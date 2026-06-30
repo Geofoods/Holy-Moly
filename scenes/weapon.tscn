@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://bvk2vitixghvo"]
+
+[ext_resource type="Texture2D" uid="uid://dmftsaevhuhp5" path="res://sprites/shovel.png" id="1_shovel"]
+[ext_resource type="Script" uid="uid://b0qqjanss8ip0" path="res://scenes/sword.gd" id="2_script"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_uxn4k"]
+radius = 113.758514
+
+[node name="Weapon" type="Node2D" unique_id=1920443244]
+script = ExtResource("2_script")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=2110929315]
+position = Vector2(250, 0)
+scale = Vector2(2, 1.5)
+texture = ExtResource("1_shovel")
+offset = Vector2(80, 0)
+
+[node name="Hitbox" type="Area2D" parent="." unique_id=676626529]
+monitoring = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox" unique_id=1614599316]
+position = Vector2(446, -195)
+shape = SubResource("CircleShape2D_uxn4k")

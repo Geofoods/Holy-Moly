@@ -5,6 +5,8 @@
 [ext_resource type="Texture2D" uid="uid://blp357sqm6m5c" path="res://sprites/moleacharacterwalk.png" id="3_7mr06"]
 [ext_resource type="Texture2D" uid="uid://cxnydmpntr28i" path="res://sprites/molejump.png" id="3_j2wvo"]
 [ext_resource type="Texture2D" uid="uid://3rihdvr6p56t" path="res://sprites/molesidewaysjump.png" id="4_j2wvo"]
+[ext_resource type="PackedScene" uid="uid://bb123weaponuid" path="res://scenes/weapon.tscn" id="5_weapon"]
+
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_fo5de"]
 atlas = ExtResource("1_dmcpu")
@@ -109,3 +111,7 @@ autoplay = "idle"
 position = Vector2(4, -73)
 rotation = -1.5580355
 shape = SubResource("CapsuleShape2D_gmfyf")
+
+[node name="Weapon" parent="." instance=ExtResource("5_weapon")]
+position = Vector2(0, -60)
+
