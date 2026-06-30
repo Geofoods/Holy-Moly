@@ -1,0 +1,22 @@
+[gd_scene format=3 uid="uid://dexkafcey6f5i"]
+
+[ext_resource type="PackedScene" uid="uid://p1of6ummc17j" path="res://scenes/mole.tscn" id="1_o5qli"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ig7tw"]
+size = Vector2(2361, 657)
+
+[node name="Node2D" type="Node2D" unique_id=1979316305]
+
+[node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=493170328]
+position = Vector2(-3, -72)
+scale = Vector2(0.5, 0.5)
+
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="StaticBody2D" unique_id=709730228]
+position = Vector2(8, 638)
+shape = SubResource("RectangleShape2D_ig7tw")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=955812054]
+
+[node name="CharacterBody2D2" parent="." unique_id=501808252 instance=ExtResource("1_o5qli")]
+position = Vector2(-28, -116)
+scale = Vector2(0.25, 0.25)
