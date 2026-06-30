@@ -1,0 +1,14 @@
+63f7b34db8d8cdea90c76aacccf841ec
+::res://::1782842286
+icon.svg::CompressedTexture2D::750625158934811565::1782839777::1782839782::1::::<><><>0<>0<>2e88065d0bbf30a805b1fcf8c3c98255<>res://.godot/imported/icon.svg-218a8f2b3041327d8a5756f3a245f83b.ctex::
+::res://scenes/::1782842286
+main.tscn::PackedScene::7488105549823870736::1782840734::0::1::::<><><>0<>0<><>::uid://p1of6ummc17j::::res://scenes/mole.tscn
+mole.gd::GDScript::1793935040003545074::1782842282::0::1::::<>CharacterBody2D<><>0<>0<><>::
+mole.tscn::PackedScene::1107367102725608577::1782841866::0::1::::<><><>0<>0<><>::uid://cbforxrmshl21::::res://sprites/moleacharacteridle.png<>uid://0s833kiry6t7::::res://scenes/mole.gd<>uid://blp357sqm6m5c::::res://sprites/moleacharacterwalk.png<>uid://cxnydmpntr28i::::res://sprites/molejump.png<>uid://3rihdvr6p56t::::res://sprites/molesidewaysjump.png
+molehole.tscn::PackedScene::298139655041994233::1782842282::0::1::::<><><>0<>0<><>::uid://ciw6fcc656sbn::::res://sprites/molehole.png
+::res://sprites/::1782841816
+moleacharacteridle.png::CompressedTexture2D::4854233731057943412::1782839790::1782839804::1::::<><><>0<>0<>8e382a5a57d7cfcbd444930fafe9c1af<>res://.godot/imported/moleacharacteridle.png-35abc984776db773c049f23f0c596936.ctex::
+moleacharacterwalk.png::CompressedTexture2D::3191218988934882022::1782839790::1782839804::1::::<><><>0<>0<>7f29ce7d470963e034698b9c7daa9791<>res://.godot/imported/moleacharacterwalk.png-6a4d1d554c52c5504f6aee286efe2fc9.ctex::
+molehole.png::CompressedTexture2D::5381659692411197743::1782839790::1782839804::1::::<><><>0<>0<>b35eaff44bfe18691ec29f32fbfec33d<>res://.godot/imported/molehole.png-92cff5acd9e281e53f7b2bffb0adcd8a.ctex::
+molejump.png::CompressedTexture2D::6415484901140853230::1782841159::1782841159::1::::<><><>0<>0<>0df21584e1e44d35d9721c420359b916<>res://.godot/imported/molejump.png-7931e976abcd463b8e57d8d12249ed5a.ctex::
+molesidewaysjump.png::CompressedTexture2D::2000880471008786033::1782841816::1782841816::1::::<><><>0<>0<>34aa7ce530ae003d00819eea225b07bc<>res://.godot/imported/molesidewaysjump.png-fc2b60ab8eca431d7cbbdf0f2e69d92f.ctex::
