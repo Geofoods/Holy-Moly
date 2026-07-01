@@ -1,9 +1,9 @@
 [gd_scene format=3 uid="uid://eiok07cioajx"]
 
-[ext_resource type="Texture2D" uid="uid://ciw6fcc656sbn" path="res://sprites/molehole.png" id="1_ponbj"]
+[ext_resource type="Texture2D" uid="uid://dnq805ixuiif7" path="res://sprites/moleholebold.png" id="1_viawq"]
 
 [node name="Node2D" type="Node2D" unique_id=1734199015]
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1710531698]
 scale = Vector2(0.25, 0.25)
-texture = ExtResource("1_ponbj")
+texture = ExtResource("1_viawq")

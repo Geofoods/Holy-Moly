@@ -1,12 +1,33 @@
 extends CharacterBody2D
 
-const SPEED = 300.0
+const SPEED = 350.0
 const JUMP_VELOCITY = -800.0
+const ACCELERATION = 1800.0
+const FRICTION = 1800.0
+const AIR_FRICTION = 800.0
+
 
 var mole_hole_scene := preload("res://scenes/molehole.tscn")
 var mole_hole_instance: Node2D = null
 var was_on_floor := true
 var is_sideways_jump := false
+
+func _ready() -> void:
+	var ev_w = InputEventKey.new()
+	ev_w.keycode = KEY_W
+	InputMap.action_add_event("ui_accept", ev_w)
+	
+	var ev_up = InputEventKey.new()
+	ev_up.keycode = KEY_UP
+	InputMap.action_add_event("ui_accept", ev_up)
+	
+	var ev_a = InputEventKey.new()
+	ev_a.keycode = KEY_A
+	InputMap.action_add_event("ui_left", ev_a)
+	
+	var ev_d = InputEventKey.new()
+	ev_d.keycode = KEY_D
+	InputMap.action_add_event("ui_right", ev_d)
 
 func _physics_process(delta: float) -> void:
 	# Gravity
@@ -31,10 +52,12 @@ func _physics_process(delta: float) -> void:
 	var direction := Input.get_axis("ui_left", "ui_right")
 
 	if direction:
-		velocity.x = direction * SPEED
+		var accel = ACCELERATION if is_on_floor() else ACCELERATION * 0.6
+		velocity.x = move_toward(velocity.x, direction * SPEED, accel * delta)
 		$AnimatedSprite2D.flip_h = direction < 0
 	else:
-		velocity.x = move_toward(velocity.x, 0, SPEED)
+		var friction = FRICTION if is_on_floor() else AIR_FRICTION
+		velocity.x = move_toward(velocity.x, 0, friction * delta)
 
 	# Upgrade to sideways jump mid-air (one-way, can't go back)
 	if not is_on_floor() and not is_sideways_jump and direction != 0:
@@ -45,7 +68,7 @@ func _physics_process(delta: float) -> void:
 	# Animation
 	if not is_on_floor():
 		if is_sideways_jump:
-			$AnimatedSprite2D.play("sidewaysjump")
+			$AnimatedSprite2D.play("sidewaysjumpbold")
 			$AnimatedSprite2D.flip_v = false
 			var target_angle = atan2(velocity.y, abs(velocity.x))
 			target_angle = clamp(target_angle, -PI / 4, PI / 4)
@@ -53,16 +76,16 @@ func _physics_process(delta: float) -> void:
 				target_angle = -target_angle
 			$AnimatedSprite2D.rotation = lerp_angle($AnimatedSprite2D.rotation, target_angle, 0.15)
 		else:
-			$AnimatedSprite2D.play("jump")
+			$AnimatedSprite2D.play("jumpbold")
 			$AnimatedSprite2D.flip_v = velocity.y > 0
 			$AnimatedSprite2D.rotation = lerp_angle($AnimatedSprite2D.rotation, 0.0, 0.15)
 	else:
 		$AnimatedSprite2D.flip_v = false
 		$AnimatedSprite2D.rotation = lerp_angle($AnimatedSprite2D.rotation, 0.0, 0.3)
 		if direction != 0:
-			$AnimatedSprite2D.play("walk")
+			$AnimatedSprite2D.play("walkbold")
 		else:
-			$AnimatedSprite2D.play("idle")
+			$AnimatedSprite2D.play("idlebold")
 
 
 func spawn_mole_hole() -> void:
