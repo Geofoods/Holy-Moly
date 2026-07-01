@@ -20,7 +20,17 @@ var is_digging := false
 var is_tunneling := false
 var tunnel_direction := 1.0
 
+var health: int = 1:
+	set(value):
+		health = clamp(value, 1, 6)
+		if is_inside_tree():
+			var heart_anim = get_parent().get_node_or_null("heart/AnimatedSprite2D")
+			if heart_anim:
+				heart_anim.play(str(health) + "hp")
+
 func _ready() -> void:
+	await get_tree().process_frame
+	self.health = health
 	var ev_w = InputEventKey.new()
 	ev_w.keycode = KEY_W
 	InputMap.action_add_event("ui_accept", ev_w)

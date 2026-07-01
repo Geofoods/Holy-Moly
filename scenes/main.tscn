@@ -2,6 +2,7 @@
 
 [ext_resource type="PackedScene" uid="uid://p1of6ummc17j" path="res://scenes/mole.tscn" id="1_o5qli"]
 [ext_resource type="PackedScene" uid="uid://dnp3icrndkjm8" path="res://scenes/enemy.tscn" id="2_enemy"]
+[ext_resource type="PackedScene" uid="uid://c6xus6tuhcmfo" path="res://scenes/heart.tscn" id="3_sugp2"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ig7tw"]
 size = Vector2(2361, 657)
@@ -22,5 +23,9 @@ shape = SubResource("RectangleShape2D_ig7tw")
 position = Vector2(-28, -116)
 scale = Vector2(0.25, 0.25)
 
-[node name="Enemy" parent="." instance=ExtResource("2_enemy")]
+[node name="Enemy" parent="." unique_id=1155690396 instance=ExtResource("2_enemy")]
 position = Vector2(300, -116)
+
+[node name="heart" parent="." unique_id=1207891791 instance=ExtResource("3_sugp2")]
+position = Vector2(-472, -232)
+scale = Vector2(0.25, 0.25)
