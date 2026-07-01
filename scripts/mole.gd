@@ -5,12 +5,17 @@ const JUMP_VELOCITY = -800.0
 const ACCELERATION = 1800.0
 const FRICTION = 1800.0
 const AIR_FRICTION = 800.0
+const TUNNEL_SPEED = 1200.0
+const TUNNEL_DURATION = 0.4
 
 
 var mole_hole_scene := preload("res://scenes/molehole.tscn")
 var mole_hole_instance: Node2D = null
 var was_on_floor := true
 var is_sideways_jump := false
+var is_digging := false
+var is_tunneling := false
+var tunnel_direction := 1.0
 
 func _ready() -> void:
 	var ev_w = InputEventKey.new()
@@ -29,10 +34,31 @@ func _ready() -> void:
 	ev_d.keycode = KEY_D
 	InputMap.action_add_event("ui_right", ev_d)
 
+	if not InputMap.has_action("dig_dash"):
+		InputMap.add_action("dig_dash")
+		var ev_shift = InputEventKey.new()
+		ev_shift.keycode = KEY_SHIFT
+		InputMap.action_add_event("dig_dash", ev_shift)
+
 func _physics_process(delta: float) -> void:
 	# Gravity
 	if not is_on_floor():
 		velocity += get_gravity() * delta
+
+	if is_digging:
+		velocity.x = move_toward(velocity.x, 0, FRICTION * delta)
+		move_and_slide()
+		was_on_floor = is_on_floor()
+		return
+	elif is_tunneling:
+		velocity.x = tunnel_direction * TUNNEL_SPEED
+		move_and_slide()
+		was_on_floor = is_on_floor()
+		return
+
+	if Input.is_action_just_pressed("dig_dash") and is_on_floor():
+		start_dig_dash()
+		return
 
 	# Jump
 	if Input.is_action_just_pressed("ui_accept") and is_on_floor():
@@ -99,3 +125,32 @@ func remove_mole_hole() -> void:
 	if mole_hole_instance and is_instance_valid(mole_hole_instance):
 		mole_hole_instance.queue_free()
 		mole_hole_instance = null
+
+func start_dig_dash() -> void:
+	is_digging = true
+	if has_node("Weapon"):
+		$Weapon.hide()
+	$AnimatedSprite2D.play("dig")
+	
+	tunnel_direction = -1.0 if $AnimatedSprite2D.flip_h else 1.0
+	
+	await $AnimatedSprite2D.animation_finished
+	
+	if not is_digging:
+		return
+		
+	is_digging = false
+	is_tunneling = true
+	$AnimatedSprite2D.play("tunnel")
+	
+	await get_tree().create_timer(TUNNEL_DURATION).timeout
+	
+	if not is_tunneling:
+		return
+		
+	is_tunneling = false
+	velocity.x = 0
+	velocity.y = JUMP_VELOCITY
+	if has_node("Weapon"):
+		$Weapon.show()
+	$AnimatedSprite2D.play("jumpbold")
