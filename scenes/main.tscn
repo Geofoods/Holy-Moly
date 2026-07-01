@@ -5,7 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://c6xus6tuhcmfo" path="res://scenes/heart.tscn" id="3_sugp2"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ig7tw"]
-size = Vector2(2361, 657)
+size = Vector2(4868, 657)
 
 [node name="Node2D" type="Node2D" unique_id=1979316305]
 
@@ -14,7 +14,7 @@ position = Vector2(-3, -72)
 scale = Vector2(0.5, 0.5)
 
 [node name="CollisionShape2D2" type="CollisionShape2D" parent="StaticBody2D" unique_id=709730228]
-position = Vector2(8, 638)
+position = Vector2(126, 638)
 shape = SubResource("RectangleShape2D_ig7tw")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=955812054]
@@ -27,5 +27,5 @@ scale = Vector2(0.25, 0.25)
 position = Vector2(300, -116)
 
 [node name="heart" parent="." unique_id=1207891791 instance=ExtResource("3_sugp2")]
-position = Vector2(-472, -232)
-scale = Vector2(0.25, 0.25)
+position = Vector2(-795, -383)
+scale = Vector2(0.4, 0.4)
