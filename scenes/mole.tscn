@@ -255,6 +255,18 @@ animations = [{
 "speed": 5.0
 }]
 
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_trail1"]
+direction = Vector3(0, 1, 0)
+spread = 25.0
+gravity = Vector3(0, 80, 0)
+initial_velocity_min = 40.0
+initial_velocity_max = 80.0
+angular_velocity_min = -45.0
+angular_velocity_max = 45.0
+scale_min = 10.0
+scale_max = 15.0
+color = Color(0.45, 0.26, 0.13, 0.85)
+
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_gmfyf"]
 radius = 136.00168
 height = 368.12317
@@ -277,3 +289,10 @@ shape = SubResource("CapsuleShape2D_gmfyf")
 
 [node name="Weapon" parent="." unique_id=1867143522 instance=ExtResource("5_weapon")]
 position = Vector2(0, -60)
+
+[node name="ParticleTrail" type="GPUParticles2D" parent="."]
+position = Vector2(0, 110)
+emitting = false
+amount = 14
+process_material = SubResource("ParticleProcessMaterial_trail1")
+lifetime = 0.5

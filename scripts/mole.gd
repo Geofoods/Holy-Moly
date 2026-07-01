@@ -10,6 +10,9 @@ const TUNNEL_DURATION = 0.4
 
 
 var mole_hole_scene := preload("res://scenes/molehole.tscn")
+var default_trail_color := Color(0.45, 0.26, 0.13, 0.85)
+var tunnel_trail_color := Color(0.6, 0.35, 0.15, 1.0)
+@onready var particle_trail: GPUParticles2D = $ParticleTrail
 var mole_hole_instance: Node2D = null
 var was_on_floor := true
 var is_sideways_jump := false
@@ -90,6 +93,18 @@ func _physics_process(delta: float) -> void:
 		is_sideways_jump = true
 
 	move_and_slide()
+
+	# Particle trail — only on ground, offset to sprite edge based on facing
+	if is_on_floor() and (velocity.x != 0 or is_digging or is_tunneling):
+		particle_trail.emitting = true
+		var edge_offset := -180.0 if $AnimatedSprite2D.flip_h else 180.0
+		particle_trail.position.x = edge_offset
+		if is_digging or is_tunneling:
+			particle_trail.process_material.color = tunnel_trail_color
+		else:
+			particle_trail.process_material.color = default_trail_color
+	else:
+		particle_trail.emitting = false
 
 	# Animation
 	if not is_on_floor():

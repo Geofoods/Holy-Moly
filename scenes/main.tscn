@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://dexkafcey6f5i"]
 
 [ext_resource type="PackedScene" uid="uid://p1of6ummc17j" path="res://scenes/mole.tscn" id="1_o5qli"]
+[ext_resource type="PackedScene" uid="uid://dnp3icrndkjm8" path="res://scenes/enemy.tscn" id="2_enemy"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ig7tw"]
 size = Vector2(2361, 657)
@@ -20,3 +21,6 @@ shape = SubResource("RectangleShape2D_ig7tw")
 [node name="CharacterBody2D2" parent="." unique_id=501808252 instance=ExtResource("1_o5qli")]
 position = Vector2(-28, -116)
 scale = Vector2(0.25, 0.25)
+
+[node name="Enemy" parent="." instance=ExtResource("2_enemy")]
+position = Vector2(300, -116)
