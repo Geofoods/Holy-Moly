@@ -1,7 +1,8 @@
 [gd_scene format=3 uid="uid://p1of6ummc17j"]
 
 [ext_resource type="Texture2D" uid="uid://cbforxrmshl21" path="res://sprites/moleacharacteridle.png" id="1_dmcpu"]
-[ext_resource type="Script" uid="uid://0s833kiry6t7" path="res://scenes/mole.gd" id="1_kln4g"]
+[ext_resource type="Script" uid="uid://0s833kiry6t7" path="res://scripts/mole.gd" id="1_kln4g"]
+[ext_resource type="Texture2D" uid="uid://bnyoy86ltasyk" path="res://sprites/moledig.png" id="2_tss7c"]
 [ext_resource type="Texture2D" uid="uid://blp357sqm6m5c" path="res://sprites/moleacharacterwalk.png" id="3_7mr06"]
 [ext_resource type="Texture2D" uid="uid://d3yd67l328fkp" path="res://sprites/moleacharacteridlebold.png" id="3_gmfyf"]
 [ext_resource type="Texture2D" uid="uid://cxnydmpntr28i" path="res://sprites/molejump.png" id="3_j2wvo"]
@@ -10,6 +11,31 @@
 [ext_resource type="PackedScene" uid="uid://bvk2vitixghvo" path="res://scenes/weapon.tscn" id="5_weapon"]
 [ext_resource type="Texture2D" uid="uid://dtrh4fdba0nph" path="res://sprites/moleacharacterwalkbold.png" id="6_ev00m"]
 [ext_resource type="Texture2D" uid="uid://bo1hkfcoq6vt5" path="res://sprites/molesidewaysjumpbold.png" id="7_tss7c"]
+[ext_resource type="Texture2D" uid="uid://sm1rsjogvngx" path="res://sprites/moletunnel.png" id="9_dd0k0"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_xipw3"]
+atlas = ExtResource("2_tss7c")
+region = Rect2(0, 0, 600, 600)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_aaajs"]
+atlas = ExtResource("2_tss7c")
+region = Rect2(600, 0, 600, 600)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dhild"]
+atlas = ExtResource("2_tss7c")
+region = Rect2(1200, 0, 600, 600)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_87w2t"]
+atlas = ExtResource("2_tss7c")
+region = Rect2(1800, 0, 600, 600)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ff3o3"]
+atlas = ExtResource("2_tss7c")
+region = Rect2(2400, 0, 600, 600)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_67hep"]
+atlas = ExtResource("2_tss7c")
+region = Rect2(3000, 0, 600, 600)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_fo5de"]
 atlas = ExtResource("1_dmcpu")
@@ -42,6 +68,18 @@ region = Rect2(0, 0, 800, 300)
 [sub_resource type="AtlasTexture" id="AtlasTexture_642kj"]
 atlas = ExtResource("7_tss7c")
 region = Rect2(0, 0, 800, 300)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j7ewp"]
+atlas = ExtResource("9_dd0k0")
+region = Rect2(0, 0, 600, 600)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ys5la"]
+atlas = ExtResource("9_dd0k0")
+region = Rect2(600, 0, 600, 600)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_aa1jl"]
+atlas = ExtResource("9_dd0k0")
+region = Rect2(1200, 0, 600, 600)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_j2wvo"]
 atlas = ExtResource("3_7mr06")
@@ -85,6 +123,29 @@ region = Rect2(2400, 0, 600, 600)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_ecm7r"]
 animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_xipw3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_aaajs")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dhild")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_87w2t")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ff3o3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_67hep")
+}],
+"loop": false,
+"name": &"dig",
+"speed": 12.0
+}, {
 "frames": [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_fo5de")
@@ -141,6 +202,20 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
+"texture": SubResource("AtlasTexture_j7ewp")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ys5la")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_aa1jl")
+}],
+"loop": true,
+"name": &"tunnel",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
 "texture": SubResource("AtlasTexture_j2wvo")
 }, {
 "duration": 1.0,
@@ -190,8 +265,10 @@ script = ExtResource("1_kln4g")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1243241645]
 sprite_frames = SubResource("SpriteFrames_ecm7r")
-animation = &"idlebold"
+animation = &"tunnel"
 autoplay = "idlebold"
+frame = 2
+frame_progress = 0.96202683
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1888999731]
 position = Vector2(4, -73)
