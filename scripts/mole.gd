@@ -19,18 +19,23 @@ var is_sideways_jump := false
 var is_digging := false
 var is_tunneling := false
 var tunnel_direction := 1.0
+var invulnerable := false
 
-var health: int = 1:
+var health: int = 3:
 	set(value):
-		health = clamp(value, 1, 6)
+		health = clamp(value, 0, 3)
 		if is_inside_tree():
-			var heart_anim = get_parent().get_node_or_null("heart/AnimatedSprite2D")
-			if heart_anim:
-				heart_anim.play(str(health) + "hp")
+			if health > 0:
+				var heart_anim = get_parent().get_node_or_null("CanvasLayer/heart/AnimatedSprite2D")
+				if heart_anim:
+					heart_anim.play(str(health) + "hp")
+			else:
+				get_tree().reload_current_scene()
 
 func _ready() -> void:
 	await get_tree().process_frame
 	self.health = health
+	add_to_group("mole")
 	var ev_w = InputEventKey.new()
 	ev_w.keycode = KEY_W
 	InputMap.action_add_event("ui_accept", ev_w)
@@ -150,6 +155,20 @@ func remove_mole_hole() -> void:
 	if mole_hole_instance and is_instance_valid(mole_hole_instance):
 		mole_hole_instance.queue_free()
 		mole_hole_instance = null
+
+func take_damage(amount: int) -> void:
+	if invulnerable or health <= 0:
+		return
+	health -= amount
+	invulnerable = true
+	var tween := create_tween()
+	tween.tween_property($AnimatedSprite2D, "modulate:a", 0.4, 0.1)
+	get_tree().create_timer(1.0).timeout.connect(_end_invulnerability)
+
+func _end_invulnerability() -> void:
+	invulnerable = false
+	var tween := create_tween()
+	tween.tween_property($AnimatedSprite2D, "modulate:a", 1.0, 0.1)
 
 func start_dig_dash() -> void:
 	is_digging = true

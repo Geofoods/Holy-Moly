@@ -12,6 +12,7 @@ var direction := 1.0
 
 func _ready() -> void:
 	hurtbox.area_entered.connect(_on_hurtbox_area_entered)
+	hitbox.body_entered.connect(_on_hitbox_body_entered)
 
 func _physics_process(delta: float) -> void:
 	if not is_on_floor():
@@ -33,6 +34,10 @@ func _physics_process(delta: float) -> void:
 	visual.scale.x = abs(visual.scale.x) * sign(direction)
 
 	move_and_slide()
+
+func _on_hitbox_body_entered(body: Node) -> void:
+	if body.is_in_group("mole"):
+		body.take_damage(1)
 
 func _on_hurtbox_area_entered(_area: Area2D) -> void:
 	die()

@@ -123,6 +123,6 @@ animations = [{
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=694995907]
 sprite_frames = SubResource("SpriteFrames_kwk4n")
-animation = &"6hp"
-autoplay = "6hp"
+animation = &"3hp"
+autoplay = "3hp"
 frame_progress = 0.21668786
