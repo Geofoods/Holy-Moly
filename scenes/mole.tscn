@@ -293,6 +293,6 @@ position = Vector2(0, -60)
 [node name="ParticleTrail" type="GPUParticles2D" parent="."]
 position = Vector2(0, 110)
 emitting = false
-amount = 14
+amount = 8
 process_material = SubResource("ParticleProcessMaterial_trail1")
 lifetime = 0.5
