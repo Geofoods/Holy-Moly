@@ -6,11 +6,6 @@ const FALL_START_RATIO := 0.22
 const FALL_X_RATIO := 0.78
 
 func _ready():
-	var vp_size: Vector2 = get_viewport_rect().size
-	size = vp_size
-	$Background.size = vp_size
-	$CenterContainer.size = vp_size
-
 	var vbox = $CenterContainer/VBoxContainer
 	vbox.modulate.a = 0.0
 	vbox.scale = Vector2(0.85, 0.85)

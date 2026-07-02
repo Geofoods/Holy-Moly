@@ -62,28 +62,51 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cancelbutton"]
+bg_color = Color(0.72, 0.1, 0.18, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.03, 0.03, 0.03, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cancelbutton_hover"]
+bg_color = Color(0.9, 0.15, 0.25, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.03, 0.03, 0.03, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
 [node name="PauseMenu" type="CanvasLayer"]
 script = ExtResource("1_pause")
 
 [node name="DimBackground" type="ColorRect" parent="."]
-visible = false
-anchors_left = 0.0
-anchors_top = 0.0
-anchors_right = 1.0
-anchors_bottom = 1.0
+layout_mode = 1
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 1.0
 color = Color(0, 0, 0, 0.6)
 
 [node name="CenterContainer" type="CenterContainer" parent="."]
-visible = false
-anchors_left = 0.0
-anchors_top = 0.0
-anchors_right = 1.0
-anchors_bottom = 1.0
 layout_mode = 1
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 1.0
 
 [node name="PausePanel" type="PanelContainer" parent="CenterContainer"]
 layout_mode = 2
-custom_minimum_size = Vector2(400, 300)
+custom_minimum_size = Vector2(400, 340)
 theme_override_styles/panel = SubResource("StyleBoxFlat_pausebg")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/PausePanel"]
@@ -116,11 +139,11 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_resumebutton_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_resumebutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_resumebutton_hover")
 
-[node name="ExitButton" type="Button" parent="CenterContainer/PausePanel/VBoxContainer/ButtonContainer"]
+[node name="MainMenuButton" type="Button" parent="CenterContainer/PausePanel/VBoxContainer/ButtonContainer"]
 layout_mode = 2
 size_flags_horizontal = 2
 custom_minimum_size = Vector2(0, 60)
-text = "EXIT TO MENU"
+text = "MAIN MENU"
 theme_override_font_sizes/font_size = 24
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
@@ -130,5 +153,20 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_exitbutton_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_exitbutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_exitbutton_hover")
 
+[node name="CancelButton" type="Button" parent="CenterContainer/PausePanel/VBoxContainer/ButtonContainer"]
+layout_mode = 2
+size_flags_horizontal = 2
+custom_minimum_size = Vector2(0, 60)
+text = "CANCEL"
+theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_colors/font_outline_size = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_cancelbutton")
+theme_override_styles/hover = SubResource("StyleBoxFlat_cancelbutton_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_cancelbutton_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_cancelbutton_hover")
+
 [connection signal="pressed" from="CenterContainer/PausePanel/VBoxContainer/ButtonContainer/ResumeButton" to="." method="_on_resume_pressed"]
-[connection signal="pressed" from="CenterContainer/PausePanel/VBoxContainer/ButtonContainer/ExitButton" to="." method="_on_exit_pressed"]
+[connection signal="pressed" from="CenterContainer/PausePanel/VBoxContainer/ButtonContainer/MainMenuButton" to="." method="_on_main_menu_pressed"]
+[connection signal="pressed" from="CenterContainer/PausePanel/VBoxContainer/ButtonContainer/CancelButton" to="." method="_on_cancel_pressed"]
