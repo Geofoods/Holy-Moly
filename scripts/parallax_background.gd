@@ -13,6 +13,8 @@ var layer_sprites: Array[Array] = []
 
 func _ready() -> void:
 	await get_tree().process_frame
+	if get_viewport_rect().size == Vector2.ZERO:
+		await get_tree().process_frame
 	_build_layers()
 
 func _build_layers() -> void:

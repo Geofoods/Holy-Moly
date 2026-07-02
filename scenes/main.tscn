@@ -33,4 +33,4 @@ position = Vector2(300, -116)
 position = Vector2(74.99999, 73)
 scale = Vector2(0.24147864, 0.24147864)
 
-[node name="PauseMenu" parent="." instance=ExtResource("4_pause")]
+[node name="PauseMenu" parent="." instance=ExtResource("6_pause")]

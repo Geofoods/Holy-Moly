@@ -1,9 +1,9 @@
 extends Control
 
-func _ready():
+func _ready() -> void:
 	animate_intro()
 
-func animate_intro():
+func animate_intro() -> void:
 	var mole = $MoleAnimation
 	var vbox = $CenterContainer/VBoxContainer
 	
@@ -19,8 +19,8 @@ func animate_intro():
 	ui_tween.set_trans(Tween.TRANS_CUBIC)
 	ui_tween.tween_property(vbox, "modulate:a", 1.0, 1.5)
 
-func _on_play_pressed():
+func _on_play_pressed() -> void:
 	get_tree().change_scene_to_file("res://scenes/main.tscn")
 
-func _on_exit_pressed():
+func _on_exit_pressed() -> void:
 	get_tree().quit()
