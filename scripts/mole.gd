@@ -13,6 +13,7 @@ var mole_hole_scene := preload("res://scenes/molehole.tscn")
 var default_trail_color := Color(0.45, 0.26, 0.13, 0.85)
 var tunnel_trail_color := Color(0.6, 0.35, 0.15, 1.0)
 @onready var particle_trail: GPUParticles2D = $ParticleTrail
+@onready var dirt_spray: GPUParticles2D = $DirtSpray
 var mole_hole_instance: Node2D = null
 var was_on_floor := true
 var is_sideways_jump := false
@@ -118,8 +119,14 @@ func _physics_process(delta: float) -> void:
 			particle_trail.process_material.color = tunnel_trail_color
 		else:
 			particle_trail.process_material.color = default_trail_color
+		
+		var back_offset := -200.0 if $AnimatedSprite2D.flip_h else 200.0
+		dirt_spray.position.x = -back_offset
+		dirt_spray.process_material.direction = Vector3(1.0 if $AnimatedSprite2D.flip_h else -1.0, 0.0, 0.0)
+		dirt_spray.emitting = true
 	else:
 		particle_trail.emitting = false
+		dirt_spray.emitting = false
 
 	# Animation
 	if not is_on_floor():
