@@ -2,54 +2,76 @@
 
 [ext_resource type="Script" path="res://scripts/intro.gd" id="1_h1b2y"]
 [ext_resource type="Texture2D" uid="uid://dfykrb6hlx3b" path="res://sprites/molejumpbold.png" id="2_molejump"]
+[ext_resource type="Script" path="res://scripts/glitch_title.gd" id="3_glitch"]
+[ext_resource type="Shader" path="res://shaders/corrupted_bg.gdshader" id="4_shader"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_bg"]
+shader = ExtResource("4_shader")
+shader_parameter/scanline_count = 240.0
+shader_parameter/scanline_opacity = 0.18
+shader_parameter/noise_strength = 0.05
+shader_parameter/glitch_speed = 1.2
+shader_parameter/base_color = Vector3(0.035, 0.05, 0.04)
+shader_parameter/tint_color = Vector3(0.15, 0.55, 0.3)
+
+[sub_resource type="SystemFont" id="SystemFont_mono"]
+font_names = PackedStringArray("Consolas", "Cascadia Mono", "Courier New", "monospace")
+
+[sub_resource type="FontVariation" id="FontVariation_title"]
+base_font = SubResource("SystemFont_mono")
+spacing_glyph = 6
+
+[sub_resource type="FontVariation" id="FontVariation_ui"]
+base_font = SubResource("SystemFont_mono")
+spacing_glyph = 2
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_playbutton"]
-bg_color = Color(0.95, 0.4, 0.7, 1)
+bg_color = Color(0.13, 0.75, 0.32, 1)
 border_width_left = 3
 border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
-border_color = Color(0.8, 0.3, 0.6, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+border_color = Color(0.03, 0.03, 0.03, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_playbutton_hover"]
-bg_color = Color(1.0, 0.5, 0.8, 1)
+bg_color = Color(0.2, 0.95, 0.42, 1)
 border_width_left = 3
 border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
-border_color = Color(0.9, 0.4, 0.7, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+border_color = Color(0.03, 0.03, 0.03, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_exitbutton"]
-bg_color = Color(0.5, 0.5, 0.5, 1)
+bg_color = Color(0.72, 0.1, 0.18, 1)
 border_width_left = 3
 border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
-border_color = Color(0.35, 0.35, 0.35, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+border_color = Color(0.03, 0.03, 0.03, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_exitbutton_hover"]
-bg_color = Color(0.65, 0.65, 0.65, 1)
+bg_color = Color(0.9, 0.15, 0.25, 1)
 border_width_left = 3
 border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
-border_color = Color(0.5, 0.5, 0.5, 1)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+border_color = Color(0.03, 0.03, 0.03, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [node name="IntroScreen" type="Control"]
 layout_mode = 3
@@ -65,19 +87,19 @@ anchors_left = 0.0
 anchors_top = 0.0
 anchors_right = 1.0
 anchors_bottom = 1.0
-color = Color(0.2, 0.2, 0.2, 1)
+material = SubResource("ShaderMaterial_bg")
+color = Color(0.035, 0.05, 0.04, 1)
 
 [node name="MoleAnimation" type="TextureRect" parent="."]
-layout_mode = 1
-anchors_left = 0.0
-anchors_top = 0.0
-anchors_right = 0.0
-anchors_bottom = 1.0
-offset_left = -200.0
-offset_right = -100.0
+layout_mode = 0
+offset_left = -180.0
+offset_right = 0.0
+offset_top = -240.0
+offset_bottom = 0.0
+modulate = Color(0.85, 1.0, 0.88, 1)
 texture = ExtResource("2_molejump")
 expand_mode = 1
-stretch_mode = 1
+stretch_mode = 5
 
 [node name="CenterContainer" type="CenterContainer" parent="."]
 layout_mode = 1
@@ -93,18 +115,62 @@ size_flags_vertical = 2
 alignment = 1
 theme_override_constants/separation = 40
 
-[node name="TitleLabel" type="Label" parent="CenterContainer/VBoxContainer"]
+[node name="TitleWrapper" type="Control" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
+size_flags_horizontal = 4
+custom_minimum_size = Vector2(560, 100)
+script = ExtResource("3_glitch")
+
+[node name="TitleRed" type="Label" parent="CenterContainer/VBoxContainer/TitleWrapper"]
+layout_mode = 1
+anchors_left = 0.0
+anchors_top = 0.0
+anchors_right = 1.0
+anchors_bottom = 1.0
 text = "HOLY MOLEY"
 theme_override_font_sizes/font_size = 72
-theme_override_colors/font_color = Color(0.95, 0.4, 0.7, 1)
+theme_override_fonts/font = SubResource("FontVariation_title")
+theme_override_colors/font_color = Color(1.0, 0.1, 0.25, 0.5)
 horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="TitleCyan" type="Label" parent="CenterContainer/VBoxContainer/TitleWrapper"]
+layout_mode = 1
+anchors_left = 0.0
+anchors_top = 0.0
+anchors_right = 1.0
+anchors_bottom = 1.0
+text = "HOLY MOLEY"
+theme_override_font_sizes/font_size = 72
+theme_override_fonts/font = SubResource("FontVariation_title")
+theme_override_colors/font_color = Color(0.1, 0.95, 0.9, 0.5)
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="TitleMain" type="Label" parent="CenterContainer/VBoxContainer/TitleWrapper"]
+layout_mode = 1
+anchors_left = 0.0
+anchors_top = 0.0
+anchors_right = 1.0
+anchors_bottom = 1.0
+text = "HOLY MOLEY"
+theme_override_font_sizes/font_size = 72
+theme_override_fonts/font = SubResource("FontVariation_title")
+theme_override_colors/font_color = Color(0.35, 1.0, 0.55, 1)
+theme_override_colors/font_outline_color = Color(0.02, 0.02, 0.02, 1)
+theme_override_colors/font_shadow_color = Color(0.1, 0.9, 0.4, 0.6)
+theme_override_constants/outline_size = 6
+theme_override_constants/shadow_offset_x = 0
+theme_override_constants/shadow_offset_y = 4
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="SubtitleLabel" type="Label" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-text = "Dig, Jump, Survive!"
-theme_override_font_sizes/font_size = 28
-theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+text = "> dig. jump. survive._"
+theme_override_font_sizes/font_size = 24
+theme_override_fonts/font = SubResource("FontVariation_ui")
+theme_override_colors/font_color = Color(0.55, 0.75, 0.6, 1)
 horizontal_alignment = 1
 
 [node name="Spacer" type="Control" parent="CenterContainer/VBoxContainer"]
@@ -120,29 +186,31 @@ theme_override_constants/separation = 30
 layout_mode = 2
 size_flags_horizontal = 0
 custom_minimum_size = Vector2(180, 70)
-text = "PLAY GAME"
+text = "PLAY"
 theme_override_font_sizes/font_size = 24
-theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = SubResource("FontVariation_ui")
+theme_override_colors/font_color = Color(0.03, 0.03, 0.03, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_colors/font_outline_size = 2
+theme_override_colors/font_outline_size = 0
 theme_override_styles/normal = SubResource("StyleBoxFlat_playbutton")
 theme_override_styles/hover = SubResource("StyleBoxFlat_playbutton_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_playbutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_playbutton_hover")
 
-[node name="ExitButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer"]
+[node name="CancelButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer"]
 layout_mode = 2
 size_flags_horizontal = 0
 custom_minimum_size = Vector2(180, 70)
-text = "EXIT GAME"
+text = "CANCEL"
 theme_override_font_sizes/font_size = 24
-theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = SubResource("FontVariation_ui")
+theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_colors/font_outline_size = 2
+theme_override_colors/font_outline_size = 0
 theme_override_styles/normal = SubResource("StyleBoxFlat_exitbutton")
 theme_override_styles/hover = SubResource("StyleBoxFlat_exitbutton_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_exitbutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_exitbutton_hover")
 
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/PlayButton" to="." method="_on_play_pressed"]
-[connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/ExitButton" to="." method="_on_exit_pressed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/CancelButton" to="." method="_on_cancel_pressed"]

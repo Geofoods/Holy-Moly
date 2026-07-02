@@ -4,9 +4,34 @@
 [ext_resource type="PackedScene" uid="uid://dnp3icrndkjm8" path="res://scenes/enemy.tscn" id="2_enemy"]
 [ext_resource type="PackedScene" uid="uid://c6xus6tuhcmfo" path="res://scenes/heart.tscn" id="3_sugp2"]
 [ext_resource type="PackedScene" uid="uid://d2i1x8x1y6p9" path="res://scenes/pause_menu.tscn" id="4_pause"]
+[ext_resource type="Script" path="res://scripts/hud.gd" id="5_hud"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ig7tw"]
 size = Vector2(4868, 657)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_exitgamebutton"]
+bg_color = Color(0.5, 0.5, 0.5, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.35, 0.35, 0.35, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_exitgamebutton_hover"]
+bg_color = Color(0.65, 0.65, 0.65, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.5, 0.5, 0.5, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [node name="Node2D" type="Node2D" unique_id=1979316305]
 
@@ -37,9 +62,33 @@ scale = Vector2(4, 4)
 position = Vector2(300, -116)
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=71896557]
+script = ExtResource("5_hud")
 
 [node name="heart" parent="CanvasLayer" unique_id=1207891791 instance=ExtResource("3_sugp2")]
 position = Vector2(117.99999, 113.99999)
 scale = Vector2(0.24147864, 0.24147864)
 
+[node name="ExitGameButton" type="Button" parent="CanvasLayer"]
+layout_mode = 1
+anchors_left = 1.0
+anchors_top = 0.0
+anchors_right = 1.0
+anchors_bottom = 0.0
+offset_left = -150.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 65.0
+grow_horizontal = 0
+text = "EXIT GAME"
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_colors/font_outline_size = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_exitgamebutton")
+theme_override_styles/hover = SubResource("StyleBoxFlat_exitgamebutton_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_exitgamebutton_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_exitgamebutton_hover")
+
 [node name="PauseMenu" parent="." instance=ExtResource("4_pause")]
+
+[connection signal="pressed" from="CanvasLayer/ExitGameButton" to="CanvasLayer" method="_on_exit_game_pressed"]
