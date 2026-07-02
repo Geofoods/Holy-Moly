@@ -2,8 +2,9 @@
 
 [ext_resource type="Script" path="res://scripts/game_over.gd" id="1_gameover"]
 [ext_resource type="Texture2D" uid="uid://dfykrb6hlx3b" path="res://sprites/molejumpbold.png" id="2_molejump"]
-[ext_resource type="Script" path="res://scripts/glitch_title.gd" id="3_glitch"]
 [ext_resource type="Shader" path="res://shaders/corrupted_bg.gdshader" id="4_shader"]
+[ext_resource type="Texture2D" path="res://Gameover.webp" id="5_gameoverimg"]
+[ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="6_babydoll"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_bg"]
 shader = ExtResource("4_shader")
@@ -16,10 +17,6 @@ shader_parameter/tint_color = Vector3(0.55, 0.12, 0.12)
 
 [sub_resource type="SystemFont" id="SystemFont_mono"]
 font_names = PackedStringArray("Consolas", "Cascadia Mono", "Courier New", "monospace")
-
-[sub_resource type="FontVariation" id="FontVariation_title"]
-base_font = SubResource("SystemFont_mono")
-spacing_glyph = 6
 
 [sub_resource type="FontVariation" id="FontVariation_ui"]
 base_font = SubResource("SystemFont_mono")
@@ -125,55 +122,13 @@ size_flags_vertical = 2
 alignment = 1
 theme_override_constants/separation = 40
 
-[node name="TitleWrapper" type="Control" parent="CenterContainer/VBoxContainer"]
+[node name="TitleImage" type="TextureRect" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 4
-custom_minimum_size = Vector2(560, 100)
-script = ExtResource("3_glitch")
-
-[node name="TitleRed" type="Label" parent="CenterContainer/VBoxContainer/TitleWrapper"]
-layout_mode = 1
-anchor_left = 0.0
-anchor_top = 0.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-text = "GAME OVER"
-theme_override_font_sizes/font_size = 72
-theme_override_fonts/font = SubResource("FontVariation_title")
-theme_override_colors/font_color = Color(0.15, 0.95, 0.5, 0.5)
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="TitleCyan" type="Label" parent="CenterContainer/VBoxContainer/TitleWrapper"]
-layout_mode = 1
-anchor_left = 0.0
-anchor_top = 0.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-text = "GAME OVER"
-theme_override_font_sizes/font_size = 72
-theme_override_fonts/font = SubResource("FontVariation_title")
-theme_override_colors/font_color = Color(0.1, 0.85, 0.95, 0.5)
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="TitleMain" type="Label" parent="CenterContainer/VBoxContainer/TitleWrapper"]
-layout_mode = 1
-anchor_left = 0.0
-anchor_top = 0.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-text = "GAME OVER"
-theme_override_font_sizes/font_size = 72
-theme_override_fonts/font = SubResource("FontVariation_title")
-theme_override_colors/font_color = Color(1.0, 0.2, 0.25, 1)
-theme_override_colors/font_outline_color = Color(0.02, 0.02, 0.02, 1)
-theme_override_colors/font_shadow_color = Color(0.9, 0.1, 0.15, 0.6)
-theme_override_constants/outline_size = 6
-theme_override_constants/shadow_offset_x = 0
-theme_override_constants/shadow_offset_y = 4
-horizontal_alignment = 1
-vertical_alignment = 1
+custom_minimum_size = Vector2(520, 170)
+texture = ExtResource("5_gameoverimg")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="SubtitleLabel" type="Label" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
@@ -198,10 +153,9 @@ size_flags_horizontal = 0
 custom_minimum_size = Vector2(180, 70)
 text = "PLAY AGAIN"
 theme_override_font_sizes/font_size = 22
-theme_override_fonts/font = SubResource("FontVariation_ui")
+theme_override_fonts/font = ExtResource("6_babydoll")
 theme_override_colors/font_color = Color(0.03, 0.03, 0.03, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_colors/font_outline_size = 0
 theme_override_styles/normal = SubResource("StyleBoxFlat_playbutton")
 theme_override_styles/hover = SubResource("StyleBoxFlat_playbutton_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_playbutton_hover")
@@ -213,10 +167,9 @@ size_flags_horizontal = 0
 custom_minimum_size = Vector2(180, 70)
 text = "CANCEL"
 theme_override_font_sizes/font_size = 24
-theme_override_fonts/font = SubResource("FontVariation_ui")
+theme_override_fonts/font = ExtResource("6_babydoll")
 theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_colors/font_outline_size = 0
 theme_override_styles/normal = SubResource("StyleBoxFlat_exitbutton")
 theme_override_styles/hover = SubResource("StyleBoxFlat_exitbutton_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_exitbutton_hover")
