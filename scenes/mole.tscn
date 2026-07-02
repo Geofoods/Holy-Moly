@@ -12,7 +12,6 @@
 [ext_resource type="Texture2D" uid="uid://dtrh4fdba0nph" path="res://sprites/moleacharacterwalkbold.png" id="6_ev00m"]
 [ext_resource type="Texture2D" uid="uid://bo1hkfcoq6vt5" path="res://sprites/molesidewaysjumpbold.png" id="7_tss7c"]
 [ext_resource type="Texture2D" uid="uid://sm1rsjogvngx" path="res://sprites/moletunnel.png" id="9_dd0k0"]
-[ext_resource type="Texture2D" uid="uid://nmuv62kmxnpa" path="res://sprites/particles.webp" id="10_particles"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_xipw3"]
 atlas = ExtResource("2_tss7c")
@@ -256,33 +255,6 @@ animations = [{
 "speed": 5.0
 }]
 
-[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_spray"]
-direction = Vector3(-1, 0, 0)
-spread = 55.0
-gravity = Vector3(0, 300, 0)
-initial_velocity_min = 100.0
-initial_velocity_max = 300.0
-angular_velocity_min = -180.0
-angular_velocity_max = 180.0
-scale_min = 0.1
-scale_max = 0.5
-anim_speed_min = 0.0
-anim_speed_max = 0.0
-anim_offset = 0.0
-anim_offset_random = 1.0
-
-[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_trail1"]
-direction = Vector3(0, 1, 0)
-spread = 25.0
-gravity = Vector3(0, 80, 0)
-initial_velocity_min = 40.0
-initial_velocity_max = 80.0
-angular_velocity_min = -45.0
-angular_velocity_max = 45.0
-scale_min = 10.0
-scale_max = 15.0
-color = Color(0.45, 0.26, 0.13, 0.85)
-
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_gmfyf"]
 radius = 136.00168
 height = 368.12317
@@ -305,21 +277,3 @@ shape = SubResource("CapsuleShape2D_gmfyf")
 
 [node name="Weapon" parent="." unique_id=1867143522 instance=ExtResource("5_weapon")]
 position = Vector2(0, -60)
-
-[node name="ParticleTrail" type="GPUParticles2D" parent="."]
-position = Vector2(0, 110)
-emitting = false
-amount = 8
-process_material = SubResource("ParticleProcessMaterial_trail1")
-lifetime = 0.5
-
-[node name="DirtSpray" type="GPUParticles2D" parent="."]
-position = Vector2(-180, 80)
-emitting = false
-amount = 15
-texture = ExtResource("10_particles")
-vframes = 5
-process_material = SubResource("ParticleProcessMaterial_spray")
-lifetime = 0.7
-one_shot = false
-local_coords = false

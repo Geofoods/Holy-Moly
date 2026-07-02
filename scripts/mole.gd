@@ -118,23 +118,7 @@ func _physics_process(delta: float) -> void:
 
 	move_and_slide()
 
-	# Particle trail — only on ground, offset to sprite edge based on facing
-	if is_on_floor() and (velocity.x != 0 or is_digging or is_tunneling):
-		particle_trail.emitting = true
-		var edge_offset := -180.0 if $AnimatedSprite2D.flip_h else 180.0
-		particle_trail.position.x = edge_offset
-		if is_digging or is_tunneling:
-			particle_trail.process_material.color = tunnel_trail_color
-		else:
-			particle_trail.process_material.color = default_trail_color
-		
-		var back_offset := -200.0 if $AnimatedSprite2D.flip_h else 200.0
-		dirt_spray.position.x = -back_offset
-		dirt_spray.process_material.direction = Vector3(1.0 if $AnimatedSprite2D.flip_h else -1.0, 0.0, 0.0)
-		dirt_spray.emitting = true
-	else:
-		particle_trail.emitting = false
-		dirt_spray.emitting = false
+
 
 	update_depth_display()
 
