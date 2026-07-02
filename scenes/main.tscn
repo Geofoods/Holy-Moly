@@ -5,6 +5,10 @@
 [ext_resource type="PackedScene" uid="uid://c6xus6tuhcmfo" path="res://scenes/heart.tscn" id="3_sugp2"]
 [ext_resource type="Script" uid="uid://gkv1us5qnfhm" path="res://scripts/terrain_generator.gd" id="4_terrain"]
 [ext_resource type="PackedScene" path="res://scenes/parallax_background.tscn" id="5_parallax"]
+[ext_resource type="PackedScene" uid="uid://d2i1x8x1y6p9" path="res://scenes/pause_menu.tscn" id="6_pause"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ig7tw"]
+size = Vector2(4868, 657)
 
 [node name="Node2D" type="Node2D" unique_id=1979316305]
 script = ExtResource("4_terrain")
@@ -28,3 +32,5 @@ position = Vector2(300, -116)
 [node name="heart" parent="CanvasLayer" unique_id=1207891791 instance=ExtResource("3_sugp2")]
 position = Vector2(74.99999, 73)
 scale = Vector2(0.24147864, 0.24147864)
+
+[node name="PauseMenu" parent="." instance=ExtResource("4_pause")]
