@@ -3,9 +3,9 @@ extends Node2D
 const PLATFORM_HEIGHT := 400.0
 
 var colors = {
-	"ground": Color(0.45, 0.26, 0.13),
-	"dirt_dark": Color(0.35, 0.20, 0.10),
-	"dirt_light": Color(0.55, 0.35, 0.18),
+	"ground": Color(0.60, 0.38, 0.22),
+	"dirt_dark": Color(0.50, 0.32, 0.18),
+	"dirt_light": Color(0.70, 0.48, 0.30),
 	"grass": Color(0.25, 0.50, 0.12),
 	"stone": Color(0.48, 0.45, 0.42),
 	"stone_dark": Color(0.35, 0.33, 0.30),
