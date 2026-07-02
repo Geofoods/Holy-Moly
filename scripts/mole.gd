@@ -59,6 +59,14 @@ func _ready() -> void:
 		ev_shift.keycode = KEY_SHIFT
 		InputMap.action_add_event("dig_dash", ev_shift)
 
+const SURFACE_Y := 850.0
+
+func update_depth_display() -> void:
+	var label = get_parent().get_node_or_null("CanvasLayer/DepthLabel")
+	if label:
+		var depth := maxf(0.0, global_position.y - SURFACE_Y)
+		label.text = "Depth: %dm" % int(depth)
+
 func _physics_process(delta: float) -> void:
 	# Gravity
 	if not is_on_floor():
@@ -127,6 +135,8 @@ func _physics_process(delta: float) -> void:
 	else:
 		particle_trail.emitting = false
 		dirt_spray.emitting = false
+
+	update_depth_display()
 
 	# Animation
 	if not is_on_floor():
