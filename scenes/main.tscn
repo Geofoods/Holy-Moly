@@ -3,11 +3,11 @@
 [ext_resource type="PackedScene" uid="uid://p1of6ummc17j" path="res://scenes/mole.tscn" id="1_o5qli"]
 [ext_resource type="PackedScene" uid="uid://dnp3icrndkjm8" path="res://scenes/enemy.tscn" id="2_enemy"]
 [ext_resource type="PackedScene" uid="uid://c6xus6tuhcmfo" path="res://scenes/heart.tscn" id="3_sugp2"]
-[ext_resource type="PackedScene" uid="uid://d2i1x8x1y6p9" path="res://scenes/pause_menu.tscn" id="4_pause"]
+[ext_resource type="PackedScene" uid="uid://d2i1x8x1y6qa" path="res://scenes/pause_menu.tscn" id="4_pause"]
 [ext_resource type="Script" path="res://scripts/hud.gd" id="5_hud"]
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_ig7tw"]
-size = Vector2(4868, 657)
+[ext_resource type="Script" path="res://scripts/terrain_generator.gd" id="6_terrain"]
+[ext_resource type="Shader" path="res://shaders/vignette.gdshader" id="7_vignette"]
+[ext_resource type="PackedScene" path="res://scenes/parallax_background.tscn" id="8_parallax"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_exitgamebutton"]
 bg_color = Color(0.5, 0.5, 0.5, 1)
@@ -33,22 +33,15 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_vignette"]
+shader = ExtResource("7_vignette")
+
 [node name="Node2D" type="Node2D" unique_id=1979316305]
 
-[node name="ColorRect" type="ColorRect" parent="." unique_id=254513104]
-offset_left = -1145.0
-offset_top = 75.0
-offset_right = 1295.0
-offset_bottom = 429.0
-color = Color(0.6761941, 0.5834327, 0.26081806, 1)
+[node name="ParallaxBackground" parent="." instance=ExtResource("8_parallax")]
 
-[node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=493170328]
-position = Vector2(-3, -72)
-scale = Vector2(0.5, 0.5)
-
-[node name="CollisionShape2D2" type="CollisionShape2D" parent="StaticBody2D" unique_id=709730228]
-position = Vector2(126, 638)
-shape = SubResource("RectangleShape2D_ig7tw")
+[node name="TerrainGenerator" type="Node2D" parent="."]
+script = ExtResource("6_terrain")
 
 [node name="CharacterBody2D2" parent="." unique_id=501808252 instance=ExtResource("1_o5qli")]
 position = Vector2(-28, -116)
@@ -68,27 +61,41 @@ script = ExtResource("5_hud")
 position = Vector2(117.99999, 113.99999)
 scale = Vector2(0.24147864, 0.24147864)
 
-[node name="ExitGameButton" type="Button" parent="CanvasLayer"]
-layout_mode = 1
-anchors_left = 1.0
-anchors_top = 0.0
-anchors_right = 1.0
-anchors_bottom = 0.0
+[node name="ExitGameButton" type="Button" parent="CanvasLayer" unique_id=2042132586]
 offset_left = -150.0
 offset_top = 20.0
 offset_right = -20.0
 offset_bottom = 65.0
 grow_horizontal = 0
-text = "EXIT GAME"
-theme_override_font_sizes/font_size = 18
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_colors/font_outline_size = 2
+theme_override_font_sizes/font_size = 18
 theme_override_styles/normal = SubResource("StyleBoxFlat_exitgamebutton")
-theme_override_styles/hover = SubResource("StyleBoxFlat_exitgamebutton_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_exitgamebutton_hover")
+theme_override_styles/hover = SubResource("StyleBoxFlat_exitgamebutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_exitgamebutton_hover")
+text = "EXIT GAME"
 
-[node name="PauseMenu" parent="." instance=ExtResource("4_pause")]
+[node name="PauseMenu" parent="." unique_id=1779626465 instance=ExtResource("4_pause")]
+
+[node name="VignetteLayer" type="CanvasLayer" parent="."]
+layer = 1
+
+[node name="VignetteRect" type="ColorRect" parent="VignetteLayer"]
+material = SubResource("ShaderMaterial_vignette")
+layout_mode = 1
+anchors_preset = 15
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 0.0
+offset_bottom = 0.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(1, 1, 1, 1)
+mouse_filter = 2
 
 [connection signal="pressed" from="CanvasLayer/ExitGameButton" to="CanvasLayer" method="_on_exit_game_pressed"]

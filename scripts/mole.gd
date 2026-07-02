@@ -21,9 +21,9 @@ var is_tunneling := false
 var tunnel_direction := 1.0
 var invulnerable := false
 
-var health: int = 3:
+var health: int = 6:
 	set(value):
-		health = clamp(value, 0, 3)
+		health = clamp(value, 0, 6)
 		if is_inside_tree():
 			if health > 0:
 				var heart_anim = get_parent().get_node_or_null("CanvasLayer/heart/AnimatedSprite2D")
