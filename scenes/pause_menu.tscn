@@ -1,0 +1,134 @@
+[gd_scene format=3 uid="uid://d2i1x8x1y6qa"]
+
+[ext_resource type="Script" path="res://scripts/pause_menu.gd" id="1_pause"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebg"]
+bg_color = Color(0.1, 0.1, 0.1, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.95, 0.4, 0.7, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_resumebutton"]
+bg_color = Color(0.95, 0.4, 0.7, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.8, 0.3, 0.6, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_resumebutton_hover"]
+bg_color = Color(1.0, 0.5, 0.8, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.9, 0.4, 0.7, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_exitbutton"]
+bg_color = Color(0.5, 0.5, 0.5, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.35, 0.35, 0.35, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_exitbutton_hover"]
+bg_color = Color(0.65, 0.65, 0.65, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.5, 0.5, 0.5, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="PauseMenu" type="CanvasLayer"]
+script = ExtResource("1_pause")
+
+[node name="DimBackground" type="ColorRect" parent="."]
+visible = false
+anchors_left = 0.0
+anchors_top = 0.0
+anchors_right = 1.0
+anchors_bottom = 1.0
+color = Color(0, 0, 0, 0.6)
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+visible = false
+anchors_left = 0.0
+anchors_top = 0.0
+anchors_right = 1.0
+anchors_bottom = 1.0
+layout_mode = 1
+
+[node name="PausePanel" type="PanelContainer" parent="CenterContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(400, 300)
+theme_override_styles/panel = SubResource("StyleBoxFlat_pausebg")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/PausePanel"]
+layout_mode = 2
+theme_override_constants/separation = 30
+
+[node name="TitleLabel" type="Label" parent="CenterContainer/PausePanel/VBoxContainer"]
+layout_mode = 2
+text = "PAUSED"
+theme_override_font_sizes/font_size = 48
+theme_override_colors/font_color = Color(0.95, 0.4, 0.7, 1)
+horizontal_alignment = 1
+
+[node name="ButtonContainer" type="VBoxContainer" parent="CenterContainer/PausePanel/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="ResumeButton" type="Button" parent="CenterContainer/PausePanel/VBoxContainer/ButtonContainer"]
+layout_mode = 2
+size_flags_horizontal = 2
+custom_minimum_size = Vector2(0, 60)
+text = "RESUME"
+theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_colors/font_outline_size = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_resumebutton")
+theme_override_styles/hover = SubResource("StyleBoxFlat_resumebutton_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_resumebutton_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_resumebutton_hover")
+
+[node name="ExitButton" type="Button" parent="CenterContainer/PausePanel/VBoxContainer/ButtonContainer"]
+layout_mode = 2
+size_flags_horizontal = 2
+custom_minimum_size = Vector2(0, 60)
+text = "EXIT TO MENU"
+theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_colors/font_outline_size = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_exitbutton")
+theme_override_styles/hover = SubResource("StyleBoxFlat_exitbutton_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_exitbutton_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_exitbutton_hover")
+
+[connection signal="pressed" from="CenterContainer/PausePanel/VBoxContainer/ButtonContainer/ResumeButton" to="." method="_on_resume_pressed"]
+[connection signal="pressed" from="CenterContainer/PausePanel/VBoxContainer/ButtonContainer/ExitButton" to="." method="_on_exit_pressed"]
