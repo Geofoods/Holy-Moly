@@ -22,7 +22,7 @@ var is_tunneling := false
 var tunnel_direction := 1.0
 var invulnerable := false
 
-var health: int = 6:
+var health: int = 1:
 	set(value):
 		health = clamp(value, 0, 6)
 		if is_inside_tree():

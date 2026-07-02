@@ -18,6 +18,7 @@ func _ready() -> void:
 	$DimBackground.modulate.a = 0.0
 	_set_input_enabled(false)
 	call_deferred("_position_hp_label")
+	call_deferred("_sync_pause_heart")
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed:
@@ -38,6 +39,7 @@ func toggle_pause() -> void:
 		_set_input_enabled(true)
 		panel.scale = Vector2(0.9, 0.9)
 		label.scale = Vector2(0.9, 0.9)
+		_sync_pause_heart()
 		var tween := create_tween()
 		tween.set_parallel(true)
 		tween.tween_property(panel, "modulate:a", 1.0, 0.2).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
@@ -69,6 +71,15 @@ func _position_hp_label() -> void:
 	var panel = $CenterContainer/PausePanel as Control
 	var label = $Label as Control
 	label.position = panel.global_position + Vector2(panel.size.x * 0.54, panel.size.y + 14.0)
+
+func _sync_pause_heart() -> void:
+	var source_heart := get_parent().get_node_or_null("CanvasLayer/heart/AnimatedSprite2D")
+	var pause_heart := $CenterContainer/PausePanel/heart/AnimatedSprite2D
+	if source_heart and pause_heart:
+		pause_heart.animation = source_heart.animation
+		pause_heart.frame = source_heart.frame
+		pause_heart.frame_progress = source_heart.frame_progress
+		pause_heart.play()
 
 func _on_resume_pressed() -> void:
 	toggle_pause()
