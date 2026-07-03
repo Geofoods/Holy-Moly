@@ -31,7 +31,9 @@ var health: int = 1:
 				if heart_anim:
 					heart_anim.play(str(health) + "hp")
 			else:
-				get_tree().change_scene_to_file("res://scenes/game_over.tscn")
+				var transition := preload("res://scenes/scene_transition.tscn").instantiate()
+				get_tree().root.add_child(transition)
+				transition.change_to("res://scenes/game_over.tscn")
 
 func _ready() -> void:
 	await get_tree().process_frame
