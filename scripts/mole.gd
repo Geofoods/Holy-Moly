@@ -24,14 +24,30 @@ var invulnerable := false
 
 var health: int = 1:
 	set(value):
+		var old_health := health
 		health = clamp(value, 0, 6)
 		if is_inside_tree():
 			if health > 0:
-				var heart_anim = get_parent().get_node_or_null("CanvasLayer/heart/AnimatedSprite2D")
-				if heart_anim:
-					heart_anim.play(str(health) + "hp")
+				var heart_node = get_parent().get_node_or_null("CanvasLayer/heart")
+				if heart_node:
+					var heart_anim = heart_node.get_node_or_null("AnimatedSprite2D")
+					if heart_anim:
+						heart_anim.play(str(health) + "hp")
+					if health < old_health:
+						_animate_heart_damage(heart_node)
 			else:
-				get_tree().change_scene_to_file("res://scenes/game_over.tscn")
+				set_physics_process(false)
+				get_tree().create_timer(0.3).timeout.connect(func(): get_tree().change_scene_to_file("res://scenes/game_over.tscn"))
+
+var _heart_base_scale := Vector2.ONE
+
+func _animate_heart_damage(heart_node: Node2D) -> void:
+	if _heart_base_scale == Vector2.ONE:
+		_heart_base_scale = heart_node.scale
+	var tween := create_tween()
+	tween.tween_property(heart_node, "scale", _heart_base_scale * 0.7, 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween.tween_property(heart_node, "scale", _heart_base_scale * 1.15, 0.1).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(heart_node, "scale", _heart_base_scale, 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 func _ready() -> void:
 	await get_tree().process_frame
@@ -118,7 +134,13 @@ func _physics_process(delta: float) -> void:
 
 	move_and_slide()
 
-
+	# Check for enemy contact via physics collisions
+	for i in get_slide_collision_count():
+		var collision := get_slide_collision(i)
+		var collider := collision.get_collider()
+		if collider is CharacterBody2D and collider.has_method("die"):
+			take_damage(1)
+			break
 
 	update_depth_display()
 
