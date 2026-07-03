@@ -1,0 +1,100 @@
+[gd_scene format=3 uid="uid://c13eo2fe2htwf"]
+
+[ext_resource type="PackedScene" uid="uid://p1of6ummc17j" path="res://scenes/mole.tscn" id="1_o5qli"]
+[ext_resource type="PackedScene" uid="uid://dnp3icrndkjm8" path="res://scenes/enemy.tscn" id="2_enemy"]
+[ext_resource type="PackedScene" uid="uid://c6xus6tuhcmfo" path="res://scenes/heart.tscn" id="3_sugp2"]
+[ext_resource type="PackedScene" uid="uid://d2i1x8x1y6qa" path="res://scenes/pause_menu.tscn" id="4_pause"]
+[ext_resource type="Script" uid="uid://gkv1us5qnfhm" path="res://scripts/terrain_generator.gd" id="6_terrain"]
+[ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="6_tipki"]
+[ext_resource type="Shader" uid="uid://qjf1ibg12yh2" path="res://shaders/vignette.gdshader" id="7_vignette"]
+[ext_resource type="PackedScene" path="res://scenes/parallax_background.tscn" id="8_parallax"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
+bg_color = Color(0.1, 0.1, 0.12, 0.85)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.95, 0.4, 0.7, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton_hover"]
+bg_color = Color(0.2, 0.2, 0.22, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.5, 0.8, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_vignette"]
+shader = ExtResource("7_vignette")
+shader_parameter/intensity = 0.6
+shader_parameter/smoothness = 0.4
+shader_parameter/opacity = 1.0
+
+[node name="Node2D" type="Node2D" unique_id=1979316305]
+
+[node name="ParallaxBackground" parent="." unique_id=211574599 instance=ExtResource("8_parallax")]
+
+[node name="TerrainGenerator" type="Node2D" parent="." unique_id=1834868234]
+script = ExtResource("6_terrain")
+
+
+[node name="CharacterBody2D2" parent="." unique_id=501808252 instance=ExtResource("1_o5qli")]
+position = Vector2(-28, -116)
+scale = Vector2(0.25, 0.25)
+
+[node name="Camera2D" type="Camera2D" parent="CharacterBody2D2" unique_id=955812054]
+position = Vector2(92, -296)
+scale = Vector2(4, 4)
+position_smoothing_enabled = true
+
+[node name="Enemy" parent="." unique_id=1155690396 instance=ExtResource("2_enemy")]
+position = Vector2(300, -116)
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=71896557]
+
+[node name="heart" parent="CanvasLayer" unique_id=1207891791 instance=ExtResource("3_sugp2")]
+position = Vector2(117.99999, 113.99999)
+scale = Vector2(0.24147864, 0.24147864)
+
+[node name="PauseButton" type="Button" parent="CanvasLayer" unique_id=2042132586]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -110.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 65.0
+grow_horizontal = 0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("6_tipki")
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_pausebutton")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_pausebutton_hover")
+theme_override_styles/hover = SubResource("StyleBoxFlat_pausebutton_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_pausebutton_hover")
+text = "II ESC"
+
+[node name="PauseMenu" parent="." unique_id=1779626465 instance=ExtResource("4_pause")]
+
+[node name="VignetteLayer" type="CanvasLayer" parent="." unique_id=182643830]
+
+[node name="VignetteRect" type="ColorRect" parent="VignetteLayer" unique_id=1731371193]
+material = SubResource("ShaderMaterial_vignette")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
