@@ -18,31 +18,43 @@ var tip_rng := RandomNumberGenerator.new()
 
 func _ready():
 	tip_rng.randomize()
+	await get_tree().process_frame
+	
 	_set_random_tip()
 
 	var vbox = $CenterContainer/VBoxContainer
-	vbox.modulate.a = 0.0
-	vbox.scale = Vector2(0.85, 0.85)
-	vbox.call_deferred("set", "pivot_offset", vbox.size / 2.0)
-	_set_buttons_enabled(false)
+	if vbox:
+		vbox.modulate.a = 0.0
+		vbox.scale = Vector2(0.85, 0.85)
+		vbox.pivot_offset = vbox.size / 2.0
+		_set_buttons_enabled(false)
 
 	var play_btn = $CenterContainer/VBoxContainer/ButtonContainer/PlayButton
 	var cancel_btn = $CenterContainer/VBoxContainer/ButtonContainer/CancelButton
-	play_btn.mouse_entered.connect(_on_button_hover.bind(play_btn))
-	play_btn.mouse_exited.connect(_on_button_unhover.bind(play_btn))
-	cancel_btn.mouse_entered.connect(_on_button_hover.bind(cancel_btn))
-	cancel_btn.mouse_exited.connect(_on_button_unhover.bind(cancel_btn))
+	if play_btn:
+		play_btn.mouse_entered.connect(_on_button_hover.bind(play_btn))
+	if cancel_btn:
+		cancel_btn.mouse_entered.connect(_on_button_hover.bind(cancel_btn))
+	if play_btn:
+		play_btn.mouse_exited.connect(_on_button_unhover.bind(play_btn))
+	if cancel_btn:
+		cancel_btn.mouse_exited.connect(_on_button_unhover.bind(cancel_btn))
 
 	animate_intro()
 
 func animate_intro():
-	$IntroAudio.play()
+	var audio = $IntroAudio
+	if audio:
+		audio.play()
 	await animate_mole_hop()
 	await get_tree().create_timer(0.15).timeout
 	animate_menu_reveal()
 
 func animate_mole_hop() -> void:
 	var mole = $MoleAnimation
+	if not mole:
+		return
+		
 	var viewport_size: Vector2 = get_viewport_rect().size
 
 	mole.custom_minimum_size = MOLE_SIZE
@@ -76,6 +88,9 @@ func _update_mole_hop(mole: Control, t: float, start_x: float, end_x: float, gro
 
 func animate_menu_reveal() -> void:
 	var vbox = $CenterContainer/VBoxContainer
+	if not vbox:
+		return
+		
 	_set_buttons_enabled(true)
 
 	var tween := create_tween()
@@ -87,11 +102,14 @@ func animate_menu_reveal() -> void:
 func _set_buttons_enabled(enabled: bool) -> void:
 	var play_btn = $CenterContainer/VBoxContainer/ButtonContainer/PlayButton
 	var cancel_btn = $CenterContainer/VBoxContainer/ButtonContainer/CancelButton
-	play_btn.disabled = not enabled
-	cancel_btn.disabled = not enabled
-	if enabled:
-		play_btn.pivot_offset = play_btn.size / 2.0
-		cancel_btn.pivot_offset = cancel_btn.size / 2.0
+	if play_btn:
+		play_btn.disabled = not enabled
+		if enabled:
+			play_btn.pivot_offset = play_btn.size / 2.0
+	if cancel_btn:
+		cancel_btn.disabled = not enabled
+		if enabled:
+			cancel_btn.pivot_offset = cancel_btn.size / 2.0
 
 func _on_button_hover(button: Button) -> void:
 	var tween := create_tween()
@@ -102,10 +120,14 @@ func _on_button_unhover(button: Button) -> void:
 	tween.tween_property(button, "scale", Vector2(1.0, 1.0), 0.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 func _set_random_tip() -> void:
-	$CenterContainer/VBoxContainer/TipWrapper/SubtitleLabel.text = TIPS[tip_rng.randi_range(0, TIPS.size() - 1)]
+	var label = $CenterContainer/VBoxContainer/TipWrapper/SubtitleLabel
+	if label:
+		label.text = TIPS[tip_rng.randi_range(0, TIPS.size() - 1)]
 
 func _start_tip_wobble() -> void:
 	var tip = $CenterContainer/VBoxContainer/TipWrapper/SubtitleLabel
+	if not tip:
+		return
 	if tip_tween:
 		tip_tween.kill()
 	tip_tween = create_tween().set_loops()
@@ -119,3 +141,4 @@ func _on_play_pressed() -> void:
 
 func _on_cancel_pressed():
 	get_tree().quit()
+
