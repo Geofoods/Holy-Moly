@@ -11,6 +11,10 @@ var scroll_speeds: Array[float] = [0.05, 0.15, 0.4, 0.8]
 
 var layer_sprites: Array[Array] = []
 
+@export var parallax_scale: float = 2.0
+@export var x_scroll_multiplier: float = 0.25
+@export var y_scroll_multiplier: float = 0.05
+
 func _ready() -> void:
 	await get_tree().process_frame
 	if get_viewport_rect().size == Vector2.ZERO:
@@ -26,7 +30,7 @@ func _build_layers() -> void:
 			continue
 
 		var tex_size: Vector2 = tex.get_size()
-		var scale_factor: Vector2 = vp_size / tex_size
+		var scale_factor: Vector2 = vp_size / tex_size * parallax_scale
 		var scaled_w: float = tex_size.x * scale_factor.x
 
 		var a := Sprite2D.new()
@@ -51,6 +55,7 @@ func _process(_delta: float) -> void:
 		return
 
 	var cam_x: float = camera.global_position.x
+	var cam_y: float = camera.global_position.y
 
 	for i in layer_sprites.size():
 		var speed: float = scroll_speeds[i]
@@ -60,12 +65,14 @@ func _process(_delta: float) -> void:
 		var tex_size: Vector2 = a.texture.get_size()
 		var scaled_w: float = tex_size.x * a.scale.x
 
-		var offset_x: float = -cam_x * speed
+		var offset_x: float = -cam_x * speed * x_scroll_multiplier
 		offset_x = fmod(offset_x, scaled_w)
 		if offset_x > 0:
 			offset_x -= scaled_w
 
+		var offset_y: float = -cam_y * speed * y_scroll_multiplier
+
 		a.position.x = offset_x
 		b.position.x = offset_x + scaled_w
-		a.position.y = 0
-		b.position.y = 0
+		a.position.y = offset_y
+		b.position.y = offset_y
