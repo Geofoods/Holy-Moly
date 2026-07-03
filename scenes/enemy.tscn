@@ -9,7 +9,7 @@ size = Vector2(100, 100)
 size = Vector2(110, 110)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hitbox"]
-size = Vector2(90, 90)
+size = Vector2(140, 140)
 
 [node name="Enemy" type="CharacterBody2D"]
 script = ExtResource("1_script")
