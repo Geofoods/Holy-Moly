@@ -18,10 +18,6 @@ var tip_rng := RandomNumberGenerator.new()
 
 func _ready():
 	tip_rng.randomize()
-	var vp_size: Vector2 = get_viewport_rect().size
-	custom_minimum_size = vp_size
-	$Background.custom_minimum_size = vp_size
-	$CenterContainer.custom_minimum_size = vp_size
 	_set_random_tip()
 
 	var vbox = $CenterContainer/VBoxContainer
