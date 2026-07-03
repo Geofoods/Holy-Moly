@@ -30,6 +30,13 @@ func _ready():
 	vbox.call_deferred("set", "pivot_offset", vbox.size / 2.0)
 	_set_buttons_enabled(false)
 
+	var play_btn = $CenterContainer/VBoxContainer/ButtonContainer/PlayButton
+	var cancel_btn = $CenterContainer/VBoxContainer/ButtonContainer/CancelButton
+	play_btn.mouse_entered.connect(_on_button_hover.bind(play_btn))
+	play_btn.mouse_exited.connect(_on_button_unhover.bind(play_btn))
+	cancel_btn.mouse_entered.connect(_on_button_hover.bind(cancel_btn))
+	cancel_btn.mouse_exited.connect(_on_button_unhover.bind(cancel_btn))
+
 	animate_intro()
 
 func animate_intro():
@@ -81,8 +88,21 @@ func animate_menu_reveal() -> void:
 	tween.finished.connect(_start_tip_wobble)
 
 func _set_buttons_enabled(enabled: bool) -> void:
-	$CenterContainer/VBoxContainer/ButtonContainer/PlayButton.disabled = not enabled
-	$CenterContainer/VBoxContainer/ButtonContainer/CancelButton.disabled = not enabled
+	var play_btn = $CenterContainer/VBoxContainer/ButtonContainer/PlayButton
+	var cancel_btn = $CenterContainer/VBoxContainer/ButtonContainer/CancelButton
+	play_btn.disabled = not enabled
+	cancel_btn.disabled = not enabled
+	if enabled:
+		play_btn.pivot_offset = play_btn.size / 2.0
+		cancel_btn.pivot_offset = cancel_btn.size / 2.0
+
+func _on_button_hover(button: Button) -> void:
+	var tween := create_tween()
+	tween.tween_property(button, "scale", Vector2(1.08, 1.08), 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+func _on_button_unhover(button: Button) -> void:
+	var tween := create_tween()
+	tween.tween_property(button, "scale", Vector2(1.0, 1.0), 0.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 func _set_random_tip() -> void:
 	$CenterContainer/VBoxContainer/TipWrapper/SubtitleLabel.text = TIPS[tip_rng.randi_range(0, TIPS.size() - 1)]
