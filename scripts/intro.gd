@@ -49,7 +49,7 @@ func animate_mole_hop() -> void:
 	var mole = $MoleAnimation
 	var viewport_size: Vector2 = get_viewport_rect().size
 
-	mole.size = MOLE_SIZE
+	mole.custom_minimum_size = MOLE_SIZE
 	mole.pivot_offset = Vector2(MOLE_SIZE.x / 2.0, MOLE_SIZE.y)
 
 	var start_x := -MOLE_SIZE.x
