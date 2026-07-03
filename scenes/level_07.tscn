@@ -46,7 +46,6 @@ shader_parameter/opacity = 1.0
 [node name="TerrainGenerator" type="Node2D" parent="." unique_id=1834868234]
 script = ExtResource("6_terrain")
 
-
 [node name="CharacterBody2D2" parent="." unique_id=501808252 instance=ExtResource("1_o5qli")]
 position = Vector2(-28, -116)
 scale = Vector2(0.25, 0.25)
@@ -96,5 +95,8 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+
+[node name="TileMap" type="TileMap" parent="." unique_id=1753828275]
+format = 2
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]

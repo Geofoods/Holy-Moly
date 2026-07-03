@@ -46,7 +46,6 @@ shader_parameter/opacity = 1.0
 [node name="TerrainGenerator" type="Node2D" parent="." unique_id=1834868234]
 script = ExtResource("6_terrain")
 
-
 [node name="CharacterBody2D2" parent="." unique_id=501808252 instance=ExtResource("1_o5qli")]
 position = Vector2(-28, -116)
 scale = Vector2(0.25, 0.25)
@@ -60,12 +59,15 @@ position_smoothing_enabled = true
 position = Vector2(300, -116)
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=71896557]
+visible = false
 
 [node name="heart" parent="CanvasLayer" unique_id=1207891791 instance=ExtResource("3_sugp2")]
+visible = false
 position = Vector2(117.99999, 113.99999)
 scale = Vector2(0.24147864, 0.24147864)
 
 [node name="PauseButton" type="Button" parent="CanvasLayer" unique_id=2042132586]
+visible = false
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
@@ -87,8 +89,10 @@ text = "II ESC"
 [node name="PauseMenu" parent="." unique_id=1779626465 instance=ExtResource("4_pause")]
 
 [node name="VignetteLayer" type="CanvasLayer" parent="." unique_id=182643830]
+visible = false
 
 [node name="VignetteRect" type="ColorRect" parent="VignetteLayer" unique_id=1731371193]
+visible = false
 material = SubResource("ShaderMaterial_vignette")
 anchors_preset = 15
 anchor_right = 1.0
