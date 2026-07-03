@@ -146,15 +146,21 @@ position = Vector2(287, 30)
 scale = Vector2(0.5, 0.5)
 texture = ExtResource("5_wfs7u")
 
-[node name="SubtitleLabel" type="Label" parent="CenterContainer/VBoxContainer" unique_id=1825271191]
+[node name="TipWrapper" type="Control" parent="CenterContainer/VBoxContainer" unique_id=1166636007]
+custom_minimum_size = Vector2(0, 34)
 layout_mode = 2
+
+[node name="SubtitleLabel" type="Label" parent="CenterContainer/VBoxContainer/TipWrapper" unique_id=1825271191]
+layout_mode = 0
+position = Vector2(0, 2)
+size = Vector2(560, 30)
 theme_override_colors/font_color = Color(0.55, 0.75, 0.6, 1)
 theme_override_fonts/font = ExtResource("6_es01l")
 theme_override_font_sizes/font_size = 24
 text = "> dig. jump. survive._"
 horizontal_alignment = 1
 
-[node name="Spacer" type="Control" parent="CenterContainer/VBoxContainer" unique_id=1166636007]
+[node name="Spacer" type="Control" parent="CenterContainer/VBoxContainer" unique_id=1959195758]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 

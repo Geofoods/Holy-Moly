@@ -5,12 +5,24 @@ const HOP_COUNT := 4
 const HOP_HEIGHT := 90.0
 const HOP_DURATION := 1.7
 const GROUND_RATIO := 0.72
+const TIPS := [
+	"> Press shift to dig and dash.",
+	"> Press ESC to check your HP.",
+	"> Do NOT fall for the corruption.",
+	"> Moles can paralyse worms with their spit.",
+	"> Made for the Pixel Forge game jam.",
+]
+
+var tip_tween: Tween
+var tip_rng := RandomNumberGenerator.new()
 
 func _ready():
+	tip_rng.randomize()
 	var vp_size: Vector2 = get_viewport_rect().size
 	size = vp_size
 	$Background.size = vp_size
 	$CenterContainer.size = vp_size
+	_set_random_tip()
 
 	var vbox = $CenterContainer/VBoxContainer
 	vbox.modulate.a = 0.0
@@ -66,10 +78,22 @@ func animate_menu_reveal() -> void:
 	tween.set_parallel(true)
 	tween.tween_property(vbox, "modulate:a", 1.0, 0.55).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tween.tween_property(vbox, "scale", Vector2(1.0, 1.0), 0.55).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.finished.connect(_start_tip_wobble)
 
 func _set_buttons_enabled(enabled: bool) -> void:
 	$CenterContainer/VBoxContainer/ButtonContainer/PlayButton.disabled = not enabled
 	$CenterContainer/VBoxContainer/ButtonContainer/CancelButton.disabled = not enabled
+
+func _set_random_tip() -> void:
+	$CenterContainer/VBoxContainer/TipWrapper/SubtitleLabel.text = TIPS[tip_rng.randi_range(0, TIPS.size() - 1)]
+
+func _start_tip_wobble() -> void:
+	var tip = $CenterContainer/VBoxContainer/TipWrapper/SubtitleLabel
+	if tip_tween:
+		tip_tween.kill()
+	tip_tween = create_tween().set_loops()
+	tip_tween.tween_property(tip, "position:y", 0.0, 0.45).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tip_tween.tween_property(tip, "position:y", 5.0, 0.45).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 func _on_play_pressed() -> void:
 	get_tree().change_scene_to_file("res://scenes/main.tscn")
