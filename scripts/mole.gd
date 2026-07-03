@@ -7,6 +7,9 @@ const FRICTION = 1800.0
 const AIR_FRICTION = 800.0
 const TUNNEL_SPEED = 1200.0
 const TUNNEL_DURATION = 0.4
+const HURT_GROUND_DURATION = 0.25
+const HURT_AIR_DURATION = 0.35
+const KNOCKBACK_X = 260.0
 
 
 var mole_hole_scene := preload("res://scenes/molehole.tscn")
@@ -21,6 +24,7 @@ var is_digging := false
 var is_tunneling := false
 var tunnel_direction := 1.0
 var invulnerable := false
+var hurt_anim_time_left := 0.0
 
 var health: float = 6.0:
 	set(value):
@@ -141,13 +145,21 @@ func _physics_process(delta: float) -> void:
 		var collision := get_slide_collision(i)
 		var collider := collision.get_collider()
 		if collider is CharacterBody2D and collider.has_method("die"):
-			take_damage(1)
+			take_damage(1, collider.global_position, true)
 			break
 
 	update_depth_display()
 
 	# Animation
-	if not is_on_floor():
+	if hurt_anim_time_left > 0.0:
+		hurt_anim_time_left = maxf(0.0, hurt_anim_time_left - delta)
+		$AnimatedSprite2D.flip_v = false
+		$AnimatedSprite2D.rotation = lerp_angle($AnimatedSprite2D.rotation, 0.0, 0.25)
+		if is_on_floor():
+			$AnimatedSprite2D.play("hurtground")
+		else:
+			$AnimatedSprite2D.play("hurt")
+	elif not is_on_floor():
 		if is_sideways_jump:
 			$AnimatedSprite2D.play("sidewaysjumpbold")
 			$AnimatedSprite2D.flip_v = false
@@ -181,19 +193,22 @@ func remove_mole_hole() -> void:
 		mole_hole_instance.queue_free()
 		mole_hole_instance = null
 
-func take_damage(amount: float) -> void:
+func take_damage(amount: float, source_position: Vector2 = Vector2.ZERO, has_source: bool = false) -> void:
 	if invulnerable or health <= 0:
 		return
 	health -= amount
 	invulnerable = true
-	var tween := create_tween()
-	tween.tween_property($AnimatedSprite2D, "modulate:a", 0.4, 0.1)
+	hurt_anim_time_left = HURT_GROUND_DURATION if is_on_floor() else HURT_AIR_DURATION
+	var knockback_direction := -1.0 if $AnimatedSprite2D.flip_h else 1.0
+	if has_source:
+		knockback_direction = sign(global_position.x - source_position.x)
+		if knockback_direction == 0.0:
+			knockback_direction = -1.0 if $AnimatedSprite2D.flip_h else 1.0
+	velocity.x = knockback_direction * KNOCKBACK_X
 	get_tree().create_timer(1.0).timeout.connect(_end_invulnerability)
 
 func _end_invulnerability() -> void:
 	invulnerable = false
-	var tween := create_tween()
-	tween.tween_property($AnimatedSprite2D, "modulate:a", 1.0, 0.1)
 
 func start_dig_dash() -> void:
 	is_digging = true

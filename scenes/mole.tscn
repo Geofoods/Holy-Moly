@@ -12,6 +12,8 @@
 [ext_resource type="Texture2D" uid="uid://dtrh4fdba0nph" path="res://sprites/moleacharacterwalkbold.png" id="6_ev00m"]
 [ext_resource type="Texture2D" uid="uid://bo1hkfcoq6vt5" path="res://sprites/molesidewaysjumpbold.png" id="7_tss7c"]
 [ext_resource type="Texture2D" uid="uid://sm1rsjogvngx" path="res://sprites/moletunnel.png" id="9_dd0k0"]
+[ext_resource type="Texture2D" path="res://sprites/molehurt.png" id="10_hurt"]
+[ext_resource type="Texture2D" path="res://sprites/molehurtground.png" id="11_hurtground"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_xipw3"]
 atlas = ExtResource("2_tss7c")
@@ -121,6 +123,14 @@ region = Rect2(1800, 0, 600, 600)
 atlas = ExtResource("6_ev00m")
 region = Rect2(2400, 0, 600, 600)
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_hurt"]
+atlas = ExtResource("10_hurt")
+region = Rect2(0, 0, 600, 800)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hurtground"]
+atlas = ExtResource("11_hurtground")
+region = Rect2(0, 0, 600, 600)
+
 [sub_resource type="SpriteFrames" id="SpriteFrames_ecm7r"]
 animations = [{
 "frames": [{
@@ -199,6 +209,22 @@ animations = [{
 "loop": true,
 "name": &"sidewaysjumpbold",
 "speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hurt")
+}],
+"loop": true,
+"name": &"hurt",
+"speed": 1.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hurtground")
+}],
+"loop": true,
+"name": &"hurtground",
+"speed": 1.0
 }, {
 "frames": [{
 "duration": 1.0,

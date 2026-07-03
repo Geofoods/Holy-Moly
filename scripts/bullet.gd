@@ -17,7 +17,7 @@ func _physics_process(delta: float) -> void:
 func _on_body_entered(body: Node) -> void:
 	if body.is_in_group("mole"):
 		if body.has_method("take_damage"):
-			body.take_damage(0.5)
+			body.take_damage(0.5, global_position, true)
 		queue_free()
 	elif body is StaticBody2D:
 		queue_free()

@@ -112,7 +112,7 @@ layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_pausebg")
 
 [node name="heart" parent="CenterContainer/PausePanel" unique_id=1207891791 instance=ExtResource("3_5d2l8")]
-position = Vector2(250, 260)
+position = Vector2(302, 258)
 scale = Vector2(0.6, 0.6)
 script = ExtResource("3_7l7mv")
 
@@ -176,6 +176,10 @@ theme_override_styles/focus = SubResource("StyleBoxFlat_cancelbutton_hover")
 text = " CANCEL "
 
 [node name="Label" type="Label" parent="." unique_id=1644145906]
+offset_left = 1069.0
+offset_top = -577.0
+offset_right = 1141.0
+offset_bottom = -533.0
 theme_override_fonts/font = ExtResource("2_myx47")
 theme_override_font_sizes/font_size = 48
 text = "HP:"
