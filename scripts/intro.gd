@@ -56,7 +56,7 @@ func animate_mole_hop() -> void:
 	shadow.show()
 
 	var start_x := -MOLE_SIZE.x - 100.0
-	var end_x := viewport_size.x * 0.12
+	var end_x := viewport_size.x + MOLE_SIZE.x + 100.0
 	var ground_y := viewport_size.y * GROUND_RATIO - MOLE_SIZE.y
 
 	mole.position = Vector2(start_x, ground_y)
@@ -84,7 +84,7 @@ func _update_mole_hop(mole: Control, shadow: ColorRect, t: float, start_x: float
 	mole.scale = Vector2(lerp(1.15, 0.9, arc), lerp(0.85, 1.15, arc))
 	mole.rotation_degrees = sin(t * HOP_COUNT * PI * 2.0) * 6.0
 
-	var shadow_squash := lerp(1.5, 0.6, arc)
+	var shadow_squash: float = lerp(1.5, 0.6, arc)
 	shadow.position = Vector2(x + MOLE_SIZE.x / 2.0, ground_y + MOLE_SIZE.y + 4.0)
 	shadow.scale = Vector2(shadow_squash, 1.0 / shadow_squash)
 	shadow.modulate.a = lerp(0.0, 0.4, 1.0 - arc)
