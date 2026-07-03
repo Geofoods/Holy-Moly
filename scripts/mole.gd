@@ -10,6 +10,7 @@ const TUNNEL_DURATION = 0.4
 const HURT_GROUND_DURATION = 0.25
 const HURT_AIR_DURATION = 0.35
 const KNOCKBACK_X = 260.0
+const MIDAIR_SPRITE_DELAY = 0.25
 
 
 var mole_hole_scene := preload("res://scenes/molehole.tscn")
@@ -25,6 +26,8 @@ var is_tunneling := false
 var tunnel_direction := 1.0
 var invulnerable := false
 var hurt_anim_time_left := 0.0
+var air_time := 0.0
+var launched_from_jump := false
 
 var health: float = 6.0:
 	set(value):
@@ -115,11 +118,15 @@ func _physics_process(delta: float) -> void:
 		spawn_mole_hole()
 		var direction_at_jump := Input.get_axis("ui_left", "ui_right")
 		is_sideways_jump = direction_at_jump != 0
+		air_time = 1.0
+		launched_from_jump = true
 
 	# Landing detection — was in air, now on floor
 	if is_on_floor() and not was_on_floor:
 		remove_mole_hole()
 		is_sideways_jump = false
+		air_time = 0.0
+		launched_from_jump = false
 
 	was_on_floor = is_on_floor()
 
@@ -139,6 +146,8 @@ func _physics_process(delta: float) -> void:
 		is_sideways_jump = true
 
 	move_and_slide()
+	if not is_on_floor() and not launched_from_jump:
+		air_time += delta
 
 	# Check for enemy contact via physics collisions
 	for i in get_slide_collision_count():
@@ -155,11 +164,11 @@ func _physics_process(delta: float) -> void:
 		hurt_anim_time_left = maxf(0.0, hurt_anim_time_left - delta)
 		$AnimatedSprite2D.flip_v = false
 		$AnimatedSprite2D.rotation = lerp_angle($AnimatedSprite2D.rotation, 0.0, 0.25)
-		if is_on_floor():
+		if is_on_floor() or (not launched_from_jump and air_time <= MIDAIR_SPRITE_DELAY):
 			$AnimatedSprite2D.play("hurtground")
 		else:
 			$AnimatedSprite2D.play("hurt")
-	elif not is_on_floor():
+	elif not is_on_floor() and (launched_from_jump or air_time > MIDAIR_SPRITE_DELAY):
 		if is_sideways_jump:
 			$AnimatedSprite2D.play("sidewaysjumpbold")
 			$AnimatedSprite2D.flip_v = false

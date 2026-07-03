@@ -8,6 +8,7 @@
 [ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="6_tipki"]
 [ext_resource type="Shader" uid="uid://qjf1ibg12yh2" path="res://shaders/vignette.gdshader" id="7_vignette"]
 [ext_resource type="PackedScene" path="res://scenes/parallax_background.tscn" id="8_parallax"]
+[ext_resource type="PackedScene" path="res://scenes/death_plane.tscn" id="10_deathplane"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.1, 0.1, 0.12, 0.85)
@@ -46,6 +47,7 @@ shader_parameter/opacity = 1.0
 [node name="TerrainGenerator" type="Node2D" parent="." unique_id=1834868234]
 script = ExtResource("6_terrain")
 
+[node name="DeathPlane" parent="." instance=ExtResource("10_deathplane")]
 
 [node name="CharacterBody2D2" parent="." unique_id=501808252 instance=ExtResource("1_o5qli")]
 position = Vector2(-28, -116)
