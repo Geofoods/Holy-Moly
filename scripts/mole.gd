@@ -37,7 +37,9 @@ var health: int = 1:
 						_animate_heart_damage(heart_node)
 			else:
 				set_physics_process(false)
-				get_tree().create_timer(0.3).timeout.connect(func(): get_tree().change_scene_to_file("res://scenes/game_over.tscn"))
+				var transition := preload("res://scenes/scene_transition.tscn").instantiate()
+				get_tree().root.add_child(transition)
+				transition.change_to("res://scenes/game_over.tscn")
 
 var _heart_base_scale := Vector2.ONE
 
@@ -45,9 +47,9 @@ func _animate_heart_damage(heart_node: Node2D) -> void:
 	if _heart_base_scale == Vector2.ONE:
 		_heart_base_scale = heart_node.scale
 	var tween := create_tween()
-	tween.tween_property(heart_node, "scale", _heart_base_scale * 0.7, 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	tween.tween_property(heart_node, "scale", _heart_base_scale * 1.15, 0.1).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tween.tween_property(heart_node, "scale", _heart_base_scale, 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(heart_node, "scale", _heart_base_scale * 0.75, 0.1).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween.tween_property(heart_node, "scale", _heart_base_scale * 1.1, 0.15).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(heart_node, "scale", _heart_base_scale, 0.2).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 func _ready() -> void:
 	await get_tree().process_frame

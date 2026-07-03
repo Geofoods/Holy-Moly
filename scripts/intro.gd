@@ -116,7 +116,9 @@ func _start_tip_wobble() -> void:
 	tip_tween.tween_property(tip, "position:y", 5.0, 0.45).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 func _on_play_pressed() -> void:
-	get_tree().change_scene_to_file("res://scenes/main.tscn")
+	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
+	get_tree().root.add_child(transition)
+	transition.change_to("res://scenes/main.tscn")
 
 func _on_cancel_pressed():
 	get_tree().quit()
