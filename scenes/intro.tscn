@@ -187,7 +187,7 @@ text = "PLAY"
 custom_minimum_size = Vector2(180, 70)
 layout_mode = 2
 size_flags_horizontal = 0
-theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
+theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_fonts/font = ExtResource("6_es01l")
 theme_override_font_sizes/font_size = 24
@@ -195,7 +195,7 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_exitbutton")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_exitbutton_hover")
 theme_override_styles/hover = SubResource("StyleBoxFlat_exitbutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_exitbutton_hover")
-text = "CANCEL"
+text = "QUIT"
 
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/PlayButton" to="." method="_on_play_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/CancelButton" to="." method="_on_cancel_pressed"]
