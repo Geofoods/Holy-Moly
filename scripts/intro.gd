@@ -40,6 +40,7 @@ func _ready():
 	animate_intro()
 
 func animate_intro():
+	$IntroAudio.play()
 	await animate_mole_hop()
 	await get_tree().create_timer(0.15).timeout
 	animate_menu_reveal()

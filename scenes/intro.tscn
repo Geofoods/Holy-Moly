@@ -6,6 +6,7 @@
 [ext_resource type="Shader" uid="uid://ch2hh4i0b8k0l" path="res://shaders/corrupted_bg.gdshader" id="4_shader"]
 [ext_resource type="Texture2D" uid="uid://cpabxkmqhhx5n" path="res://holymolylogo.png" id="5_wfs7u"]
 [ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="6_es01l"]
+[ext_resource type="AudioStream" path="res://Intro Sound.mp3" id="7_intro_sound"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_bg"]
 shader = ExtResource("4_shader")
@@ -90,7 +91,9 @@ texture = ExtResource("2_molejump")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="CenterContainer" type="CenterContainer" parent="." unique_id=539154291]
+[node name="IntroAudio" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("7_intro_sound")
+volume_db = 0.0
 layout_mode = 1
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer" unique_id=1690639232]
