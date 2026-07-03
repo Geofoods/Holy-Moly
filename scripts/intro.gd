@@ -30,6 +30,8 @@ func _ready():
 	vbox.call_deferred("set", "pivot_offset", vbox.size / 2.0)
 	_set_buttons_enabled(false)
 
+	$MoleShadow.hide()
+
 	var play_btn = $CenterContainer/VBoxContainer/ButtonContainer/PlayButton
 	var cancel_btn = $CenterContainer/VBoxContainer/ButtonContainer/CancelButton
 	play_btn.mouse_entered.connect(_on_button_hover.bind(play_btn))
@@ -46,27 +48,32 @@ func animate_intro():
 
 func animate_mole_hop() -> void:
 	var mole = $MoleAnimation
+	var shadow = $MoleShadow
 	var viewport_size: Vector2 = get_viewport_rect().size
 
 	mole.size = MOLE_SIZE
 	mole.pivot_offset = Vector2(MOLE_SIZE.x / 2.0, MOLE_SIZE.y)
+	shadow.show()
 
-	var start_x := -MOLE_SIZE.x
-	var end_x := viewport_size.x + MOLE_SIZE.x
+	var start_x := -MOLE_SIZE.x - 100.0
+	var end_x := viewport_size.x * 0.12
 	var ground_y := viewport_size.y * GROUND_RATIO - MOLE_SIZE.y
 
 	mole.position = Vector2(start_x, ground_y)
+	shadow.position = Vector2(start_x + MOLE_SIZE.x / 2.0, ground_y + MOLE_SIZE.y)
 
 	var tween := create_tween()
 	tween.set_trans(Tween.TRANS_SINE)
 	tween.set_ease(Tween.EASE_IN_OUT)
 	tween.tween_method(
-		func(t: float): _update_mole_hop(mole, t, start_x, end_x, ground_y),
+		func(t: float): _update_mole_hop(mole, shadow, t, start_x, end_x, ground_y),
 		0.0, 1.0, HOP_DURATION
 	)
 	await tween.finished
 
-func _update_mole_hop(mole: Control, t: float, start_x: float, end_x: float, ground_y: float) -> void:
+	shadow.hide()
+
+func _update_mole_hop(mole: Control, shadow: ColorRect, t: float, start_x: float, end_x: float, ground_y: float) -> void:
 	var x: float = lerp(start_x, end_x, t)
 
 	var hop_phase := fmod(t * HOP_COUNT, 1.0)
@@ -76,6 +83,11 @@ func _update_mole_hop(mole: Control, t: float, start_x: float, end_x: float, gro
 	mole.position = Vector2(x, y)
 	mole.scale = Vector2(lerp(1.15, 0.9, arc), lerp(0.85, 1.15, arc))
 	mole.rotation_degrees = sin(t * HOP_COUNT * PI * 2.0) * 6.0
+
+	var shadow_squash := lerp(1.5, 0.6, arc)
+	shadow.position = Vector2(x + MOLE_SIZE.x / 2.0, ground_y + MOLE_SIZE.y + 4.0)
+	shadow.scale = Vector2(shadow_squash, 1.0 / shadow_squash)
+	shadow.modulate.a = lerp(0.0, 0.4, 1.0 - arc)
 
 func animate_menu_reveal() -> void:
 	var vbox = $CenterContainer/VBoxContainer
@@ -87,6 +99,22 @@ func animate_menu_reveal() -> void:
 	tween.tween_property(vbox, "scale", Vector2(1.0, 1.0), 0.55).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.finished.connect(_start_tip_wobble)
 
+	animate_title_glow()
+
+func animate_title_glow() -> void:
+	await get_tree().create_timer(0.8).timeout
+	var title := $CenterContainer/VBoxContainer/TitleWrapper/TitleMain
+	var glow_tween := create_tween().set_loops()
+	glow_tween.set_parallel(true)
+	glow_tween.tween_property(title, "theme_override_colors/font_shadow_color", Color(0.1, 1.0, 0.5, 0.8), 1.2).set_ease(Tween.EASE_IN_OUT)
+	glow_tween.tween_property(title, "theme_override_colors/font_color", Color(0.5, 1.0, 0.7, 1), 1.2).set_ease(Tween.EASE_IN_OUT)
+	glow_tween.tween_property(title, "modulate:a", 1.05, 1.2).set_ease(Tween.EASE_IN_OUT)
+	glow_tween.chain()
+	glow_tween.set_parallel(true)
+	glow_tween.tween_property(title, "theme_override_colors/font_shadow_color", Color(0.1, 0.9, 0.4, 0.6), 1.2).set_ease(Tween.EASE_IN_OUT)
+	glow_tween.tween_property(title, "theme_override_colors/font_color", Color(0.35, 1.0, 0.55, 1), 1.2).set_ease(Tween.EASE_IN_OUT)
+	glow_tween.tween_property(title, "modulate:a", 1.0, 1.2).set_ease(Tween.EASE_IN_OUT)
+
 func _set_buttons_enabled(enabled: bool) -> void:
 	var play_btn = $CenterContainer/VBoxContainer/ButtonContainer/PlayButton
 	var cancel_btn = $CenterContainer/VBoxContainer/ButtonContainer/CancelButton
@@ -97,12 +125,16 @@ func _set_buttons_enabled(enabled: bool) -> void:
 		cancel_btn.pivot_offset = cancel_btn.size / 2.0
 
 func _on_button_hover(button: Button) -> void:
+	if button.disabled:
+		return
 	var tween := create_tween()
 	tween.tween_property(button, "scale", Vector2(1.08, 1.08), 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(button, "modulate:a", 1.1, 0.12)
 
 func _on_button_unhover(button: Button) -> void:
 	var tween := create_tween()
 	tween.tween_property(button, "scale", Vector2(1.0, 1.0), 0.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(button, "modulate:a", 1.0, 0.1)
 
 func _set_random_tip() -> void:
 	$CenterContainer/VBoxContainer/TipWrapper/SubtitleLabel.text = TIPS[tip_rng.randi_range(0, TIPS.size() - 1)]
@@ -116,6 +148,10 @@ func _start_tip_wobble() -> void:
 	tip_tween.tween_property(tip, "position:y", 5.0, 0.45).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 func _on_play_pressed() -> void:
+	if tip_tween:
+		tip_tween.kill()
+	var play_btn = $CenterContainer/VBoxContainer/ButtonContainer/PlayButton
+	play_btn.disabled = true
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 	get_tree().root.add_child(transition)
 	transition.change_to("res://scenes/main.tscn")
