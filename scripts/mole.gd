@@ -22,7 +22,7 @@ var is_tunneling := false
 var tunnel_direction := 1.0
 var invulnerable := false
 
-var health: int = 1:
+var health: float = 6.0:
 	set(value):
 		var old_health := health
 		health = clamp(value, 0, 6)
@@ -32,7 +32,7 @@ var health: int = 1:
 				if heart_node:
 					var heart_anim = heart_node.get_node_or_null("AnimatedSprite2D")
 					if heart_anim:
-						heart_anim.play(str(health) + "hp")
+						heart_anim.play(str(int(health)) + "hp")
 					if health < old_health:
 						_animate_heart_damage(heart_node)
 			else:
@@ -181,7 +181,7 @@ func remove_mole_hole() -> void:
 		mole_hole_instance.queue_free()
 		mole_hole_instance = null
 
-func take_damage(amount: int) -> void:
+func take_damage(amount: float) -> void:
 	if invulnerable or health <= 0:
 		return
 	health -= amount
