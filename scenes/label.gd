@@ -1,4 +1,6 @@
 extends Label
 
 func _process(_delta):
-	text = "HP " + str(Mole.health) + "/6"
+	var mole = get_tree().get_first_node_in_group("mole")
+	if mole:
+		text = "HP " + str(mole.health) + "/6"

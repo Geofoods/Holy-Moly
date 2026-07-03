@@ -65,7 +65,11 @@ func _set_buttons_enabled(enabled: bool) -> void:
 	$CenterContainer/VBoxContainer/ButtonContainer/CancelButton.disabled = not enabled
 
 func _on_play_again_pressed():
-	get_tree().change_scene_to_file("res://scenes/main.tscn")
+	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
+	get_tree().root.add_child(transition)
+	transition.change_to("res://scenes/main.tscn")
 
 func _on_cancel_pressed():
-	get_tree().change_scene_to_file("res://scenes/intro.tscn")
+	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
+	get_tree().root.add_child(transition)
+	transition.change_to("res://scenes/intro.tscn")

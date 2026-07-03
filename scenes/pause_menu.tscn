@@ -107,40 +107,40 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="PausePanel" type="PanelContainer" parent="CenterContainer" unique_id=1329555518]
-custom_minimum_size = Vector2(400, 340)
+custom_minimum_size = Vector2(500, 520)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_pausebg")
 
 [node name="heart" parent="CenterContainer/PausePanel" unique_id=1207891791 instance=ExtResource("3_5d2l8")]
-position = Vector2(240, 186)
-scale = Vector2(0.5, 0.5)
+position = Vector2(250, 260)
+scale = Vector2(0.6, 0.6)
 script = ExtResource("3_7l7mv")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/PausePanel" unique_id=1558397815]
 layout_mode = 2
-theme_override_constants/separation = 30
+theme_override_constants/separation = 40
 
 [node name="TitleLabel" type="Label" parent="CenterContainer/PausePanel/VBoxContainer" unique_id=1129764051]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.4, 0.7, 1)
 theme_override_fonts/font = ExtResource("2_myx47")
-theme_override_font_sizes/font_size = 48
+theme_override_font_sizes/font_size = 56
 text = "PAUSED"
 horizontal_alignment = 1
 
 [node name="ButtonContainer" type="VBoxContainer" parent="CenterContainer/PausePanel/VBoxContainer" unique_id=1732381094]
 layout_mode = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 30
 alignment = 1
 
 [node name="ResumeButton" type="Button" parent="CenterContainer/PausePanel/VBoxContainer/ButtonContainer" unique_id=1696080540]
-custom_minimum_size = Vector2(0, 60)
+custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
 size_flags_horizontal = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_fonts/font = ExtResource("2_myx47")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 32
 theme_override_styles/normal = SubResource("StyleBoxFlat_resumebutton")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_resumebutton_hover")
 theme_override_styles/hover = SubResource("StyleBoxFlat_resumebutton_hover")
@@ -148,13 +148,13 @@ theme_override_styles/focus = SubResource("StyleBoxFlat_resumebutton_hover")
 text = " RESUME "
 
 [node name="MainMenuButton" type="Button" parent="CenterContainer/PausePanel/VBoxContainer/ButtonContainer" unique_id=726517987]
-custom_minimum_size = Vector2(0, 60)
+custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
 size_flags_horizontal = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_fonts/font = ExtResource("2_myx47")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 32
 theme_override_styles/normal = SubResource("StyleBoxFlat_exitbutton")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_exitbutton_hover")
 theme_override_styles/hover = SubResource("StyleBoxFlat_exitbutton_hover")
@@ -162,13 +162,13 @@ theme_override_styles/focus = SubResource("StyleBoxFlat_exitbutton_hover")
 text = "  MENU   "
 
 [node name="CancelButton" type="Button" parent="CenterContainer/PausePanel/VBoxContainer/ButtonContainer" unique_id=1098464102]
-custom_minimum_size = Vector2(0, 60)
+custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
 size_flags_horizontal = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_fonts/font = ExtResource("2_myx47")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 32
 theme_override_styles/normal = SubResource("StyleBoxFlat_cancelbutton")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_cancelbutton_hover")
 theme_override_styles/hover = SubResource("StyleBoxFlat_cancelbutton_hover")
