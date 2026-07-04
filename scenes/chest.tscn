@@ -1,0 +1,54 @@
+[gd_scene format=3 uid="uid://dchest7x2k9m1"]
+
+[ext_resource type="Script" path="res://scripts/chest.gd" id="1_chest"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_chest"]
+size = Vector2(100, 80)
+
+[node name="Chest" type="Area2D"]
+collision_layer = 1
+collision_mask = 1
+script = ExtResource("1_chest")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -40)
+shape = SubResource("RectangleShape2D_chest")
+
+[node name="Base" type="ColorRect" parent="."]
+offset_left = -45.0
+offset_top = -50.0
+offset_right = 45.0
+offset_bottom = 10.0
+color = Color(0.4, 0.25, 0.12, 1)
+
+[node name="Band" type="ColorRect" parent="."]
+offset_left = -45.0
+offset_top = -22.0
+offset_right = 45.0
+offset_bottom = -10.0
+color = Color(0.18, 0.11, 0.05, 1)
+
+[node name="Lock" type="ColorRect" parent="."]
+offset_left = -8.0
+offset_top = -24.0
+offset_right = 8.0
+offset_bottom = -8.0
+color = Color(0.85, 0.7, 0.2, 1)
+
+[node name="Lid" type="Node2D" parent="."]
+position = Vector2(0, -50)
+
+[node name="LidRect" type="ColorRect" parent="Lid"]
+offset_left = -45.0
+offset_top = 0.0
+offset_right = 45.0
+offset_bottom = 14.0
+color = Color(0.55, 0.38, 0.16, 1)
+
+[node name="Glow" type="ColorRect" parent="."]
+visible = false
+offset_left = -30.0
+offset_top = -95.0
+offset_right = 30.0
+offset_bottom = -35.0
+color = Color(1.0, 0.9, 0.4, 1)

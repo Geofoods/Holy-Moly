@@ -65,6 +65,34 @@ corner_radius_bottom_left = 12
 shadow_size = 8
 shadow_color = Color(0.9, 0.1, 0.2, 0.35)
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tutorialbutton"]
+bg_color = Color(0.15, 0.55, 0.9, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.4, 0.75, 1.0, 0.4)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_size = 8
+shadow_color = Color(0.1, 0.5, 0.9, 0.35)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tutorialbutton_hover"]
+bg_color = Color(0.25, 0.65, 1.0, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.5, 0.85, 1.0, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_size = 12
+shadow_color = Color(0.2, 0.6, 1.0, 0.5)
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_exitbutton_hover"]
 bg_color = Color(1.0, 0.2, 0.3, 1)
 border_width_left = 3
@@ -200,6 +228,20 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_playbutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_playbutton_hover")
 text = "PLAY"
 
+[node name="TutorialButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer" unique_id=223072364]
+custom_minimum_size = Vector2(180, 70)
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_colors/font_color = Color(0.03, 0.03, 0.03, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("6_es01l")
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBoxFlat_tutorialbutton")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_tutorialbutton_hover")
+theme_override_styles/hover = SubResource("StyleBoxFlat_tutorialbutton_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_tutorialbutton_hover")
+text = "TUTORIAL"
+
 [node name="CancelButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer" unique_id=223072363]
 custom_minimum_size = Vector2(180, 70)
 layout_mode = 2
@@ -215,4 +257,5 @@ theme_override_styles/focus = SubResource("StyleBoxFlat_exitbutton_hover")
 text = "QUIT"
 
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/PlayButton" to="." method="_on_play_pressed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/TutorialButton" to="." method="_on_tutorial_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/CancelButton" to="." method="_on_cancel_pressed"]

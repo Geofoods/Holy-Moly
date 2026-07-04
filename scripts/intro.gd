@@ -33,9 +33,12 @@ func _ready():
 	$MoleShadow.hide()
 
 	var play_btn = $CenterContainer/VBoxContainer/ButtonContainer/PlayButton
+	var tutorial_btn = $CenterContainer/VBoxContainer/ButtonContainer/TutorialButton
 	var cancel_btn = $CenterContainer/VBoxContainer/ButtonContainer/CancelButton
 	play_btn.mouse_entered.connect(_on_button_hover.bind(play_btn))
 	play_btn.mouse_exited.connect(_on_button_unhover.bind(play_btn))
+	tutorial_btn.mouse_entered.connect(_on_button_hover.bind(tutorial_btn))
+	tutorial_btn.mouse_exited.connect(_on_button_unhover.bind(tutorial_btn))
 	cancel_btn.mouse_entered.connect(_on_button_hover.bind(cancel_btn))
 	cancel_btn.mouse_exited.connect(_on_button_unhover.bind(cancel_btn))
 
@@ -117,11 +120,14 @@ func animate_title_glow() -> void:
 
 func _set_buttons_enabled(enabled: bool) -> void:
 	var play_btn = $CenterContainer/VBoxContainer/ButtonContainer/PlayButton
+	var tutorial_btn = $CenterContainer/VBoxContainer/ButtonContainer/TutorialButton
 	var cancel_btn = $CenterContainer/VBoxContainer/ButtonContainer/CancelButton
 	play_btn.disabled = not enabled
+	tutorial_btn.disabled = not enabled
 	cancel_btn.disabled = not enabled
 	if enabled:
 		play_btn.pivot_offset = play_btn.size / 2.0
+		tutorial_btn.pivot_offset = tutorial_btn.size / 2.0
 		cancel_btn.pivot_offset = cancel_btn.size / 2.0
 
 func _on_button_hover(button: Button) -> void:
@@ -155,6 +161,15 @@ func _on_play_pressed() -> void:
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 	get_tree().root.add_child(transition)
 	transition.change_to("res://scenes/main.tscn")
+
+func _on_tutorial_pressed() -> void:
+	if tip_tween:
+		tip_tween.kill()
+	var tutorial_btn = $CenterContainer/VBoxContainer/ButtonContainer/TutorialButton
+	tutorial_btn.disabled = true
+	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
+	get_tree().root.add_child(transition)
+	transition.change_to("res://scenes/tutorial.tscn")
 
 func _on_cancel_pressed():
 	get_tree().quit()

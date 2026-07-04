@@ -1,0 +1,213 @@
+[gd_scene format=3 uid="uid://dtutorial9k3m2"]
+
+[ext_resource type="Script" path="res://scripts/tutorial_manager.gd" id="1_tutorial"]
+[ext_resource type="PackedScene" uid="uid://p1of6ummc17j" path="res://scenes/mole.tscn" id="2_mole"]
+[ext_resource type="PackedScene" uid="uid://dnp3icrndkjm8" path="res://scenes/enemy.tscn" id="3_enemy"]
+[ext_resource type="PackedScene" uid="uid://c6xus6tuhcmfo" path="res://scenes/heart.tscn" id="4_heart"]
+[ext_resource type="PackedScene" path="res://scenes/chest.tscn" id="5_chest"]
+[ext_resource type="PackedScene" path="res://scenes/dialogue_box.tscn" id="6_dialogue"]
+[ext_resource type="PackedScene" path="res://scenes/parallax_background.tscn" id="7_parallax"]
+[ext_resource type="PackedScene" path="res://scenes/death_plane.tscn" id="8_deathplane"]
+[ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="9_font"]
+[ext_resource type="Texture2D" uid="uid://chcmh5bq4tsqd" path="res://sprites/tileset.png" id="10_tileset"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_choun"]
+texture = ExtResource("10_tileset")
+texture_region_size = Vector2i(160, 160)
+0:0/0 = 0
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -50, 80, -51, 80, 8, -80, 17)
+1:0/0 = 0
+1:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+2:0/0 = 0
+2:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+3:0/0 = 0
+3:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+4:0/0 = 0
+4:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+5:0/0 = 0
+5:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+6:0/0 = 0
+6:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+7:0/0 = 0
+7:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+8:0/0 = 0
+8:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+9:0/0 = 0
+9:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -46.52009, 80, 12, -80, -14)
+10:0/0 = 0
+10:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -50, 80, -51, 80, 8, -80, 17)
+11:0/0 = 0
+11:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -58, 80, -80, 80, -27, -80, 2)
+12:0/0 = 0
+0:1/0 = 0
+0:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+1:1/0 = 0
+1:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+2:1/0 = 0
+2:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+3:1/0 = 0
+3:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+4:1/0 = 0
+4:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+5:1/0 = 0
+5:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+6:1/0 = 0
+6:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+7:1/0 = 0
+7:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+8:1/0 = 0
+8:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+9:1/0 = 0
+9:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -51, 80, 8, -80, -17)
+10:1/0 = 0
+10:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -58, 80, -51, 80, 8, -80, 2)
+11:1/0 = 0
+11:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -58, 80, -80, 80, -27, -80, 2)
+12:1/0 = 0
+3:3/0 = 0
+4:3/0 = 0
+5:3/0 = 0
+6:3/0 = 0
+6:6/0 = 0
+5:8/0 = 0
+5:9/0 = 0
+5:10/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_ya4ey"]
+tile_size = Vector2i(160, 160)
+physics_layer_0/collision_layer = 1
+sources/0 = SubResource("TileSetAtlasSource_choun")
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_movetrigger"]
+size = Vector2(20, 400)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_jumptrigger"]
+size = Vector2(220, 40)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_enemytrigger"]
+size = Vector2(20, 400)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_exittrigger"]
+size = Vector2(20, 400)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_skipbutton"]
+bg_color = Color(0.1, 0.1, 0.12, 0.85)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.95, 0.4, 0.7, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_skipbutton_hover"]
+bg_color = Color(0.2, 0.2, 0.22, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.5, 0.8, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="Tutorial" type="Node2D"]
+script = ExtResource("1_tutorial")
+
+[node name="ParallaxBackground" parent="." instance=ExtResource("7_parallax")]
+
+[node name="DeathPlane" parent="." instance=ExtResource("8_deathplane")]
+
+[node name="TileMap" type="TileMap" parent="."]
+scale = Vector2(0.5, 0.5)
+tile_set = SubResource("TileSet_ya4ey")
+format = 2
+layer_0/tile_data = PackedInt32Array(-131054, 65536, 0, -131053, 65536, 0, -131052, 65536, 0, -131051, 65536, 0, -65518, 65536, 1, -65517, 65536, 1, -65516, 65536, 1, -65515, 65536, 1, 65533, 0, 0, 65534, 0, 0, 65535, 0, 0, 0, 0, 0, 1, 0, 0, 2, 0, 0, 3, 0, 0, 4, 0, 0, 5, 0, 0, 6, 0, 0, 7, 0, 0, 8, 0, 0, 9, 0, 0, 10, 0, 0, 11, 0, 0, 12, 0, 0, 13, 0, 0, 14, 0, 0, 22, 0, 0, 23, 0, 0, 24, 0, 0, 25, 0, 0, 26, 0, 0, 27, 0, 0, 28, 0, 0, 29, 0, 0, 30, 0, 0, 31, 0, 0, 32, 0, 0, 33, 0, 0, 34, 0, 0, 35, 0, 0, 36, 0, 0, 37, 0, 0, 38, 0, 0, 39, 0, 0, 40, 0, 0, 41, 0, 0, 42, 0, 0, 43, 0, 0, 44, 0, 0, 45, 0, 0, 46, 0, 0, 47, 0, 0, 48, 0, 0, 49, 0, 0, 50, 0, 0, 51, 0, 0, 52, 0, 0, 53, 0, 0, 54, 0, 0, 55, 0, 0, 56, 0, 0, 57, 0, 0, 58, 0, 0, 59, 0, 0, 60, 0, 0, 61, 0, 0, 62, 0, 0, 131069, 0, 1, 131070, 0, 1, 131071, 0, 1, 65536, 0, 1, 65537, 0, 1, 65538, 0, 1, 65539, 0, 1, 65540, 0, 1, 65541, 0, 1, 65542, 0, 1, 65543, 0, 1, 65544, 0, 1, 65545, 0, 1, 65546, 0, 1, 65547, 0, 1, 65548, 0, 1, 65549, 0, 1, 65550, 0, 1, 65558, 0, 1, 65559, 0, 1, 65560, 0, 1, 65561, 0, 1, 65562, 0, 1, 65563, 0, 1, 65564, 0, 1, 65565, 0, 1, 65566, 0, 1, 65567, 0, 1, 65568, 0, 1, 65569, 0, 1, 65570, 0, 1, 65571, 0, 1, 65572, 0, 1, 65573, 0, 1, 65574, 0, 1, 65575, 0, 1, 65576, 0, 1, 65577, 0, 1, 65578, 0, 1, 65579, 0, 1, 65580, 0, 1, 65581, 0, 1, 65582, 0, 1, 65583, 0, 1, 65584, 0, 1, 65585, 0, 1, 65586, 0, 1, 65587, 0, 1, 65588, 0, 1, 65589, 0, 1, 65590, 0, 1, 65591, 0, 1, 65592, 0, 1, 65593, 0, 1, 65594, 0, 1, 65595, 0, 1, 65596, 0, 1, 65597, 0, 1, 65598, 0, 1)
+layer_1/name = "Decoration"
+layer_1/tile_data = PackedInt32Array(-196589, 327680, 8, -2, 327680, 9, -65534, 196608, 3, -65493, 393216, 3, -65480, 327680, 3, -65477, 393216, 6)
+
+[node name="CharacterBody2D2" parent="." instance=ExtResource("2_mole")]
+position = Vector2(-28, -116)
+scale = Vector2(0.25, 0.25)
+
+[node name="Camera2D" type="Camera2D" parent="CharacterBody2D2"]
+position = Vector2(92, -296)
+scale = Vector2(4, 4)
+position_smoothing_enabled = true
+
+[node name="MoveTrigger" type="Area2D" parent="."]
+position = Vector2(800, -200)
+collision_layer = 0
+collision_mask = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="MoveTrigger"]
+shape = SubResource("RectangleShape2D_movetrigger")
+
+[node name="JumpTrigger" type="Area2D" parent="."]
+position = Vector2(1560, -336)
+collision_layer = 0
+collision_mask = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="JumpTrigger"]
+shape = SubResource("RectangleShape2D_jumptrigger")
+
+[node name="Enemy" parent="." instance=ExtResource("3_enemy")]
+position = Vector2(2640, -116)
+
+[node name="EnemyTrigger" type="Area2D" parent="."]
+position = Vector2(3040, -200)
+collision_layer = 0
+collision_mask = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="EnemyTrigger"]
+shape = SubResource("RectangleShape2D_enemytrigger")
+
+[node name="Chest" parent="." instance=ExtResource("5_chest")]
+position = Vector2(3600, -126)
+
+[node name="ExitTrigger" type="Area2D" parent="."]
+position = Vector2(4560, -200)
+collision_layer = 0
+collision_mask = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ExitTrigger"]
+shape = SubResource("RectangleShape2D_exittrigger")
+
+[node name="ExitGlow" type="ColorRect" parent="."]
+offset_left = 4530.0
+offset_top = -260.0
+offset_right = 4590.0
+offset_bottom = -60.0
+color = Color(0.2, 1.0, 0.45, 0.55)
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="heart" parent="CanvasLayer" instance=ExtResource("4_heart")]
+position = Vector2(117.99999, 113.99999)
+scale = Vector2(0.24147864, 0.24147864)
+
+[node name="SkipButton" type="Button" parent="CanvasLayer"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -140.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 65.0
+grow_horizontal = 0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("9_font")
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_skipbutton")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_skipbutton_hover")
+theme_override_styles/hover = SubResource("StyleBoxFlat_skipbutton_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_skipbutton_hover")
+text = "SKIP TUTORIAL ▸"
+
+[node name="DialogueBox" parent="." instance=ExtResource("6_dialogue")]
+
+[connection signal="pressed" from="CanvasLayer/SkipButton" to="." method="_on_skip_pressed"]
