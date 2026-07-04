@@ -8,6 +8,8 @@ polygon = PackedVector2Array(-22, -166.1, -22, -164.8, -28.199997, -164, -34.399
 
 [node name="bomb" type="RigidBody2D" unique_id=1915613992]
 script = ExtResource("1_arlqj")
+tile_break_radius = 1
+explosion_radius = 120.0
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1846263911]
 position = Vector2(0, -1.000001)
