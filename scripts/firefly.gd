@@ -25,6 +25,6 @@ func _process(delta: float) -> void:
 	var dir := (wander_target - global_position).normalized()
 	position += dir * SPEED * delta
 
-	var glow := 0.6 + sin(float_phase * 0.7) * 0.4
+	var glow := 0.8 + sin(float_phase * 0.7) * 0.4
 	body.color.a = glow
-	light.energy = glow
+	light.energy = glow * 2.0

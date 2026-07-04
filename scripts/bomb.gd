@@ -1,64 +1,44 @@
 extends Node2D
 
+const FUSE_TIME := 3.0
+const EXPLOSION_RADIUS := 200.0
+const EXPLOSION_DAMAGE := 2.0
+const TILE_BREAK_RADIUS := 2
+
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var fuse_timer: Timer = $FuseTimer
-@onready var explosion_area: Area2D = $ExplosionArea
+
+var dead := false
 
 func _ready() -> void:
 	fuse_timer.timeout.connect(_on_fuse_timeout)
 	fuse_timer.start()
+	var tween := create_tween()
+	tween.set_loops(0)
+	tween.tween_property(sprite, "modulate", Color(1.0, 0.1, 0.1, 1.0), 0.15)
+	tween.tween_property(sprite, "modulate", Color(0.9, 0.3, 0.1, 1.0), 0.15)
 
 func _on_fuse_timeout() -> void:
-	sprite.visible = false
-
-	var explosion := CPUParticles2D.new()
-	explosion.emitting = true
-	explosion.one_shot = true
-	explosion.amount = 40
-	explosion.lifetime = 0.6
-	explosion.explosiveness = 1.0
-	explosion.direction = Vector2.ZERO
-	explosion.spread = 360.0
-	explosion.initial_velocity_min = 200.0
-	explosion.initial_velocity_max = 500.0
-	explosion.gravity = Vector2.ZERO
-	explosion.damping_min = 30.0
-	explosion.damping_max = 80.0
-	explosion.scale_amount_min = 3.0
-	explosion.scale_amount_max = 6.0
-	explosion.color = Color(1.0, 0.6, 0.1, 1.0)
-	var fade := Gradient.new()
-	fade.set_color(0, Color(1.0, 0.7, 0.15, 1.0))
-	fade.set_color(1, Color(0.8, 0.2, 0.05, 0.0))
-	explosion.color_ramp = fade
-	get_parent().add_child(explosion)
-	explosion.global_position = global_position
-
-	explosion_area.monitoring = true
-	await get_tree().physics_frame
-
-	for area in explosion_area.get_overlapping_areas():
-		if area.is_in_group("enemy_hurtbox"):
-			var enemy = area.get_parent()
-			if enemy and enemy.has_method("die"):
-				enemy.die()
-
-	_break_tiles()
-
-	get_tree().create_timer(0.6).timeout.connect(queue_free)
-	get_tree().create_timer(1.0).timeout.connect(explosion.queue_free)
-
-func _break_tiles() -> void:
-	var tilemap := get_parent().get_node_or_null("TileMap") as TileMap
-	if not tilemap:
+	if dead:
 		return
-	var center := tilemap.local_to_map(tilemap.to_local(global_position))
-	var radius_tiles := 2
-	var sfx = load("res://scripts/tile_break_sfx.gd")
-	for x in range(-radius_tiles, radius_tiles + 1):
-		for y in range(-radius_tiles, radius_tiles + 1):
-			if Vector2i(x, y).length() > radius_tiles:
-				continue
-			var tile_pos := center + Vector2i(x, y)
-			if tilemap.get_cell_source_id(0, tile_pos) != -1:
-				sfx.break_tile(tilemap, tile_pos, get_parent())
+	dead = true
+	_explode()
+	var tween := create_tween()
+	tween.tween_property(self, "scale", Vector2.ZERO, 0.2).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_BACK)
+	tween.tween_callback(queue_free)
+
+func _explode() -> void:
+	var mole := get_tree().get_first_node_in_group("mole")
+	if mole and is_instance_valid(mole):
+		var dist := global_position.distance_to(mole.global_position)
+		if dist <= EXPLOSION_RADIUS and mole.has_method("take_damage"):
+			mole.take_damage(EXPLOSION_DAMAGE, global_position, true)
+
+	var tilemap: TileMap = get_parent().get_node_or_null("TileMap")
+	if tilemap:
+		var center_tile := tilemap.local_to_map(tilemap.to_local(global_position))
+		var sfx = load("res://scripts/tile_break_sfx.gd")
+		for dx in range(-TILE_BREAK_RADIUS, TILE_BREAK_RADIUS + 1):
+			for dy in range(-TILE_BREAK_RADIUS, TILE_BREAK_RADIUS + 1):
+				var tp := Vector2i(center_tile.x + dx, center_tile.y + dy)
+				sfx.break_tile(tilemap, tp, get_parent())

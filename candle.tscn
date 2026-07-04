@@ -19,11 +19,13 @@ animations = [{
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_pqck8"]
-size = Vector2(156, 59)
+size = Vector2(80, 29.5)
 
 [node name="candle" type="RigidBody2D" unique_id=158104047]
+mass = 0.032
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=797099782]
+scale = Vector2(0.5, 0.5)
 sprite_frames = SubResource("SpriteFrames_wmlv8")
 
 [node name="PointLight2D" type="PointLight2D" parent="." unique_id=1979554668]
@@ -35,5 +37,5 @@ shadow_color = Color(1, 0.39249998, 0.19, 1)
 texture = ExtResource("2_pqck8")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1389234606]
-position = Vector2(-1, 52.5)
+position = Vector2(-1, 25.25)
 shape = SubResource("RectangleShape2D_pqck8")
