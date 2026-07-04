@@ -12,6 +12,8 @@
 [ext_resource type="PackedScene" uid="uid://wjt35doljo8p" path="res://scenes/parallax_background2.tscn" id="12_ph8se"]
 [ext_resource type="PackedScene" uid="uid://u77s8ew4xenh" path="res://scenes/beetleenemy.tscn" id="13_40wum"]
 [ext_resource type="PackedScene" path="res://scenes/firefly_spawner.tscn" id="13_spawner"]
+[ext_resource type="TileSet" uid="uid://d07lidnoim34q" path="res://tileset.tres" id="9_ggs2r"]
+[ext_resource type="PackedScene" uid="uid://k06dbe7sq1ph" path="res://scenes/goblinenemy.tscn" id="11_k7nmt"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.1, 0.1, 0.12, 0.85)
