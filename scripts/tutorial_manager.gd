@@ -72,24 +72,6 @@ func _build_steps() -> void:
 			"checkpoint": Vector2(7300, -116),
 		},
 		{
-			"text": "A Bat! It drifts overhead until it dives at you. One shovel hit is all it takes to drop it.",
-			"kind": "trigger",
-			"node": "BatTrigger",
-			"checkpoint": Vector2(8500, -116),
-		},
-		{
-			"text": "Careful, a Worm! It's a buried mine that arms itself and flashes red when you get close, then explodes. Pop it from a distance or keep moving once you see it flash.",
-			"kind": "trigger",
-			"node": "WormTrigger",
-			"checkpoint": Vector2(9700, -116),
-		},
-		{
-			"text": "A Mushroom Caster! It stays put and lobs exploding mushrooms at anything it can see. Close the distance and finish it with your shovel.",
-			"kind": "trigger",
-			"node": "MushroomTrigger",
-			"checkpoint": Vector2(10900, -116),
-		},
-		{
 			"text": "You've got a Bomb! Press its number key to select it, then Left-click to throw it at that wall and blast your way through.",
 			"kind": "trigger",
 			"node": "BombWallTrigger",
