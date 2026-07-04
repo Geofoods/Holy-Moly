@@ -1,33 +1,35 @@
-extends Node2D
+extends RigidBody2D
 
-const FUSE_TIME := 3.0
 const EXPLOSION_RADIUS := 200.0
 const EXPLOSION_DAMAGE := 2.0
 const TILE_BREAK_RADIUS := 2
-
-@onready var sprite: Sprite2D = $Sprite2D
-@onready var fuse_timer: Timer = $FuseTimer
+const FUSE_TIME := 2.5
 
 var dead := false
+var fuse_active := false
+var fuse_elapsed := 0.0
+
+@onready var sprite: Sprite2D = $Sprite2D
 
 func _ready() -> void:
-	fuse_timer.timeout.connect(_on_fuse_timeout)
-	fuse_timer.start()
-	var tween := create_tween()
-	tween.set_loops(0)
-	tween.tween_property(sprite, "modulate", Color(1.0, 0.1, 0.1, 1.0), 0.15)
-	tween.tween_property(sprite, "modulate", Color(0.9, 0.3, 0.1, 1.0), 0.15)
+	linear_velocity = Vector2.ZERO
 
-func _on_fuse_timeout() -> void:
+func _process(delta: float) -> void:
+	if not fuse_active:
+		return
+	fuse_elapsed += delta
+	var pulse := 0.5 + sin(fuse_elapsed * 20.0) * 0.5
+	sprite.modulate = Color(1.0, pulse * 0.3, pulse * 0.1, 1.0)
+	if fuse_elapsed >= FUSE_TIME:
+		_explode()
+
+func arm() -> void:
+	fuse_active = true
+
+func _explode() -> void:
 	if dead:
 		return
 	dead = true
-	_explode()
-	var tween := create_tween()
-	tween.tween_property(self, "scale", Vector2.ZERO, 0.2).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_BACK)
-	tween.tween_callback(queue_free)
-
-func _explode() -> void:
 	var mole := get_tree().get_first_node_in_group("mole")
 	if mole and is_instance_valid(mole):
 		var dist := global_position.distance_to(mole.global_position)
@@ -42,3 +44,7 @@ func _explode() -> void:
 			for dy in range(-TILE_BREAK_RADIUS, TILE_BREAK_RADIUS + 1):
 				var tp := Vector2i(center_tile.x + dx, center_tile.y + dy)
 				sfx.break_tile(tilemap, tp, get_parent())
+
+	var tween := create_tween()
+	tween.tween_property(self, "scale", Vector2.ZERO, 0.2).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_BACK)
+	tween.tween_callback(queue_free)

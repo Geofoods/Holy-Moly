@@ -28,6 +28,7 @@ var tunnel_direction := 1.0
 var invulnerable := false
 var speed_boost_active := false
 var shield_active := false
+var bomb_armed := false
 var hurt_anim_time_left := 0.0
 var air_time := 0.0
 var launched_from_jump := false
@@ -228,11 +229,21 @@ func _physics_process(delta: float) -> void:
 		else:
 			$AnimatedSprite2D.play("idlebold")
 
+func _input(event: InputEvent) -> void:
+	if bomb_armed and event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		_throw_bomb()
+		get_viewport().set_input_as_handled()
+
 func _handle_inventory_input() -> void:
 	if Input.is_action_just_pressed("inventory_1"):
 		_use_inventory_slot(0)
 	elif Input.is_action_just_pressed("inventory_2"):
-		_use_inventory_slot(1)
+		if bomb_armed:
+			bomb_armed = false
+		else:
+			var item = Inventory.slots[1]
+			if item and item.item_name == "Bomb":
+				bomb_armed = true
 	elif Input.is_action_just_pressed("inventory_3"):
 		_use_inventory_slot(2)
 
@@ -264,6 +275,18 @@ func _use_inventory_slot(slot: int) -> void:
 func _toggle_weapon() -> void:
 	if has_node("Weapon"):
 		$Weapon.visible = not $Weapon.visible
+
+func _throw_bomb() -> void:
+	if not Inventory.use_item(1):
+		return
+	bomb_armed = false
+	var bomb = bomb_scene.instantiate()
+	get_parent().add_child(bomb)
+	bomb.global_position = global_position + Vector2(0, -40)
+	var mouse_pos := get_global_mouse_position()
+	var dir := (mouse_pos - global_position).normalized()
+	bomb.linear_velocity = dir * 600.0
+	bomb.arm()
 
 func _place_bomb() -> void:
 	var bomb = bomb_scene.instantiate()
