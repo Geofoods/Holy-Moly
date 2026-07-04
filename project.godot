@@ -19,10 +19,6 @@ config/icon="res://icon.svg"
 
 Inventory="*res://scripts/inventory.gd"
 
-[editor_plugins]
-
-enabled=PackedStringArray("res://addons/godot_super-wakatime/plugin.cfg")
-
 [physics]
 
 3d/physics_engine="Jolt Physics"
