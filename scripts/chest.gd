@@ -3,6 +3,7 @@ extends Area2D
 signal opened
 
 var is_open := false
+@export var item: ItemData = null
 
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
@@ -13,6 +14,12 @@ func _on_body_entered(body: Node) -> void:
 	is_open = true
 	_play_open_animation()
 	opened.emit()
+	_grant_item()
+
+func _grant_item() -> void:
+	if item == null:
+		return
+	Inventory.add_item(item)
 
 func _play_open_animation() -> void:
 	var lid = $Lid

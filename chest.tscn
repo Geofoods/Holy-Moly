@@ -1,0 +1,26 @@
+[gd_scene format=3 uid="uid://bcd57whed7bys"]
+
+[ext_resource type="Texture2D" uid="uid://dt3a3d45odn8t" path="res://chest.webp" id="1_twpm2"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_8uwsg"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_twpm2")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_twpm2"]
+size = Vector2(438, 223)
+
+[node name="chest" type="Node2D" unique_id=1279948993]
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=626438151]
+sprite_frames = SubResource("SpriteFrames_8uwsg")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=805675750]
+position = Vector2(-18, 85.5)
+shape = SubResource("RectangleShape2D_twpm2")

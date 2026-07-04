@@ -13,13 +13,11 @@ const KNOCKBACK_X = 260.0
 const MIDAIR_SPRITE_DELAY = 0.25
 const CAMERA_FOLLOW_SPEED = 10.0
 const CAMERA_MOUSE_INFLUENCE = 0.2
+const DIRT_PARTICLE_LIFETIME = 0.45
+const DIRT_PARTICLE_AMOUNT = 18
 
 
 var mole_hole_scene := preload("res://scenes/molehole.tscn")
-var default_trail_color := Color(0.45, 0.26, 0.13, 0.85)
-var tunnel_trail_color := Color(0.6, 0.35, 0.15, 1.0)
-@onready var particle_trail: GPUParticles2D = $ParticleTrail
-@onready var dirt_spray: GPUParticles2D = $DirtSpray
 var mole_hole_instance: Node2D = null
 var was_on_floor := true
 var is_sideways_jump := false
@@ -27,6 +25,8 @@ var is_digging := false
 var is_tunneling := false
 var tunnel_direction := 1.0
 var invulnerable := false
+var speed_boost_active := false
+var shield_active := false
 var hurt_anim_time_left := 0.0
 var air_time := 0.0
 var launched_from_jump := false
@@ -116,10 +116,11 @@ func _physics_process(delta: float) -> void:
 				var collider = collision.get_collider()
 				if collider is TileMap:
 					var tile_pos = collider.local_to_map(collider.to_local(collision.get_position()))
+					var source_id := collider.get_cell_source_id(0, tile_pos)
+					if source_id == -1:
+						continue
 					collider.erase_cell(0, tile_pos)
-					if dirt_spray:
-						dirt_spray.restart()
-						dirt_spray.emitting = true
+					spawn_dirt_particles(collision.get_position())
 		was_on_floor = is_on_floor()
 		_update_camera_position(delta)
 		return
@@ -215,6 +216,28 @@ func _update_camera_position(delta: float) -> void:
 	var target_local := to_local(target_global)
 	var follow_weight := clampf(CAMERA_FOLLOW_SPEED * delta, 0.0, 1.0)
 	camera.position = camera.position.lerp(target_local, follow_weight)
+
+func spawn_dirt_particles(world_position: Vector2) -> void:
+	var dirt := GPUParticles2D.new()
+	var material := ParticleProcessMaterial.new()
+	dirt.global_position = world_position
+	dirt.one_shot = true
+	dirt.explosiveness = 1.0
+	dirt.amount = DIRT_PARTICLE_AMOUNT
+	dirt.lifetime = DIRT_PARTICLE_LIFETIME
+	dirt.process_material = material
+	dirt.z_index = 5
+	material.direction = Vector3(0.0, -1.0, 0.0)
+	material.spread = 70.0
+	material.gravity = Vector3(0.0, 980.0, 0.0)
+	material.initial_velocity_min = 140.0
+	material.initial_velocity_max = 260.0
+	material.scale_min = 2.0
+	material.scale_max = 4.0
+	material.color = Color(0.45, 0.30, 0.16, 1.0)
+	get_tree().current_scene.add_child(dirt)
+	dirt.emitting = true
+	get_tree().create_timer(DIRT_PARTICLE_LIFETIME + 0.2).timeout.connect(dirt.queue_free)
 
 
 func spawn_mole_hole() -> void:

@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/item_data.gd" id="1_rxrym"]
+
+[resource]
+script = ExtResource("1_rxrym")
+item_name = "Health Potion"
+description = "Restores 1 HP"
+icon_color = Color(0.9059, 0.298, 0.2353, 1)
+icon_text = ""

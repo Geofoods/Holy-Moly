@@ -110,4 +110,11 @@ func _break_tile_at_mouse() -> void:
 		return
 	var mouse_global = get_global_mouse_position()
 	var tile_pos = tilemap.local_to_map(tilemap.to_local(mouse_global))
+	var source_id := tilemap.get_cell_source_id(0, tile_pos)
+	if source_id == -1:
+		return
 	tilemap.erase_cell(0, tile_pos)
+	var mole = get_parent()
+	if mole and mole.has_method("spawn_dirt_particles"):
+		var tile_world = tilemap.to_global(tilemap.map_to_local(tile_pos))
+		mole.spawn_dirt_particles(tile_world)
