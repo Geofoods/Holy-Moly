@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://5yvhb0s8snt2"]
 
 [ext_resource type="PackedScene" uid="uid://p1of6ummc17j" path="res://scenes/mole.tscn" id="1_o5qli"]
-[ext_resource type="PackedScene" uid="uid://dnp3icrndkjm8" path="res://scenes/enemy.tscn" id="2_enemy"]
+[ext_resource type="PackedScene" uid="uid://dnp3icrndkjm8" path="res://scenes/antenemy.tscn" id="2_enemy"]
 [ext_resource type="PackedScene" uid="uid://c6xus6tuhcmfo" path="res://scenes/heart.tscn" id="3_sugp2"]
 [ext_resource type="PackedScene" uid="uid://d2i1x8x1y6qa" path="res://scenes/pause_menu.tscn" id="4_pause"]
 [ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="6_tipki"]
@@ -9,6 +9,7 @@
 [ext_resource type="PackedScene" path="res://scenes/parallax_background.tscn" id="8_parallax"]
 [ext_resource type="Texture2D" uid="uid://chcmh5bq4tsqd" path="res://sprites/tileset.png" id="9_ygv7j"]
 [ext_resource type="PackedScene" path="res://scenes/death_plane.tscn" id="10_deathplane"]
+[ext_resource type="PackedScene" path="res://scenes/inventory_ui.tscn" id="12_invui"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.1, 0.1, 0.12, 0.85)
@@ -36,9 +37,9 @@ corner_radius_bottom_left = 8
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_vignette"]
 shader = ExtResource("7_vignette")
-shader_parameter/intensity = 0.95
-shader_parameter/smoothness = 0.4
-shader_parameter/opacity = 1.0
+shader_parameter/inner_radius = 0.25
+shader_parameter/outer_radius = 0.55
+shader_parameter/darkness = 0.95
 
 [sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_ha83q"]
 polygon = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
@@ -175,6 +176,8 @@ theme_override_styles/pressed = SubResource("StyleBoxFlat_pausebutton_hover")
 theme_override_styles/hover = SubResource("StyleBoxFlat_pausebutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_pausebutton_hover")
 text = "II ESC"
+
+[node name="InventoryUI" parent="." unique_id=1093632194 instance=ExtResource("12_invui")]
 
 [node name="PauseMenu" parent="." unique_id=1779626465 instance=ExtResource("4_pause")]
 

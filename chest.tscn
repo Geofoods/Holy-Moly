@@ -1,12 +1,16 @@
 [gd_scene format=3 uid="uid://bcd57whed7bys"]
 
 [ext_resource type="Texture2D" uid="uid://dt3a3d45odn8t" path="res://chest.webp" id="1_twpm2"]
+[ext_resource type="Texture2D" uid="uid://urfkaekhg4mh" path="res://chestopen.webp" id="2_8uwsg"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_8uwsg"]
 animations = [{
 "frames": [{
 "duration": 1.0,
 "texture": ExtResource("1_twpm2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_8uwsg")
 }],
 "loop": true,
 "name": &"default",
@@ -16,11 +20,22 @@ animations = [{
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_twpm2"]
 size = Vector2(438, 223)
 
-[node name="chest" type="Node2D" unique_id=1279948993]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_8uwsg"]
+size = Vector2(680, 618)
+
+[node name="chest" type="StaticBody2D" unique_id=328821009]
+scale = Vector2(0.5, 0.5)
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=626438151]
 sprite_frames = SubResource("SpriteFrames_8uwsg")
+frame_progress = 0.85352045
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=805675750]
 position = Vector2(-18, 85.5)
 shape = SubResource("RectangleShape2D_twpm2")
+
+[node name="Area2D" type="Area2D" parent="." unique_id=853306521]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=1020911219]
+position = Vector2(-14, 19)
+shape = SubResource("RectangleShape2D_8uwsg")

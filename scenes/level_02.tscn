@@ -8,6 +8,7 @@
 [ext_resource type="Shader" uid="uid://qjf1ibg12yh2" path="res://shaders/vignette.gdshader" id="7_vignette"]
 [ext_resource type="PackedScene" path="res://scenes/parallax_background.tscn" id="8_parallax"]
 [ext_resource type="PackedScene" path="res://scenes/death_plane.tscn" id="10_deathplane"]
+[ext_resource type="PackedScene" path="res://scenes/inventory_ui.tscn" id="12_invui"]
 [ext_resource type="Texture2D" uid="uid://chcmh5bq4tsqd" path="res://sprites/tileset.png" id="11_tileset"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_choun"]
@@ -171,6 +172,8 @@ theme_override_styles/pressed = SubResource("StyleBoxFlat_pausebutton_hover")
 theme_override_styles/hover = SubResource("StyleBoxFlat_pausebutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_pausebutton_hover")
 text = "II ESC"
+
+[node name="InventoryUI" parent="." instance=ExtResource("12_invui")]
 
 [node name="PauseMenu" parent="." unique_id=1779626465 instance=ExtResource("4_pause")]
 

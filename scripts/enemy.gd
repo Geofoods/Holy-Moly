@@ -18,7 +18,7 @@ var bullet_scene := preload("res://scenes/bullet.tscn")
 @onready var hitbox: Area2D = $Hitbox
 @onready var ray_right: RayCast2D = $RayRight
 @onready var ray_left: RayCast2D = $RayLeft
-@onready var visual: ColorRect = $Visual
+@onready var visual: CanvasItem = $Visual
 
 func _ready() -> void:
 	hurtbox.area_entered.connect(_on_hurtbox_area_entered)

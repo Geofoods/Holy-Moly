@@ -91,6 +91,7 @@ corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
 [node name="PauseMenu" type="CanvasLayer" unique_id=1329127324]
+layer = 2
 script = ExtResource("1_pause")
 
 [node name="DimBackground" type="ColorRect" parent="." unique_id=1294194623]

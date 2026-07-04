@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://dexkafcey6f5i"]
 
 [ext_resource type="PackedScene" uid="uid://p1of6ummc17j" path="res://scenes/mole.tscn" id="1_o5qli"]
-[ext_resource type="PackedScene" uid="uid://dnp3icrndkjm8" path="res://scenes/enemy.tscn" id="2_enemy"]
+[ext_resource type="PackedScene" uid="uid://dnp3icrndkjm8" path="res://scenes/antenemy.tscn" id="2_enemy"]
 [ext_resource type="PackedScene" uid="uid://c6xus6tuhcmfo" path="res://scenes/heart.tscn" id="3_sugp2"]
 [ext_resource type="PackedScene" uid="uid://d2i1x8x1y6qa" path="res://scenes/pause_menu.tscn" id="4_pause"]
 [ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="6_tipki"]
@@ -9,6 +9,7 @@
 [ext_resource type="PackedScene" path="res://scenes/mushroom_enemy.tscn" id="10_mushroom"]
 [ext_resource type="Texture2D" uid="uid://chcmh5bq4tsqd" path="res://sprites/tileset.png" id="9_85g3d"]
 [ext_resource type="PackedScene" path="res://scenes/inventory_ui.tscn" id="12_invui"]
+
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_choun"]
 texture = ExtResource("9_85g3d")

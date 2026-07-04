@@ -88,6 +88,18 @@ func _ready() -> void:
 		ev_shift.keycode = KEY_SHIFT
 		InputMap.action_add_event("dig_dash", ev_shift)
 
+	_setup_inventory_actions()
+
+func _setup_inventory_actions() -> void:
+	var keys := [KEY_1, KEY_2, KEY_3]
+	var actions := ["inventory_1", "inventory_2", "inventory_3"]
+	for i in 3:
+		if not InputMap.has_action(actions[i]):
+			InputMap.add_action(actions[i])
+			var ev = InputEventKey.new()
+			ev.keycode = keys[i]
+			InputMap.action_add_event(actions[i], ev)
+
 const SURFACE_Y := 850.0
 
 func update_depth_display() -> void:
@@ -117,8 +129,9 @@ func _physics_process(delta: float) -> void:
 				var collision = get_slide_collision(i)
 				var collider = collision.get_collider()
 				if collider is TileMap:
-					var tile_pos = collider.local_to_map(collider.to_local(collision.get_position()))
-					var source_id := collider.get_cell_source_id(0, tile_pos)
+					var tm := collider as TileMap
+					var tile_pos = tm.local_to_map(tm.to_local(collision.get_position()))
+					var source_id := tm.get_cell_source_id(0, tile_pos)
 					if source_id == -1:
 						continue
 					var sfx = load("res://scripts/tile_break_sfx.gd")
@@ -210,6 +223,53 @@ func _physics_process(delta: float) -> void:
 			$AnimatedSprite2D.play("walkbold")
 		else:
 			$AnimatedSprite2D.play("idlebold")
+
+func _handle_inventory_input() -> void:
+	if Input.is_action_just_pressed("inventory_1"):
+		_use_inventory_slot(0)
+	elif Input.is_action_just_pressed("inventory_2"):
+		_use_inventory_slot(1)
+	elif Input.is_action_just_pressed("inventory_3"):
+		_use_inventory_slot(2)
+
+func _use_inventory_slot(slot: int) -> void:
+	var item: ItemData = Inventory.slots[slot] if slot < Inventory.slots.size() else null
+	if item == null:
+		return
+	if item.item_name == "Health Potion":
+		if health >= 6:
+			return
+		Inventory.use_item(slot, self)
+	elif item.item_name == "Speed Boots":
+		if speed_boost_active:
+			return
+		Inventory.use_item(slot, self)
+		_activate_speed_boost()
+	elif item.item_name == "Shield":
+		if shield_active:
+			return
+		Inventory.use_item(slot, self)
+		_activate_shield()
+
+func heal(amount: float) -> bool:
+	if health >= 6:
+		return false
+	health += amount
+	return true
+
+func _activate_speed_boost() -> void:
+	speed_boost_active = true
+	$AnimatedSprite2D.modulate = Color(0.6, 0.8, 1, 1)
+	await get_tree().create_timer(5.0).timeout
+	speed_boost_active = false
+	$AnimatedSprite2D.modulate = Color.WHITE
+
+func _activate_shield() -> void:
+	shield_active = true
+	modulate = Color(0.8, 1, 0.8, 1)
+	await get_tree().create_timer(5.0).timeout
+	shield_active = false
+	modulate = Color.WHITE
 
 func _update_camera_position(delta: float) -> void:
 	var camera := get_node_or_null("Camera2D") as Camera2D

@@ -288,7 +288,7 @@ func _update_parry_indicator() -> void:
 		label.add_theme_color_override("font_color", Color(0.8, 0.9, 1.0, 1.0))
 
 func _break_tile_at_mouse() -> void:
-	var tilemap = get_parent().get_parent().get_node_or_null("TileMap")
+	var tilemap := get_parent().get_parent().get_node_or_null("TileMap") as TileMap
 	if not tilemap:
 		return
 	var mouse_global = get_global_mouse_position()

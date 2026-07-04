@@ -1,9 +1,48 @@
 [gd_scene format=3]
 
-[ext_resource type="Script" path="res://scripts/parallax_background.gd" id="1_bg"]
+[ext_resource type="Texture2D" path="res://1.png" id="1_tex"]
+[ext_resource type="Texture2D" path="res://2.png" id="2_tex"]
+[ext_resource type="Texture2D" path="res://3.png" id="3_tex"]
+[ext_resource type="Texture2D" path="res://4.png" id="4_tex"]
 
-[node name="CanvasLayer" type="CanvasLayer"]
-layer = -1
+[node name="ParallaxBackground" type="Node2D"]
 
-[node name="Background" type="Node2D" parent="."]
-script = ExtResource("1_bg")
+[node name="Layer0" type="Parallax2D" parent="."]
+scroll_scale = Vector2(0.0125, 0.0025)
+repeat_size = Vector2(1152, 0)
+repeat_times = Vector2i(10, 1)
+
+[node name="Sprite" type="Sprite2D" parent="Layer0"]
+texture = ExtResource("1_tex")
+centered = false
+scale = Vector2(2, 2)
+
+[node name="Layer1" type="Parallax2D" parent="."]
+scroll_scale = Vector2(0.0375, 0.0075)
+repeat_size = Vector2(1152, 0)
+repeat_times = Vector2i(10, 1)
+
+[node name="Sprite" type="Sprite2D" parent="Layer1"]
+texture = ExtResource("2_tex")
+centered = false
+scale = Vector2(2, 2)
+
+[node name="Layer2" type="Parallax2D" parent="."]
+scroll_scale = Vector2(0.1, 0.02)
+repeat_size = Vector2(1152, 0)
+repeat_times = Vector2i(10, 1)
+
+[node name="Sprite" type="Sprite2D" parent="Layer2"]
+texture = ExtResource("3_tex")
+centered = false
+scale = Vector2(2, 2)
+
+[node name="Layer3" type="Parallax2D" parent="."]
+scroll_scale = Vector2(0.2, 0.04)
+repeat_size = Vector2(1152, 0)
+repeat_times = Vector2i(10, 1)
+
+[node name="Sprite" type="Sprite2D" parent="Layer3"]
+texture = ExtResource("4_tex")
+centered = false
+scale = Vector2(2, 2)
