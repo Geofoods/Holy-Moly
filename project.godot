@@ -19,6 +19,7 @@ config/icon="res://icon.svg"
 
 Inventory="*res://scripts/inventory.gd"
 SFX="*res://scripts/sfx_manager.gd"
+Bestiary="*res://scripts/bestiary_data.gd"
 
 [physics]
 
