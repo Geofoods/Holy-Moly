@@ -19,6 +19,7 @@ const DIRT_PARTICLE_AMOUNT = 18
 
 var mole_hole_scene := preload("res://scenes/molehole.tscn")
 var mole_hole_instance: Node2D = null
+var bomb_scene := preload("res://bomb.tscn")
 var was_on_floor := true
 var is_sideways_jump := false
 var is_digging := false
@@ -89,6 +90,9 @@ func _ready() -> void:
 		InputMap.action_add_event("dig_dash", ev_shift)
 
 	_setup_inventory_actions()
+	Inventory.initialize()
+	if has_node("Weapon"):
+		$Weapon.hide()
 
 func _setup_inventory_actions() -> void:
 	var keys := [KEY_1, KEY_2, KEY_3]
@@ -239,17 +243,32 @@ func _use_inventory_slot(slot: int) -> void:
 	if item.item_name == "Health Potion":
 		if health >= 6:
 			return
-		Inventory.use_item(slot, self)
+		Inventory.use_item(slot)
+		heal(1)
 	elif item.item_name == "Speed Boots":
 		if speed_boost_active:
 			return
-		Inventory.use_item(slot, self)
+		Inventory.use_item(slot)
 		_activate_speed_boost()
 	elif item.item_name == "Shield":
 		if shield_active:
 			return
-		Inventory.use_item(slot, self)
+		Inventory.use_item(slot)
 		_activate_shield()
+	elif item.item_name == "Shovel":
+		_toggle_weapon()
+	elif item.item_name == "Bomb":
+		if Inventory.use_item(slot):
+			_place_bomb()
+
+func _toggle_weapon() -> void:
+	if has_node("Weapon"):
+		$Weapon.visible = not $Weapon.visible
+
+func _place_bomb() -> void:
+	var bomb = bomb_scene.instantiate()
+	get_parent().add_child(bomb)
+	bomb.global_position = global_position
 
 func heal(amount: float) -> bool:
 	if health >= 6:
@@ -383,7 +402,9 @@ func deflect_pause() -> void:
 
 func start_dig_dash() -> void:
 	is_digging = true
+	var weapon_was_visible := false
 	if has_node("Weapon"):
+		weapon_was_visible = $Weapon.visible
 		$Weapon.hide()
 	$AnimatedSprite2D.play("dig")
 	
@@ -406,6 +427,6 @@ func start_dig_dash() -> void:
 	is_tunneling = false
 	velocity.x = 0
 	velocity.y = JUMP_VELOCITY
-	if has_node("Weapon"):
+	if has_node("Weapon") and weapon_was_visible:
 		$Weapon.show()
 	$AnimatedSprite2D.play("jumpbold")

@@ -158,6 +158,7 @@ func _on_play_pressed() -> void:
 		tip_tween.kill()
 	var play_btn = $CenterContainer/VBoxContainer/ButtonContainer/PlayButton
 	play_btn.disabled = true
+	Inventory.reset()
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 	get_tree().root.add_child(transition)
 	transition.change_to("res://scenes/main.tscn")
@@ -167,6 +168,7 @@ func _on_tutorial_pressed() -> void:
 		tip_tween.kill()
 	var tutorial_btn = $CenterContainer/VBoxContainer/ButtonContainer/TutorialButton
 	tutorial_btn.disabled = true
+	Inventory.reset()
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 	get_tree().root.add_child(transition)
 	transition.change_to("res://scenes/tutorial.tscn")

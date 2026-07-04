@@ -105,6 +105,8 @@ func _update_trail() -> void:
 		trail.add_point(point)
 
 func _unhandled_input(event: InputEvent) -> void:
+	if not visible:
+		return
 	if event is InputEventMouseButton and event.pressed:
 		if event.button_index == MOUSE_BUTTON_LEFT and not is_swinging and not is_parrying:
 			swing()
