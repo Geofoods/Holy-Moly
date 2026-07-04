@@ -48,6 +48,7 @@ var health: float = 6.0:
 				get_tree().root.add_child(transition)
 				transition.change_to("res://scenes/game_over.tscn")
 
+var tilemap: TileMap = null
 var _heart_base_scale := Vector2.ONE
 
 func _animate_heart_damage(heart_node: Node2D) -> void:
@@ -62,6 +63,7 @@ func _ready() -> void:
 	await get_tree().process_frame
 	self.health = health
 	add_to_group("mole")
+	tilemap = get_parent().get_node_or_null("TileMap")
 	var ev_w = InputEventKey.new()
 	ev_w.keycode = KEY_W
 	InputMap.action_add_event("ui_accept", ev_w)
@@ -105,6 +107,16 @@ func _physics_process(delta: float) -> void:
 	elif is_tunneling:
 		velocity.x = tunnel_direction * TUNNEL_SPEED
 		move_and_slide()
+		if tilemap:
+			for i in get_slide_collision_count():
+				var collision = get_slide_collision(i)
+				var collider = collision.get_collider()
+				if collider is TileMap:
+					var tile_pos = collider.local_to_map(collider.to_local(collision.get_position()))
+					collider.erase_cell(0, tile_pos)
+					if dirt_spray:
+						dirt_spray.restart()
+						dirt_spray.emitting = true
 		was_on_floor = is_on_floor()
 		return
 
@@ -202,7 +214,7 @@ func remove_mole_hole() -> void:
 		mole_hole_instance.queue_free()
 		mole_hole_instance = null
 
-func take_damage(amount: float, source_position: Vector2 = Vector2.ZERO, has_source: bool = false) -> void:
+func take_damage(amount: float, source_position: Vector2 = Vector2.ZERO, has_source: bool = false, is_projectile: bool = false) -> void:
 	if invulnerable or health <= 0:
 		return
 	health -= amount
@@ -214,10 +226,33 @@ func take_damage(amount: float, source_position: Vector2 = Vector2.ZERO, has_sou
 		if knockback_direction == 0.0:
 			knockback_direction = -1.0 if $AnimatedSprite2D.flip_h else 1.0
 	velocity.x = knockback_direction * KNOCKBACK_X
+	if is_projectile:
+		screen_shake(22.0, 0.4)
+		hit_freeze(0.06)
+	else:
+		screen_shake(12.0, 0.3)
 	get_tree().create_timer(1.0).timeout.connect(_end_invulnerability)
 
 func _end_invulnerability() -> void:
 	invulnerable = false
+
+func hit_freeze(duration: float) -> void:
+	Engine.time_scale = 0.05
+	await get_tree().create_timer(duration * 0.05).timeout
+	Engine.time_scale = 1.0
+
+func screen_shake(intensity: float, duration: float) -> void:
+	var camera := get_node_or_null("Camera2D")
+	if not camera:
+		return
+	var tween := create_tween()
+	var steps := 8
+	var step_time := duration / steps
+	for i in steps:
+		var offset := Vector2(randf_range(-intensity, intensity), randf_range(-intensity, intensity))
+		intensity *= 0.8
+		tween.tween_property(camera, "offset", offset, step_time).set_trans(Tween.TRANS_SINE)
+	tween.tween_property(camera, "offset", Vector2.ZERO, step_time).set_trans(Tween.TRANS_SINE)
 
 func start_dig_dash() -> void:
 	is_digging = true

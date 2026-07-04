@@ -1,10 +1,9 @@
-[gd_scene format=3 uid="uid://sywnvp23knqg"]
+[gd_scene format=3 uid="uid://5yvhb0s8snt2"]
 
 [ext_resource type="PackedScene" uid="uid://p1of6ummc17j" path="res://scenes/mole.tscn" id="1_o5qli"]
 [ext_resource type="PackedScene" uid="uid://dnp3icrndkjm8" path="res://scenes/enemy.tscn" id="2_enemy"]
 [ext_resource type="PackedScene" uid="uid://c6xus6tuhcmfo" path="res://scenes/heart.tscn" id="3_sugp2"]
 [ext_resource type="PackedScene" uid="uid://d2i1x8x1y6qa" path="res://scenes/pause_menu.tscn" id="4_pause"]
-[ext_resource type="Script" uid="uid://gkv1us5qnfhm" path="res://scripts/terrain_generator.gd" id="6_terrain"]
 [ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="6_tipki"]
 [ext_resource type="Shader" uid="uid://qjf1ibg12yh2" path="res://shaders/vignette.gdshader" id="7_vignette"]
 [ext_resource type="PackedScene" path="res://scenes/parallax_background.tscn" id="8_parallax"]
@@ -44,11 +43,7 @@ shader_parameter/opacity = 1.0
 
 [node name="ParallaxBackground" parent="." unique_id=211574599 instance=ExtResource("8_parallax")]
 
-[node name="TerrainGenerator" type="Node2D" parent="." unique_id=1834868234]
-script = ExtResource("6_terrain")
-
-
-[node name="DeathPlane" parent="." instance=ExtResource("10_deathplane")]
+[node name="DeathPlane" parent="." unique_id=1942262957 instance=ExtResource("10_deathplane")]
 
 [node name="CharacterBody2D2" parent="." unique_id=501808252 instance=ExtResource("1_o5qli")]
 position = Vector2(-28, -116)
