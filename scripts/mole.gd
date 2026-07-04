@@ -48,6 +48,7 @@ var health: float = 6.0:
 				get_tree().root.add_child(transition)
 				transition.change_to("res://scenes/game_over.tscn")
 
+var tilemap: TileMap = null
 var _heart_base_scale := Vector2.ONE
 
 func _animate_heart_damage(heart_node: Node2D) -> void:
@@ -62,6 +63,7 @@ func _ready() -> void:
 	await get_tree().process_frame
 	self.health = health
 	add_to_group("mole")
+	tilemap = get_parent().get_node_or_null("TileMap")
 	var ev_w = InputEventKey.new()
 	ev_w.keycode = KEY_W
 	InputMap.action_add_event("ui_accept", ev_w)
@@ -105,6 +107,16 @@ func _physics_process(delta: float) -> void:
 	elif is_tunneling:
 		velocity.x = tunnel_direction * TUNNEL_SPEED
 		move_and_slide()
+		if tilemap:
+			for i in get_slide_collision_count():
+				var collision = get_slide_collision(i)
+				var collider = collision.get_collider()
+				if collider is TileMap:
+					var tile_pos = collider.local_to_map(collider.to_local(collision.get_position()))
+					collider.erase_cell(0, tile_pos)
+					if dirt_spray:
+						dirt_spray.restart()
+						dirt_spray.emitting = true
 		was_on_floor = is_on_floor()
 		return
 
