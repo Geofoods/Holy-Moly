@@ -6,47 +6,57 @@
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_chest"]
 size = Vector2(100, 80)
 
-[node name="Chest" type="Area2D"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_detect"]
+size = Vector2(160, 140)
+
+[node name="Chest" type="RigidBody2D"]
 collision_layer = 1
 collision_mask = 1
-script = ExtResource("1_chest")
+gravity_scale = 0.0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, -40)
 shape = SubResource("RectangleShape2D_chest")
 
-[node name="Base" type="ColorRect" parent="."]
+[node name="Interaction" type="Area2D" parent="."]
+script = ExtResource("1_chest")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Interaction"]
+position = Vector2(0, -40)
+shape = SubResource("RectangleShape2D_detect")
+
+[node name="Base" type="ColorRect" parent="Interaction"]
 offset_left = -45.0
 offset_top = -50.0
 offset_right = 45.0
 offset_bottom = 10.0
 color = Color(0.4, 0.25, 0.12, 1)
 
-[node name="Band" type="ColorRect" parent="."]
+[node name="Band" type="ColorRect" parent="Interaction"]
 offset_left = -45.0
 offset_top = -22.0
 offset_right = 45.0
 offset_bottom = -10.0
 color = Color(0.18, 0.11, 0.05, 1)
 
-[node name="Lock" type="ColorRect" parent="."]
+[node name="Lock" type="ColorRect" parent="Interaction"]
 offset_left = -8.0
 offset_top = -24.0
 offset_right = 8.0
 offset_bottom = -8.0
 color = Color(0.85, 0.7, 0.2, 1)
 
-[node name="Lid" type="Node2D" parent="."]
+[node name="Lid" type="Node2D" parent="Interaction"]
 position = Vector2(0, -50)
 
-[node name="LidRect" type="ColorRect" parent="Lid"]
+[node name="LidRect" type="ColorRect" parent="Interaction/Lid"]
 offset_left = -45.0
 offset_top = 0.0
 offset_right = 45.0
 offset_bottom = 14.0
 color = Color(0.55, 0.38, 0.16, 1)
 
-[node name="Glow" type="ColorRect" parent="."]
+[node name="Glow" type="ColorRect" parent="Interaction"]
 visible = false
 offset_left = -30.0
 offset_top = -95.0
@@ -54,7 +64,7 @@ offset_right = 30.0
 offset_bottom = -35.0
 color = Color(1.0, 0.9, 0.4, 1)
 
-[node name="PromptLabel" type="Label" parent="."]
+[node name="PromptLabel" type="Label" parent="Interaction"]
 visible = false
 position = Vector2(0, -70)
 horizontal_alignment = 1

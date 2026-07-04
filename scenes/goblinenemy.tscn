@@ -1,0 +1,61 @@
+[gd_scene format=3 uid="uid://k06dbe7sq1ph"]
+
+[ext_resource type="Script" uid="uid://vv8xs2em0h6" path="res://scripts/goblin_enemy.gd" id="1_u888v"]
+[ext_resource type="Texture2D" uid="uid://fwunuhhl4glm" path="res://golblin.webp" id="2_u888v"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_3x5wh"]
+atlas = ExtResource("2_u888v")
+region = Rect2(0, 0, 620, 414)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_165p4"]
+atlas = ExtResource("2_u888v")
+region = Rect2(620, 0, 620, 414)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_45hj4"]
+atlas = ExtResource("2_u888v")
+region = Rect2(1240, 0, 620, 414)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_d2pvn"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_3x5wh")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_165p4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_45hj4")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(84, 142)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_cy55b"]
+size = Vector2(124, 156)
+
+[node name="Enemy" type="CharacterBody2D" unique_id=866104770]
+position = Vector2(2, -1)
+scale = Vector2(0.5, 0.5)
+script = ExtResource("1_u888v")
+
+[node name="Visual" type="AnimatedSprite2D" parent="." unique_id=2010235303]
+position = Vector2(-42, 23.499985)
+scale = Vector2(0.5, 0.5)
+sprite_frames = SubResource("SpriteFrames_d2pvn")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1102294679]
+position = Vector2(-50, 33)
+shape = SubResource("RectangleShape2D_body")
+
+[node name="Area2D" type="Area2D" parent="." unique_id=1008187029]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=1028128716]
+position = Vector2(-52, 30)
+shape = SubResource("RectangleShape2D_cy55b")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1139016147]
