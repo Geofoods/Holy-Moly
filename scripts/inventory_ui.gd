@@ -9,6 +9,7 @@ var slot_icons: Array = []
 var slot_textures: Array = []
 var slot_labels: Array = []
 var _placeholder_textures: Dictionary = {}
+var container: Node2D = null
 
 func _make_colored_texture(color: Color) -> Texture2D:
 	var key := str(color)
@@ -27,7 +28,7 @@ func _ready() -> void:
 	_update_all_slots()
 
 func _build_ui() -> void:
-	var container := Node2D.new()
+	container = Node2D.new()
 	container.name = "InventoryContainer"
 	add_child(container)
 
@@ -101,6 +102,10 @@ func _build_ui() -> void:
 
 	var screen_size := get_viewport().get_visible_rect().size
 	container.position = Vector2(screen_size.x / 2, screen_size.y - SLOT_SIZE.y - 16)
+
+func reposition(new_position: Vector2) -> void:
+	if container:
+		container.position = new_position
 
 func _on_slots_changed(slot_indices: Array) -> void:
 	for idx in slot_indices:

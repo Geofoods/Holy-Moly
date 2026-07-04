@@ -14,6 +14,7 @@ func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	area_entered.connect(_on_area_entered)
 	get_tree().create_timer(LIFETIME).timeout.connect(queue_free)
+	SFX.play("enemy_fire", global_position)
 
 func _physics_process(delta: float) -> void:
 	position += velocity * delta

@@ -14,6 +14,7 @@
 [ext_resource type="PackedScene" uid="uid://brmtyiqcy1wkv" path="res://scenes/inventory_ui.tscn" id="12_invui"]
 [ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="13_ikbui"]
 [ext_resource type="PackedScene" path="res://scenes/firefly_spawner.tscn" id="14_spawner"]
+[ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="15_xo5qq"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.1, 0.1, 0.12, 0.85)
@@ -147,6 +148,18 @@ script = ExtResource("13_ikbui")
 position = Vector2(3008, 1669)
 shape = SubResource("RectangleShape2D_vqvml")
 
-[node name="FireflySpawner" parent="." instance=ExtResource("14_spawner")]
+[node name="FireflySpawner" parent="." unique_id=1006708542 instance=ExtResource("14_spawner")]
+
+[node name="Costume5" type="Sprite2D" parent="." unique_id=1329603915]
+position = Vector2(3496, 1289)
+scale = Vector2(13.883869, 1.7175142)
+texture = ExtResource("15_xo5qq")
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=630450445]
+offset_left = 248.0
+offset_top = 1499.9999
+offset_right = 6731.0
+offset_bottom = 3221.0
+color = Color(0, 0, 0, 1)
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]

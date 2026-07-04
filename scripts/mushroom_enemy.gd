@@ -73,6 +73,7 @@ func die() -> void:
 		return
 	dead = true
 	fuse_active = false
+	SFX.play("explosion", global_position)
 	_explode()
 	set_physics_process(false)
 	hurtbox.set_deferred("monitorable", false)

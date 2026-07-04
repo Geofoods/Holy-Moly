@@ -115,6 +115,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_start_parry()
 
 func _start_parry() -> void:
+	SFX.play("parry_activate", global_position)
 	is_parrying = true
 	parry_time_left = PARRY_DURATION
 	hitbox.monitoring = true
@@ -141,6 +142,7 @@ func _on_parry_area_entered(area: Area2D) -> void:
 			_deflect_bullet(area)
 
 func swing() -> void:
+	SFX.play("swing", global_position)
 	is_swinging = true
 	hitbox.monitoring = true
 	hit_enemies = []
@@ -177,6 +179,7 @@ func _on_hitbox_area_entered(area: Area2D) -> void:
 		var enemy = area.get_parent()
 		if enemy not in hit_enemies:
 			hit_enemies.append(enemy)
+			SFX.play("enemy_hit", enemy.global_position)
 
 func _deflect_bullet(bullet: Node) -> void:
 	var target_pos := get_global_mouse_position()
@@ -291,6 +294,7 @@ func _update_parry_indicator() -> void:
 func dig_slash() -> void:
 	if is_swinging or is_parrying:
 		return
+	SFX.play("swing", global_position)
 	is_swinging = true
 	visible = true
 	hitbox.monitoring = true

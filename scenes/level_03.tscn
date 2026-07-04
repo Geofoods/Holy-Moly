@@ -13,6 +13,8 @@
 [ext_resource type="PackedScene" uid="uid://brmtyiqcy1wkv" path="res://scenes/inventory_ui.tscn" id="12_invui"]
 [ext_resource type="PackedScene" uid="uid://cdxu1kg5or16d" path="res://candle.tscn" id="12_yv1v3"]
 [ext_resource type="PackedScene" path="res://scenes/firefly_spawner.tscn" id="13_spawner"]
+[ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="14_fpl26"]
+[ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="15_fevqv"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.1, 0.1, 0.12, 0.85)
@@ -43,6 +45,9 @@ shader = ExtResource("7_vignette")
 shader_parameter/inner_radius = 0.25
 shader_parameter/outer_radius = 0.55
 shader_parameter/darkness = 0.4
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1k21b"]
+size = Vector2(4079.5, 933)
 
 [node name="Node2D2" type="Node2D" unique_id=1979316305]
 
@@ -176,6 +181,25 @@ position = Vector2(3101, -261)
 [node name="chest5" parent="." unique_id=2038037181 instance=ExtResource("11_jjwm3")]
 position = Vector2(-206, 937)
 
-[node name="FireflySpawner" parent="." instance=ExtResource("13_spawner")]
+[node name="FireflySpawner" parent="." unique_id=1274839951 instance=ExtResource("13_spawner")]
+
+[node name="Costume5" type="Sprite2D" parent="." unique_id=1462549335]
+position = Vector2(3761.9995, 2229)
+scale = Vector2(13.883869, 1.7175142)
+texture = ExtResource("14_fpl26")
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=1080348679]
+offset_left = 537.9995
+offset_top = 2432.0
+offset_right = 7020.9995
+offset_bottom = 4153.0
+color = Color(0, 0, 0, 1)
+
+[node name="nextlevel" type="Area2D" parent="." unique_id=750996591]
+script = ExtResource("15_fevqv")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="nextlevel" unique_id=624748274]
+position = Vector2(3815, 2720)
+shape = SubResource("RectangleShape2D_1k21b")
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]

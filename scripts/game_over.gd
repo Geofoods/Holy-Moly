@@ -65,12 +65,14 @@ func _set_buttons_enabled(enabled: bool) -> void:
 	$CenterContainer/VBoxContainer/ButtonContainer/CancelButton.disabled = not enabled
 
 func _on_play_again_pressed():
+	SFX.play_ui("ui_click")
 	Inventory.reset()
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 	get_tree().root.add_child(transition)
 	transition.change_to(Inventory.current_level_path)
 
 func _on_cancel_pressed():
+	SFX.play_ui("ui_click")
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 	get_tree().root.add_child(transition)
 	transition.change_to("res://scenes/intro.tscn")
