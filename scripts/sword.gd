@@ -176,8 +176,6 @@ func _on_hitbox_area_entered(area: Area2D) -> void:
 		var enemy = area.get_parent()
 		if enemy not in hit_enemies:
 			hit_enemies.append(enemy)
-			if enemy.has_method("die"):
-				enemy.die()
 
 func _deflect_bullet(bullet: Node) -> void:
 	var target_pos := get_global_mouse_position()

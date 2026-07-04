@@ -401,8 +401,8 @@ func spawn_dirt_particles(world_position: Vector2) -> void:
 	material.gravity = Vector3(0.0, 980.0, 0.0)
 	material.initial_velocity_min = 140.0
 	material.initial_velocity_max = 260.0
-	material.scale_min = 2.0
-	material.scale_max = 4.0
+	material.scale_min = 4.0
+	material.scale_max = 8.0
 	material.color = Color(0.45, 0.30, 0.16, 1.0)
 	get_tree().current_scene.add_child(dirt)
 	dirt.emitting = true

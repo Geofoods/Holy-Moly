@@ -42,9 +42,14 @@ func _open_chest() -> void:
 	_grant_item()
 
 func _grant_item() -> void:
-	if item == null:
+	if item != null:
+		Inventory.add_item(item)
 		return
-	Inventory.add_item(item)
+
+	var bomb := preload("res://resources/bomb.tres")
+	var drill := preload("res://resources/drill.tres")
+	var loot := bomb if randf() < 0.5 else drill
+	Inventory.add_item(loot)
 
 func _play_open_animation() -> void:
 	var lid = $Lid

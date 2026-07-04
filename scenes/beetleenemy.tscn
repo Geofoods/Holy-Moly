@@ -1,0 +1,44 @@
+[gd_scene format=3 uid="uid://u77s8ew4xenh"]
+
+[ext_resource type="Script" uid="uid://vuo21m773its" path="res://scripts/enemy.gd" id="1_cwycq"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(318, 152)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hurtbox"]
+size = Vector2(411, 211)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hitbox"]
+size = Vector2(393, 228)
+
+[node name="Enemy" type="CharacterBody2D" unique_id=866104770]
+position = Vector2(2, -1)
+scale = Vector2(0.5, 0.5)
+script = ExtResource("1_cwycq")
+
+[node name="Visual" type="AnimatedSprite2D" parent="." unique_id=2010235303]
+position = Vector2(48, -48)
+animation = &""
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1102294679]
+position = Vector2(10, 12)
+shape = SubResource("RectangleShape2D_body")
+
+[node name="RayRight" type="RayCast2D" parent="." unique_id=804185459]
+target_position = Vector2(200, 40)
+
+[node name="RayLeft" type="RayCast2D" parent="." unique_id=1608081044]
+target_position = Vector2(-200, 40)
+
+[node name="Hurtbox" type="Area2D" parent="." unique_id=148008664]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox" unique_id=2070211923]
+position = Vector2(-17.5, -9.5)
+shape = SubResource("RectangleShape2D_hurtbox")
+
+[node name="Hitbox" type="Area2D" parent="." unique_id=1990850546]
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox" unique_id=904549536]
+position = Vector2(-26, -13)
+shape = SubResource("RectangleShape2D_hitbox")
