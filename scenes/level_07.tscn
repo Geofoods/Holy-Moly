@@ -8,6 +8,7 @@
 [ext_resource type="Shader" uid="uid://qjf1ibg12yh2" path="res://shaders/vignette.gdshader" id="7_vignette"]
 [ext_resource type="PackedScene" path="res://scenes/parallax_background.tscn" id="8_parallax"]
 [ext_resource type="PackedScene" path="res://scenes/death_plane.tscn" id="10_deathplane"]
+[ext_resource type="TileSet" uid="uid://d07lidnoim34q" path="res://tileset.tres" id="10_jqe1v"]
 [ext_resource type="PackedScene" uid="uid://brmtyiqcy1wkv" path="res://scenes/inventory_ui.tscn" id="12_invui"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
@@ -100,6 +101,7 @@ grow_vertical = 2
 mouse_filter = 2
 
 [node name="TileMap" type="TileMap" parent="." unique_id=1753828275]
+tile_set = ExtResource("10_jqe1v")
 format = 2
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
