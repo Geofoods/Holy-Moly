@@ -282,6 +282,9 @@ animations = [{
 "speed": 5.0
 }]
 
+[sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_obc8e"]
+polygon = PackedVector2Array(20, -162, -88, -132, -142, -78, -190, -4, -196, 12, -284, 28, -284, 52, -252, 134, -202, 144, -74, 116, -8, 148, 52, 128, 114, 138, 146, 118, 198, 118, 202, 140, 314, 100, 304, 76, 242, 18, 214, 10, 192, 2, 198, -94, 166, -124, 122, -160, 40, -166)
+
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_gmfyf"]
 radius = 136.00168
 height = 368.12317
@@ -300,10 +303,11 @@ texture = ExtResource("15_obc8e")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1243241645]
 sprite_frames = SubResource("SpriteFrames_ecm7r")
-animation = &"tunnel"
+animation = &"dig"
 autoplay = "idlebold"
-frame = 2
-frame_progress = 0.96202683
+
+[node name="LightOccluder2D" type="LightOccluder2D" parent="AnimatedSprite2D" unique_id=1518452610]
+occluder = SubResource("OccluderPolygon2D_obc8e")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1888999731]
 position = Vector2(4, -73)

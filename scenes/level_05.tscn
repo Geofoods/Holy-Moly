@@ -13,6 +13,7 @@
 [ext_resource type="PackedScene" uid="uid://brmtyiqcy1wkv" path="res://scenes/inventory_ui.tscn" id="12_invui"]
 [ext_resource type="PackedScene" uid="uid://dnp3icrndkjm8" path="res://scenes/antenemy.tscn" id="12_pojnb"]
 [ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="12_rt7wb"]
+[ext_resource type="PackedScene" uid="uid://cdxu1kg5or16d" path="res://candle.tscn" id="14_d8cpw"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.1, 0.1, 0.12, 0.85)
@@ -405,6 +406,54 @@ position = Vector2(2544, -382)
 
 [node name="Enemy9" parent="." unique_id=1183022241 instance=ExtResource("12_pojnb")]
 position = Vector2(1615, -34)
+
+[node name="candle" parent="." unique_id=546040729 instance=ExtResource("14_d8cpw")]
+position = Vector2(-41, -1236)
+scale = Vector2(0.5, 0.5)
+
+[node name="candle2" parent="." unique_id=926166913 instance=ExtResource("14_d8cpw")]
+position = Vector2(1000, -1317)
+scale = Vector2(0.5, 0.5)
+
+[node name="candle3" parent="." unique_id=1826928843 instance=ExtResource("14_d8cpw")]
+position = Vector2(352, -600)
+scale = Vector2(0.5, 0.5)
+
+[node name="candle4" parent="." unique_id=1560969481 instance=ExtResource("14_d8cpw")]
+position = Vector2(1961, -1075)
+scale = Vector2(0.5, 0.5)
+
+[node name="candle5" parent="." unique_id=265983052 instance=ExtResource("14_d8cpw")]
+position = Vector2(2361, -1874)
+scale = Vector2(0.5, 0.5)
+
+[node name="candle6" parent="." unique_id=1346781070 instance=ExtResource("14_d8cpw")]
+position = Vector2(1244, -2115)
+scale = Vector2(0.5, 0.5)
+
+[node name="candle7" parent="." unique_id=1284076784 instance=ExtResource("14_d8cpw")]
+position = Vector2(2757, -996)
+scale = Vector2(0.5, 0.5)
+
+[node name="candle8" parent="." unique_id=484407656 instance=ExtResource("14_d8cpw")]
+position = Vector2(3483, -834)
+scale = Vector2(0.5, 0.5)
+
+[node name="candle9" parent="." unique_id=704035858 instance=ExtResource("14_d8cpw")]
+position = Vector2(4120, -992)
+scale = Vector2(0.5, 0.5)
+
+[node name="candle10" parent="." unique_id=136818011 instance=ExtResource("14_d8cpw")]
+position = Vector2(4288, -1309)
+scale = Vector2(0.5, 0.5)
+
+[node name="candle11" parent="." unique_id=157544253 instance=ExtResource("14_d8cpw")]
+position = Vector2(4199, -1711)
+scale = Vector2(0.5, 0.5)
+
+[node name="candle12" parent="." unique_id=1123406741 instance=ExtResource("14_d8cpw")]
+position = Vector2(2683, 288)
+scale = Vector2(0.5, 0.5)
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="area_entered" from="nextlevel" to="DeathPlane" method="_on_nextlevel_area_entered"]
