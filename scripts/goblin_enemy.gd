@@ -15,6 +15,7 @@ var mushroom_scene := preload("res://explodingmushroom.tscn")
 
 @onready var hurtbox: Area2D = $Area2D
 @onready var visual: AnimatedSprite2D = $Visual
+var _base_scale_x: float
 
 func _ready() -> void:
 	hurtbox.area_entered.connect(_on_hurtbox_area_entered)
@@ -22,6 +23,7 @@ func _ready() -> void:
 	hurtbox.add_to_group("enemy_hurtbox")
 	visual.z_index = -1
 	visual.play()
+	_base_scale_x = abs(visual.scale.x)
 
 func _physics_process(delta: float) -> void:
 	_find_target()
@@ -65,9 +67,8 @@ func _find_target() -> void:
 func _update_facing() -> void:
 	if not target_mole or not is_instance_valid(target_mole):
 		return
-	var dir := (target_mole.global_position - global_position).normalized()
-	var facing := 1 if dir.x >= 0 else -1
-	visual.scale.x = -abs(visual.scale.x) * facing
+	var diff := target_mole.global_position.x - global_position.x
+	visual.scale.x = -_base_scale_x if diff >= 0 else _base_scale_x
 
 func _throw_mushroom() -> void:
 	SFX.play("enemy_fire", global_position)

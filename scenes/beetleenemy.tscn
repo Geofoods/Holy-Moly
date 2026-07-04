@@ -35,7 +35,6 @@ size = Vector2(362, 204)
 position = Vector2(2, -1)
 scale = Vector2(0.5, 0.5)
 collision_layer = 4
-collision_mask = 1
 script = ExtResource("1_cwycq")
 
 [node name="Visual" type="AnimatedSprite2D" parent="." unique_id=2010235303]
@@ -52,5 +51,3 @@ shape = SubResource("RectangleShape2D_body")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=1028128716]
 position = Vector2(-41, -10)
 shape = SubResource("RectangleShape2D_cy55b")
-
-[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1139016147]
