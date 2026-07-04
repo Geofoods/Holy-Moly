@@ -46,8 +46,17 @@ func _physics_process(delta: float) -> void:
 	_update_facing()
 
 	throw_cooldown -= delta
-	if throw_cooldown <= 0.0 and target_mole:
+	if throw_cooldown <= 0.0 and target_mole and _is_on_screen():
 		_throw_mushroom()
+
+func _is_on_screen() -> bool:
+	var camera := get_viewport().get_camera_2d()
+	if not camera:
+		return true
+	var viewport_size := get_viewport().get_visible_rect().size
+	var visible_world := viewport_size / camera.zoom
+	var screen_rect := Rect2(camera.global_position - visible_world * 0.5, visible_world)
+	return screen_rect.has_point(global_position)
 
 func _find_target() -> void:
 	if target_mole == null or not is_instance_valid(target_mole):

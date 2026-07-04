@@ -46,6 +46,14 @@ func _explode() -> void:
 				var tp := Vector2i(center_tile.x + dx, center_tile.y + dy)
 				sfx.break_tile(tilemap, tp, get_parent())
 
+	for hurtbox in get_tree().get_nodes_in_group("enemy_hurtbox"):
+		if not is_instance_valid(hurtbox):
+			continue
+		var enemy := hurtbox.get_parent()
+		if enemy and is_instance_valid(enemy) and enemy.has_method("die"):
+			if global_position.distance_to(enemy.global_position) <= explosion_radius:
+				enemy.die()
+
 	var tween := create_tween()
 	tween.tween_property(self, "scale", Vector2.ZERO, 0.2).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_BACK)
 	tween.tween_callback(queue_free)

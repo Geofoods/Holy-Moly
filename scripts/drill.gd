@@ -7,9 +7,19 @@ var velocity := Vector2.ZERO
 var elapsed := 0.0
 var prev_tile_pos := Vector2i(999999, 999999)
 
+func _ready() -> void:
+	area_entered.connect(_on_area_entered)
+
 func setup(dir: Vector2) -> void:
 	velocity = dir * SPEED
 	rotation = velocity.angle() + PI / 2
+
+func _on_area_entered(area: Area2D) -> void:
+	if not area.is_in_group("enemy_hurtbox"):
+		return
+	var enemy := area.get_parent()
+	if enemy and is_instance_valid(enemy) and enemy.has_method("die"):
+		enemy.die()
 
 func _process(delta: float) -> void:
 	elapsed += delta
