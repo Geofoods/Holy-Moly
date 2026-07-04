@@ -107,7 +107,11 @@ func _update_slot(idx: int) -> void:
 		style.bg_color = Color(0.15, 0.15, 0.18, 0.9)
 		style.border_color = Color(0.5, 0.5, 0.6, 1)
 		icon_rect.color = item.icon_color
-		icon_label.text = item.icon_text
+		var count: int = Inventory.slot_counts[idx] if idx < Inventory.slot_counts.size() else 0
+		if count > 1:
+			icon_label.text = item.icon_text + " " + str(count)
+		else:
+			icon_label.text = item.icon_text
 	else:
 		style.bg_color = Color(0.1, 0.1, 0.12, 0.6)
 		style.border_color = Color(0.2, 0.2, 0.25, 1)

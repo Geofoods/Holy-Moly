@@ -47,22 +47,11 @@ func remove_item(slot: int) -> void:
 		slot_counts[slot] = 0
 		slots_changed.emit([slot])
 
-func use_item(slot: int, player: Node) -> bool:
+func use_item(slot: int) -> bool:
 	if slot < 0 or slot >= MAX_SLOTS or slots[slot] == null:
 		return false
 	var item: ItemData = slots[slot]
 	if not item.consumable:
-		return false
-	if item.item_name == "Health Potion":
-		if player.has_method("heal") and not player.heal(1):
-			return false
-	elif item.item_name == "Speed Boots":
-		if player.has_method("_activate_speed_boost"):
-			player._activate_speed_boost()
-	elif item.item_name == "Shield":
-		if player.has_method("_activate_shield"):
-			player._activate_shield()
-	else:
 		return false
 	slot_counts[slot] -= 1
 	if slot_counts[slot] <= 0:

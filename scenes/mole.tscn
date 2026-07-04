@@ -15,6 +15,7 @@
 [ext_resource type="Texture2D" uid="uid://0cey1y0shbd" path="res://sprites/molehurt.png" id="10_hurt"]
 [ext_resource type="Texture2D" uid="uid://5ubkucu56yps" path="res://sprites/molehurtground.png" id="11_hurtground"]
 [ext_resource type="Texture2D" uid="uid://dlc4hd7f6on2v" path="res://costume3 (1).svg" id="15_obc8e"]
+[ext_resource type="PackedScene" path="res://scenes/firefly_spawner.tscn" id="16_spawner"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_xipw3"]
 atlas = ExtResource("2_tss7c")
@@ -316,3 +317,5 @@ shape = SubResource("CapsuleShape2D_gmfyf")
 
 [node name="Weapon" parent="." unique_id=1867143522 instance=ExtResource("5_weapon")]
 position = Vector2(0, -60)
+
+[node name="FireflySpawner" parent="." instance=ExtResource("16_spawner")]

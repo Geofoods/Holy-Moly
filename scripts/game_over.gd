@@ -65,6 +65,7 @@ func _set_buttons_enabled(enabled: bool) -> void:
 	$CenterContainer/VBoxContainer/ButtonContainer/CancelButton.disabled = not enabled
 
 func _on_play_again_pressed():
+	Inventory.reset()
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 	get_tree().root.add_child(transition)
 	transition.change_to("res://scenes/main.tscn")
