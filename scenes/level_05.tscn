@@ -42,7 +42,7 @@ corner_radius_bottom_left = 8
 shader = ExtResource("7_vignette")
 shader_parameter/inner_radius = 0.25
 shader_parameter/outer_radius = 0.55
-shader_parameter/darkness = 0.95
+shader_parameter/darkness = 0.5
 
 [sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_ha83q"]
 polygon = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)

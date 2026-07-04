@@ -13,12 +13,13 @@ var is_climbing := false
 var climb_timer := 0.0
 @onready var hurtbox: Area2D = $Hurtbox
 @onready var hitbox: Area2D = $Hitbox
-@onready var visual: CanvasItem = $Visual
+@onready var visual: AnimatedSprite2D = $Visual
 
 func _ready() -> void:
 	hurtbox.area_entered.connect(_on_hurtbox_area_entered)
 	hitbox.body_entered.connect(_on_hitbox_body_entered)
 	hurtbox.add_to_group("enemy_hurtbox")
+	visual.play()
 
 func _physics_process(delta: float) -> void:
 	_find_target()
@@ -33,7 +34,7 @@ func _physics_process(delta: float) -> void:
 		if climb_timer <= 0.0 or is_on_ceiling():
 			is_climbing = false
 		move_and_slide()
-		visual.scale.x = abs(visual.scale.x) * sign(facing())
+		_update_visual_direction()
 		return
 
 	if not is_on_floor():
@@ -51,10 +52,11 @@ func _physics_process(delta: float) -> void:
 			direction *= -1
 
 	move_and_slide()
-	visual.scale.x = abs(visual.scale.x) * sign(facing())
+	_update_visual_direction()
 
-func facing() -> float:
-	return sign(velocity.x) if velocity.x != 0.0 else direction
+func _update_visual_direction() -> void:
+	var dir = sign(velocity.x) if velocity.x != 0.0 else direction
+	visual.scale.x = -abs(visual.scale.x) * sign(dir)
 
 func _find_target() -> void:
 	if target_mole == null or not is_instance_valid(target_mole):
@@ -67,7 +69,7 @@ func _on_hitbox_body_entered(body: Node) -> void:
 		body.take_damage(1, global_position, true)
 
 func _on_hurtbox_area_entered(area: Area2D) -> void:
-	if area == hitbox:
+	if area == hitbox or not area.monitoring:
 		return
 	die()
 
@@ -75,8 +77,28 @@ func die() -> void:
 	set_physics_process(false)
 	hitbox.set_deferred("monitoring", false)
 	hurtbox.set_deferred("monitorable", false)
-	var tween := create_tween()
-	tween.tween_property(visual, "modulate", Color.WHITE, 0.05)
-	tween.tween_property(visual, "modulate", Color(0.7, 0.2, 1.0), 0.05)
-	tween.tween_property(self, "scale", Vector2.ZERO, 0.2).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_BACK)
-	tween.tween_callback(queue_free)
+	visual.visible = false
+
+	var explosion := CPUParticles2D.new()
+	explosion.emitting = true
+	explosion.one_shot = true
+	explosion.amount = 16
+	explosion.lifetime = 0.5
+	explosion.explosiveness = 1.0
+	explosion.direction = Vector2.ZERO
+	explosion.spread = 360.0
+	explosion.initial_velocity_min = 100.0
+	explosion.initial_velocity_max = 250.0
+	explosion.gravity = Vector2(0, 200)
+	explosion.damping_min = 50.0
+	explosion.damping_max = 150.0
+	explosion.scale_amount_min = 1.5
+	explosion.scale_amount_max = 3.0
+	explosion.color = Color(0.5, 0.25, 0.1, 1.0)
+	var fade := Gradient.new()
+	fade.set_color(0, Color(0.7, 0.35, 0.1, 1.0))
+	fade.set_color(1, Color(0.3, 0.15, 0.05, 0.0))
+	explosion.color_ramp = fade
+	add_child(explosion)
+	explosion.global_position = global_position
+	get_tree().create_timer(0.6).timeout.connect(queue_free)
