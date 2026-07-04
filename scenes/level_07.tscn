@@ -40,13 +40,14 @@ shader_parameter/inner_radius = 0.25
 shader_parameter/outer_radius = 0.55
 shader_parameter/darkness = 0.6
 
-[node name="Node2D" type="Node2D" unique_id=1979316305]
+[node name="Node2D3" type="Node2D" unique_id=1979316305]
 
 [node name="ParallaxBackground" parent="." unique_id=211574599 instance=ExtResource("8_parallax")]
 
 [node name="DeathPlane" parent="." unique_id=1572879576 instance=ExtResource("10_deathplane")]
 
 [node name="CharacterBody2D2" parent="." unique_id=501808252 instance=ExtResource("1_o5qli")]
+z_index = 0
 position = Vector2(-16, -2399)
 scale = Vector2(0.25, 0.25)
 
