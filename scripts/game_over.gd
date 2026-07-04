@@ -68,7 +68,7 @@ func _on_play_again_pressed():
 	Inventory.reset()
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 	get_tree().root.add_child(transition)
-	transition.change_to("res://scenes/main.tscn")
+	transition.change_to(Inventory.current_level_path)
 
 func _on_cancel_pressed():
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()

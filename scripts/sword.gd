@@ -88,7 +88,8 @@ func _update_parry(delta: float) -> void:
 
 func _update_trail() -> void:
 	var tip_offset := 330.0
-	var tip_pos := global_position + Vector2(cos(global_rotation), sin(global_rotation)) * tip_offset
+	var dir := Vector2(cos(sprite.global_rotation), sin(sprite.global_rotation))
+	var tip_pos := sprite.global_position + dir * tip_offset
 
 	if is_swinging:
 		trail_points.push_front(tip_pos)

@@ -12,6 +12,7 @@
 [ext_resource type="PackedScene" uid="uid://bcd57whed7bys" path="res://chest.tscn" id="11_jjwm3"]
 [ext_resource type="PackedScene" uid="uid://brmtyiqcy1wkv" path="res://scenes/inventory_ui.tscn" id="12_invui"]
 [ext_resource type="PackedScene" uid="uid://cdxu1kg5or16d" path="res://candle.tscn" id="12_yv1v3"]
+[ext_resource type="PackedScene" path="res://scenes/firefly_spawner.tscn" id="13_spawner"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.1, 0.1, 0.12, 0.85)
@@ -174,5 +175,7 @@ position = Vector2(3101, -261)
 
 [node name="chest5" parent="." unique_id=2038037181 instance=ExtResource("11_jjwm3")]
 position = Vector2(-206, 937)
+
+[node name="FireflySpawner" parent="." instance=ExtResource("13_spawner")]
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]

@@ -9,6 +9,7 @@
 [ext_resource type="PackedScene" path="res://scenes/parallax_background.tscn" id="8_parallax"]
 [ext_resource type="PackedScene" path="res://scenes/death_plane.tscn" id="10_deathplane"]
 [ext_resource type="PackedScene" path="res://scenes/inventory_ui.tscn" id="12_invui"]
+[ext_resource type="PackedScene" path="res://scenes/firefly_spawner.tscn" id="13_spawner"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.1, 0.1, 0.12, 0.85)
@@ -98,5 +99,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+
+[node name="FireflySpawner" parent="." instance=ExtResource("13_spawner")]
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]

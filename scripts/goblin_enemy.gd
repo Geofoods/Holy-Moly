@@ -86,9 +86,8 @@ func _throw_mushroom() -> void:
 	mushroom.linear_velocity = dir * THROW_VELOCITY
 	mushroom.arm()
 
-func _on_body_entered(body: Node) -> void:
-	if body.is_in_group("mole"):
-		body.take_damage(1, global_position, true)
+func _on_body_entered(_body: Node) -> void:
+	pass
 
 func _on_hurtbox_area_entered(area: Area2D) -> void:
 	var parent = area.get_parent()
