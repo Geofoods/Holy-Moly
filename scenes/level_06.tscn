@@ -44,6 +44,7 @@ shader_parameter/outer_radius = 0.55
 shader_parameter/darkness = 0.55
 
 [node name="Node2D3" type="Node2D" unique_id=1979316305]
+texture_filter = 0
 
 [node name="DeathPlane" parent="." unique_id=1942262957 instance=ExtResource("10_deathplane")]
 
