@@ -13,6 +13,7 @@
 [ext_resource type="PackedScene" uid="uid://brmtyiqcy1wkv" path="res://scenes/inventory_ui.tscn" id="12_invui"]
 [ext_resource type="PackedScene" uid="uid://dnp3icrndkjm8" path="res://scenes/antenemy.tscn" id="12_pojnb"]
 [ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="12_rt7wb"]
+[ext_resource type="PackedScene" uid="uid://fireflyl33t7x" path="res://scenes/firefly.tscn" id="13_firefly"]
 [ext_resource type="PackedScene" uid="uid://cdxu1kg5or16d" path="res://candle.tscn" id="14_d8cpw"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
@@ -454,6 +455,21 @@ scale = Vector2(0.5, 0.5)
 [node name="candle12" parent="." unique_id=1123406741 instance=ExtResource("14_d8cpw")]
 position = Vector2(2683, 288)
 scale = Vector2(0.5, 0.5)
+
+[node name="Firefly1" parent="." instance=ExtResource("13_firefly")]
+position = Vector2(2400, -600)
+
+[node name="Firefly2" parent="." instance=ExtResource("13_firefly")]
+position = Vector2(3100, -400)
+
+[node name="Firefly3" parent="." instance=ExtResource("13_firefly")]
+position = Vector2(3800, -800)
+
+[node name="Firefly4" parent="." instance=ExtResource("13_firefly")]
+position = Vector2(3000, 200)
+
+[node name="Firefly5" parent="." instance=ExtResource("13_firefly")]
+position = Vector2(4200, -1200)
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="area_entered" from="nextlevel" to="DeathPlane" method="_on_nextlevel_area_entered"]
