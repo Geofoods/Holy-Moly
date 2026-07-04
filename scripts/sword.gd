@@ -34,6 +34,8 @@ func swing() -> void:
 	
 	hitbox.area_entered.connect(_on_hitbox_area_entered)
 	
+	_break_tile_at_mouse()
+	
 	var aim := rotation
 	
 	var start_angle := aim - SWING_ARC / 2.0
@@ -60,3 +62,11 @@ func _on_hitbox_area_entered(area: Area2D) -> void:
 			hit_enemies.append(enemy)
 			if enemy.has_method("die"):
 				enemy.die()
+
+func _break_tile_at_mouse() -> void:
+	var tilemap = get_parent().get_parent().get_node_or_null("TileMap")
+	if not tilemap:
+		return
+	var mouse_global = get_global_mouse_position()
+	var tile_pos = tilemap.local_to_map(tilemap.to_local(mouse_global))
+	tilemap.erase_cell(0, tile_pos)
