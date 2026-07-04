@@ -13,7 +13,7 @@ size = Vector2(90, 40)
 size = Vector2(100, 50)
 
 [node name="WormEnemy" type="CharacterBody2D"]
-collision_layer = 2
+collision_layer = 4
 collision_mask = 1
 script = ExtResource("1_script")
 

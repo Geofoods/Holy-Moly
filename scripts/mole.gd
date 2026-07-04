@@ -262,13 +262,7 @@ func _physics_process(delta: float) -> void:
 	if not is_on_floor() and not launched_from_jump:
 		air_time += delta
 
-	# Check for enemy contact via physics collisions
-	for i in get_slide_collision_count():
-		var collision := get_slide_collision(i)
-		var collider := collision.get_collider()
-		if collider is CharacterBody2D and collider.is_in_group("enemy"):
-			take_damage(1, collider.global_position, true)
-			break
+	# Don't take contact damage from enemies
 
 	update_depth_display()
 	_update_camera_position(delta)
