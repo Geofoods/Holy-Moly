@@ -137,9 +137,20 @@ func _setup_held_item_sprites() -> void:
 	add_child(drill_sprite)
 
 func _process(_delta: float) -> void:
-	if Inventory.selected_slot <= 0:
+	var slot := Inventory.selected_slot
+	if slot < 0 or slot >= Inventory.slots.size():
 		return
-	var sprite := get_node_or_null("HeldBomb") if Inventory.selected_slot == 1 else get_node_or_null("HeldDrill")
+	var item: ItemData = Inventory.slots[slot]
+	if item == null:
+		return
+	var sprite_name := ""
+	if item.item_name == "Bomb":
+		sprite_name = "HeldBomb"
+	elif item.item_name == "Drill":
+		sprite_name = "HeldDrill"
+	if sprite_name == "":
+		return
+	var sprite := get_node_or_null(sprite_name)
 	if not sprite or not sprite.visible:
 		return
 	var mouse_dir := (get_global_mouse_position() - global_position).normalized()
@@ -160,11 +171,11 @@ func _update_held_item() -> void:
 	if has_node("Weapon"):
 		$Weapon.visible = (slot == 0 and Inventory.slots[0] != null)
 
+	var item: ItemData = Inventory.slots[slot] if slot >= 0 and slot < Inventory.slots.size() else null
 	if has_node("HeldBomb"):
-		$HeldBomb.visible = (slot == 1 and Inventory.slots[1] != null)
-
+		$HeldBomb.visible = (item != null and item.item_name == "Bomb")
 	if has_node("HeldDrill"):
-		$HeldDrill.visible = (slot == 2 and Inventory.slots[2] != null)
+		$HeldDrill.visible = (item != null and item.item_name == "Drill")
 
 const SURFACE_Y := 850.0
 
@@ -292,11 +303,15 @@ func _physics_process(delta: float) -> void:
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		match Inventory.selected_slot:
-			1:
+		var slot := Inventory.selected_slot
+		var item: ItemData = Inventory.slots[slot] if slot >= 0 and slot < Inventory.slots.size() else null
+		if item == null:
+			return
+		match item.item_name:
+			"Bomb":
 				_throw_bomb()
 				get_viewport().set_input_as_handled()
-			2:
+			"Drill":
 				_deploy_drill()
 				get_viewport().set_input_as_handled()
 
@@ -335,7 +350,7 @@ func _toggle_slot(slot: int) -> void:
 		Inventory.selected_slot = slot
 
 func _deploy_drill() -> void:
-	if not Inventory.use_item(2):
+	if not Inventory.use_item(Inventory.selected_slot):
 		return
 	Inventory.selected_slot = -1
 	var drill = drill_scene.instantiate()
@@ -346,7 +361,7 @@ func _deploy_drill() -> void:
 	drill.setup(dir)
 
 func _throw_bomb() -> void:
-	if not Inventory.use_item(1):
+	if not Inventory.use_item(Inventory.selected_slot):
 		return
 	Inventory.selected_slot = -1
 	var bomb = bomb_scene.instantiate()

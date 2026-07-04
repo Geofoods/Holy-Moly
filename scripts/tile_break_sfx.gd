@@ -328,6 +328,9 @@ static func _break_single_tile(tilemap: TileMap, tile_pos: Vector2i, atlas_coord
 	var source_id := tilemap.get_cell_source_id(0, tile_pos)
 	if source_id == -1:
 		return
+	var tile_data := tilemap.get_cell_tile_data(0, tile_pos)
+	if tile_data and tile_data.get_custom_data("bedrock"):
+		return
 
 	var tile_type := get_tile_type(atlas_coords)
 	var variants: Array = SOUNDS[tile_type]

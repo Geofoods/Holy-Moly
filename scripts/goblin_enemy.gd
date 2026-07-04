@@ -1,12 +1,10 @@
 extends CharacterBody2D
 
-const SPEED := 50.0
 const GRAVITY := 980.0
 const THROW_INTERVAL := 3.0
 const THROW_VELOCITY := 500.0
 const MAX_HEALTH := 4.0
 
-var direction := 1.0
 var health := MAX_HEALTH
 var throw_cooldown := THROW_INTERVAL
 var throw_anim_timer := 0.0
@@ -38,29 +36,29 @@ func _physics_process(delta: float) -> void:
 		throw_anim_timer -= delta
 		if throw_anim_timer <= 0.0:
 			is_throwing = false
+			visual.frame = 0
 			throw_cooldown = THROW_INTERVAL
 		move_and_slide()
 		return
 
-	velocity.x = direction * SPEED
-
-	if is_on_wall():
-		direction *= -1
-
+	velocity.x = 0.0
 	move_and_slide()
-	_update_visual_direction()
+	_update_facing()
 
 	throw_cooldown -= delta
 	if throw_cooldown <= 0.0 and target_mole:
 		_throw_mushroom()
 
-func _update_visual_direction() -> void:
-	var dir = sign(velocity.x) if velocity.x != 0.0 else direction
-	visual.scale.x = -abs(visual.scale.x) * sign(dir)
-
 func _find_target() -> void:
 	if target_mole == null or not is_instance_valid(target_mole):
 		target_mole = get_tree().get_first_node_in_group("mole")
+
+func _update_facing() -> void:
+	if not target_mole or not is_instance_valid(target_mole):
+		return
+	var dir := (target_mole.global_position - global_position).normalized()
+	var facing := 1 if dir.x >= 0 else -1
+	visual.scale.x = -abs(visual.scale.x) * facing
 
 func _throw_mushroom() -> void:
 	is_throwing = true
@@ -71,11 +69,11 @@ func _throw_mushroom() -> void:
 		throw_cooldown = THROW_INTERVAL
 		return
 
+	var dir := (target_mole.global_position - global_position).normalized()
+
 	var mushroom = mushroom_scene.instantiate()
 	get_parent().add_child(mushroom)
-	mushroom.global_position = global_position + Vector2(direction * 30, -40)
-
-	var dir := (target_mole.global_position - global_position).normalized()
+	mushroom.global_position = global_position + Vector2(sign(dir.x) * 30, -40)
 	mushroom.linear_velocity = dir * THROW_VELOCITY
 	mushroom.arm()
 
