@@ -5,12 +5,21 @@ extends Node2D
 
 var steps := []
 var step_index := -1
+var _pending_signal: Signal
+var _has_pending_signal := false
 
 func _ready() -> void:
 	mole.set_physics_process(false)
 	mole.set_process(false)
 	_build_steps()
 	_show_step(0)
+	_reposition_inventory_ui()
+
+func _reposition_inventory_ui() -> void:
+	var inv_ui = get_node_or_null("InventoryUI")
+	if inv_ui and inv_ui.has_method("reposition"):
+		var vp_size: Vector2 = get_viewport().get_visible_rect().size
+		inv_ui.reposition(Vector2(vp_size.x / 2.0, 90.0))
 
 func _build_steps() -> void:
 	steps = [
@@ -47,11 +56,6 @@ func _build_steps() -> void:
 			"kind": "chest",
 			"node": "Chest",
 		},
-		{
-			"text": "Almost there — head to the glowing exit to finish up.",
-			"kind": "trigger",
-			"node": "ExitTrigger",
-		},
 	]
 
 func _show_step(i: int) -> void:
@@ -60,17 +64,38 @@ func _show_step(i: int) -> void:
 	if step.has("on_start"):
 		step["on_start"].call()
 
-	dialogue.show_text(step["text"], i + 1, steps.size(), step["kind"] == "click")
+	_clear_pending_signal()
+
+	# Always show a Next button so the player is never stuck waiting on a
+	# trigger/chest that fails to fire — it's a manual fallback alongside
+	# the automatic gameplay-based advance.
+	dialogue.show_text(step["text"], i + 1, steps.size(), true)
+	if dialogue.next_pressed.is_connected(_advance):
+		dialogue.next_pressed.disconnect(_advance)
+	dialogue.next_pressed.connect(_advance, CONNECT_ONE_SHOT)
 
 	match step["kind"]:
-		"click":
-			dialogue.next_pressed.connect(_advance, CONNECT_ONE_SHOT)
 		"trigger":
 			var trigger := get_node(String(step["node"]))
+			_pending_signal = trigger.body_entered
+			_has_pending_signal = true
 			trigger.body_entered.connect(_on_trigger_entered, CONNECT_ONE_SHOT)
 		"chest":
 			var chest := get_node(String(step["node"]))
-			chest.opened.connect(_advance, CONNECT_ONE_SHOT)
+			var interaction: Node = chest.get_node_or_null("Interaction")
+			if interaction == null:
+				interaction = chest
+			_pending_signal = interaction.opened
+			_has_pending_signal = true
+			interaction.opened.connect(_advance, CONNECT_ONE_SHOT)
+
+func _clear_pending_signal() -> void:
+	if _has_pending_signal and _pending_signal.get_object():
+		if _pending_signal.is_connected(_on_trigger_entered):
+			_pending_signal.disconnect(_on_trigger_entered)
+		if _pending_signal.is_connected(_advance):
+			_pending_signal.disconnect(_advance)
+	_has_pending_signal = false
 
 func _on_trigger_entered(body: Node) -> void:
 	if body.is_in_group("mole"):
@@ -83,12 +108,16 @@ func _on_trigger_entered(body: Node) -> void:
 			trigger.body_entered.connect(_on_trigger_entered, CONNECT_ONE_SHOT)
 
 func _advance() -> void:
+	_clear_pending_signal()
 	if step_index + 1 >= steps.size():
 		_finish()
 	else:
 		_show_step(step_index + 1)
 
 func _finish() -> void:
+	_clear_pending_signal()
+	if dialogue.next_pressed.is_connected(_advance):
+		dialogue.next_pressed.disconnect(_advance)
 	dialogue.show_text("Great job! You now know the basics. You're ready to begin your adventure. Good luck!", 0, 0, true)
 	dialogue.next_button.text = "PLAY NOW ▸"
 	dialogue.next_pressed.connect(_on_play_now_pressed, CONNECT_ONE_SHOT)

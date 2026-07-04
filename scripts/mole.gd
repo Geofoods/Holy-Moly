@@ -228,6 +228,7 @@ func _physics_process(delta: float) -> void:
 	# Jump
 	if Input.is_action_just_pressed("ui_accept") and is_on_floor():
 		velocity.y = JUMP_VELOCITY
+		SFX.play("jump", global_position, -12.0)
 		spawn_mole_hole()
 		var direction_at_jump := Input.get_axis("ui_left", "ui_right")
 		is_sideways_jump = direction_at_jump != 0
@@ -236,6 +237,7 @@ func _physics_process(delta: float) -> void:
 
 	# Landing detection — was in air, now on floor
 	if is_on_floor() and not was_on_floor:
+		SFX.play("land", global_position, -10.0)
 		remove_mole_hole()
 		is_sideways_jump = false
 		air_time = 0.0
@@ -372,6 +374,7 @@ func heal(amount: float) -> bool:
 	if health >= 6:
 		return false
 	health += amount
+	SFX.play("heal", global_position)
 	return true
 
 func _activate_speed_boost() -> void:
@@ -436,6 +439,10 @@ func take_damage(amount: float, source_position: Vector2 = Vector2.ZERO, has_sou
 	if invulnerable or health <= 0:
 		return
 	health -= amount
+	if health <= 0:
+		SFX.play("death", global_position)
+	else:
+		SFX.play("hurt", global_position)
 	invulnerable = true
 	hurt_anim_time_left = HURT_GROUND_DURATION if is_on_floor() else HURT_AIR_DURATION
 	var knockback_direction := -1.0 if $AnimatedSprite2D.flip_h else 1.0
@@ -499,6 +506,7 @@ func deflect_pause() -> void:
 	zoom_tween.tween_property(camera, "zoom", original_zoom, 0.35).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 func start_dig_dash() -> void:
+	SFX.play("dig_dash", global_position)
 	is_digging = true
 	_dig_dash_weapon_was_visible = false
 	if has_node("Weapon"):

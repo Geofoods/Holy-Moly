@@ -18,7 +18,10 @@ var _hidden_y := 0.0
 var _shown_y := 0.0
 
 func _ready() -> void:
-	next_button.pressed.connect(func(): next_pressed.emit())
+	next_button.pressed.connect(func():
+		SFX.play_ui("ui_click")
+		next_pressed.emit()
+	)
 	
 	var vp_size: Vector2 = get_viewport().get_visible_rect().size
 	panel.size = Vector2(vp_size.x - PANEL_MARGIN_SIDE * 2.0, PANEL_HEIGHT)

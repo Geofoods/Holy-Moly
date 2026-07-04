@@ -33,12 +33,14 @@ func add_item(item: ItemData) -> bool:
 			if slots[i] != null and slots[i].item_name == item.item_name:
 				slot_counts[i] += 1
 				slots_changed.emit([i])
+				SFX.play_ui("item_pickup")
 				return true
 	for i in MAX_SLOTS:
 		if slots[i] == null:
 			slots[i] = item
 			slot_counts[i] = 1
 			slots_changed.emit([i])
+			SFX.play_ui("item_pickup")
 			return true
 	return false
 

@@ -82,6 +82,7 @@ func take_damage(amount: float) -> void:
 	if health <= 0:
 		return
 	health -= amount
+	SFX.play("enemy_hit", global_position)
 	queue_redraw()
 
 	var tween := create_tween()
@@ -104,6 +105,7 @@ func _draw() -> void:
 	draw_rect(Rect2(offset, Vector2(bar_w * ratio, bar_h)), fill)
 
 func die() -> void:
+	SFX.play("enemy_death", global_position)
 	set_physics_process(false)
 	hitbox.set_deferred("monitoring", false)
 	hurtbox.set_deferred("monitorable", false)

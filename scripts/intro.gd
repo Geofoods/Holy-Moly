@@ -154,6 +154,7 @@ func _start_tip_wobble() -> void:
 	tip_tween.tween_property(tip, "position:y", 5.0, 0.45).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 func _on_play_pressed() -> void:
+	SFX.play_ui("ui_click")
 	if tip_tween:
 		tip_tween.kill()
 	var play_btn = $CenterContainer/VBoxContainer/ButtonContainer/PlayButton
@@ -164,6 +165,7 @@ func _on_play_pressed() -> void:
 	transition.change_to("res://scenes/main.tscn")
 
 func _on_tutorial_pressed() -> void:
+	SFX.play_ui("ui_click")
 	if tip_tween:
 		tip_tween.kill()
 	var tutorial_btn = $CenterContainer/VBoxContainer/ButtonContainer/TutorialButton
@@ -174,4 +176,5 @@ func _on_tutorial_pressed() -> void:
 	transition.change_to("res://scenes/tutorial.tscn")
 
 func _on_cancel_pressed():
+	SFX.play_ui("ui_click")
 	get_tree().quit()

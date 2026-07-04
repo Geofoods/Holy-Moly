@@ -1,6 +1,7 @@
 extends RigidBody2D
 
 const FUSE_TIME := 2.5
+const FLASH_TIME := 0.4
 
 @export var explosion_radius := 200.0
 @export var explosion_damage := 2.0
@@ -9,6 +10,8 @@ const FUSE_TIME := 2.5
 var dead := false
 var fuse_active := false
 var fuse_elapsed := 0.0
+var tick_cooldown := 0.0
+var is_flashing := false
 
 @onready var sprite: Sprite2D = $Sprite2D
 
@@ -16,21 +19,49 @@ func _ready() -> void:
 	linear_velocity = Vector2.ZERO
 
 func _process(delta: float) -> void:
-	if not fuse_active:
+	if not fuse_active or is_flashing:
 		return
 	fuse_elapsed += delta
-	var pulse := 0.5 + sin(fuse_elapsed * 20.0) * 0.5
-	sprite.modulate = Color(1.0, 0.6 + pulse * 0.3, pulse * 0.3, 1.0)
-	if fuse_elapsed >= FUSE_TIME:
-		_explode()
+
+	var progress := clampf(fuse_elapsed / (FUSE_TIME - FLASH_TIME), 0.0, 1.0)
+
+	# Ticking sound that speeds up as fuse runs out
+	tick_cooldown -= delta
+	if tick_cooldown <= 0.0:
+		SFX.play("bomb_tick", global_position, -4.0, 0.05)
+		var interval := lerpf(0.5, 0.1, progress)
+		tick_cooldown = interval
+
+	# Pulsing red tint that intensifies over time
+	var pulse_speed := lerpf(8.0, 25.0, progress)
+	var pulse := 0.5 + sin(fuse_elapsed * pulse_speed) * 0.5
+	var red_intensity := lerpf(0.3, 1.0, progress)
+	sprite.modulate = Color(1.0, 1.0 - red_intensity * 0.5 + pulse * 0.2, 1.0 - red_intensity * 0.7 + pulse * 0.1, 1.0)
+
+	# Start the flash phase before explosion
+	if fuse_elapsed >= FUSE_TIME - FLASH_TIME:
+		_start_flash()
 
 func arm() -> void:
 	fuse_active = true
+
+func _start_flash() -> void:
+	is_flashing = true
+	var tween := create_tween()
+	# Minecraft-style: flash white and enlarge briefly
+	tween.tween_property(sprite, "modulate", Color(8.0, 8.0, 8.0, 1.0), 0.08).set_trans(Tween.TRANS_QUAD)
+	tween.tween_property(sprite, "modulate", Color(1.0, 1.0, 1.0, 1.0), 0.06)
+	tween.tween_property(sprite, "modulate", Color(10.0, 10.0, 10.0, 1.0), 0.06).set_trans(Tween.TRANS_QUAD)
+	tween.tween_property(sprite, "modulate", Color(2.0, 2.0, 2.0, 1.0), 0.05)
+	tween.tween_property(sprite, "modulate", Color(12.0, 12.0, 12.0, 1.0), 0.05).set_trans(Tween.TRANS_QUAD)
+	tween.parallel().tween_property(self, "scale", Vector2(1.5, 1.5), FLASH_TIME * 0.8).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween.tween_callback(_explode)
 
 func _explode() -> void:
 	if dead:
 		return
 	dead = true
+	SFX.play("explosion", global_position)
 	var mole := get_tree().get_first_node_in_group("mole")
 	if mole and is_instance_valid(mole):
 		var dist := global_position.distance_to(mole.global_position)
