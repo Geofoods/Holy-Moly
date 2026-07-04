@@ -1,14 +1,14 @@
 [gd_scene format=3 uid="uid://dnalp7pe0fqi0"]
 
 [ext_resource type="PackedScene" uid="uid://p1of6ummc17j" path="res://scenes/mole.tscn" id="1_o5qli"]
-[ext_resource type="PackedScene" uid="uid://dnp3icrndkjm8" path="res://scenes/enemy.tscn" id="2_enemy"]
+[ext_resource type="PackedScene" uid="uid://dnp3icrndkjm8" path="res://scenes/antenemy.tscn" id="2_enemy"]
 [ext_resource type="PackedScene" uid="uid://c6xus6tuhcmfo" path="res://scenes/heart.tscn" id="3_sugp2"]
 [ext_resource type="PackedScene" uid="uid://d2i1x8x1y6qa" path="res://scenes/pause_menu.tscn" id="4_pause"]
 [ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="6_tipki"]
 [ext_resource type="Shader" uid="uid://qjf1ibg12yh2" path="res://shaders/vignette.gdshader" id="7_vignette"]
 [ext_resource type="PackedScene" path="res://scenes/parallax_background.tscn" id="8_parallax"]
 [ext_resource type="PackedScene" path="res://scenes/death_plane.tscn" id="10_deathplane"]
-[ext_resource type="PackedScene" path="res://scenes/inventory_ui.tscn" id="12_invui"]
+[ext_resource type="PackedScene" uid="uid://brmtyiqcy1wkv" path="res://scenes/inventory_ui.tscn" id="12_invui"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.1, 0.1, 0.12, 0.85)
@@ -36,18 +36,18 @@ corner_radius_bottom_left = 8
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_vignette"]
 shader = ExtResource("7_vignette")
-shader_parameter/intensity = 1.1
-shader_parameter/smoothness = 0.4
-shader_parameter/opacity = 1.0
+shader_parameter/inner_radius = 0.25
+shader_parameter/outer_radius = 0.55
+shader_parameter/darkness = 0.95
 
 [node name="Node2D" type="Node2D" unique_id=1979316305]
 
 [node name="ParallaxBackground" parent="." unique_id=211574599 instance=ExtResource("8_parallax")]
 
-[node name="DeathPlane" parent="." instance=ExtResource("10_deathplane")]
+[node name="DeathPlane" parent="." unique_id=1572879576 instance=ExtResource("10_deathplane")]
 
 [node name="CharacterBody2D2" parent="." unique_id=501808252 instance=ExtResource("1_o5qli")]
-position = Vector2(-28, -116)
+position = Vector2(-16, -2399)
 scale = Vector2(0.25, 0.25)
 
 [node name="Camera2D" type="Camera2D" parent="CharacterBody2D2" unique_id=955812054]
@@ -83,7 +83,7 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_pausebutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_pausebutton_hover")
 text = "II ESC"
 
-[node name="InventoryUI" parent="." instance=ExtResource("12_invui")]
+[node name="InventoryUI" parent="." unique_id=1644753890 instance=ExtResource("12_invui")]
 
 [node name="PauseMenu" parent="." unique_id=1779626465 instance=ExtResource("4_pause")]
 

@@ -1,23 +1,18 @@
 extends CharacterBody2D
-const SPEED = 120.0
+
+const SPEED = 80.0
+const CLIMB_SPEED = 70.0
 const GRAVITY = 980.0
-const DETECT_RANGE_X = 500.0
-const DETECT_RANGE_Y = 80.0
-const FIRE_INTERVAL = 1.6
-const BULLET_SPEED = 500.0
-const MUZZLE_OFFSET = Vector2(96.0, -47.0)
+const DETECT_RANGE = 600.0
+const CLIMB_DURATION = 1.2
+const CLIMB_CHANCE = 0.5
 
 var direction := 1.0
-var facing := 1.0
-var fire_timer := FIRE_INTERVAL * 0.5
 var target_mole: Node2D = null
-
-var bullet_scene := preload("res://scenes/bullet.tscn")
-
+var is_climbing := false
+var climb_timer := 0.0
 @onready var hurtbox: Area2D = $Hurtbox
 @onready var hitbox: Area2D = $Hitbox
-@onready var ray_right: RayCast2D = $RayRight
-@onready var ray_left: RayCast2D = $RayLeft
 @onready var visual: CanvasItem = $Visual
 
 func _ready() -> void:
@@ -26,64 +21,54 @@ func _ready() -> void:
 	hurtbox.add_to_group("enemy_hurtbox")
 
 func _physics_process(delta: float) -> void:
+	_find_target()
+
+	if target_mole:
+		direction = sign(target_mole.global_position.x - global_position.x)
+
+	if is_climbing:
+		climb_timer -= delta
+		velocity.y = -CLIMB_SPEED
+		velocity.x = direction * SPEED * 0.3
+		if climb_timer <= 0.0 or is_on_ceiling():
+			is_climbing = false
+		move_and_slide()
+		visual.scale.x = abs(visual.scale.x) * sign(facing())
+		return
+
 	if not is_on_floor():
 		velocity.y += GRAVITY * delta
 	else:
-		velocity.y = 0
+		velocity.y = 0.0
 
 	velocity.x = direction * SPEED
 
-	# Reverse at walls or edges
 	if is_on_wall():
-		direction *= -1.0
-	elif is_on_floor():
-		if direction > 0 and ray_right.is_colliding() == false:
-			direction *= -1.0
-		elif direction < 0 and ray_left.is_colliding() == false:
-			direction *= -1.0
-
-	facing = direction
-	_update_targeting(delta)
-
-	visual.scale.x = abs(visual.scale.x) * sign(facing)
+		if randf() < CLIMB_CHANCE and target_mole and target_mole.global_position.y < global_position.y - 30:
+			is_climbing = true
+			climb_timer = CLIMB_DURATION
+		else:
+			direction *= -1
 
 	move_and_slide()
+	visual.scale.x = abs(visual.scale.x) * sign(facing())
 
-func _update_targeting(delta: float) -> void:
+func facing() -> float:
+	return sign(velocity.x) if velocity.x != 0.0 else direction
+
+func _find_target() -> void:
 	if target_mole == null or not is_instance_valid(target_mole):
 		target_mole = get_tree().get_first_node_in_group("mole")
-
-	fire_timer -= delta
-
-	if target_mole == null:
-		return
-
-	var offset: Vector2 = target_mole.global_position - global_position
-	var in_range: bool = abs(offset.x) < DETECT_RANGE_X and abs(offset.y) < DETECT_RANGE_Y
-
-	if in_range:
-		if offset.x != 0.0:
-			facing = sign(offset.x)
-		if fire_timer <= 0.0:
-			fire_timer = FIRE_INTERVAL
-			_fire_at(target_mole)
-
-func _fire_at(target: Node2D) -> void:
-	var muzzle: Vector2 = global_position + Vector2(MUZZLE_OFFSET.x * facing, MUZZLE_OFFSET.y)
-	var fire_dir: float = sign(target.global_position.x - muzzle.x)
-	if fire_dir == 0.0:
-		fire_dir = facing
-
-	var bullet := bullet_scene.instantiate()
-	bullet.global_position = muzzle
-	bullet.setup(Vector2(fire_dir, 0.0) * BULLET_SPEED)
-	get_parent().add_child(bullet)
+	elif global_position.distance_squared_to(target_mole.global_position) > DETECT_RANGE * DETECT_RANGE:
+		target_mole = null
 
 func _on_hitbox_body_entered(body: Node) -> void:
 	if body.is_in_group("mole"):
 		body.take_damage(1, global_position, true)
 
-func _on_hurtbox_area_entered(_area: Area2D) -> void:
+func _on_hurtbox_area_entered(area: Area2D) -> void:
+	if area == hitbox:
+		return
 	die()
 
 func die() -> void:
