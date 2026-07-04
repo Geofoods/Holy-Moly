@@ -1,0 +1,31 @@
+[gd_scene format=3 uid="uid://cdxu1kg5or16d"]
+
+[ext_resource type="Texture2D" uid="uid://chcmh5bq4tsqd" path="res://sprites/tileset.png" id="1_tcgl6"]
+[ext_resource type="Texture2D" uid="uid://dlc4hd7f6on2v" path="res://costume3 (1).svg" id="2_pqck8"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pqck8"]
+atlas = ExtResource("1_tcgl6")
+region = Rect2(960, 960, 160, 160)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_wmlv8"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_pqck8")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
+[node name="candle" type="Node2D" unique_id=546040729]
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=797099782]
+sprite_frames = SubResource("SpriteFrames_wmlv8")
+
+[node name="PointLight2D" type="PointLight2D" parent="." unique_id=1979554668]
+scale = Vector2(3.0509553, 2.598726)
+color = Color(1, 0.8039216, 0.101960786, 1)
+shadow_enabled = true
+shadow_color = Color(1, 0.39249998, 0.19, 1)
+texture = ExtResource("2_pqck8")
