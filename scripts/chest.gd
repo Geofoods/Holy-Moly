@@ -33,7 +33,7 @@ func _process(_delta: float) -> void:
 
 func _open_chest() -> void:
 	is_open = true
-	var spr = get_node("../AnimatedSprite2D")
+	var spr = get_node_or_null("../AnimatedSprite2D")
 	if spr is AnimatedSprite2D:
 		spr.stop()
 		spr.frame = 1
