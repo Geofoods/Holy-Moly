@@ -33,6 +33,7 @@ func _on_area_entered(area: Area2D) -> void:
 			_explode()
 
 func _explode() -> void:
+	SFX.play("explosion", global_position)
 	var tilemap: TileMap = get_parent().get_node_or_null("TileMap")
 	if tilemap:
 		var center_tile := tilemap.local_to_map(tilemap.to_local(global_position))

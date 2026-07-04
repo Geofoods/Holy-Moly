@@ -7,8 +7,21 @@ var velocity := Vector2.ZERO
 var elapsed := 0.0
 var prev_tile_pos := Vector2i(999999, 999999)
 
+var _drill_player: AudioStreamPlayer2D = null
+
 func _ready() -> void:
 	area_entered.connect(_on_area_entered)
+	_start_drill_sound()
+
+func _start_drill_sound() -> void:
+	if not SFX._sounds.has("drill") or SFX._sounds["drill"].size() == 0:
+		return
+	_drill_player = AudioStreamPlayer2D.new()
+	_drill_player.stream = SFX._sounds["drill"][0]
+	_drill_player.volume_db = -8.0
+	_drill_player.max_distance = 2000.0
+	add_child(_drill_player)
+	_drill_player.play()
 
 func setup(dir: Vector2) -> void:
 	velocity = dir * SPEED
