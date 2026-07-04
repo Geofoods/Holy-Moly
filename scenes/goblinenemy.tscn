@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://k06dbe7sq1ph"]
 
-[ext_resource type="Script" uid="uid://vv8xs2em0h6" path="res://scripts/goblin_enemy.gd" id="1_u888v"]
+[ext_resource type="Script" uid="uid://drf2sbp8vfdni" path="res://scripts/goblin_enemy.gd" id="1_u888v"]
 [ext_resource type="Texture2D" uid="uid://fwunuhhl4glm" path="res://golblin.webp" id="2_u888v"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_3x5wh"]
