@@ -5,7 +5,6 @@
 [ext_resource type="PackedScene" uid="uid://d2i1x8x1y6qa" path="res://scenes/pause_menu.tscn" id="4_pause"]
 [ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="6_tipki"]
 [ext_resource type="Shader" uid="uid://qjf1ibg12yh2" path="res://shaders/vignette.gdshader" id="7_vignette"]
-[ext_resource type="PackedScene" path="res://scenes/parallax_background.tscn" id="8_parallax"]
 [ext_resource type="TileSet" uid="uid://d07lidnoim34q" path="res://tileset.tres" id="9_eceou"]
 [ext_resource type="PackedScene" path="res://scenes/death_plane.tscn" id="10_deathplane"]
 [ext_resource type="PackedScene" uid="uid://bcd57whed7bys" path="res://chest.tscn" id="10_lepkc"]
@@ -16,6 +15,7 @@
 [ext_resource type="PackedScene" uid="uid://cdxu1kg5or16d" path="res://candle.tscn" id="14_d8cpw"]
 [ext_resource type="PackedScene" path="res://scenes/firefly_spawner.tscn" id="15_spawner"]
 [ext_resource type="PackedScene" uid="uid://u77s8ew4xenh" path="res://scenes/beetleenemy.tscn" id="16_eceou"]
+[ext_resource type="PackedScene" uid="uid://wjt35doljo8p" path="res://scenes/parallax_background2.tscn" id="16_o2pic"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.1, 0.1, 0.12, 0.85)
@@ -52,8 +52,7 @@ size = Vector2(4079.5, 933)
 
 [node name="Node2D2" type="Node2D" unique_id=1979316305]
 
-[node name="ParallaxBackground" parent="." unique_id=211574599 instance=ExtResource("8_parallax")]
-z_index = -2
+[node name="ParallaxBackgroun2" parent="." unique_id=1654768929 instance=ExtResource("16_o2pic")]
 
 [node name="DeathPlane" parent="." unique_id=1679135203 instance=ExtResource("10_deathplane")]
 

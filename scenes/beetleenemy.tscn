@@ -34,6 +34,8 @@ size = Vector2(362, 204)
 [node name="Enemy" type="CharacterBody2D" unique_id=866104770]
 position = Vector2(2, -1)
 scale = Vector2(0.5, 0.5)
+collision_layer = 2
+collision_mask = 1
 script = ExtResource("1_cwycq")
 
 [node name="Visual" type="AnimatedSprite2D" parent="." unique_id=2010235303]

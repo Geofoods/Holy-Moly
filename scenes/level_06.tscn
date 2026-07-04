@@ -6,11 +6,12 @@
 [ext_resource type="PackedScene" uid="uid://d2i1x8x1y6qa" path="res://scenes/pause_menu.tscn" id="4_pause"]
 [ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="6_tipki"]
 [ext_resource type="Shader" uid="uid://qjf1ibg12yh2" path="res://shaders/vignette.gdshader" id="7_vignette"]
-[ext_resource type="PackedScene" path="res://scenes/parallax_background.tscn" id="8_parallax"]
 [ext_resource type="Texture2D" uid="uid://chcmh5bq4tsqd" path="res://sprites/tileset.png" id="9_ygv7j"]
 [ext_resource type="PackedScene" path="res://scenes/death_plane.tscn" id="10_deathplane"]
 [ext_resource type="PackedScene" uid="uid://k06dbe7sq1ph" path="res://scenes/goblinenemy.tscn" id="11_k7nmt"]
 [ext_resource type="PackedScene" uid="uid://brmtyiqcy1wkv" path="res://scenes/inventory_ui.tscn" id="12_invui"]
+[ext_resource type="PackedScene" uid="uid://wjt35doljo8p" path="res://scenes/parallax_background2.tscn" id="12_ph8se"]
+[ext_resource type="PackedScene" uid="uid://u77s8ew4xenh" path="res://scenes/beetleenemy.tscn" id="13_40wum"]
 [ext_resource type="PackedScene" path="res://scenes/firefly_spawner.tscn" id="13_spawner"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
@@ -147,8 +148,6 @@ sources/0 = SubResource("TileSetAtlasSource_ggs2r")
 
 [node name="Node2D2" type="Node2D" unique_id=1979316305]
 
-[node name="ParallaxBackground" parent="." unique_id=211574599 instance=ExtResource("8_parallax")]
-
 [node name="DeathPlane" parent="." unique_id=1942262957 instance=ExtResource("10_deathplane")]
 
 [node name="Enemy" parent="." unique_id=1155690396 instance=ExtResource("2_enemy")]
@@ -213,6 +212,11 @@ layer_1/name = "Decoration"
 [node name="Enemy2" parent="." unique_id=866104770 instance=ExtResource("11_k7nmt")]
 position = Vector2(1372, -2145)
 
-[node name="FireflySpawner" parent="." instance=ExtResource("13_spawner")]
+[node name="FireflySpawner" parent="." unique_id=823637786 instance=ExtResource("13_spawner")]
+
+[node name="ParallaxBackgroun2" parent="." unique_id=1654768929 instance=ExtResource("12_ph8se")]
+
+[node name="Enemy3" parent="." unique_id=1157909365 instance=ExtResource("13_40wum")]
+position = Vector2(2606, -2089)
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
