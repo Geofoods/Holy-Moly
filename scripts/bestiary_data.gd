@@ -1,8 +1,8 @@
 extends Node
 
 ## Single source of truth for the in-game encyclopedia (Info popup).
-## To add a new enemy/hazard/item, append one dictionary to ENTRIES below —
-## the Info popup will pick it up automatically.
+## To add a new enemy/hazard/item, append one dictionary to ENTRIES below.
+## The Info popup picks it up automatically.
 
 const ENTRIES: Array[Dictionary] = [
 	{
@@ -14,8 +14,8 @@ const ENTRIES: Array[Dictionary] = [
 		"danger_level": 3,
 		"description": "A hard-shelled burrow dweller that patrols the tunnels in short stretches.",
 		"behavior": "Paces back and forth until it spots you, then locks on and rushes straight at you at high speed before pulling back to cool down.",
-		"attack_pattern": "550 px/s charge for about 1.2 seconds, dealing contact damage, followed by a ~2.5 second cooldown before it can charge again.",
-		"strategy": "Time your shovel swing (Left-click) for the moment it commits to a charge, or simply jump over it — it can't change direction mid-rush. Takes 4 hits to defeat.",
+		"attack_pattern": "550 px/s charge for about 1.2 seconds, dealing contact damage, followed by a roughly 2.5 second cooldown before it can charge again.",
+		"strategy": "Time your shovel swing (Left-click) for the moment it commits to a charge, since it can't change direction mid-rush. Or just jump over it. Takes 4 hits to defeat.",
 	},
 	{
 		"id": "goblin",
@@ -27,7 +27,7 @@ const ENTRIES: Array[Dictionary] = [
 		"description": "A scrappy raider that's more aggressive and alert than the average tunnel pest.",
 		"behavior": "Detects you from further away than a Beetle and charges almost immediately, slowing to a stop afterward before resuming its patrol.",
 		"attack_pattern": "Fast 400 px/s charge dealing contact damage, with a short cooldown before it can charge again.",
-		"strategy": "Don't get caught flat-footed by its longer detection range — swing early or dodge sideways as it closes in. Takes 4 hits to defeat.",
+		"strategy": "Don't get caught flat-footed by its longer detection range. Swing early or dodge sideways as it closes in. Takes 4 hits to defeat.",
 	},
 	{
 		"id": "ant",
@@ -38,8 +38,47 @@ const ENTRIES: Array[Dictionary] = [
 		"danger_level": 2,
 		"description": "A light, fast scuttler that isn't afraid to follow you off the ground.",
 		"behavior": "Patrols the tunnel and turns to face you once it notices you. When it hits a wall, it sometimes scales straight up it to chase you onto higher ground.",
-		"attack_pattern": "Deals contact damage; the main threat is being cornered when it climbs up to your platform.",
-		"strategy": "The weakest enemy in the burrow — a couple of shovel swings (3 hits) puts it down, or just outrun it.",
+		"attack_pattern": "Deals contact damage. The main threat is being cornered when it climbs up to your platform.",
+		"strategy": "The weakest enemy in the burrow. A couple of shovel swings (3 hits) puts it down, or just outrun it.",
+	},
+	{
+		"id": "bat",
+		"name": "Bat",
+		"icon": "",
+		"icon_region": Rect2(),
+		"icon_color": Color(0.35, 0.3, 0.45, 1),
+		"category": "Enemy",
+		"danger_level": 2,
+		"description": "A jittery flyer that drifts overhead on a lazy wave pattern until it notices you.",
+		"behavior": "Bobs up and down while patrolling in the air, then dives straight at you once you're close enough.",
+		"attack_pattern": "250 px/s dive that deals contact damage. No gravity while airborne, so it can come from above.",
+		"strategy": "It only takes one shovel hit to drop, so a single well-timed swing ends the fight.",
+	},
+	{
+		"id": "worm",
+		"name": "Worm",
+		"icon": "",
+		"icon_region": Rect2(),
+		"icon_color": Color(0.55, 0.2, 0.2, 1),
+		"category": "Hazard",
+		"danger_level": 3,
+		"description": "A buried mine that looks harmless until you get close.",
+		"behavior": "Sits still until you step near it, then arms itself and flashes red as its fuse counts down.",
+		"attack_pattern": "About 1.5 seconds after arming, it detonates for 2 damage in a 200px radius.",
+		"strategy": "Pop it from a distance with a shovel swing or the Drill before it finishes arming, or just keep moving once you see it flash.",
+	},
+	{
+		"id": "mushroom_caster",
+		"name": "Mushroom Caster",
+		"icon": "",
+		"icon_region": Rect2(),
+		"icon_color": Color(0.55, 0.35, 0.15, 1),
+		"category": "Enemy",
+		"danger_level": 3,
+		"description": "A stationary spellcaster that lobs exploding mushrooms at anything in view.",
+		"behavior": "Stays in place and tracks you as long as you're visible, throwing every few seconds.",
+		"attack_pattern": "Lobs an exploding mushroom that deals 2 damage in a 200px radius on impact, and can even destroy nearby tiles.",
+		"strategy": "Close the distance quickly or take cover behind terrain to break its line of sight, then finish it with your shovel. Takes 4 hits to defeat.",
 	},
 	{
 		"id": "bomb",
@@ -50,8 +89,8 @@ const ENTRIES: Array[Dictionary] = [
 		"danger_level": 2,
 		"description": "A thrown explosive for clearing tough terrain and groups of enemies at once.",
 		"behavior": "Select it from your inventory (number key) and Left-click to throw it toward your cursor. It arms on impact and counts down before detonating.",
-		"attack_pattern": "~2.5 second fuse, then a 200px-radius blast that destroys nearby tiles and instantly defeats any enemy caught inside it.",
-		"strategy": "Throw it from a safe distance — the blast damages you too if you're still standing in the radius when it goes off. Great for blasting through blocked tunnels.",
+		"attack_pattern": "About a 2.5 second fuse, then a 200px-radius blast that destroys nearby tiles and instantly defeats any enemy caught inside it.",
+		"strategy": "Throw it from a safe distance. The blast damages you too if you're still standing in the radius when it goes off. Great for blasting through blocked tunnels.",
 	},
 	{
 		"id": "drill",
@@ -62,8 +101,8 @@ const ENTRIES: Array[Dictionary] = [
 		"danger_level": 1,
 		"description": "A spinning drill head that bores straight through rock and enemies alike.",
 		"behavior": "Select it from your inventory and Left-click to launch it toward your cursor. It travels in a straight line, tunneling through tiles as it goes.",
-		"attack_pattern": "Travels for about 2 seconds, instantly defeating any enemy it touches along its path — unlike the Bomb, it never damages you.",
-		"strategy": "Aim it straight down a corridor to clear a path and any enemies lined up in it in one shot — completely safe to use up close.",
+		"attack_pattern": "Travels for about 2 seconds, instantly defeating any enemy it touches along its path. Unlike the Bomb, it never damages you.",
+		"strategy": "Aim it straight down a corridor to clear a path and any enemies lined up in it in one shot. Completely safe to use up close.",
 	},
 ]
 
@@ -80,7 +119,7 @@ const CONTROLS: Array[Dictionary] = [
 	{
 		"category": "Digging",
 		"rows": [
-			{"label": "SHIFT", "detail": "Dig-dash — tunnel straight through terrain in front of you."},
+			{"label": "SHIFT", "detail": "Dig-dash. Tunnel straight through terrain in front of you."},
 			{"label": "Left-click (mid-dash)", "detail": "Cancel the dash into an attack, breaking out with a burst and a screen shake."},
 		],
 	},
@@ -88,7 +127,7 @@ const CONTROLS: Array[Dictionary] = [
 		"category": "Combat",
 		"rows": [
 			{"label": "Left-click", "detail": "Swing your shovel. Breaks the tile under your cursor and damages any enemy it hits."},
-			{"label": "Right-click", "detail": "Parry — raise your shovel as a guard for a couple of seconds, deflecting anything it blocks back toward your cursor. Has a short cooldown after use."},
+			{"label": "Right-click", "detail": "Parry. Raise your shovel as a guard for a couple of seconds, deflecting anything it blocks back toward your cursor. Has a short cooldown after use."},
 		],
 	},
 	{
@@ -104,6 +143,7 @@ const CONTROLS: Array[Dictionary] = [
 		"category": "Health & Objective",
 		"rows": [
 			{"label": "Hearts (top-left)", "detail": "You have 6 hearts. Taking damage costs hearts and grants a brief moment of invulnerability."},
+			{"label": "Depth meter", "detail": "Shows how far underground you've dug, near the bottom of the screen."},
 			{"label": "Losing", "detail": "Running out of hearts sends you to the Game Over screen."},
 			{"label": "Winning a level", "detail": "Reach the glowing level exit to move on. There are 9 levels in total."},
 		],
@@ -111,7 +151,7 @@ const CONTROLS: Array[Dictionary] = [
 	{
 		"category": "Menus",
 		"rows": [
-			{"label": "ESC", "detail": "Pause the game — resume, return to the main menu, or quit."},
+			{"label": "ESC", "detail": "Pause the game. Resume, return to the main menu, or quit."},
 			{"label": "Info button (bottom-right)", "detail": "Opens this screen any time, in a level or from the main menu."},
 		],
 	},
