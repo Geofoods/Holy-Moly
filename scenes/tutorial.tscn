@@ -15,9 +15,6 @@
 [ext_resource type="PackedScene" path="res://scenes/info_popup.tscn" id="info_popup_res"]
 [ext_resource type="PackedScene" uid="uid://u77s8ew4xenh" path="res://scenes/beetleenemy.tscn" id="20_beetle"]
 [ext_resource type="PackedScene" uid="uid://k06dbe7sq1ph" path="res://scenes/goblinenemy.tscn" id="21_goblin"]
-[ext_resource type="PackedScene" path="res://scenes/bat_enemy.tscn" id="22_bat"]
-[ext_resource type="PackedScene" path="res://scenes/worm_enemy.tscn" id="23_worm"]
-[ext_resource type="PackedScene" path="res://scenes/mushroom_enemy.tscn" id="24_mushroom"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_choun"]
 texture = ExtResource("10_tileset")
@@ -207,36 +204,6 @@ position = Vector2(8240, -200)
 collision_layer = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="GoblinTrigger"]
-shape = SubResource("RectangleShape2D_enemytrigger")
-
-[node name="BatEnemy" parent="." instance=ExtResource("22_bat")]
-position = Vector2(8960, -116)
-
-[node name="BatTrigger" type="Area2D" parent="."]
-position = Vector2(9440, -200)
-collision_layer = 0
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="BatTrigger"]
-shape = SubResource("RectangleShape2D_enemytrigger")
-
-[node name="WormEnemy" parent="." instance=ExtResource("23_worm")]
-position = Vector2(10160, -116)
-
-[node name="WormTrigger" type="Area2D" parent="."]
-position = Vector2(10640, -200)
-collision_layer = 0
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="WormTrigger"]
-shape = SubResource("RectangleShape2D_enemytrigger")
-
-[node name="MushroomCaster" parent="." instance=ExtResource("24_mushroom")]
-position = Vector2(11440, -116)
-
-[node name="MushroomTrigger" type="Area2D" parent="."]
-position = Vector2(12080, -200)
-collision_layer = 0
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="MushroomTrigger"]
 shape = SubResource("RectangleShape2D_enemytrigger")
 
 [node name="BombWallTrigger" type="Area2D" parent="."]
