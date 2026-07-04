@@ -12,8 +12,9 @@
 [ext_resource type="Texture2D" uid="uid://dtrh4fdba0nph" path="res://sprites/moleacharacterwalkbold.png" id="6_ev00m"]
 [ext_resource type="Texture2D" uid="uid://bo1hkfcoq6vt5" path="res://sprites/molesidewaysjumpbold.png" id="7_tss7c"]
 [ext_resource type="Texture2D" uid="uid://sm1rsjogvngx" path="res://sprites/moletunnel.png" id="9_dd0k0"]
-[ext_resource type="Texture2D" path="res://sprites/molehurt.png" id="10_hurt"]
-[ext_resource type="Texture2D" path="res://sprites/molehurtground.png" id="11_hurtground"]
+[ext_resource type="Texture2D" uid="uid://0cey1y0shbd" path="res://sprites/molehurt.png" id="10_hurt"]
+[ext_resource type="Texture2D" uid="uid://5ubkucu56yps" path="res://sprites/molehurtground.png" id="11_hurtground"]
+[ext_resource type="Texture2D" uid="uid://dlc4hd7f6on2v" path="res://costume3 (1).svg" id="15_obc8e"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_xipw3"]
 atlas = ExtResource("2_tss7c")
@@ -38,6 +39,14 @@ region = Rect2(2400, 0, 600, 600)
 [sub_resource type="AtlasTexture" id="AtlasTexture_67hep"]
 atlas = ExtResource("2_tss7c")
 region = Rect2(3000, 0, 600, 600)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hurt"]
+atlas = ExtResource("10_hurt")
+region = Rect2(0, 0, 600, 800)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hurtground"]
+atlas = ExtResource("11_hurtground")
+region = Rect2(0, 0, 600, 600)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_fo5de"]
 atlas = ExtResource("1_dmcpu")
@@ -123,14 +132,6 @@ region = Rect2(1800, 0, 600, 600)
 atlas = ExtResource("6_ev00m")
 region = Rect2(2400, 0, 600, 600)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_hurt"]
-atlas = ExtResource("10_hurt")
-region = Rect2(0, 0, 600, 800)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_hurtground"]
-atlas = ExtResource("11_hurtground")
-region = Rect2(0, 0, 600, 600)
-
 [sub_resource type="SpriteFrames" id="SpriteFrames_ecm7r"]
 animations = [{
 "frames": [{
@@ -155,6 +156,22 @@ animations = [{
 "loop": false,
 "name": &"dig",
 "speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hurt")
+}],
+"loop": true,
+"name": &"hurt",
+"speed": 1.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hurtground")
+}],
+"loop": true,
+"name": &"hurtground",
+"speed": 1.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -209,22 +226,6 @@ animations = [{
 "loop": true,
 "name": &"sidewaysjumpbold",
 "speed": 5.0
-}, {
-"frames": [{
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_hurt")
-}],
-"loop": true,
-"name": &"hurt",
-"speed": 1.0
-}, {
-"frames": [{
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_hurtground")
-}],
-"loop": true,
-"name": &"hurtground",
-"speed": 1.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -288,6 +289,13 @@ height = 368.12317
 [node name="mole" type="CharacterBody2D" unique_id=501808252]
 scale = Vector2(0.5, 0.5)
 script = ExtResource("1_kln4g")
+
+[node name="PointLight2D" type="PointLight2D" parent="." unique_id=1504260063]
+position = Vector2(6, -70)
+scale = Vector2(10, 10)
+shadow_enabled = true
+shadow_color = Color(0, 0, 0, 1)
+texture = ExtResource("15_obc8e")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1243241645]
 sprite_frames = SubResource("SpriteFrames_ecm7r")

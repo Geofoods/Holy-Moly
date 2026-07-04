@@ -113,7 +113,7 @@ corner_radius_bottom_left = 8
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_vignette"]
 shader = ExtResource("7_vignette")
-shader_parameter/intensity = 0.6
+shader_parameter/intensity = 0.5
 shader_parameter/smoothness = 0.4
 shader_parameter/opacity = 1.0
 

@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://dtutorial9k3m2"]
+[gd_scene format=3 uid="uid://b16phqrsrbx5d"]
 
 [ext_resource type="Script" path="res://scripts/tutorial_manager.gd" id="1_tutorial"]
 [ext_resource type="PackedScene" uid="uid://p1of6ummc17j" path="res://scenes/mole.tscn" id="2_mole"]

@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://dbox5k2m9p1x7"]
+[gd_scene format=3 uid="uid://dbox5k2nap1x7"]
 
 [ext_resource type="Script" path="res://scripts/dialogue_box.gd" id="1_dialogue"]
 [ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="2_font"]

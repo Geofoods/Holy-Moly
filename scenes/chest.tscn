@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://dchest7x2k9m1"]
+[gd_scene format=3 uid="uid://dchest7x2lam1"]
 
 [ext_resource type="Script" path="res://scripts/chest.gd" id="1_chest"]
 
