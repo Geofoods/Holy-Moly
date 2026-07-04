@@ -34,6 +34,7 @@ var drill_armed := false
 var hurt_anim_time_left := 0.0
 var air_time := 0.0
 var launched_from_jump := false
+var _dig_dash_weapon_was_visible := false
 
 var health: float = 6.0:
 	set(value):
@@ -91,6 +92,12 @@ func _ready() -> void:
 		var ev_shift = InputEventKey.new()
 		ev_shift.keycode = KEY_SHIFT
 		InputMap.action_add_event("dig_dash", ev_shift)
+
+	if not InputMap.has_action("dig_slash"):
+		InputMap.add_action("dig_slash")
+		var ev_click = InputEventMouseButton.new()
+		ev_click.button_index = MOUSE_BUTTON_LEFT
+		InputMap.action_add_event("dig_slash", ev_click)
 
 	_setup_inventory_actions()
 	Inventory.initialize()
@@ -449,31 +456,54 @@ func deflect_pause() -> void:
 
 func start_dig_dash() -> void:
 	is_digging = true
-	var weapon_was_visible := false
+	_dig_dash_weapon_was_visible = false
 	if has_node("Weapon"):
-		weapon_was_visible = $Weapon.visible
+		_dig_dash_weapon_was_visible = $Weapon.visible
 		$Weapon.hide()
 	$AnimatedSprite2D.play("dig")
-	
+
 	tunnel_direction = -1.0 if $AnimatedSprite2D.flip_h else 1.0
-	
+
 	await $AnimatedSprite2D.animation_finished
-	
+
 	if not is_digging:
 		return
-		
+
 	is_digging = false
 	is_tunneling = true
 	$AnimatedSprite2D.play("tunnel")
-	
-	await get_tree().create_timer(TUNNEL_DURATION).timeout
-	
+
+	var tunnel_elapsed := 0.0
+	while tunnel_elapsed < TUNNEL_DURATION:
+		await get_tree().process_frame
+		if not is_tunneling:
+			return
+		tunnel_elapsed += get_process_delta_time()
+		if Input.is_action_just_pressed("dig_slash"):
+			_dash_cancel_into_attack()
+			return
+
 	if not is_tunneling:
 		return
-		
+
+	_end_dig_dash()
+
+func _dash_cancel_into_attack() -> void:
+	is_tunneling = false
+	velocity.x = tunnel_direction * SPEED * 0.5
+	velocity.y = -200.0
+	if has_node("Weapon"):
+		$Weapon.show()
+		if $Weapon.has_method("dig_slash"):
+			$Weapon.dig_slash()
+	screen_shake(18.0, 0.3)
+	spawn_dirt_particles(global_position)
+	$AnimatedSprite2D.play("jumpbold")
+
+func _end_dig_dash() -> void:
 	is_tunneling = false
 	velocity.x = 0
 	velocity.y = JUMP_VELOCITY
-	if has_node("Weapon") and weapon_was_visible:
+	if has_node("Weapon") and _dig_dash_weapon_was_visible:
 		$Weapon.show()
 	$AnimatedSprite2D.play("jumpbold")

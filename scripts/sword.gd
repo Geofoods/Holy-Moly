@@ -289,6 +289,35 @@ func _update_parry_indicator() -> void:
 		label.text = "PARRY [RMB]"
 		label.add_theme_color_override("font_color", Color(0.8, 0.9, 1.0, 1.0))
 
+func dig_slash() -> void:
+	if is_swinging or is_parrying:
+		return
+	is_swinging = true
+	visible = true
+	hitbox.monitoring = true
+	hit_enemies = []
+	trail_points.clear()
+
+	hitbox.area_entered.connect(_on_hitbox_area_entered)
+
+	_break_tile_at_mouse()
+
+	var dir := (get_global_mouse_position() - global_position).normalized()
+	var aim := atan2(dir.y, dir.x)
+	var arc := SWING_ARC * 1.4
+	var start_angle := aim - arc / 2.0
+	var end_angle := aim + arc / 2.0
+
+	if cos(aim) < 0:
+		start_angle = aim + arc / 2.0
+		end_angle = aim - arc / 2.0
+
+	rotation = start_angle
+
+	var tween := create_tween()
+	tween.tween_property(self, "rotation", end_angle, SWING_DURATION * 0.6).set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_CUBIC)
+	tween.tween_callback(_end_swing)
+
 func _break_tile_at_mouse() -> void:
 	var tilemap := get_parent().get_parent().get_node_or_null("TileMap") as TileMap
 	if not tilemap:
