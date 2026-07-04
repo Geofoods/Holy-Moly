@@ -51,7 +51,6 @@ shader_parameter/darkness = 0.35
 size = Vector2(4079.5, 933)
 
 [node name="Node2D" type="Node2D" unique_id=1979316305]
-texture_filter = 0
 
 [node name="TileMap" type="TileMap" parent="." unique_id=117175245]
 scale = Vector2(0.5, 0.5)
@@ -177,12 +176,12 @@ shape = SubResource("RectangleShape2D_vqvml")
 [node name="FireflySpawner" parent="." unique_id=1006708542 instance=ExtResource("14_spawner")]
 
 [node name="Costume5" type="Sprite2D" parent="." unique_id=1329603915]
-position = Vector2(3496, 1289)
-scale = Vector2(13.883869, 1.7175142)
+position = Vector2(2515.9253, 1289)
+scale = Vector2(18.090199, 1.7175142)
 texture = ExtResource("15_xo5qq")
 
 [node name="ColorRect" type="ColorRect" parent="." unique_id=630450445]
-offset_left = 248.0
+offset_left = -1557.0
 offset_top = 1499.9999
 offset_right = 6731.0
 offset_bottom = 3221.0
