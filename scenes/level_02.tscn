@@ -8,6 +8,84 @@
 [ext_resource type="Shader" uid="uid://qjf1ibg12yh2" path="res://shaders/vignette.gdshader" id="7_vignette"]
 [ext_resource type="PackedScene" path="res://scenes/parallax_background.tscn" id="8_parallax"]
 [ext_resource type="PackedScene" path="res://scenes/death_plane.tscn" id="10_deathplane"]
+[ext_resource type="Texture2D" uid="uid://chcmh5bq4tsqd" path="res://sprites/tileset.png" id="11_tileset"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_choun"]
+texture = ExtResource("11_tileset")
+texture_region_size = Vector2i(160, 160)
+0:0/0 = 0
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -50, 80, -51, 80, 8, -80, 17)
+1:0/0 = 0
+1:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+2:0/0 = 0
+2:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+3:0/0 = 0
+3:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+4:0/0 = 0
+4:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+5:0/0 = 0
+5:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+6:0/0 = 0
+6:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+7:0/0 = 0
+7:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+8:0/0 = 0
+8:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+9:0/0 = 0
+9:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -46.52009, 80, 12, -80, -14)
+10:0/0 = 0
+10:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -50, 80, -51, 80, 8, -80, 17)
+11:0/0 = 0
+11:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -58, 80, -80, 80, -27, -80, 2)
+12:0/0 = 0
+0:1/0 = 0
+0:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+1:1/0 = 0
+1:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+2:1/0 = 0
+2:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+3:1/0 = 0
+3:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+4:1/0 = 0
+4:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+5:1/0 = 0
+5:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+6:1/0 = 0
+6:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+7:1/0 = 0
+7:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+8:1/0 = 0
+8:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+9:1/0 = 0
+9:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -51, 80, 8, -80, -17)
+10:1/0 = 0
+10:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -58, 80, -51, 80, 8, -80, 2)
+11:1/0 = 0
+11:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -58, 80, -80, 80, -27, -80, 2)
+12:1/0 = 0
+3:3/0 = 0
+4:3/0 = 0
+5:3/0 = 0
+6:3/0 = 0
+5:6/0 = 0
+6:6/0 = 0
+5:7/0 = 0
+4:8/0 = 0
+0:7/0 = 0
+1:7/0 = 0
+0:8/0 = 0
+1:8/0 = 0
+5:8/0 = 0
+6:8/0 = 0
+5:9/0 = 0
+6:9/0 = 0
+5:10/0 = 0
+6:10/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_ya4ey"]
+tile_size = Vector2i(160, 160)
+physics_layer_0/collision_layer = 1
+sources/0 = SubResource("TileSetAtlasSource_choun")
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.1, 0.1, 0.12, 0.85)
@@ -41,6 +119,14 @@ shader_parameter/opacity = 1.0
 
 [node name="Node2D" type="Node2D" unique_id=1979316305]
 
+[node name="TileMap" type="TileMap" parent="."]
+scale = Vector2(0.5, 0.5)
+tile_set = SubResource("TileSet_ya4ey")
+format = 2
+layer_0/tile_data = PackedInt32Array(-327652, 262144, 1, -327651, 262144, 1, -327650, 262144, 1, -327649, 262144, 1, -327648, 262144, 1, -327647, 262144, 1, -327646, 262144, 1, -262126, 131072, 0, -262125, 131072, 0, -262124, 131072, 0, -262123, 131072, 0, -262122, 131072, 0, -262121, 131072, 0, -262120, 131072, 0, -262116, 262144, 1, -262115, 262144, 1, -262114, 262144, 1, -262113, 262144, 1, -262112, 262144, 1, -262111, 262144, 1, -262110, 262144, 1, -196590, 131072, 1, -196589, 131072, 1, -196588, 131072, 1, -196587, 131072, 1, -196586, 131072, 1, -196585, 131072, 1, -196584, 131072, 1, -196580, 262144, 0, -196579, 262144, 0, -196578, 262144, 0, -196577, 262144, 0, -196576, 262144, 0, -196575, 262144, 0, -196574, 262144, 0, -196573, 196608, 0, -196572, 196608, 0, -196571, 196608, 0, -196570, 196608, 0, -196569, 196608, 0, -196568, 196608, 0, -196567, 196608, 0, -131056, 131072, 0, -131055, 131072, 0, -131047, 65536, 0, -131037, 196608, 1, -131036, 196608, 1, -131035, 196608, 1, -131034, 196608, 1, -131033, 196608, 1, -131032, 196608, 1, -131031, 196608, 1, -131024, 0, 0, -131023, 0, 0, -131018, 0, 0, -131017, 0, 0, -131016, 0, 0, -131015, 0, 0, -131014, 0, 0, -131013, 0, 0, -131012, 0, 0, -131011, 0, 0, -131010, 0, 0, -131009, 0, 0, -131008, 0, 0, -65520, 131072, 1, -65519, 131072, 1, -65511, 65536, 1, -65488, 0, 1, -65487, 0, 1, -65482, 0, 1, -65481, 0, 1, -65480, 0, 1, -65479, 0, 1, -65478, 0, 1, -65477, 0, 1, -65476, 0, 1, -65475, 0, 1, -65474, 0, 1, -65473, 0, 1, -65472, 0, 1, 65533, 0, 0, 65534, 0, 0, 65535, 0, 0, 0, 0, 0, 1, 0, 0, 2, 0, 0, 3, 0, 0, 4, 0, 0, 5, 0, 0, 6, 0, 0, 7, 0, 0, 8, 0, 0, 11, 65536, 0, 13, 0, 0, 14, 131072, 0, 15, 131072, 0, 27, 0, 0, 28, 0, 0, 29, 0, 0, 30, 0, 0, 31, 0, 0, 32, 0, 0, 33, 0, 0, 34, 0, 0, 35, 0, 0, 36, 0, 0, 37, 0, 0, 38, 0, 0, 39, 0, 0, 40, 0, 0, 41, 0, 0, 42, 0, 0, 43, 0, 0, 44, 0, 0, 45, 0, 0, 46, 0, 0, 51, 0, 0, 52, 0, 0, 131069, 0, 1, 131070, 0, 1, 131071, 0, 1, 65536, 0, 1, 65537, 0, 1, 65538, 0, 1, 65539, 0, 1, 65540, 0, 1, 65541, 0, 1, 65542, 0, 1, 65543, 0, 1, 65544, 0, 1, 65547, 65536, 1, 65549, 0, 1, 65550, 131072, 1, 65551, 131072, 1, 65563, 0, 1, 65564, 0, 1, 65565, 0, 1, 65566, 0, 1, 65567, 0, 1, 65568, 0, 1, 65569, 0, 1, 65570, 0, 1, 65571, 0, 1, 65572, 0, 1, 65573, 0, 1, 65574, 0, 1, 65575, 0, 1, 65576, 0, 1, 65577, 0, 1, 65578, 0, 1, 65579, 0, 1, 65580, 0, 1, 65581, 131072, 0, 65582, 0, 1, 65584, 131072, 0, 65587, 0, 1, 65588, 0, 1, 131117, 131072, 0, 131120, 131072, 0, 196653, 131072, 0, 196654, 65536, 0, 196655, 65536, 0, 196656, 131072, 0, 262190, 65536, 1, 262191, 65536, 1)
+layer_1/name = "Decoration"
+layer_1/tile_data = PackedInt32Array(-327660, 65536, 7, -327659, 0, 8, -327656, 327680, 10, -262106, 65536, 8, -196560, 393216, 9, -196550, 393216, 3, -196546, 393216, 6, -1, 327680, 9, -65534, 196608, 3, -65530, 327680, 8, -65525, 393216, 10, -65521, 327680, 3, -65506, 327680, 9, -65494, 327680, 6, 131118, 0, 7, 131119, 327680, 7)
+
 [node name="ParallaxBackground" parent="." unique_id=211574599 instance=ExtResource("8_parallax")]
 
 [node name="DeathPlane" parent="." unique_id=2094833728 instance=ExtResource("10_deathplane")]
@@ -56,7 +142,10 @@ scale = Vector2(4, 4)
 position_smoothing_enabled = true
 
 [node name="Enemy" parent="." unique_id=1155690396 instance=ExtResource("2_enemy")]
-position = Vector2(300, -116)
+position = Vector2(2480, -116)
+
+[node name="Enemy2" parent="." instance=ExtResource("2_enemy")]
+position = Vector2(4080, -116)
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=71896557]
 

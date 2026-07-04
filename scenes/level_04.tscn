@@ -4,11 +4,88 @@
 [ext_resource type="PackedScene" uid="uid://dnp3icrndkjm8" path="res://scenes/enemy.tscn" id="2_enemy"]
 [ext_resource type="PackedScene" uid="uid://c6xus6tuhcmfo" path="res://scenes/heart.tscn" id="3_sugp2"]
 [ext_resource type="PackedScene" uid="uid://d2i1x8x1y6qa" path="res://scenes/pause_menu.tscn" id="4_pause"]
-[ext_resource type="Script" uid="uid://gkv1us5qnfhm" path="res://scripts/terrain_generator.gd" id="6_terrain"]
 [ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="6_tipki"]
 [ext_resource type="Shader" uid="uid://qjf1ibg12yh2" path="res://shaders/vignette.gdshader" id="7_vignette"]
 [ext_resource type="PackedScene" path="res://scenes/parallax_background.tscn" id="8_parallax"]
 [ext_resource type="PackedScene" path="res://scenes/death_plane.tscn" id="10_deathplane"]
+[ext_resource type="Texture2D" uid="uid://chcmh5bq4tsqd" path="res://sprites/tileset.png" id="11_tileset"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_choun"]
+texture = ExtResource("11_tileset")
+texture_region_size = Vector2i(160, 160)
+0:0/0 = 0
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -50, 80, -51, 80, 8, -80, 17)
+1:0/0 = 0
+1:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+2:0/0 = 0
+2:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+3:0/0 = 0
+3:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+4:0/0 = 0
+4:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+5:0/0 = 0
+5:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+6:0/0 = 0
+6:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+7:0/0 = 0
+7:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+8:0/0 = 0
+8:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+9:0/0 = 0
+9:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -46.52009, 80, 12, -80, -14)
+10:0/0 = 0
+10:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -50, 80, -51, 80, 8, -80, 17)
+11:0/0 = 0
+11:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -58, 80, -80, 80, -27, -80, 2)
+12:0/0 = 0
+0:1/0 = 0
+0:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+1:1/0 = 0
+1:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+2:1/0 = 0
+2:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+3:1/0 = 0
+3:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+4:1/0 = 0
+4:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+5:1/0 = 0
+5:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+6:1/0 = 0
+6:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+7:1/0 = 0
+7:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+8:1/0 = 0
+8:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
+9:1/0 = 0
+9:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -51, 80, 8, -80, -17)
+10:1/0 = 0
+10:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -58, 80, -51, 80, 8, -80, 2)
+11:1/0 = 0
+11:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -58, 80, -80, 80, -27, -80, 2)
+12:1/0 = 0
+3:3/0 = 0
+4:3/0 = 0
+5:3/0 = 0
+6:3/0 = 0
+5:6/0 = 0
+6:6/0 = 0
+5:7/0 = 0
+4:8/0 = 0
+0:7/0 = 0
+1:7/0 = 0
+0:8/0 = 0
+1:8/0 = 0
+5:8/0 = 0
+6:8/0 = 0
+5:9/0 = 0
+6:9/0 = 0
+5:10/0 = 0
+6:10/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_ya4ey"]
+tile_size = Vector2i(160, 160)
+physics_layer_0/collision_layer = 1
+sources/0 = SubResource("TileSetAtlasSource_choun")
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.1, 0.1, 0.12, 0.85)
@@ -42,11 +119,15 @@ shader_parameter/opacity = 1.0
 
 [node name="Node2D" type="Node2D" unique_id=1979316305]
 
+[node name="TileMap" type="TileMap" parent="."]
+scale = Vector2(0.5, 0.5)
+tile_set = SubResource("TileSet_ya4ey")
+format = 2
+layer_0/tile_data = PackedInt32Array(-786399, 131072, 0, -786398, 131072, 0, -786397, 131072, 0, -786396, 131072, 0, -786395, 131072, 0, -786394, 131072, 0, -720863, 131072, 1, -720862, 131072, 1, -720861, 131072, 1, -720860, 131072, 1, -720859, 131072, 1, -720858, 131072, 1, -655329, 131072, 0, -589793, 131072, 1, -524260, 131072, 0, -524259, 131072, 0, -458724, 131072, 1, -458723, 131072, 1, -393190, 131072, 0, -393175, 65536, 0, -393174, 65536, 0, -327654, 131072, 1, -327639, 65536, 1, -327638, 65536, 1, -327629, 262144, 1, -327628, 262144, 1, -327627, 262144, 1, -327626, 262144, 1, -327625, 262144, 1, -327624, 262144, 1, -327623, 262144, 1, -327622, 262144, 1, -327621, 262144, 1, -327620, 262144, 1, -327617, 262144, 1, -327616, 262144, 1, -327615, 262144, 1, -327614, 262144, 1, -327613, 262144, 1, -327612, 262144, 1, -327611, 262144, 1, -327610, 262144, 1, -327607, 196608, 0, -327604, 196608, 0, -327601, 196608, 0, -327598, 196608, 0, -327597, 196608, 0, -262121, 131072, 0, -262120, 131072, 0, -262093, 262144, 1, -262092, 262144, 1, -262091, 262144, 1, -262090, 262144, 1, -262089, 262144, 1, -262088, 262144, 1, -262087, 262144, 1, -262086, 262144, 1, -262085, 262144, 1, -262084, 262144, 1, -262081, 262144, 1, -262080, 262144, 1, -262079, 262144, 1, -262078, 262144, 1, -262077, 262144, 1, -262076, 262144, 1, -262075, 262144, 1, -262074, 262144, 1, -262071, 196608, 1, -262068, 196608, 1, -262065, 196608, 1, -262062, 196608, 1, -262061, 196608, 1, -196585, 131072, 1, -196584, 131072, 1, -196557, 262144, 0, -196556, 262144, 0, -196555, 262144, 0, -196554, 262144, 0, -196553, 262144, 0, -196552, 262144, 0, -196551, 262144, 0, -196550, 262144, 0, -196549, 262144, 0, -196548, 262144, 0, -196545, 262144, 0, -196544, 262144, 0, -196543, 262144, 0, -196542, 262144, 0, -196541, 262144, 0, -196540, 262144, 0, -196539, 262144, 0, -196538, 262144, 0, -131051, 131072, 0, -131000, 65536, 0, -130999, 65536, 0, -130998, 65536, 0, -130996, 65536, 0, -130995, 65536, 0, -130994, 65536, 0, -130992, 65536, 0, -130991, 65536, 0, -130990, 65536, 0, -65515, 131072, 1, -65464, 65536, 1, -65463, 65536, 1, -65462, 65536, 1, -65460, 65536, 1, -65459, 65536, 1, -65458, 65536, 1, -65456, 65536, 1, -65455, 65536, 1, -65454, 65536, 1, 65533, 0, 0, 65534, 0, 0, 65535, 0, 0, 0, 0, 0, 1, 0, 0, 2, 0, 0, 3, 0, 0, 4, 0, 0, 8, 65536, 0, 12, 65536, 0, 16, 0, 0, 17, 0, 0, 18, 131072, 0, 19, 131072, 0, 45, 0, 0, 46, 0, 0, 47, 0, 0, 48, 0, 0, 49, 0, 0, 50, 0, 0, 51, 0, 0, 52, 0, 0, 53, 0, 0, 54, 0, 0, 55, 0, 0, 56, 0, 0, 57, 0, 0, 58, 0, 0, 59, 0, 0, 60, 0, 0, 63, 0, 0, 64, 0, 0, 65, 0, 0, 66, 0, 0, 67, 0, 0, 68, 0, 0, 69, 0, 0, 70, 0, 0, 71, 0, 0, 72, 0, 0, 73, 0, 0, 74, 0, 0, 75, 0, 0, 76, 0, 0, 77, 0, 0, 78, 0, 0, 79, 0, 0, 80, 0, 0, 81, 0, 0, 82, 0, 0, 83, 0, 0, 84, 0, 0, 85, 0, 0, 86, 0, 0, 87, 0, 0, 88, 0, 0, 89, 0, 0, 90, 0, 0, 91, 0, 0, 92, 0, 0, 96, 0, 0, 100, 0, 0, 101, 0, 0, 105, 0, 0, 109, 0, 0, 110, 0, 0, 111, 0, 0, 112, 0, 0, 113, 0, 0, 114, 0, 0, 115, 0, 0, 116, 0, 0, 117, 0, 0, 118, 0, 0, 119, 0, 0, 120, 0, 0, 121, 0, 0, 122, 0, 0, 131069, 0, 1, 131070, 0, 1, 131071, 0, 1, 65536, 0, 1, 65537, 0, 1, 65538, 0, 1, 65539, 0, 1, 65540, 0, 1, 65544, 65536, 1, 65548, 65536, 1, 65552, 0, 1, 65553, 0, 1, 65554, 131072, 1, 65555, 131072, 1, 65581, 0, 1, 65582, 0, 1, 65583, 0, 1, 65584, 0, 1, 65585, 0, 1, 65586, 0, 1, 65587, 0, 1, 65588, 0, 1, 65589, 0, 1, 65590, 0, 1, 65591, 0, 1, 65592, 0, 1, 65593, 0, 1, 65594, 0, 1, 65595, 0, 1, 65596, 0, 1, 65599, 0, 1, 65600, 0, 1, 65601, 0, 1, 65602, 0, 1, 65603, 0, 1, 65604, 0, 1, 65605, 0, 1, 65606, 0, 1, 65607, 0, 1, 65608, 0, 1, 65609, 0, 1, 65610, 0, 1, 65611, 0, 1, 65612, 0, 1, 65613, 0, 1, 65614, 0, 1, 65615, 0, 1, 65616, 0, 1, 65617, 0, 1, 65618, 0, 1, 65619, 0, 1, 65620, 0, 1, 65621, 0, 1, 65622, 0, 1, 65623, 0, 1, 65624, 0, 1, 65625, 0, 1, 65626, 0, 1, 65627, 0, 1, 65628, 131072, 0, 65632, 131072, 0, 65636, 0, 1, 65637, 131072, 0, 65641, 131072, 0, 65645, 0, 1, 65646, 0, 1, 65647, 0, 1, 65648, 0, 1, 65649, 0, 1, 65650, 0, 1, 65651, 0, 1, 65652, 0, 1, 65653, 0, 1, 65654, 0, 1, 65655, 0, 1, 65656, 0, 1, 65657, 0, 1, 65658, 0, 1, 131164, 131072, 0, 131168, 131072, 0, 131173, 131072, 0, 131177, 131072, 0, 196700, 131072, 0, 196701, 65536, 0, 196702, 65536, 0, 196703, 65536, 0, 196704, 131072, 0, 196709, 131072, 0, 196710, 65536, 0, 196711, 65536, 0, 196712, 65536, 0, 196713, 131072, 0, 262237, 65536, 1, 262238, 65536, 1, 262239, 65536, 1, 262246, 65536, 1, 262247, 65536, 1, 262248, 65536, 1)
+layer_1/name = "Decoration"
+layer_1/tile_data = PackedInt32Array(-851934, 65536, 7, -851933, 65536, 8, -458710, 327680, 10, -393134, 0, 8, -393133, 0, 7, -196531, 327680, 6, -1, 393216, 3, -65528, 393216, 8, -65517, 196608, 3, -65475, 327680, 7, -65440, 262144, 8, -65423, 327680, 3, -65420, 393216, 6, -65417, 262144, 3, 131165, 65536, 7, 131166, 327680, 7, 131175, 65536, 8, 131176, 327680, 6)
+
 [node name="ParallaxBackground" parent="." unique_id=211574599 instance=ExtResource("8_parallax")]
-
-[node name="TerrainGenerator" type="Node2D" parent="." unique_id=1834868234]
-script = ExtResource("6_terrain")
-
 
 [node name="DeathPlane" parent="." instance=ExtResource("10_deathplane")]
 
@@ -60,7 +141,22 @@ scale = Vector2(4, 4)
 position_smoothing_enabled = true
 
 [node name="Enemy" parent="." unique_id=1155690396 instance=ExtResource("2_enemy")]
-position = Vector2(300, -116)
+position = Vector2(800, -116)
+
+[node name="Enemy2" parent="." instance=ExtResource("2_enemy")]
+position = Vector2(4160, -116)
+
+[node name="Enemy3" parent="." instance=ExtResource("2_enemy")]
+position = Vector2(5200, -116)
+
+[node name="Enemy4" parent="." instance=ExtResource("2_enemy")]
+position = Vector2(6800, -116)
+
+[node name="Enemy5" parent="." instance=ExtResource("2_enemy")]
+position = Vector2(7600, -116)
+
+[node name="Enemy6" parent="." instance=ExtResource("2_enemy")]
+position = Vector2(8560, -116)
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=71896557]
 
