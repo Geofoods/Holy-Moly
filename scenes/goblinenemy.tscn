@@ -61,4 +61,4 @@ shape = SubResource("RectangleShape2D_cy55b")
 
 [node name="VisibleOnScreenNotifier2D" type="VisibleOnScreenNotifier2D" parent="." unique_id=53723564]
 position = Vector2(40, 100)
-rect = Rect2(-432, -452, 864, 904)
+rect = Rect2(-654, -684, 1308, 1368)
