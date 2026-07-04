@@ -35,7 +35,7 @@ var launched_from_jump := false
 var _dig_dash_weapon_was_visible := false
 
 ## Set by a scene (e.g. the tutorial) that wants to intercept death instead of
-## the default Game Over transition — e.g. to restart just the current section.
+## the default Game Over transition, e.g. to restart just the current section.
 var death_override: Callable = Callable()
 
 var health: float = 6.0:

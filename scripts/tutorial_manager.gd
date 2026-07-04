@@ -7,10 +7,12 @@ var steps := []
 var step_index := -1
 var _pending_signal: Signal
 var _has_pending_signal := false
+var current_checkpoint: Vector2 = Vector2(-28, -116)
 
 func _ready() -> void:
 	mole.set_physics_process(false)
 	mole.set_process(false)
+	mole.death_override = _on_tutorial_death
 	_build_steps()
 	_show_step(0)
 	_reposition_inventory_ui()
@@ -28,7 +30,7 @@ func _build_steps() -> void:
 			"kind": "click",
 		},
 		{
-			"text": "Enemies will shoot and charge at you, and gaps or hazards can hurt you too. Let's learn how to survive.",
+			"text": "Enemies will charge, sting and explode, and gaps or hazards can hurt you too. Let's learn how to survive.",
 			"kind": "click",
 			"on_start": func(): mole.set_physics_process(true); mole.set_process(true),
 		},
@@ -43,24 +45,71 @@ func _build_steps() -> void:
 			"node": "JumpTrigger",
 		},
 		{
-			"text": "An enemy! Left-click to swing your shovel and defeat it — or just jump past to avoid it.",
+			"text": "An Ant! It's the weakest enemy in the burrow. Left-click to swing your shovel and defeat it, or just jump past to avoid it.",
 			"kind": "trigger",
 			"node": "EnemyTrigger",
-		},
-		{
-			"text": "Tip: Right-click to PARRY! Your shovel flips into a guard for 2 seconds. Any bullet that hits it deflects toward your cursor! (5s cooldown)",
-			"kind": "click",
+			"checkpoint": Vector2(2500, -116),
 		},
 		{
 			"text": "Nice work! Walk into this chest to open it.",
 			"kind": "chest",
 			"node": "Chest",
 		},
+		{
+			"text": "Handy trick: Right-click raises your shovel as a guard for about 1.25 seconds, deflecting anything it blocks back toward your cursor. It has a 3 second cooldown after use.",
+			"kind": "click",
+		},
+		{
+			"text": "A Beetle! It rushes you fast once it spots you, but can't change direction mid-charge. Swing to meet it head on, or jump over the charge.",
+			"kind": "trigger",
+			"node": "BeetleTrigger",
+			"checkpoint": Vector2(6050, -116),
+		},
+		{
+			"text": "A Goblin! It's faster to notice you than the Beetle and charges almost immediately. Don't get caught flat-footed.",
+			"kind": "trigger",
+			"node": "GoblinTrigger",
+			"checkpoint": Vector2(7300, -116),
+		},
+		{
+			"text": "A Bat! It drifts overhead until it dives at you. One shovel hit is all it takes to drop it.",
+			"kind": "trigger",
+			"node": "BatTrigger",
+			"checkpoint": Vector2(8500, -116),
+		},
+		{
+			"text": "Careful, a Worm! It's a buried mine that arms itself and flashes red when you get close, then explodes. Pop it from a distance or keep moving once you see it flash.",
+			"kind": "trigger",
+			"node": "WormTrigger",
+			"checkpoint": Vector2(9700, -116),
+		},
+		{
+			"text": "A Mushroom Caster! It stays put and lobs exploding mushrooms at anything it can see. Close the distance and finish it with your shovel.",
+			"kind": "trigger",
+			"node": "MushroomTrigger",
+			"checkpoint": Vector2(10900, -116),
+		},
+		{
+			"text": "You've got a Bomb! Press its number key to select it, then Left-click to throw it at that wall and blast your way through.",
+			"kind": "trigger",
+			"node": "BombWallTrigger",
+			"checkpoint": Vector2(12200, -116),
+			"on_start": func(): Inventory.add_item(preload("res://resources/bomb.tres")),
+		},
+		{
+			"text": "Now try the Drill! It tunnels through rock and instantly defeats any enemy in its path, and it never hurts you. Select it, then Left-click toward the wall ahead.",
+			"kind": "trigger",
+			"node": "DrillWallTrigger",
+			"checkpoint": Vector2(13000, -116),
+			"on_start": func(): Inventory.add_item(preload("res://resources/drill.tres")),
+		},
 	]
 
 func _show_step(i: int) -> void:
 	step_index = i
 	var step: Dictionary = steps[i]
+	if step.has("checkpoint"):
+		current_checkpoint = step["checkpoint"]
 	if step.has("on_start"):
 		step["on_start"].call()
 
@@ -121,6 +170,20 @@ func _finish() -> void:
 	dialogue.show_text("Great job! You now know the basics. You're ready to begin your adventure. Good luck!", 0, 0, true)
 	dialogue.next_button.text = "PLAY NOW ▸"
 	dialogue.next_pressed.connect(_on_play_now_pressed, CONNECT_ONE_SHOT)
+
+func _on_tutorial_death() -> void:
+	mole.velocity = Vector2.ZERO
+	mole.global_position = current_checkpoint
+	mole.invulnerable = false
+	mole.hurt_anim_time_left = 0.0
+	mole.health = 6
+	mole.set_physics_process(true)
+	if is_instance_valid(dialogue) and is_instance_valid(dialogue.main_label):
+		var original_text: String = dialogue.main_label.text
+		dialogue.main_label.text = "That got you! Right back to it."
+		await get_tree().create_timer(1.4).timeout
+		if is_instance_valid(dialogue) and is_instance_valid(dialogue.main_label):
+			dialogue.main_label.text = original_text
 
 func _on_skip_pressed() -> void:
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
