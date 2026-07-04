@@ -1,13 +1,24 @@
 extends CanvasLayer
 
 const SLOT_COUNT := 3
-const SLOT_SIZE := Vector2(64, 64)
-const SLOT_GAP := 12
+const SLOT_SIZE := Vector2(84, 84)
+const SLOT_GAP := 14
 
 var slot_panels: Array = []
 var slot_icons: Array = []
 var slot_textures: Array = []
 var slot_labels: Array = []
+var _placeholder_textures: Dictionary = {}
+
+func _make_colored_texture(color: Color) -> Texture2D:
+	var key := str(color)
+	if key in _placeholder_textures:
+		return _placeholder_textures[key]
+	var img := Image.create(24, 24, false, Image.FORMAT_RGBA8)
+	img.fill(color)
+	var tex := ImageTexture.create_from_image(img)
+	_placeholder_textures[key] = tex
+	return tex
 
 func _ready() -> void:
 	_build_ui()
@@ -53,19 +64,20 @@ func _build_ui() -> void:
 
 		var tex_rect := TextureRect.new()
 		tex_rect.name = "IconTexture"
-		tex_rect.size = Vector2(36, 36)
-		tex_rect.position = Vector2((SLOT_SIZE.x - 36) / 2, 4)
+		tex_rect.size = Vector2(28, 28)
+		tex_rect.position = Vector2((SLOT_SIZE.x - 28) / 2, 6)
 		tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		tex_rect.expand = true
 		tex_rect.mouse_filter = Control.MOUSE_FILTER_PASS
 		panel.add_child(tex_rect)
 
 		var icon_label := Label.new()
 		icon_label.name = "IconLabel"
-		icon_label.size = Vector2(36, 36)
-		icon_label.position = Vector2((SLOT_SIZE.x - 36) / 2, 4)
+		icon_label.size = Vector2(28, 28)
+		icon_label.position = Vector2((SLOT_SIZE.x - 28) / 2, 6)
 		icon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		icon_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		icon_label.add_theme_font_size_override("font_size", 22)
+		icon_label.add_theme_font_size_override("font_size", 14)
 		icon_label.text = ""
 		icon_label.mouse_filter = Control.MOUSE_FILTER_PASS
 		panel.add_child(icon_label)
@@ -142,15 +154,12 @@ func _update_slot(idx: int) -> void:
 			tex_rect.show()
 			icon_rect.color = Color(0, 0, 0, 0)
 		else:
-			tex_rect.texture = null
-			tex_rect.hide()
-			icon_rect.color = item.icon_color
+			tex_rect.texture = _make_colored_texture(item.icon_color)
+			tex_rect.show()
+			icon_rect.color = Color(0, 0, 0, 0)
 
 		var count: int = Inventory.slot_counts[idx] if idx < Inventory.slot_counts.size() else 0
-		if count > 1:
-			icon_label.text = item.icon_text + " " + str(count)
-		else:
-			icon_label.text = item.icon_text
+		icon_label.text = str(count) if count > 1 else ""
 	else:
 		if is_selected:
 			style.bg_color = Color(0.2, 0.2, 0.25, 0.7)

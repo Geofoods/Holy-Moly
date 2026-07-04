@@ -15,6 +15,7 @@
 [ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="12_rt7wb"]
 [ext_resource type="PackedScene" uid="uid://cdxu1kg5or16d" path="res://candle.tscn" id="14_d8cpw"]
 [ext_resource type="PackedScene" path="res://scenes/firefly_spawner.tscn" id="15_spawner"]
+[ext_resource type="PackedScene" uid="uid://u77s8ew4xenh" path="res://scenes/beetleenemy.tscn" id="16_eceou"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.1, 0.1, 0.12, 0.85)
@@ -457,6 +458,21 @@ position = Vector2(2683, 288)
 scale = Vector2(0.5, 0.5)
 
 [node name="FireflySpawner" parent="." unique_id=1343869836 instance=ExtResource("15_spawner")]
+
+[node name="Enemy10" parent="." unique_id=1849714905 instance=ExtResource("16_eceou")]
+position = Vector2(3181, -858)
+
+[node name="Enemy11" parent="." unique_id=110770945 instance=ExtResource("16_eceou")]
+position = Vector2(2437, -1034)
+
+[node name="Enemy12" parent="." unique_id=463146960 instance=ExtResource("16_eceou")]
+position = Vector2(2143, -1946)
+
+[node name="Enemy13" parent="." unique_id=1576950735 instance=ExtResource("16_eceou")]
+position = Vector2(4099, -1037)
+
+[node name="Enemy14" parent="." unique_id=383233866 instance=ExtResource("16_eceou")]
+position = Vector2(2039, 178)
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="area_entered" from="nextlevel" to="DeathPlane" method="_on_nextlevel_area_entered"]

@@ -1,25 +1,28 @@
 extends CharacterBody2D
 
-const SPEED = 80.0
-const CLIMB_SPEED = 70.0
-const GRAVITY = 980.0
-const DETECT_RANGE = 600.0
-const CLIMB_DURATION = 1.2
-const CLIMB_CHANCE = 0.5
-const MAX_HEALTH := 3.0
+enum State { PATROL, RUSHING, COOLDOWN }
 
+const PATROL_SPEED := 60.0
+const RUSH_SPEED := 550.0
+const GRAVITY := 980.0
+const DETECT_RANGE := 350.0
+const RUSH_DURATION := 1.2
+const COOLDOWN_DURATION := 2.5
+const MAX_HEALTH := 4.0
+
+var state := State.PATROL
 var direction := 1.0
 var target_mole: Node2D = null
-var is_climbing := false
-var climb_timer := 0.0
+var rush_timer := 0.0
+var cooldown_timer := 0.0
 var health := MAX_HEALTH
-@onready var hurtbox: Area2D = $Hurtbox
-@onready var hitbox: Area2D = $Hitbox
+var was_on_floor := true
+@onready var hurtbox: Area2D = $Area2D
 @onready var visual: AnimatedSprite2D = $Visual
 
 func _ready() -> void:
 	hurtbox.area_entered.connect(_on_hurtbox_area_entered)
-	hitbox.body_entered.connect(_on_hitbox_body_entered)
+	hurtbox.body_entered.connect(_on_body_entered)
 	hurtbox.add_to_group("enemy_hurtbox")
 	visual.z_index = -1
 	visual.play()
@@ -27,56 +30,95 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	_find_target()
 
-	if target_mole:
-		direction = sign(target_mole.global_position.x - global_position.x)
+	match state:
+		State.PATROL:
+			_patrol(delta)
+		State.RUSHING:
+			_rush(delta)
+		State.COOLDOWN:
+			_cooldown(delta)
 
-	if is_climbing:
-		climb_timer -= delta
-		velocity.y = -CLIMB_SPEED
-		velocity.x = direction * SPEED * 0.3
-		if climb_timer <= 0.0 or is_on_ceiling():
-			is_climbing = false
-		move_and_slide()
-		_update_visual_direction()
-		return
+	move_and_slide()
+	_update_visual_direction()
 
+	if state == State.RUSHING:
+		_break_tiles_on_collision()
+
+	was_on_floor = is_on_floor()
+
+func _patrol(delta: float) -> void:
 	if not is_on_floor():
 		velocity.y += GRAVITY * delta
 	else:
 		velocity.y = 0.0
 
-	velocity.x = direction * SPEED
+	velocity.x = direction * PATROL_SPEED
 
 	if is_on_wall():
-		if randf() < CLIMB_CHANCE and target_mole and target_mole.global_position.y < global_position.y - 30:
-			is_climbing = true
-			climb_timer = CLIMB_DURATION
-		else:
-			direction *= -1
+		direction *= -1
 
-	move_and_slide()
-	_update_visual_direction()
+	if target_mole:
+		var dist: float = global_position.distance_squared_to(target_mole.global_position)
+		if dist < DETECT_RANGE * DETECT_RANGE:
+			_start_rush()
+
+func _rush(_delta: float) -> void:
+	velocity.y = 0.0
+
+	var dir: float = sign(target_mole.global_position.x - global_position.x) if target_mole else direction
+	velocity.x = dir * RUSH_SPEED
+
+	rush_timer -= _delta
+	if rush_timer <= 0.0:
+		state = State.COOLDOWN
+		cooldown_timer = COOLDOWN_DURATION
+
+func _cooldown(delta: float) -> void:
+	if not is_on_floor():
+		velocity.y += GRAVITY * delta
+	else:
+		velocity.y = 0.0
+
+	velocity.x = move_toward(velocity.x, 0.0, PATROL_SPEED * delta)
+
+	cooldown_timer -= delta
+	if cooldown_timer <= 0.0:
+		state = State.PATROL
+
+func _start_rush() -> void:
+	state = State.RUSHING
+	rush_timer = RUSH_DURATION
+	direction = sign(target_mole.global_position.x - global_position.x)
+
+func _break_tiles_on_collision() -> void:
+	for i in get_slide_collision_count():
+		var collision := get_slide_collision(i)
+		var collider := collision.get_collider()
+		if collider is TileMap:
+			var tilemap := collider as TileMap
+			var tile_pos := tilemap.local_to_map(tilemap.to_local(collision.get_position()))
+			if tilemap.get_cell_source_id(0, tile_pos) != -1:
+				var sfx = load("res://scripts/tile_break_sfx.gd")
+				sfx.break_tile(tilemap, tile_pos, get_parent())
 
 func _update_visual_direction() -> void:
-	var dir = sign(velocity.x) if velocity.x != 0.0 else direction
+	var dir: float = sign(velocity.x) if velocity.x != 0.0 else direction
 	visual.scale.x = -abs(visual.scale.x) * sign(dir)
 
 func _find_target() -> void:
 	if target_mole == null or not is_instance_valid(target_mole):
 		target_mole = get_tree().get_first_node_in_group("mole")
-	elif global_position.distance_squared_to(target_mole.global_position) > DETECT_RANGE * DETECT_RANGE:
+	elif global_position.distance_squared_to(target_mole.global_position) > DETECT_RANGE * DETECT_RANGE * 4:
 		target_mole = null
 
-func _on_hitbox_body_entered(body: Node) -> void:
-	if body.is_in_group("mole"):
-		body.take_damage(1, global_position, true)
-
 func _on_hurtbox_area_entered(area: Area2D) -> void:
-	if area == hitbox or not area.monitoring:
-		return
 	var parent = area.get_parent()
 	if "is_swinging" in parent and parent.is_swinging:
 		take_damage(1)
+
+func _on_body_entered(body: Node) -> void:
+	if body.is_in_group("mole"):
+		body.take_damage(1, global_position, true)
 
 func take_damage(amount: float) -> void:
 	if health <= 0:
@@ -96,7 +138,7 @@ func _draw() -> void:
 		return
 	var bar_w := 96.0
 	var bar_h := 12.0
-	var offset := Vector2(-bar_w / 2, -70)
+	var offset := Vector2(-bar_w / 2, -80)
 	var ratio := health / MAX_HEALTH
 
 	draw_rect(Rect2(offset, Vector2(bar_w, bar_h)), Color(0.15, 0.15, 0.15, 0.9))
@@ -105,7 +147,6 @@ func _draw() -> void:
 
 func die() -> void:
 	set_physics_process(false)
-	hitbox.set_deferred("monitoring", false)
 	hurtbox.set_deferred("monitorable", false)
 
 	var tween := create_tween()

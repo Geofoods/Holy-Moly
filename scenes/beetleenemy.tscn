@@ -1,15 +1,35 @@
 [gd_scene format=3 uid="uid://u77s8ew4xenh"]
 
-[ext_resource type="Script" uid="uid://vuo21m773its" path="res://scripts/enemy.gd" id="1_cwycq"]
+[ext_resource type="Script" uid="uid://vv8xs2em0h6" path="res://scripts/beetle_enemy.gd" id="1_cwycq"]
+[ext_resource type="Texture2D" uid="uid://bn6anav3nk3cw" path="res://beetle.webp" id="2_cwycq"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_anoyi"]
+atlas = ExtResource("2_cwycq")
+region = Rect2(0, 0, 900, 600)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_o2d8q"]
+atlas = ExtResource("2_cwycq")
+region = Rect2(900, 0, 900, 600)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_d2pvn"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_anoyi")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_o2d8q")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
-size = Vector2(318, 152)
+size = Vector2(267, 132)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_hurtbox"]
-size = Vector2(411, 211)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_hitbox"]
-size = Vector2(393, 228)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_cy55b"]
+size = Vector2(362, 204)
 
 [node name="Enemy" type="CharacterBody2D" unique_id=866104770]
 position = Vector2(2, -1)
@@ -17,28 +37,18 @@ scale = Vector2(0.5, 0.5)
 script = ExtResource("1_cwycq")
 
 [node name="Visual" type="AnimatedSprite2D" parent="." unique_id=2010235303]
-position = Vector2(48, -48)
-animation = &""
+position = Vector2(-42, 23.499985)
+scale = Vector2(0.68666667, 0.5383333)
+sprite_frames = SubResource("SpriteFrames_d2pvn")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1102294679]
-position = Vector2(10, 12)
+position = Vector2(8, 22)
 shape = SubResource("RectangleShape2D_body")
 
-[node name="RayRight" type="RayCast2D" parent="." unique_id=804185459]
-target_position = Vector2(200, 40)
+[node name="Area2D" type="Area2D" parent="." unique_id=1008187029]
 
-[node name="RayLeft" type="RayCast2D" parent="." unique_id=1608081044]
-target_position = Vector2(-200, 40)
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=1028128716]
+position = Vector2(-41, -10)
+shape = SubResource("RectangleShape2D_cy55b")
 
-[node name="Hurtbox" type="Area2D" parent="." unique_id=148008664]
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox" unique_id=2070211923]
-position = Vector2(-17.5, -9.5)
-shape = SubResource("RectangleShape2D_hurtbox")
-
-[node name="Hitbox" type="Area2D" parent="." unique_id=1990850546]
-monitorable = false
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox" unique_id=904549536]
-position = Vector2(-26, -13)
-shape = SubResource("RectangleShape2D_hitbox")
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1139016147]
