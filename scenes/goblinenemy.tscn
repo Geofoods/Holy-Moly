@@ -27,16 +27,16 @@ animations = [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_45hj4")
 }],
-"loop": true,
+"loop": false,
 "name": &"default",
 "speed": 5.0
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
-size = Vector2(84, 142)
+size = Vector2(140, 238.5)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_cy55b"]
-size = Vector2(124, 156)
+size = Vector2(164, 240)
 
 [node name="Enemy" type="CharacterBody2D" unique_id=866104770]
 position = Vector2(2, -1)
@@ -44,18 +44,16 @@ scale = Vector2(0.5, 0.5)
 script = ExtResource("1_u888v")
 
 [node name="Visual" type="AnimatedSprite2D" parent="." unique_id=2010235303]
-position = Vector2(-42, 23.499985)
-scale = Vector2(0.5, 0.5)
+position = Vector2(56.091793, 88.99999)
+scale = Vector2(0.81642514, 0.81642514)
 sprite_frames = SubResource("SpriteFrames_d2pvn")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1102294679]
-position = Vector2(-50, 33)
+position = Vector2(40, 107.25)
 shape = SubResource("RectangleShape2D_body")
 
 [node name="Area2D" type="Area2D" parent="." unique_id=1008187029]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=1028128716]
-position = Vector2(-52, 30)
+position = Vector2(42, 108)
 shape = SubResource("RectangleShape2D_cy55b")
-
-[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1139016147]
