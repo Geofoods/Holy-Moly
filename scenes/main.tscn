@@ -5,10 +5,8 @@
 [ext_resource type="PackedScene" uid="uid://c6xus6tuhcmfo" path="res://scenes/heart.tscn" id="3_sugp2"]
 [ext_resource type="PackedScene" uid="uid://d2i1x8x1y6qa" path="res://scenes/pause_menu.tscn" id="4_pause"]
 [ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="6_tipki"]
-[ext_resource type="Shader" uid="uid://qjf1ibg12yh2" path="res://shaders/vignette.gdshader" id="7_vignette"]
 [ext_resource type="PackedScene" path="res://scenes/parallax_background.tscn" id="8_parallax"]
 [ext_resource type="PackedScene" path="res://scenes/mushroom_enemy.tscn" id="10_mushroom"]
-[ext_resource type="Script" path="res://scripts/dynamic_vignette.gd" id="11_vignette_script"]
 [ext_resource type="Texture2D" uid="uid://chcmh5bq4tsqd" path="res://sprites/tileset.png" id="9_85g3d"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_choun"]
@@ -191,12 +189,6 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_vignette"]
-shader = ExtResource("7_vignette")
-shader_parameter/inner_radius = 0.35
-shader_parameter/outer_radius = 0.65
-shader_parameter/darkness = 0.95
-
 [node name="Node2D" type="Node2D" unique_id=1979316305]
 
 [node name="TileMap" type="TileMap" parent="." unique_id=193735831]
@@ -250,18 +242,5 @@ theme_override_styles/focus = SubResource("StyleBoxFlat_pausebutton_hover")
 text = "II ESC"
 
 [node name="PauseMenu" parent="." unique_id=1779626465 instance=ExtResource("4_pause")]
-
-[node name="VignetteLayer" type="CanvasLayer" parent="." unique_id=182643830]
-layer = 1
-
-[node name="VignetteRect" type="ColorRect" parent="VignetteLayer" unique_id=1731371193]
-material = SubResource("ShaderMaterial_vignette")
-script = ExtResource("11_vignette_script")
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]

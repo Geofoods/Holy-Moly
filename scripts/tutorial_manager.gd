@@ -39,6 +39,10 @@ func _build_steps() -> void:
 			"node": "EnemyTrigger",
 		},
 		{
+			"text": "Tip: Right-click to PARRY! Your shovel flips into a guard for 2 seconds. Any bullet that hits it deflects toward your cursor! (5s cooldown)",
+			"kind": "click",
+		},
+		{
 			"text": "Nice work! Walk into this chest to open it.",
 			"kind": "chest",
 			"node": "Chest",

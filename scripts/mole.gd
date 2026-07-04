@@ -270,6 +270,32 @@ func screen_shake(intensity: float, duration: float) -> void:
 		tween.tween_property(camera, "offset", offset, step_time).set_trans(Tween.TRANS_SINE)
 	tween.tween_property(camera, "offset", Vector2.ZERO, step_time).set_trans(Tween.TRANS_SINE)
 
+func deflect_pause() -> void:
+	$AnimatedSprite2D.modulate = Color(3.0, 3.0, 3.5, 1.0)
+	var sprite_tween := create_tween()
+	sprite_tween.tween_property($AnimatedSprite2D, "modulate", Color(1.5, 1.5, 1.8, 1.0), 0.1).set_trans(Tween.TRANS_QUAD)
+	sprite_tween.tween_property($AnimatedSprite2D, "modulate", Color.WHITE, 0.3).set_ease(Tween.EASE_OUT)
+
+	var base_scale: Vector2 = $AnimatedSprite2D.scale
+	var punch_scale := base_scale * Vector2(1.2, 0.85)
+	var scale_tween := create_tween()
+	scale_tween.tween_property($AnimatedSprite2D, "scale", punch_scale, 0.05).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	scale_tween.tween_property($AnimatedSprite2D, "scale", base_scale, 0.15).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
+
+	Engine.time_scale = 0.05
+	await get_tree().create_timer(0.1 * 0.05).timeout
+	Engine.time_scale = 1.0
+
+	var camera := get_node_or_null("Camera2D") as Camera2D
+	if not camera:
+		return
+	var original_zoom := Vector2(1.5, 1.5)
+	var punch_zoom := Vector2(1.75, 1.75)
+	var zoom_tween := create_tween()
+	zoom_tween.tween_property(camera, "zoom", punch_zoom, 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	zoom_tween.tween_interval(0.15)
+	zoom_tween.tween_property(camera, "zoom", original_zoom, 0.35).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
 func start_dig_dash() -> void:
 	is_digging = true
 	if has_node("Weapon"):
