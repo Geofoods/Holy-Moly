@@ -11,7 +11,19 @@ const TRAIL_LENGTH := 8
 var trail_points: Array[Vector2] = []
 var trail_widths: Array[float] = []
 
+var is_parrying := false
+var parry_time_left := 0.0
+var parry_cooldown := 0.0
+const PARRY_DURATION := 1.25
+const PARRY_COOLDOWN := 3.0
+
+var deflect_sounds: Array[AudioStream] = []
+var original_shape_pos := Vector2.ZERO
+var original_shape: Shape2D = null
+var parry_shape: CircleShape2D = null
+
 @onready var hitbox: Area2D = $Hitbox
+@onready var hitbox_col: CollisionShape2D = $Hitbox/CollisionShape2D
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var trail: Line2D = $Trail
 
@@ -24,23 +36,55 @@ func _ready() -> void:
 	trail.width_curve = Curve.new()
 	trail.width_curve.add_point(Vector2(0.0, 1.0))
 	trail.width_curve.add_point(Vector2(1.0, 0.0))
+	original_shape_pos = hitbox_col.position
+	original_shape = hitbox_col.shape
+	parry_shape = CircleShape2D.new()
+	parry_shape.radius = 220.0
+	for i in range(1, 4):
+		deflect_sounds.append(load("res://sounds/deflect_%d.ogg" % i))
 
 func _process(delta: float) -> void:
 	_update_trail()
+	_update_parry(delta)
 
 	if is_swinging:
 		return
+
 	var dir := (get_global_mouse_position() - global_position).normalized()
 	rotation = atan2(dir.y, dir.x)
 
-	if dir.x < 0:
-		sprite.flip_v = true
-		sprite.rotation_degrees = -45.0
-		hitbox.rotation_degrees = -45.0
+	if is_parrying:
+		if dir.x < 0:
+			sprite.flip_v = false
+			sprite.flip_h = true
+			sprite.rotation_degrees = 45.0
+			hitbox.rotation_degrees = 45.0
+		else:
+			sprite.flip_v = true
+			sprite.flip_h = true
+			sprite.rotation_degrees = -45.0
+			hitbox.rotation_degrees = -45.0
 	else:
-		sprite.flip_v = false
-		sprite.rotation_degrees = 45.0
-		hitbox.rotation_degrees = 45.0
+		sprite.flip_h = false
+		if dir.x < 0:
+			sprite.flip_v = true
+			sprite.rotation_degrees = -45.0
+			hitbox.rotation_degrees = -45.0
+		else:
+			sprite.flip_v = false
+			sprite.rotation_degrees = 45.0
+			hitbox.rotation_degrees = 45.0
+
+func _update_parry(delta: float) -> void:
+	if parry_cooldown > 0.0:
+		parry_cooldown -= delta
+
+	if is_parrying:
+		parry_time_left -= delta
+		if parry_time_left <= 0.0:
+			_end_parry()
+
+	_update_parry_indicator()
 
 func _update_trail() -> void:
 	var tip_offset := 330.0
@@ -61,8 +105,37 @@ func _update_trail() -> void:
 		trail.add_point(point)
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT and not is_swinging:
-		swing()
+	if event is InputEventMouseButton and event.pressed:
+		if event.button_index == MOUSE_BUTTON_LEFT and not is_swinging and not is_parrying:
+			swing()
+		elif event.button_index == MOUSE_BUTTON_RIGHT and not is_swinging and not is_parrying and parry_cooldown <= 0.0:
+			_start_parry()
+
+func _start_parry() -> void:
+	is_parrying = true
+	parry_time_left = PARRY_DURATION
+	hitbox.monitoring = true
+	hitbox_col.position = Vector2(180, 0)
+	hitbox_col.shape = parry_shape
+	hitbox.area_entered.connect(_on_parry_area_entered)
+	sprite.modulate = Color(0.6, 0.85, 1.0, 1.0)
+
+func _end_parry() -> void:
+	is_parrying = false
+	parry_time_left = 0.0
+	parry_cooldown = PARRY_COOLDOWN
+	hitbox.monitoring = false
+	hitbox_col.position = original_shape_pos
+	hitbox_col.shape = original_shape
+	if hitbox.area_entered.is_connected(_on_parry_area_entered):
+		hitbox.area_entered.disconnect(_on_parry_area_entered)
+	sprite.modulate = Color.WHITE
+	sprite.flip_h = false
+
+func _on_parry_area_entered(area: Area2D) -> void:
+	if area.is_in_group("bullet") and is_parrying:
+		if not area.deflected:
+			_deflect_bullet(area)
 
 func swing() -> void:
 	is_swinging = true
@@ -104,6 +177,116 @@ func _on_hitbox_area_entered(area: Area2D) -> void:
 			if enemy.has_method("die"):
 				enemy.die()
 
+func _deflect_bullet(bullet: Node) -> void:
+	var target_pos := get_global_mouse_position()
+	bullet.deflect(target_pos)
+	_play_deflect_sound()
+	_spawn_deflect_shine(bullet.global_position)
+	var mole = get_parent()
+	if mole.has_method("deflect_pause"):
+		mole.deflect_pause()
+
+func _play_deflect_sound() -> void:
+	var player := AudioStreamPlayer2D.new()
+	player.stream = deflect_sounds[randi() % deflect_sounds.size()]
+	player.volume_db = -4.0
+	player.pitch_scale = randf_range(0.9, 1.1)
+	get_parent().get_parent().add_child(player)
+	player.global_position = global_position
+	player.play()
+	player.finished.connect(player.queue_free)
+
+func _spawn_deflect_shine(pos: Vector2) -> void:
+	var particles := CPUParticles2D.new()
+	particles.emitting = true
+	particles.one_shot = true
+	particles.amount = 24
+	particles.lifetime = 0.45
+	particles.explosiveness = 1.0
+	particles.direction = Vector2.ZERO
+	particles.spread = 180.0
+	particles.initial_velocity_min = 250.0
+	particles.initial_velocity_max = 500.0
+	particles.gravity = Vector2.ZERO
+	particles.damping_min = 350.0
+	particles.damping_max = 500.0
+	particles.scale_amount_min = 3.0
+	particles.scale_amount_max = 7.0
+	particles.color = Color(0.85, 0.92, 1.0, 1.0)
+	var fade := Gradient.new()
+	fade.set_color(0, Color(1.0, 1.0, 1.0, 1.0))
+	fade.set_color(1, Color(0.5, 0.75, 1.0, 0.0))
+	particles.color_ramp = fade
+	get_parent().get_parent().add_child(particles)
+	particles.global_position = pos
+	get_tree().create_timer(1.0).timeout.connect(particles.queue_free)
+
+func _get_or_create_indicator() -> Control:
+	var canvas_layer = get_parent().get_parent().get_node_or_null("CanvasLayer")
+	if not canvas_layer:
+		return null
+	var indicator = canvas_layer.get_node_or_null("ParryIndicator")
+	if indicator:
+		return indicator
+
+	indicator = Control.new()
+	indicator.name = "ParryIndicator"
+	indicator.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	indicator.position = Vector2(20, -60)
+	indicator.size = Vector2(120, 40)
+
+	var bg := ColorRect.new()
+	bg.name = "BG"
+	bg.size = Vector2(120, 16)
+	bg.position = Vector2(0, 20)
+	bg.color = Color(0.15, 0.15, 0.2, 0.8)
+	indicator.add_child(bg)
+
+	var fill := ColorRect.new()
+	fill.name = "Fill"
+	fill.size = Vector2(120, 16)
+	fill.position = Vector2(0, 20)
+	fill.color = Color(0.4, 0.75, 1.0, 0.9)
+	indicator.add_child(fill)
+
+	var label := Label.new()
+	label.name = "Label"
+	label.text = "PARRY [RMB]"
+	label.position = Vector2(0, 0)
+	var font = load("res://Baby Doll.otf")
+	if font:
+		label.add_theme_font_override("font", font)
+	label.add_theme_font_size_override("font_size", 14)
+	label.add_theme_color_override("font_color", Color(0.8, 0.9, 1.0, 1.0))
+	indicator.add_child(label)
+
+	canvas_layer.add_child(indicator)
+	return indicator
+
+func _update_parry_indicator() -> void:
+	var indicator := _get_or_create_indicator()
+	if not indicator:
+		return
+	var fill := indicator.get_node("Fill") as ColorRect
+	var label := indicator.get_node("Label") as Label
+	if is_parrying:
+		var ratio := parry_time_left / PARRY_DURATION
+		fill.size.x = 120.0 * ratio
+		fill.color = Color(0.3, 0.85, 1.0, 0.9)
+		label.text = "PARRY ACTIVE"
+		label.add_theme_color_override("font_color", Color(0.3, 1.0, 1.0, 1.0))
+	elif parry_cooldown > 0.0:
+		var ratio := 1.0 - (parry_cooldown / PARRY_COOLDOWN)
+		fill.size.x = 120.0 * ratio
+		fill.color = Color(0.5, 0.5, 0.6, 0.7)
+		label.text = "COOLDOWN"
+		label.add_theme_color_override("font_color", Color(0.6, 0.6, 0.7, 1.0))
+	else:
+		fill.size.x = 120.0
+		fill.color = Color(0.4, 0.75, 1.0, 0.9)
+		label.text = "PARRY [RMB]"
+		label.add_theme_color_override("font_color", Color(0.8, 0.9, 1.0, 1.0))
+
 func _break_tile_at_mouse() -> void:
 	var tilemap = get_parent().get_parent().get_node_or_null("TileMap")
 	if not tilemap:
@@ -113,7 +296,8 @@ func _break_tile_at_mouse() -> void:
 	var source_id := tilemap.get_cell_source_id(0, tile_pos)
 	if source_id == -1:
 		return
-	tilemap.erase_cell(0, tile_pos)
+	var sfx = load("res://scripts/tile_break_sfx.gd")
+	sfx.break_tile(tilemap, tile_pos, get_parent().get_parent())
 	var mole = get_parent()
 	if mole and mole.has_method("spawn_dirt_particles"):
 		var tile_world = tilemap.to_global(tilemap.map_to_local(tile_pos))
