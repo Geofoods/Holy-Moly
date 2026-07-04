@@ -1,7 +1,9 @@
 [gd_scene format=3 uid="uid://bcd57whed7bys"]
 
+[ext_resource type="Script" uid="uid://byaci7o4bsi0b" path="res://scripts/chest.gd" id="1_bp1or"]
 [ext_resource type="Texture2D" uid="uid://dt3a3d45odn8t" path="res://chest.webp" id="1_twpm2"]
 [ext_resource type="Texture2D" uid="uid://urfkaekhg4mh" path="res://chestopen.webp" id="2_8uwsg"]
+[ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="3_font"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_8uwsg"]
 animations = [{
@@ -28,14 +30,26 @@ scale = Vector2(0.5, 0.5)
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=626438151]
 sprite_frames = SubResource("SpriteFrames_8uwsg")
-frame_progress = 0.85352045
+frame_progress = 0.39701867
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=805675750]
 position = Vector2(-18, 85.5)
 shape = SubResource("RectangleShape2D_twpm2")
 
 [node name="Area2D" type="Area2D" parent="." unique_id=853306521]
+script = ExtResource("1_bp1or")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=1020911219]
 position = Vector2(-14, 19)
 shape = SubResource("RectangleShape2D_8uwsg")
+
+[node name="PromptLabel" type="Label" parent="Area2D"]
+visible = false
+position = Vector2(0, -100)
+horizontal_alignment = 1
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 32
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 2
+text = "Press E"

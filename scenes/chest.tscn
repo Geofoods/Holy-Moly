@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://dchest7x2lam1"]
 
 [ext_resource type="Script" path="res://scripts/chest.gd" id="1_chest"]
+[ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="2_font"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_chest"]
 size = Vector2(100, 80)
@@ -52,3 +53,14 @@ offset_top = -95.0
 offset_right = 30.0
 offset_bottom = -35.0
 color = Color(1.0, 0.9, 0.4, 1)
+
+[node name="PromptLabel" type="Label" parent="."]
+visible = false
+position = Vector2(0, -70)
+horizontal_alignment = 1
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 32
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 2
+text = "Press E"
