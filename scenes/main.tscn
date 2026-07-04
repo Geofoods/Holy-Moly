@@ -63,6 +63,7 @@ position_smoothing_enabled = true
 position = Vector2(300, -116)
 
 [node name="MushroomEnemy" parent="." unique_id=608157006 instance=ExtResource("10_mushroom")]
+visible = false
 position = Vector2(600, -116)
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=71896557]
