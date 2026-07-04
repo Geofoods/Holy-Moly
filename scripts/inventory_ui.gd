@@ -4,6 +4,7 @@ const SLOT_COUNT := 3
 const SLOT_SIZE := Vector2(84, 84)
 const SLOT_GAP := 14
 const HOTBAR_FONT := preload("res://Baby Doll.otf")
+var _font: Font = HOTBAR_FONT
 
 var slot_panels: Array = []
 var slot_icons: Array = []
@@ -49,29 +50,48 @@ func _build_ui() -> void:
 		style.corner_radius_bottom_left = 6
 		style.corner_radius_bottom_right = 6
 		panel.add_theme_stylebox_override("panel", style)
+
+		var icon_rect := ColorRect.new()
+		icon_rect.name = "Icon"
+		icon_rect.size = Vector2(64, 64)
+		icon_rect.position = Vector2((SLOT_SIZE.x - 64) / 2, 4)
+		icon_rect.color = Color(0, 0, 0, 0)
+		icon_rect.mouse_filter = Control.MOUSE_FILTER_PASS
+		panel.add_child(icon_rect)
+
 		var tex := TextureRect.new()
-		tex.size = Vector2(60,60)
-		tex.position = Vector2((SLOT_SIZE.x-60)/2,6)
-		tex.expand = true
+		tex.name = "IconTexture"
+		tex.size = Vector2(60, 60)
+		tex.position = Vector2((SLOT_SIZE.x - 60) / 2, 6)
 		tex.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		tex.expand = true
+		tex.mouse_filter = Control.MOUSE_FILTER_PASS
 		panel.add_child(tex)
-		var lbl := Label.new()
-		lbl.size = Vector2(60,60)
-		lbl.position = Vector2((SLOT_SIZE.x-60)/2,6)
-		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		lbl.add_theme_font_override("font", HOTBAR_FONT)
-		lbl.add_theme_font_size_override("font_size",32)
-		panel.add_child(lbl)
-		var num := Label.new()
-		num.text = str(i+1)
-		num.size = Vector2(SLOT_SIZE.x,18)
-		num.position = Vector2(0,SLOT_SIZE.y-18)
-		num.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		num.add_theme_font_override("font", HOTBAR_FONT)
-		num.add_theme_font_size_override("font_size",22)
-		num.add_theme_color_override("font_color",Color.WHITE)
-		panel.add_child(num)
+
+		var icon_label := Label.new()
+		icon_label.name = "IconLabel"
+		icon_label.size = Vector2(60, 60)
+		icon_label.position = Vector2((SLOT_SIZE.x - 60) / 2, 6)
+		icon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		icon_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		icon_label.add_theme_font_size_override("font_size", 24)
+		icon_label.add_theme_font_override("font", HOTBAR_FONT)
+		icon_label.text = ""
+		icon_label.mouse_filter = Control.MOUSE_FILTER_PASS
+		panel.add_child(icon_label)
+
+		var num_label := Label.new()
+		num_label.name = "NumLabel"
+		num_label.size = Vector2(SLOT_SIZE.x, 18)
+		num_label.position = Vector2(0, SLOT_SIZE.y - 18)
+		num_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		num_label.add_theme_font_size_override("font_size", 14)
+		num_label.add_theme_font_override("font", HOTBAR_FONT)
+		num_label.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6, 1))
+		num_label.text = str(i + 1)
+		num_label.mouse_filter = Control.MOUSE_FILTER_PASS
+		panel.add_child(num_label)
+
 		container.add_child(panel)
 		slot_panels.append(panel)
 		slot_textures.append(tex)
