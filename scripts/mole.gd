@@ -266,7 +266,7 @@ func _physics_process(delta: float) -> void:
 	for i in get_slide_collision_count():
 		var collision := get_slide_collision(i)
 		var collider := collision.get_collider()
-		if collider is CharacterBody2D and collider.has_method("die"):
+		if collider is CharacterBody2D and collider.is_in_group("enemy"):
 			take_damage(1, collider.global_position, true)
 			break
 

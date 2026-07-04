@@ -1,0 +1,46 @@
+[gd_scene format=3 uid="uid://c3fg4jh63xhyr"]
+
+[ext_resource type="Texture2D" uid="uid://cfbqjw6eh5moo" path="res://craftpix-net-576316-pixel-cave-game-parallax-backgrounds/background 4/1.png" id="1_mpebw"]
+[ext_resource type="Texture2D" uid="uid://cly317nlkrnx6" path="res://craftpix-net-576316-pixel-cave-game-parallax-backgrounds/background 4/2.png" id="2_l3pxg"]
+[ext_resource type="Texture2D" uid="uid://crw05v05e6gnn" path="res://craftpix-net-576316-pixel-cave-game-parallax-backgrounds/background 4/3.png" id="3_8q8v6"]
+[ext_resource type="Texture2D" uid="uid://b5ydtj2istsr2" path="res://craftpix-net-576316-pixel-cave-game-parallax-backgrounds/background 4/4.png" id="4_sb5c1"]
+
+[node name="ParallaxBackground" type="Node2D" unique_id=1010942744]
+modulate = Color(0.9755189, 0.21362242, 0, 1)
+z_index = -10
+
+[node name="Layer0" type="Parallax2D" parent="." unique_id=2037552014]
+scroll_scale = Vector2(0.006, 0.0025)
+repeat_size = Vector2(2304, 0)
+
+[node name="Sprite" type="Sprite2D" parent="Layer0" unique_id=225496995]
+scale = Vector2(4, 4)
+texture = ExtResource("1_mpebw")
+centered = false
+
+[node name="Layer1" type="Parallax2D" parent="." unique_id=679037598]
+scroll_scale = Vector2(0.018, 0.0075)
+repeat_size = Vector2(2304, 0)
+
+[node name="Sprite" type="Sprite2D" parent="Layer1" unique_id=15445935]
+scale = Vector2(4, 4)
+texture = ExtResource("2_l3pxg")
+centered = false
+
+[node name="Layer2" type="Parallax2D" parent="." unique_id=540517529]
+scroll_scale = Vector2(0.05, 0.02)
+repeat_size = Vector2(2304, 0)
+
+[node name="Sprite" type="Sprite2D" parent="Layer2" unique_id=149173328]
+scale = Vector2(4, 4)
+texture = ExtResource("3_8q8v6")
+centered = false
+
+[node name="Layer3" type="Parallax2D" parent="." unique_id=572662882]
+scroll_scale = Vector2(0.1, 0.04)
+repeat_size = Vector2(2304, 0)
+
+[node name="Sprite" type="Sprite2D" parent="Layer3" unique_id=702187488]
+scale = Vector2(4, 4)
+texture = ExtResource("4_sb5c1")
+centered = false

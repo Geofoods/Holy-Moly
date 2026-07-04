@@ -13,6 +13,8 @@ radius = 40.0
 radius = 250.0
 
 [node name="MushroomEnemy" type="CharacterBody2D"]
+collision_layer = 2
+collision_mask = 1
 script = ExtResource("1_script")
 
 [node name="Visual" type="Sprite2D" parent="."]
