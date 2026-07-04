@@ -324,6 +324,12 @@ func _input(event: InputEvent) -> void:
 			"Drill":
 				_deploy_drill()
 				get_viewport().set_input_as_handled()
+			"Holy Water", "Health Potion":
+				if health < 6:
+					Inventory.use_item(slot)
+					heal(1)
+				Inventory.selected_slot = -1
+				get_viewport().set_input_as_handled()
 
 func _handle_inventory_input() -> void:
 	if Input.is_action_just_pressed("inventory_1"):
@@ -342,7 +348,13 @@ func _toggle_slot(slot: int) -> void:
 		if health < 6:
 			Inventory.use_item(slot)
 			heal(1)
-		return
+			return
+		else:
+			if Inventory.selected_slot == slot:
+				Inventory.selected_slot = -1
+			else:
+				Inventory.selected_slot = slot
+			return
 	elif item.item_name == "Speed Boots":
 		if not speed_boost_active:
 			Inventory.use_item(slot)
