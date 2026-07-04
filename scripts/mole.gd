@@ -34,6 +34,10 @@ var air_time := 0.0
 var launched_from_jump := false
 var _dig_dash_weapon_was_visible := false
 
+## Set by a scene (e.g. the tutorial) that wants to intercept death instead of
+## the default Game Over transition — e.g. to restart just the current section.
+var death_override: Callable = Callable()
+
 var health: float = 6.0:
 	set(value):
 		var old_health := health
@@ -49,6 +53,9 @@ var health: float = 6.0:
 						_animate_heart_damage(heart_node)
 			else:
 				set_physics_process(false)
+				if death_override.is_valid():
+					death_override.call()
+					return
 				Inventory.current_level_path = get_tree().current_scene.scene_file_path
 				var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 				get_tree().root.add_child(transition)
@@ -102,9 +109,8 @@ func _ready() -> void:
 	Inventory.initialize()
 	Inventory.selected_slot_changed.connect(_on_selected_slot_changed)
 	Inventory.selected_slot = 0
-	if has_node("Weapon"):
-		$Weapon.hide()
 	_setup_held_item_sprites()
+	_reverb = AudioServer.get_bus_effect(0, 0) as AudioEffectReverb
 
 func _setup_inventory_actions() -> void:
 	var keys := [KEY_1, KEY_2, KEY_3]
@@ -180,12 +186,18 @@ func _update_held_item() -> void:
 		$HeldDrill.visible = (item != null and item.item_name == "Drill")
 
 const SURFACE_Y := 850.0
+const MAX_REVERB_DEPTH := 600.0
+var _reverb: AudioEffectReverb = null
 
 func update_depth_display() -> void:
+	var depth := maxf(0.0, global_position.y - SURFACE_Y)
 	var label = get_parent().get_node_or_null("CanvasLayer/DepthLabel")
 	if label:
-		var depth := maxf(0.0, global_position.y - SURFACE_Y)
 		label.text = "Depth: %dm" % int(depth)
+	if _reverb:
+		var t := clampf(depth / MAX_REVERB_DEPTH, 0.0, 1.0)
+		_reverb.wet = t * 0.6
+		_reverb.room_size = 0.1 + t * 0.75
 
 func _physics_process(delta: float) -> void:
 	# Gravity
@@ -326,7 +338,7 @@ func _toggle_slot(slot: int) -> void:
 	if item == null:
 		return
 
-	if item.item_name == "Health Potion":
+	if item.item_name == "Health Potion" or item.item_name == "Holy Water":
 		if health < 6:
 			Inventory.use_item(slot)
 			heal(1)

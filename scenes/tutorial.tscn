@@ -12,6 +12,7 @@
 [ext_resource type="Texture2D" uid="uid://chcmh5bq4tsqd" path="res://sprites/tileset.png" id="10_tileset"]
 [ext_resource type="Resource" path="res://resources/health_potion.tres" id="11_potion"]
 [ext_resource type="PackedScene" uid="uid://brmtyiqcy1wkv" path="res://scenes/inventory_ui.tscn" id="12_invui"]
+[ext_resource type="PackedScene" path="res://scenes/info_popup.tscn" id="info_popup_res"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_choun"]
 texture = ExtResource("10_tileset")
@@ -117,6 +118,7 @@ corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
 [node name="Tutorial" type="Node2D" unique_id=447521347]
+texture_filter = 0
 script = ExtResource("1_tutorial")
 
 [node name="ParallaxBackground" parent="." unique_id=199479161 instance=ExtResource("7_parallax")]
@@ -207,8 +209,33 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_skipbutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_skipbutton_hover")
 text = "SKIP TUTORIAL ▸"
 
+[node name="InfoButton" type="Button" parent="CanvasLayer"]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -66.0
+offset_top = -66.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("9_font")
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StyleBoxFlat_skipbutton")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_skipbutton_hover")
+theme_override_styles/hover = SubResource("StyleBoxFlat_skipbutton_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_skipbutton_hover")
+text = "?"
+
 [node name="InventoryUI" parent="." unique_id=297350306 instance=ExtResource("12_invui")]
+
+[node name="InfoPopup" parent="." instance=ExtResource("info_popup_res")]
 
 [node name="DialogueBox" parent="." unique_id=31203990 instance=ExtResource("6_dialogue")]
 
 [connection signal="pressed" from="CanvasLayer/SkipButton" to="." method="_on_skip_pressed"]
+[connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]

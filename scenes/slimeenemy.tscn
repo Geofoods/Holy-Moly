@@ -1,0 +1,29 @@
+[gd_scene format=3 uid="uid://iuqjuk37ur0d"]
+
+[ext_resource type="Script" path="res://scripts/slime_enemy.gd" id="1_qykxs"]
+[ext_resource type="Texture2D" uid="uid://bpu26fxw1vrf2" path="res://poison.webp" id="2_qar1a"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(108, 86)
+
+[node name="Enemy" type="CharacterBody2D" unique_id=866104770]
+position = Vector2(2, -1)
+scale = Vector2(0.5, 0.5)
+collision_layer = 4
+script = ExtResource("1_qykxs")
+
+[node name="Poison" type="Sprite2D" parent="." unique_id=1195409220]
+position = Vector2(-16.500002, -13.000002)
+scale = Vector2(0.31, 0.31)
+texture = ExtResource("2_qar1a")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1102294679]
+position = Vector2(-20, -5)
+shape = SubResource("RectangleShape2D_body")
+
+[node name="Area2D" type="Area2D" parent="." unique_id=1008187029]
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Area2D" unique_id=1317430411]
+position = Vector2(-16.500002, -13.000002)
+scale = Vector2(0.31, 0.31)
+polygon = PackedVector2Array(-29, -110.100006, -29, -108.8, -34.299988, -108, -47.399994, -108, -57.399994, -104, -63.5, -104, -115.5, -79, -117.70001, -79, -153.70001, -52, -156, -52, -178, -23, -179.4, -23, -185.4, -5, -186.9, -5, -187.9, 13, -189.1, 13, -187, 74.100006, -187, 83.399994, -177, 107.29999, -177, 109.79999, -153, 134.70001, -153, 136.20001, -128, 149.20001, -128, 150.6, -94, 157.6, -94, 159, 0, 161, 7.100006, 161, 84.099976, 156, 97.29999, 156, 111.20001, 152, 117.5, 152, 128.59998, 146, 130.79999, 146, 156.90002, 122, 158.29999, 122, 163.29999, 110, 164.79999, 110, 167.79999, 80, 169.09998, 80, 168, 46.899994, 168, 20.799988, 163, -1.3999939, 163, -4.5, 151, -29.5, 151, -31.799988, 120, -63.800003, 120, -65, 98, -82, 98, -83.3, 63, -99.3, 63, -100.7, 36, -104.8, 36, -105.899994)

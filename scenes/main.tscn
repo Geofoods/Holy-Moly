@@ -11,6 +11,7 @@
 [ext_resource type="PackedScene" path="res://scenes/mushroom_enemy.tscn" id="10_mushroom"]
 [ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="11_eb6dy"]
 [ext_resource type="PackedScene" uid="uid://brmtyiqcy1wkv" path="res://scenes/inventory_ui.tscn" id="12_invui"]
+[ext_resource type="PackedScene" path="res://scenes/info_popup.tscn" id="info_popup_res"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.1, 0.1, 0.12, 0.85)
@@ -40,6 +41,7 @@ corner_radius_bottom_left = 8
 size = Vector2(12788, 933)
 
 [node name="Node2D" type="Node2D" unique_id=1979316305]
+texture_filter = 0
 
 [node name="TileMap" type="TileMap" parent="." unique_id=193735831]
 scale = Vector2(0.5, 0.5)
@@ -92,7 +94,31 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_pausebutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_pausebutton_hover")
 text = "II ESC"
 
+[node name="InfoButton" type="Button" parent="CanvasLayer" unique_id=778241010]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -66.0
+offset_top = -66.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("6_tipki")
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StyleBoxFlat_pausebutton")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_pausebutton_hover")
+theme_override_styles/hover = SubResource("StyleBoxFlat_pausebutton_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_pausebutton_hover")
+text = "?"
+
 [node name="InventoryUI" parent="." unique_id=126326489 instance=ExtResource("12_invui")]
+
+[node name="InfoPopup" parent="." unique_id=778241011 instance=ExtResource("info_popup_res")]
 
 [node name="PauseMenu" parent="." unique_id=1779626465 instance=ExtResource("4_pause")]
 
@@ -107,3 +133,4 @@ position = Vector2(2048, 1577)
 shape = SubResource("RectangleShape2D_trceg")
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
+[connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]

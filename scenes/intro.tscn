@@ -6,6 +6,7 @@
 [ext_resource type="Shader" uid="uid://ch2hh4i0b8k0l" path="res://shaders/corrupted_bg.gdshader" id="4_shader"]
 [ext_resource type="Texture2D" uid="uid://cpabxkmqhhx5n" path="res://holymolylogo.png" id="5_wfs7u"]
 [ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="6_es01l"]
+[ext_resource type="PackedScene" path="res://scenes/info_popup.tscn" id="7_info"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_bg"]
 shader = ExtResource("4_shader")
@@ -106,6 +107,34 @@ corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
 shadow_size = 12
 shadow_color = Color(0.9, 0.1, 0.2, 0.5)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_infobutton"]
+bg_color = Color(0.72, 0.58, 0.32, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.95, 0.85, 0.6, 0.5)
+corner_radius_top_left = 24
+corner_radius_top_right = 24
+corner_radius_bottom_right = 24
+corner_radius_bottom_left = 24
+shadow_size = 8
+shadow_color = Color(0.5, 0.4, 0.15, 0.4)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_infobutton_hover"]
+bg_color = Color(0.85, 0.7, 0.4, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1.0, 0.92, 0.7, 0.8)
+corner_radius_top_left = 24
+corner_radius_top_right = 24
+corner_radius_bottom_right = 24
+corner_radius_bottom_left = 24
+shadow_size = 12
+shadow_color = Color(0.6, 0.5, 0.2, 0.5)
 
 [node name="IntroScreen" type="Control" unique_id=899664745]
 layout_mode = 3
@@ -256,6 +285,30 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_exitbutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_exitbutton_hover")
 text = "QUIT"
 
+[node name="InfoButton" type="Button" parent="." unique_id=778241001]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -86.0
+offset_top = -86.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.25, 0.15, 0.05, 1)
+theme_override_fonts/font = ExtResource("6_es01l")
+theme_override_font_sizes/font_size = 30
+theme_override_styles/normal = SubResource("StyleBoxFlat_infobutton")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_infobutton_hover")
+theme_override_styles/hover = SubResource("StyleBoxFlat_infobutton_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_infobutton_hover")
+text = "?"
+
+[node name="InfoPopup" parent="." unique_id=778241002 instance=ExtResource("7_info")]
+
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/PlayButton" to="." method="_on_play_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/TutorialButton" to="." method="_on_tutorial_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/CancelButton" to="." method="_on_cancel_pressed"]
+[connection signal="pressed" from="InfoButton" to="InfoPopup" method="open"]

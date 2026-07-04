@@ -49,7 +49,9 @@ func _grant_item() -> void:
 
 	var bomb := preload("res://resources/bomb.tres")
 	var drill := preload("res://resources/drill.tres")
-	var loot := bomb if randf() < 0.5 else drill
+	var holy_water := preload("res://resources/holy_water.tres")
+	var roll := randf()
+	var loot := bomb if roll < 0.4 else drill if roll < 0.8 else holy_water
 	Inventory.add_item(loot)
 
 func _play_open_animation() -> void:
