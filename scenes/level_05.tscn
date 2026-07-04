@@ -456,7 +456,7 @@ scale = Vector2(0.5, 0.5)
 position = Vector2(2683, 288)
 scale = Vector2(0.5, 0.5)
 
-[node name="FireflySpawner" parent="." instance=ExtResource("15_spawner")]
+[node name="FireflySpawner" parent="." unique_id=1343869836 instance=ExtResource("15_spawner")]
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="area_entered" from="nextlevel" to="DeathPlane" method="_on_nextlevel_area_entered"]

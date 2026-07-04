@@ -1,21 +1,29 @@
 [gd_scene format=3 uid="uid://cjppgf04ou214"]
 
 [ext_resource type="Texture2D" uid="uid://cx3o05cg372vl" path="res://scenes/bomb.webp" id="1_573fp"]
-[ext_resource type="Script" path="res://scripts/bomb.gd" id="2_script"]
+[ext_resource type="Script" uid="uid://dtwg0f70j8ejs" path="res://scripts/bomb.gd" id="2_script"]
 
-[node name="bomb" type="RigidBody2D"]
-z_index = 10
-collision_layer = 2
-collision_mask = 1
-gravity_scale = 1.0
+[sub_resource type="CircleShape2D" id="CircleShape2D_4fn8o"]
+radius = 38.63936
+
+[sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_4fn8o"]
+polygon = PackedVector2Array(78, -246.1, 78, -244.5, 64.29999, -240.9, 62.599976, -242, 56.100006, -242, 51.100006, -236, 49.5, -236, 47, -227.3, 47, -215.8, 44, -212.8, 44, -205.7, 36.100006, -196, 34, -196, 34, -186.9, 34.700012, -186.5, 31.700012, -186, 22.5, -186, 14.5, -182, 12, -182, -3, -161.7, -3, -160.7, -22.399994, -157, -26.399994, -157, -46.399994, -149, -49.5, -149, -71.5, -136, -73.70001, -136, -88.70001, -123, -90.899994, -123, -110.899994, -101, -112.100006, -101, -124.100006, -82, -125.399994, -82, -137.4, -51, -138.70001, -51, -142.70001, -24, -144.1, -24, -142, 11.100006, -142, 17.299988, -133, 43.399994, -133, 46.5, -123, 63.399994, -123, 65.70001, -108, 83.70001, -108, 85.899994, -92, 100.899994, -92, 102, -75, 114, -75, 115.20001, -51, 127.20001, -51, 128.5, -28, 135.4, -28, 136.70001, -8, 139.70001, -8, 141, 40.299988, 141, 63.099976, 135, 67.400024, 135, 80.400024, 129, 83.5, 129, 105.5, 116, 107.70001, 116, 122.70001, 103, 124.900024, 103, 148.90002, 76, 150.20001, 76, 165.20001, 48, 166.59998, 48, 175.5, 13, 177, 13, 177, -31.299988, 169, -58.300003, 169, -61.5, 160, -78.600006, 160, -80.7, 147, -97.7, 147, -99.8, 124.900024, -123, 127, -131.7, 127, -143.6, 115.29999, -160.1, 119, -163, 119, -171.8, 111.29999, -179.5, 129.70001, -192, 132, -192, 143, -207.4, 143, -213.9, 133.79999, -222, 132.79999, -222, 133, -222.7, 133, -227.8, 129, -231.8, 129, -233.3, 120.400024, -237, 116.79999, -237, 111, -242.8, 111, -244.9)
+
+[node name="bomb" type="RigidBody2D" unique_id=1915613992]
 script = ExtResource("2_script")
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
-scale = Vector2(0.5, 0.5)
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1846263911]
+scale = Vector2(0.25, 0.25)
 texture = ExtResource("1_573fp")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-shape = SubResource("CircleShape2D_bomb")
+[node name="FuseTimer" type="Timer" parent="." unique_id=1225054919]
+wait_time = 3.0
+one_shot = true
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_bomb"]
-radius = 60.0
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2109167968]
+position = Vector2(4, -4)
+shape = SubResource("CircleShape2D_4fn8o")
+
+[node name="LightOccluder2D" type="LightOccluder2D" parent="." unique_id=545742779]
+scale = Vector2(0.25, 0.25)
+occluder = SubResource("OccluderPolygon2D_4fn8o")

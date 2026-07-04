@@ -29,7 +29,7 @@ scale = Vector2(0.5, 0.5)
 sprite_frames = SubResource("SpriteFrames_wmlv8")
 
 [node name="PointLight2D" type="PointLight2D" parent="." unique_id=1979554668]
-position = Vector2(2, 53)
+position = Vector2(0, 13.000004)
 scale = Vector2(3.0509553, 2.598726)
 color = Color(1, 0.8039216, 0.101960786, 1)
 shadow_enabled = true

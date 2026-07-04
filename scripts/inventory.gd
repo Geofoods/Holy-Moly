@@ -15,8 +15,10 @@ func initialize() -> void:
 	_initialized = true
 	var shovel := preload("res://resources/shovel.tres")
 	var bomb := preload("res://resources/bomb.tres")
+	var drill := preload("res://resources/drill.tres")
 	add_item(shovel)
 	add_n_items(bomb, 5)
+	add_n_items(drill, 5)
 
 func reset() -> void:
 	clear()

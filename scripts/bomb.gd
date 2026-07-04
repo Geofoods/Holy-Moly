@@ -19,7 +19,7 @@ func _process(delta: float) -> void:
 		return
 	fuse_elapsed += delta
 	var pulse := 0.5 + sin(fuse_elapsed * 20.0) * 0.5
-	sprite.modulate = Color(1.0, pulse * 0.3, pulse * 0.1, 1.0)
+	sprite.modulate = Color(1.0, 0.6 + pulse * 0.3, pulse * 0.3, 1.0)
 	if fuse_elapsed >= FUSE_TIME:
 		_explode()
 

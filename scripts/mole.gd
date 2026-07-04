@@ -20,6 +20,7 @@ const DIRT_PARTICLE_AMOUNT = 18
 var mole_hole_scene := preload("res://scenes/molehole.tscn")
 var mole_hole_instance: Node2D = null
 var bomb_scene := preload("res://bomb.tscn")
+var drill_scene := preload("res://drill.tscn")
 var was_on_floor := true
 var is_sideways_jump := false
 var is_digging := false
@@ -29,6 +30,7 @@ var invulnerable := false
 var speed_boost_active := false
 var shield_active := false
 var bomb_armed := false
+var drill_armed := false
 var hurt_anim_time_left := 0.0
 var air_time := 0.0
 var launched_from_jump := false
@@ -230,9 +232,13 @@ func _physics_process(delta: float) -> void:
 			$AnimatedSprite2D.play("idlebold")
 
 func _input(event: InputEvent) -> void:
-	if bomb_armed and event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		_throw_bomb()
-		get_viewport().set_input_as_handled()
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		if bomb_armed:
+			_throw_bomb()
+			get_viewport().set_input_as_handled()
+		elif drill_armed:
+			_deploy_drill()
+			get_viewport().set_input_as_handled()
 
 func _handle_inventory_input() -> void:
 	if Input.is_action_just_pressed("inventory_1"):
@@ -244,8 +250,15 @@ func _handle_inventory_input() -> void:
 			var item = Inventory.slots[1]
 			if item and item.item_name == "Bomb":
 				bomb_armed = true
+				drill_armed = false
 	elif Input.is_action_just_pressed("inventory_3"):
-		_use_inventory_slot(2)
+		if drill_armed:
+			drill_armed = false
+		else:
+			var item = Inventory.slots[2]
+			if item and item.item_name == "Drill":
+				drill_armed = true
+				bomb_armed = false
 
 func _use_inventory_slot(slot: int) -> void:
 	var item: ItemData = Inventory.slots[slot] if slot < Inventory.slots.size() else null
@@ -275,6 +288,17 @@ func _use_inventory_slot(slot: int) -> void:
 func _toggle_weapon() -> void:
 	if has_node("Weapon"):
 		$Weapon.visible = not $Weapon.visible
+
+func _deploy_drill() -> void:
+	if not Inventory.use_item(2):
+		return
+	drill_armed = false
+	var drill = drill_scene.instantiate()
+	get_parent().add_child(drill)
+	drill.global_position = global_position + Vector2(0, -40)
+	var mouse_pos := get_global_mouse_position()
+	var dir := (mouse_pos - global_position).normalized()
+	drill.setup(dir)
 
 func _throw_bomb() -> void:
 	if not Inventory.use_item(1):
