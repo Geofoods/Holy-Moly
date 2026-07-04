@@ -11,6 +11,8 @@ const HURT_GROUND_DURATION = 0.25
 const HURT_AIR_DURATION = 0.35
 const KNOCKBACK_X = 260.0
 const MIDAIR_SPRITE_DELAY = 0.25
+const CAMERA_FOLLOW_SPEED = 10.0
+const CAMERA_MOUSE_INFLUENCE = 0.2
 
 
 var mole_hole_scene := preload("res://scenes/molehole.tscn")
@@ -103,6 +105,7 @@ func _physics_process(delta: float) -> void:
 		velocity.x = move_toward(velocity.x, 0, FRICTION * delta)
 		move_and_slide()
 		was_on_floor = is_on_floor()
+		_update_camera_position(delta)
 		return
 	elif is_tunneling:
 		velocity.x = tunnel_direction * TUNNEL_SPEED
@@ -118,10 +121,12 @@ func _physics_process(delta: float) -> void:
 						dirt_spray.restart()
 						dirt_spray.emitting = true
 		was_on_floor = is_on_floor()
+		_update_camera_position(delta)
 		return
 
 	if Input.is_action_just_pressed("dig_dash") and is_on_floor():
 		start_dig_dash()
+		_update_camera_position(delta)
 		return
 
 	# Jump
@@ -170,6 +175,7 @@ func _physics_process(delta: float) -> void:
 			break
 
 	update_depth_display()
+	_update_camera_position(delta)
 
 	# Animation
 	if hurt_anim_time_left > 0.0:
@@ -200,6 +206,15 @@ func _physics_process(delta: float) -> void:
 			$AnimatedSprite2D.play("walkbold")
 		else:
 			$AnimatedSprite2D.play("idlebold")
+
+func _update_camera_position(delta: float) -> void:
+	var camera := get_node_or_null("Camera2D") as Camera2D
+	if camera == null:
+		return
+	var target_global := global_position.lerp(get_global_mouse_position(), CAMERA_MOUSE_INFLUENCE)
+	var target_local := to_local(target_global)
+	var follow_weight := clampf(CAMERA_FOLLOW_SPEED * delta, 0.0, 1.0)
+	camera.position = camera.position.lerp(target_local, follow_weight)
 
 
 func spawn_mole_hole() -> void:
