@@ -49,6 +49,7 @@ var health: float = 6.0:
 						_animate_heart_damage(heart_node)
 			else:
 				set_physics_process(false)
+				Inventory.current_level_path = get_tree().current_scene.scene_file_path
 				var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 				get_tree().root.add_child(transition)
 				transition.change_to("res://scenes/game_over.tscn")
@@ -100,6 +101,7 @@ func _ready() -> void:
 	_setup_inventory_actions()
 	Inventory.initialize()
 	Inventory.selected_slot_changed.connect(_on_selected_slot_changed)
+	Inventory.selected_slot = 0
 	if has_node("Weapon"):
 		$Weapon.hide()
 	_setup_held_item_sprites()

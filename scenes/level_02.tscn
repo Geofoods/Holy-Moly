@@ -13,6 +13,7 @@
 [ext_resource type="PackedScene" uid="uid://cdxu1kg5or16d" path="res://candle.tscn" id="12_ikbui"]
 [ext_resource type="PackedScene" uid="uid://brmtyiqcy1wkv" path="res://scenes/inventory_ui.tscn" id="12_invui"]
 [ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="13_ikbui"]
+[ext_resource type="PackedScene" path="res://scenes/firefly_spawner.tscn" id="14_spawner"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.1, 0.1, 0.12, 0.85)
@@ -145,5 +146,7 @@ script = ExtResource("13_ikbui")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="nextlevel" unique_id=778570034]
 position = Vector2(3008, 1669)
 shape = SubResource("RectangleShape2D_vqvml")
+
+[node name="FireflySpawner" parent="." instance=ExtResource("14_spawner")]
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
