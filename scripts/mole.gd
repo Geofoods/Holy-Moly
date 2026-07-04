@@ -34,6 +34,10 @@ var air_time := 0.0
 var launched_from_jump := false
 var _dig_dash_weapon_was_visible := false
 
+## Set by a scene (e.g. the tutorial) that wants to intercept death instead of
+## the default Game Over transition — e.g. to restart just the current section.
+var death_override: Callable = Callable()
+
 var health: float = 6.0:
 	set(value):
 		var old_health := health
@@ -49,6 +53,9 @@ var health: float = 6.0:
 						_animate_heart_damage(heart_node)
 			else:
 				set_physics_process(false)
+				if death_override.is_valid():
+					death_override.call()
+					return
 				Inventory.current_level_path = get_tree().current_scene.scene_file_path
 				var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 				get_tree().root.add_child(transition)

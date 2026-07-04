@@ -1,0 +1,231 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/info_popup.gd" id="1_info"]
+[ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="2_font"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_parchment"]
+bg_color = Color(0.93, 0.85, 0.66, 1)
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 5
+border_color = Color(0.42, 0.28, 0.14, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+shadow_size = 16
+shadow_color = Color(0, 0, 0, 0.45)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_inner"]
+bg_color = Color(0.97, 0.91, 0.78, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.6, 0.44, 0.24, 0.6)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tab_off"]
+bg_color = Color(0.8, 0.68, 0.46, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.42, 0.28, 0.14, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tab_on"]
+bg_color = Color(0.97, 0.91, 0.78, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.42, 0.28, 0.14, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_close"]
+bg_color = Color(0.72, 0.1, 0.18, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.03, 0.03, 0.03, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_close_hover"]
+bg_color = Color(0.9, 0.15, 0.25, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.03, 0.03, 0.03, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_listbtn"]
+bg_color = Color(0.85, 0.75, 0.55, 0.0)
+border_width_bottom = 2
+border_color = Color(0.6, 0.44, 0.24, 0.4)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_listbtn_selected"]
+bg_color = Color(0.8, 0.62, 0.32, 0.55)
+border_width_bottom = 2
+border_color = Color(0.42, 0.28, 0.14, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="InfoPopup" type="CanvasLayer"]
+layer = 25
+script = ExtResource("1_info")
+
+[node name="DimBackground" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.6)
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Panel" type="PanelContainer" parent="CenterContainer"]
+custom_minimum_size = Vector2(980, 660)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_parchment")
+
+[node name="Margin" type="MarginContainer" parent="CenterContainer/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 22
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 22
+
+[node name="VBox" type="VBoxContainer" parent="CenterContainer/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="HeaderRow" type="HBoxContainer" parent="CenterContainer/Panel/Margin/VBox"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="CenterContainer/Panel/Margin/VBox/HeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.32, 0.2, 0.08, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 36
+text = "FIELD GUIDE"
+
+[node name="CloseButton" type="Button" parent="CenterContainer/Panel/Margin/VBox/HeaderRow"]
+custom_minimum_size = Vector2(46, 46)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StyleBoxFlat_close")
+theme_override_styles/hover = SubResource("StyleBoxFlat_close_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_close_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_close_hover")
+text = "X"
+
+[node name="TabRow" type="HBoxContainer" parent="CenterContainer/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BestiaryTab" type="Button" parent="CenterContainer/Panel/Margin/VBox/TabRow"]
+custom_minimum_size = Vector2(180, 44)
+layout_mode = 2
+toggle_mode = true
+button_pressed = true
+theme_override_colors/font_color = Color(0.32, 0.2, 0.08, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_tab_off")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_tab_on")
+theme_override_styles/hover = SubResource("StyleBoxFlat_tab_on")
+theme_override_styles/hover_pressed = SubResource("StyleBoxFlat_tab_on")
+text = "BESTIARY"
+
+[node name="ControlsTab" type="Button" parent="CenterContainer/Panel/Margin/VBox/TabRow"]
+custom_minimum_size = Vector2(180, 44)
+layout_mode = 2
+toggle_mode = true
+theme_override_colors/font_color = Color(0.32, 0.2, 0.08, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_tab_off")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_tab_on")
+theme_override_styles/hover = SubResource("StyleBoxFlat_tab_on")
+theme_override_styles/hover_pressed = SubResource("StyleBoxFlat_tab_on")
+text = "CONTROLS"
+
+[node name="ContentPanel" type="PanelContainer" parent="CenterContainer/Panel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 520)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_inner")
+
+[node name="BestiaryView" type="HBoxContainer" parent="CenterContainer/Panel/Margin/VBox/ContentPanel"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="ListScroll" type="ScrollContainer" parent="CenterContainer/Panel/Margin/VBox/ContentPanel/BestiaryView"]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="ListVBox" type="VBoxContainer" parent="CenterContainer/Panel/Margin/VBox/ContentPanel/BestiaryView/ListScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+
+[node name="DetailMargin" type="MarginContainer" parent="CenterContainer/Panel/Margin/VBox/ContentPanel/BestiaryView"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 12
+
+[node name="DetailScroll" type="ScrollContainer" parent="CenterContainer/Panel/Margin/VBox/ContentPanel/BestiaryView/DetailMargin"]
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="DetailVBox" type="VBoxContainer" parent="CenterContainer/Panel/Margin/VBox/ContentPanel/BestiaryView/DetailMargin/DetailScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="ControlsView" type="ScrollContainer" parent="CenterContainer/Panel/Margin/VBox/ContentPanel"]
+visible = false
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="ControlsMargin" type="MarginContainer" parent="CenterContainer/Panel/Margin/VBox/ContentPanel/ControlsView"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 12
+
+[node name="ControlsVBox" type="VBoxContainer" parent="CenterContainer/Panel/Margin/VBox/ContentPanel/ControlsView/ControlsMargin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[connection signal="pressed" from="CenterContainer/Panel/Margin/VBox/HeaderRow/CloseButton" to="." method="close"]
+[connection signal="toggled" from="CenterContainer/Panel/Margin/VBox/TabRow/BestiaryTab" to="." method="_on_bestiary_tab_toggled"]
+[connection signal="toggled" from="CenterContainer/Panel/Margin/VBox/TabRow/ControlsTab" to="." method="_on_controls_tab_toggled"]
