@@ -202,7 +202,7 @@ func remove_mole_hole() -> void:
 		mole_hole_instance.queue_free()
 		mole_hole_instance = null
 
-func take_damage(amount: float, source_position: Vector2 = Vector2.ZERO, has_source: bool = false) -> void:
+func take_damage(amount: float, source_position: Vector2 = Vector2.ZERO, has_source: bool = false, is_projectile: bool = false) -> void:
 	if invulnerable or health <= 0:
 		return
 	health -= amount
@@ -214,10 +214,33 @@ func take_damage(amount: float, source_position: Vector2 = Vector2.ZERO, has_sou
 		if knockback_direction == 0.0:
 			knockback_direction = -1.0 if $AnimatedSprite2D.flip_h else 1.0
 	velocity.x = knockback_direction * KNOCKBACK_X
+	if is_projectile:
+		screen_shake(22.0, 0.4)
+		hit_freeze(0.06)
+	else:
+		screen_shake(12.0, 0.3)
 	get_tree().create_timer(1.0).timeout.connect(_end_invulnerability)
 
 func _end_invulnerability() -> void:
 	invulnerable = false
+
+func hit_freeze(duration: float) -> void:
+	Engine.time_scale = 0.05
+	await get_tree().create_timer(duration * 0.05).timeout
+	Engine.time_scale = 1.0
+
+func screen_shake(intensity: float, duration: float) -> void:
+	var camera := get_node_or_null("Camera2D")
+	if not camera:
+		return
+	var tween := create_tween()
+	var steps := 8
+	var step_time := duration / steps
+	for i in steps:
+		var offset := Vector2(randf_range(-intensity, intensity), randf_range(-intensity, intensity))
+		intensity *= 0.8
+		tween.tween_property(camera, "offset", offset, step_time).set_trans(Tween.TRANS_SINE)
+	tween.tween_property(camera, "offset", Vector2.ZERO, step_time).set_trans(Tween.TRANS_SINE)
 
 func start_dig_dash() -> void:
 	is_digging = true
