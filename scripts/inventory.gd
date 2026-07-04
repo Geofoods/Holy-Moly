@@ -1,11 +1,17 @@
 extends Node
 
 signal slots_changed(slot_indices: Array)
+signal selected_slot_changed(slot: int)
 
 const MAX_SLOTS := 3
 
 var slots: Array = [null, null, null]
 var slot_counts: Array = [0, 0, 0]
+
+var selected_slot: int = -1:
+	set(value):
+		selected_slot = value
+		selected_slot_changed.emit(value)
 
 var _initialized := false
 

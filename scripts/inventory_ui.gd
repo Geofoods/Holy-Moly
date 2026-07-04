@@ -6,11 +6,13 @@ const SLOT_GAP := 12
 
 var slot_panels: Array = []
 var slot_icons: Array = []
+var slot_textures: Array = []
 var slot_labels: Array = []
 
 func _ready() -> void:
 	_build_ui()
 	Inventory.slots_changed.connect(_on_slots_changed)
+	Inventory.selected_slot_changed.connect(_on_selected_slot_changed)
 	_update_all_slots()
 
 func _build_ui() -> void:
@@ -49,6 +51,14 @@ func _build_ui() -> void:
 		icon_rect.mouse_filter = Control.MOUSE_FILTER_PASS
 		panel.add_child(icon_rect)
 
+		var tex_rect := TextureRect.new()
+		tex_rect.name = "IconTexture"
+		tex_rect.size = Vector2(36, 36)
+		tex_rect.position = Vector2((SLOT_SIZE.x - 36) / 2, 4)
+		tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		tex_rect.mouse_filter = Control.MOUSE_FILTER_PASS
+		panel.add_child(tex_rect)
+
 		var icon_label := Label.new()
 		icon_label.name = "IconLabel"
 		icon_label.size = Vector2(36, 36)
@@ -74,6 +84,7 @@ func _build_ui() -> void:
 		container.add_child(panel)
 		slot_panels.append(panel)
 		slot_icons.append(icon_rect)
+		slot_textures.append(tex_rect)
 		slot_labels.append(icon_label)
 
 	var screen_size := get_viewport().get_visible_rect().size
@@ -83,6 +94,10 @@ func _on_slots_changed(slot_indices: Array) -> void:
 	for idx in slot_indices:
 		_update_slot(idx)
 
+func _on_selected_slot_changed(slot: int) -> void:
+	for i in SLOT_COUNT:
+		_update_slot(i)
+
 func _update_all_slots() -> void:
 	for i in SLOT_COUNT:
 		_update_slot(i)
@@ -91,6 +106,7 @@ func _update_slot(idx: int) -> void:
 	var item: ItemData = Inventory.slots[idx] if idx < Inventory.slots.size() else null
 	var panel := slot_panels[idx] as Panel
 	var icon_rect := slot_icons[idx] as ColorRect
+	var tex_rect := slot_textures[idx] as TextureRect
 	var icon_label := slot_labels[idx] as Label
 
 	var style := StyleBoxFlat.new()
@@ -103,18 +119,55 @@ func _update_slot(idx: int) -> void:
 	style.corner_radius_bottom_right = 6
 	style.corner_radius_bottom_left = 6
 
+	var is_selected := Inventory.selected_slot == idx
+
 	if item:
-		style.bg_color = Color(0.15, 0.15, 0.18, 0.9)
-		style.border_color = Color(0.5, 0.5, 0.6, 1)
-		icon_rect.color = item.icon_color
+		if is_selected:
+			style.bg_color = Color(0.25, 0.25, 0.35, 0.95)
+			style.border_color = Color(0.8, 0.8, 1.0, 1)
+			style.border_width_left = 3
+			style.border_width_top = 3
+			style.border_width_right = 3
+			style.border_width_bottom = 3
+		else:
+			style.bg_color = Color(0.15, 0.15, 0.18, 0.9)
+			style.border_color = Color(0.5, 0.5, 0.6, 1)
+			style.border_width_left = 2
+			style.border_width_top = 2
+			style.border_width_right = 2
+			style.border_width_bottom = 2
+
+		if item.icon_texture:
+			tex_rect.texture = item.icon_texture
+			tex_rect.show()
+			icon_rect.color = Color(0, 0, 0, 0)
+		else:
+			tex_rect.texture = null
+			tex_rect.hide()
+			icon_rect.color = item.icon_color
+
 		var count: int = Inventory.slot_counts[idx] if idx < Inventory.slot_counts.size() else 0
 		if count > 1:
 			icon_label.text = item.icon_text + " " + str(count)
 		else:
 			icon_label.text = item.icon_text
 	else:
-		style.bg_color = Color(0.1, 0.1, 0.12, 0.6)
-		style.border_color = Color(0.2, 0.2, 0.25, 1)
+		if is_selected:
+			style.bg_color = Color(0.2, 0.2, 0.25, 0.7)
+			style.border_color = Color(0.8, 0.8, 1.0, 0.5)
+			style.border_width_left = 3
+			style.border_width_top = 3
+			style.border_width_right = 3
+			style.border_width_bottom = 3
+		else:
+			style.bg_color = Color(0.1, 0.1, 0.12, 0.6)
+			style.border_color = Color(0.2, 0.2, 0.25, 1)
+			style.border_width_left = 2
+			style.border_width_top = 2
+			style.border_width_right = 2
+			style.border_width_bottom = 2
+		tex_rect.texture = null
+		tex_rect.hide()
 		icon_rect.color = Color(0, 0, 0, 0)
 		icon_label.text = ""
 

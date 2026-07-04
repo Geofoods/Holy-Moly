@@ -29,8 +29,6 @@ var tunnel_direction := 1.0
 var invulnerable := false
 var speed_boost_active := false
 var shield_active := false
-var bomb_armed := false
-var drill_armed := false
 var hurt_anim_time_left := 0.0
 var air_time := 0.0
 var launched_from_jump := false
@@ -101,8 +99,10 @@ func _ready() -> void:
 
 	_setup_inventory_actions()
 	Inventory.initialize()
+	Inventory.selected_slot_changed.connect(_on_selected_slot_changed)
 	if has_node("Weapon"):
 		$Weapon.hide()
+	_setup_held_item_sprites()
 
 func _setup_inventory_actions() -> void:
 	var keys := [KEY_1, KEY_2, KEY_3]
@@ -113,6 +113,58 @@ func _setup_inventory_actions() -> void:
 			var ev = InputEventKey.new()
 			ev.keycode = keys[i]
 			InputMap.action_add_event(actions[i], ev)
+
+const HOLD_ITEM_ORBIT_RADIUS := 60.0
+const HOLD_ITEM_SCALE := 0.8
+
+func _setup_held_item_sprites() -> void:
+	var bomb_tex := preload("res://scenes/bomb.webp")
+	var bomb_sprite := Sprite2D.new()
+	bomb_sprite.name = "HeldBomb"
+	bomb_sprite.texture = bomb_tex
+	bomb_sprite.scale = Vector2(HOLD_ITEM_SCALE, HOLD_ITEM_SCALE)
+	bomb_sprite.z_index = 2
+	bomb_sprite.hide()
+	add_child(bomb_sprite)
+
+	var drill_tex := preload("res://drill.webp")
+	var drill_sprite := Sprite2D.new()
+	drill_sprite.name = "HeldDrill"
+	drill_sprite.texture = drill_tex
+	drill_sprite.scale = Vector2(HOLD_ITEM_SCALE, HOLD_ITEM_SCALE)
+	drill_sprite.z_index = 2
+	drill_sprite.hide()
+	add_child(drill_sprite)
+
+func _process(_delta: float) -> void:
+	if Inventory.selected_slot <= 0:
+		return
+	var sprite := get_node_or_null("HeldBomb") if Inventory.selected_slot == 1 else get_node_or_null("HeldDrill")
+	if not sprite or not sprite.visible:
+		return
+	var mouse_dir := (get_global_mouse_position() - global_position).normalized()
+	if mouse_dir == Vector2.ZERO:
+		mouse_dir = Vector2.RIGHT
+	sprite.position = mouse_dir * HOLD_ITEM_ORBIT_RADIUS
+	sprite.rotation = mouse_dir.angle()
+
+func _on_selected_slot_changed(slot: int) -> void:
+	_update_held_item()
+
+func _update_held_item() -> void:
+	if is_digging or is_tunneling:
+		return
+
+	var slot := Inventory.selected_slot
+
+	if has_node("Weapon"):
+		$Weapon.visible = (slot == 0 and Inventory.slots[0] != null)
+
+	if has_node("HeldBomb"):
+		$HeldBomb.visible = (slot == 1 and Inventory.slots[1] != null)
+
+	if has_node("HeldDrill"):
+		$HeldDrill.visible = (slot == 2 and Inventory.slots[2] != null)
 
 const SURFACE_Y := 850.0
 
@@ -240,66 +292,52 @@ func _physics_process(delta: float) -> void:
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		if bomb_armed:
-			_throw_bomb()
-			get_viewport().set_input_as_handled()
-		elif drill_armed:
-			_deploy_drill()
-			get_viewport().set_input_as_handled()
+		match Inventory.selected_slot:
+			1:
+				_throw_bomb()
+				get_viewport().set_input_as_handled()
+			2:
+				_deploy_drill()
+				get_viewport().set_input_as_handled()
 
 func _handle_inventory_input() -> void:
 	if Input.is_action_just_pressed("inventory_1"):
-		_use_inventory_slot(0)
+		_toggle_slot(0)
 	elif Input.is_action_just_pressed("inventory_2"):
-		if bomb_armed:
-			bomb_armed = false
-		else:
-			var item = Inventory.slots[1]
-			if item and item.item_name == "Bomb":
-				bomb_armed = true
-				drill_armed = false
+		_toggle_slot(1)
 	elif Input.is_action_just_pressed("inventory_3"):
-		if drill_armed:
-			drill_armed = false
-		else:
-			var item = Inventory.slots[2]
-			if item and item.item_name == "Drill":
-				drill_armed = true
-				bomb_armed = false
+		_toggle_slot(2)
 
-func _use_inventory_slot(slot: int) -> void:
+func _toggle_slot(slot: int) -> void:
 	var item: ItemData = Inventory.slots[slot] if slot < Inventory.slots.size() else null
 	if item == null:
 		return
-	if item.item_name == "Health Potion":
-		if health >= 6:
-			return
-		Inventory.use_item(slot)
-		heal(1)
-	elif item.item_name == "Speed Boots":
-		if speed_boost_active:
-			return
-		Inventory.use_item(slot)
-		_activate_speed_boost()
-	elif item.item_name == "Shield":
-		if shield_active:
-			return
-		Inventory.use_item(slot)
-		_activate_shield()
-	elif item.item_name == "Shovel":
-		_toggle_weapon()
-	elif item.item_name == "Bomb":
-		if Inventory.use_item(slot):
-			_place_bomb()
 
-func _toggle_weapon() -> void:
-	if has_node("Weapon"):
-		$Weapon.visible = not $Weapon.visible
+	if item.item_name == "Health Potion":
+		if health < 6:
+			Inventory.use_item(slot)
+			heal(1)
+		return
+	elif item.item_name == "Speed Boots":
+		if not speed_boost_active:
+			Inventory.use_item(slot)
+			_activate_speed_boost()
+		return
+	elif item.item_name == "Shield":
+		if not shield_active:
+			Inventory.use_item(slot)
+			_activate_shield()
+		return
+
+	if Inventory.selected_slot == slot:
+		Inventory.selected_slot = -1
+	else:
+		Inventory.selected_slot = slot
 
 func _deploy_drill() -> void:
 	if not Inventory.use_item(2):
 		return
-	drill_armed = false
+	Inventory.selected_slot = -1
 	var drill = drill_scene.instantiate()
 	get_parent().add_child(drill)
 	drill.global_position = global_position + Vector2(0, -40)
@@ -310,7 +348,7 @@ func _deploy_drill() -> void:
 func _throw_bomb() -> void:
 	if not Inventory.use_item(1):
 		return
-	bomb_armed = false
+	Inventory.selected_slot = -1
 	var bomb = bomb_scene.instantiate()
 	get_parent().add_child(bomb)
 	bomb.global_position = global_position + Vector2(0, -40)
@@ -318,11 +356,6 @@ func _throw_bomb() -> void:
 	var dir := (mouse_pos - global_position).normalized()
 	bomb.linear_velocity = dir * 600.0
 	bomb.arm()
-
-func _place_bomb() -> void:
-	var bomb = bomb_scene.instantiate()
-	get_parent().add_child(bomb)
-	bomb.global_position = global_position
 
 func heal(amount: float) -> bool:
 	if health >= 6:
