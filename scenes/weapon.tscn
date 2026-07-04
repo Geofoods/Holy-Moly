@@ -10,8 +10,8 @@ radius = 113.758514
 script = ExtResource("2_script")
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=2110929315]
-position = Vector2(250, 0)
-scale = Vector2(2, 1.5)
+position = Vector2(125, 0)
+scale = Vector2(1.5, 1)
 texture = ExtResource("1_shovel")
 offset = Vector2(80, 0)
 
