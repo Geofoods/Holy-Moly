@@ -47,6 +47,7 @@ shader_parameter/outer_radius = 0.55
 shader_parameter/darkness = 0.6
 
 [node name="Node2D3" type="Node2D" unique_id=1979316305]
+texture_filter = 0
 
 [node name="ParallaxBackground" parent="." unique_id=211574599 instance=ExtResource("8_parallax")]
 

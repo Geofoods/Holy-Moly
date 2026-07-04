@@ -51,6 +51,7 @@ shader_parameter/darkness = 0.5
 size = Vector2(4079.5, 933)
 
 [node name="Node2D2" type="Node2D" unique_id=1979316305]
+texture_filter = 0
 
 [node name="ParallaxBackgroun2" parent="." unique_id=1654768929 instance=ExtResource("16_o2pic")]
 
