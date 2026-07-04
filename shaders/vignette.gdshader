@@ -1,12 +1,14 @@
 shader_type canvas_item;
 
-uniform float intensity : hint_range(0.0, 2.0) = 0.6;
-uniform float smoothness : hint_range(0.0, 1.0) = 0.4;
-uniform float opacity : hint_range(0.0, 1.0) = 1.0;
+uniform float inner_radius : hint_range(0.0, 1.0) = 0.25;
+uniform float outer_radius : hint_range(0.0, 1.5) = 0.55;
+uniform float darkness : hint_range(0.0, 1.0) = 0.95;
 
 void fragment() {
-	float dist = distance(UV, vec2(0.5));
-	float vignette = smoothstep(0.5 - smoothness, 0.5 + smoothness, dist);
-	float alpha = vignette * intensity * opacity;
-	COLOR = vec4(0.0, 0.0, 0.0, alpha);
+	vec2 center = UV - vec2(0.5);
+	float aspect = SCREEN_PIXEL_SIZE.y / SCREEN_PIXEL_SIZE.x;
+	center.x *= aspect;
+	float dist = length(center);
+	float vignette = smoothstep(inner_radius, outer_radius, dist);
+	COLOR = vec4(0.0, 0.0, 0.0, vignette * darkness);
 }

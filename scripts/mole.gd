@@ -116,7 +116,8 @@ func _physics_process(delta: float) -> void:
 				var collider = collision.get_collider()
 				if collider is TileMap:
 					var tile_pos = collider.local_to_map(collider.to_local(collision.get_position()))
-					collider.erase_cell(0, tile_pos)
+					var sfx = load("res://scripts/tile_break_sfx.gd")
+					sfx.break_tile(collider, tile_pos, get_parent())
 					if dirt_spray:
 						dirt_spray.restart()
 						dirt_spray.emitting = true

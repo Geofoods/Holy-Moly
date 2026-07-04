@@ -110,4 +110,5 @@ func _break_tile_at_mouse() -> void:
 		return
 	var mouse_global = get_global_mouse_position()
 	var tile_pos = tilemap.local_to_map(tilemap.to_local(mouse_global))
-	tilemap.erase_cell(0, tile_pos)
+	var sfx = load("res://scripts/tile_break_sfx.gd")
+	sfx.break_tile(tilemap, tile_pos, get_parent().get_parent())
