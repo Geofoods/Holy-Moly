@@ -327,12 +327,17 @@ func _break_tile_at_mouse() -> void:
 		return
 	var mouse_global = get_global_mouse_position()
 	var tile_pos = tilemap.local_to_map(tilemap.to_local(mouse_global))
-	var source_id := tilemap.get_cell_source_id(0, tile_pos)
-	if source_id == -1:
-		return
 	var sfx = load("res://scripts/tile_break_sfx.gd")
-	sfx.break_tile(tilemap, tile_pos, get_parent().get_parent())
-	var mole = get_parent()
-	if mole and mole.has_method("spawn_dirt_particles"):
-		var tile_world = tilemap.to_global(tilemap.map_to_local(tile_pos))
-		mole.spawn_dirt_particles(tile_world)
+	var source_id := tilemap.get_cell_source_id(0, tile_pos)
+	var broke_tile := false
+	if source_id != -1:
+		sfx.break_tile(tilemap, tile_pos, get_parent().get_parent())
+		broke_tile = true
+	elif tilemap.get_layers_count() >= 2 and tilemap.get_cell_source_id(1, tile_pos) != -1:
+		sfx.break_decoration_tile(tilemap, tile_pos, get_parent().get_parent())
+		broke_tile = true
+	if broke_tile:
+		var mole = get_parent()
+		if mole and mole.has_method("spawn_dirt_particles"):
+			var tile_world = tilemap.to_global(tilemap.map_to_local(tile_pos))
+			mole.spawn_dirt_particles(tile_world)

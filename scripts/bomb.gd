@@ -75,7 +75,11 @@ func _explode() -> void:
 		for dx in range(-tile_break_radius, tile_break_radius + 1):
 			for dy in range(-tile_break_radius, tile_break_radius + 1):
 				var tp := Vector2i(center_tile.x + dx, center_tile.y + dy)
-				sfx.break_tile(tilemap, tp, get_parent())
+				var has_collision := tilemap.get_cell_source_id(0, tp) != -1
+				if has_collision:
+					sfx.break_tile(tilemap, tp, get_parent())
+				else:
+					sfx.break_decoration_tile(tilemap, tp, get_parent())
 
 	for hurtbox in get_tree().get_nodes_in_group("enemy_hurtbox"):
 		if not is_instance_valid(hurtbox):

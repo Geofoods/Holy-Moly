@@ -21,7 +21,7 @@ func _ready() -> void:
 	hurtbox.area_entered.connect(_on_hurtbox_area_entered)
 	hitbox.body_entered.connect(_on_hitbox_body_entered)
 	hurtbox.add_to_group("enemy_hurtbox")
-	visual.z_index = -1
+	visual.z_index = 1
 	visual.play()
 
 func _physics_process(delta: float) -> void:
@@ -64,6 +64,8 @@ func _update_visual_direction() -> void:
 func _find_target() -> void:
 	if target_mole == null or not is_instance_valid(target_mole):
 		target_mole = get_tree().get_first_node_in_group("mole")
+		if target_mole:
+			add_collision_exception_with(target_mole)
 	elif global_position.distance_squared_to(target_mole.global_position) > DETECT_RANGE * DETECT_RANGE:
 		target_mole = null
 

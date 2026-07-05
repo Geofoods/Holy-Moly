@@ -19,6 +19,9 @@ func _ready() -> void:
 	hurtbox.add_to_group("enemy_hurtbox")
 	hurtbox.area_entered.connect(_on_hurtbox_area_entered)
 	detect_zone.body_entered.connect(_on_detect_zone_body_entered)
+	var mole = get_tree().get_first_node_in_group("mole")
+	if mole:
+		add_collision_exception_with(mole)
 
 func _physics_process(delta: float) -> void:
 	if not is_on_floor():
@@ -61,7 +64,10 @@ func _explode() -> void:
 		for dx in range(-TILE_BREAK_RADIUS, TILE_BREAK_RADIUS + 1):
 			for dy in range(-TILE_BREAK_RADIUS, TILE_BREAK_RADIUS + 1):
 				var tp := Vector2i(center_tile.x + dx, center_tile.y + dy)
-				sfx.break_tile(tilemap, tp, get_parent())
+				if tilemap.get_cell_source_id(0, tp) != -1:
+					sfx.break_tile(tilemap, tp, get_parent())
+				else:
+					sfx.break_decoration_tile(tilemap, tp, get_parent())
 
 func _on_hurtbox_area_entered(_area: Area2D) -> void:
 	if dead:
