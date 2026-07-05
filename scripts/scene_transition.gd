@@ -17,6 +17,8 @@ func change_to(path: String) -> void:
 	var tween := create_tween()
 	tween.tween_method(_set_progress, 0.0, 1.0, 0.8).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_CUBIC)
 	await tween.finished
+	if path.begins_with("res://scenes/level_") or path == "res://scenes/main.tscn" or path == "res://scenes/tutorial.tscn":
+		Inventory.current_level_path = path
 	get_tree().change_scene_to_file(path)
 	await get_tree().process_frame
 	tween = create_tween()

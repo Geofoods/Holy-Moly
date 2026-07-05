@@ -15,6 +15,7 @@ const TIPS := [
 
 var tip_tween: Tween
 var tip_rng := RandomNumberGenerator.new()
+var _level_keys: Array = []
 
 func _ready():
 	tip_rng.randomize()
@@ -34,13 +35,18 @@ func _ready():
 
 	var play_btn = $CenterContainer/VBoxContainer/ButtonContainer/PlayButton
 	var tutorial_btn = $CenterContainer/VBoxContainer/ButtonContainer/TutorialButton
+	var level_picker = $CenterContainer/VBoxContainer/ButtonContainer/LevelPickerOption as OptionButton
 	var cancel_btn = $CenterContainer/VBoxContainer/ButtonContainer/CancelButton
 	play_btn.mouse_entered.connect(_on_button_hover.bind(play_btn))
 	play_btn.mouse_exited.connect(_on_button_unhover.bind(play_btn))
 	tutorial_btn.mouse_entered.connect(_on_button_hover.bind(tutorial_btn))
 	tutorial_btn.mouse_exited.connect(_on_button_unhover.bind(tutorial_btn))
+	level_picker.mouse_entered.connect(_on_button_hover.bind(level_picker))
+	level_picker.mouse_exited.connect(_on_button_unhover.bind(level_picker))
 	cancel_btn.mouse_entered.connect(_on_button_hover.bind(cancel_btn))
 	cancel_btn.mouse_exited.connect(_on_button_unhover.bind(cancel_btn))
+	
+	_setup_level_picker(level_picker)
 
 	animate_intro()
 
@@ -121,13 +127,16 @@ func animate_title_glow() -> void:
 func _set_buttons_enabled(enabled: bool) -> void:
 	var play_btn = $CenterContainer/VBoxContainer/ButtonContainer/PlayButton
 	var tutorial_btn = $CenterContainer/VBoxContainer/ButtonContainer/TutorialButton
+	var level_picker = $CenterContainer/VBoxContainer/ButtonContainer/LevelPickerOption as OptionButton
 	var cancel_btn = $CenterContainer/VBoxContainer/ButtonContainer/CancelButton
 	play_btn.disabled = not enabled
 	tutorial_btn.disabled = not enabled
+	level_picker.disabled = not enabled
 	cancel_btn.disabled = not enabled
 	if enabled:
 		play_btn.pivot_offset = play_btn.size / 2.0
 		tutorial_btn.pivot_offset = tutorial_btn.size / 2.0
+		level_picker.pivot_offset = level_picker.size / 2.0
 		cancel_btn.pivot_offset = cancel_btn.size / 2.0
 
 func _on_button_hover(button: Button) -> void:
@@ -160,9 +169,14 @@ func _on_play_pressed() -> void:
 	var play_btn = $CenterContainer/VBoxContainer/ButtonContainer/PlayButton
 	play_btn.disabled = true
 	Inventory.reset()
+	var picker = $CenterContainer/VBoxContainer/ButtonContainer/LevelPickerOption as OptionButton
+	var selected := picker.selected
+	var target := "res://scenes/main.tscn"
+	if selected > 0 and selected - 1 < _level_keys.size():
+		target = _level_keys[selected - 1]
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 	get_tree().root.add_child(transition)
-	transition.change_to("res://scenes/main.tscn")
+	transition.change_to(target)
 
 func _on_tutorial_pressed() -> void:
 	SFX.play_ui("ui_click")
@@ -174,6 +188,23 @@ func _on_tutorial_pressed() -> void:
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 	get_tree().root.add_child(transition)
 	transition.change_to("res://scenes/tutorial.tscn")
+
+func _setup_level_picker(picker: OptionButton) -> void:
+	picker.clear()
+	picker.add_item("SELECT LEVEL")
+	picker.set_item_disabled(0, true)
+
+	_level_keys = LevelData.LEVELS.keys()
+	_level_keys.sort_custom(func(a, b): return LevelData.LEVELS[a]["number"] < LevelData.LEVELS[b]["number"])
+
+	for key in _level_keys:
+		var info: Dictionary = LevelData.LEVELS[key]
+		picker.add_item("Level %d - %s" % [info["number"], info["name"]])
+
+	picker.item_selected.connect(_on_level_picked)
+
+func _on_level_picked(_index: int) -> void:
+	SFX.play_ui("ui_click")
 
 func _on_cancel_pressed():
 	SFX.play_ui("ui_click")
