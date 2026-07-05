@@ -84,6 +84,9 @@ func _animate_heart_damage(heart_node: Node2D) -> void:
 	tween.tween_property(heart_node, "scale", _heart_base_scale, 0.2).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 func _ready() -> void:
+	# Register key bindings up front so input works from the very first frame
+	# (before the awaited frame below), rather than being dead for a frame.
+	_setup_input_actions()
 	await get_tree().process_frame
 	self.health = health
 	add_to_group("mole")
@@ -92,35 +95,6 @@ func _ready() -> void:
 		camera.zoom = Vector2(0.5, 0.5)
 	tilemap = get_parent().get_node_or_null("TileMap")
 	LevelMusic.start()
-	var ev_w = InputEventKey.new()
-	ev_w.keycode = KEY_W
-	InputMap.action_add_event("ui_accept", ev_w)
-	
-	var ev_up = InputEventKey.new()
-	ev_up.keycode = KEY_UP
-	InputMap.action_add_event("ui_accept", ev_up)
-	
-	var ev_a = InputEventKey.new()
-	ev_a.keycode = KEY_A
-	InputMap.action_add_event("ui_left", ev_a)
-	
-	var ev_d = InputEventKey.new()
-	ev_d.keycode = KEY_D
-	InputMap.action_add_event("ui_right", ev_d)
-
-	if not InputMap.has_action("dig_dash"):
-		InputMap.add_action("dig_dash")
-		var ev_shift = InputEventKey.new()
-		ev_shift.keycode = KEY_SHIFT
-		InputMap.action_add_event("dig_dash", ev_shift)
-
-	if not InputMap.has_action("dig_slash"):
-		InputMap.add_action("dig_slash")
-		var ev_click = InputEventMouseButton.new()
-		ev_click.button_index = MOUSE_BUTTON_LEFT
-		InputMap.action_add_event("dig_slash", ev_click)
-
-	_setup_inventory_actions()
 	Inventory.initialize()
 	Inventory.selected_slot_changed.connect(_on_selected_slot_changed)
 	Inventory.selected_slot = 0
@@ -129,6 +103,44 @@ func _ready() -> void:
 	_setup_level_reverb()
 	_setup_stuck_label()
 	_setup_slow_ui()
+
+## Registers all keyboard/mouse bindings. Runs once per session (the InputMap is
+## global and persists across level changes). Keys are bound by physical_keycode
+## (physical key position) instead of keycode, so WASD/E/1-3 work on non-US
+## keyboard layouts (AZERTY, QWERTZ, ...) where the same physical key produces a
+## different character.
+func _setup_input_actions() -> void:
+	if InputMap.has_action("dig_dash"):
+		return
+
+	var ev_w = InputEventKey.new()
+	ev_w.physical_keycode = KEY_W
+	InputMap.action_add_event("ui_accept", ev_w)
+
+	var ev_up = InputEventKey.new()
+	ev_up.physical_keycode = KEY_UP
+	InputMap.action_add_event("ui_accept", ev_up)
+
+	var ev_a = InputEventKey.new()
+	ev_a.physical_keycode = KEY_A
+	InputMap.action_add_event("ui_left", ev_a)
+
+	var ev_d = InputEventKey.new()
+	ev_d.physical_keycode = KEY_D
+	InputMap.action_add_event("ui_right", ev_d)
+
+	InputMap.add_action("dig_dash")
+	var ev_shift = InputEventKey.new()
+	ev_shift.physical_keycode = KEY_SHIFT
+	InputMap.action_add_event("dig_dash", ev_shift)
+
+	if not InputMap.has_action("dig_slash"):
+		InputMap.add_action("dig_slash")
+		var ev_click = InputEventMouseButton.new()
+		ev_click.button_index = MOUSE_BUTTON_LEFT
+		InputMap.action_add_event("dig_slash", ev_click)
+
+	_setup_inventory_actions()
 
 func _setup_stuck_label() -> void:
 	var canvas := CanvasLayer.new()
@@ -152,7 +164,7 @@ func _setup_inventory_actions() -> void:
 		if not InputMap.has_action(actions[i]):
 			InputMap.add_action(actions[i])
 			var ev = InputEventKey.new()
-			ev.keycode = keys[i]
+			ev.physical_keycode = keys[i]
 			InputMap.action_add_event(actions[i], ev)
 
 const HOLD_ITEM_ORBIT_RADIUS := 60.0

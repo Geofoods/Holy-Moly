@@ -1,66 +1,92 @@
 [gd_scene format=3 uid="uid://b3w7fiq01gdak"]
 
 [ext_resource type="Script" uid="uid://c7nbgm1ch54sp" path="res://scripts/win_screen.gd" id="1_winscr"]
-[ext_resource type="Shader" uid="uid://ch2hh4i0b8k0l" path="res://shaders/corrupted_bg.gdshader" id="2_shader"]
 [ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="4_babydoll"]
 [ext_resource type="Texture2D" uid="uid://b301151ulaavk" path="res://image (6).webp" id="5_winimg"]
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_bg"]
-shader = ExtResource("2_shader")
-shader_parameter/scanline_count = 240.0
-shader_parameter/scanline_opacity = 0.22
-shader_parameter/noise_strength = 0.07
-shader_parameter/glitch_speed = 2.4
-shader_parameter/base_color = Color(0.035, 0.05, 0.04, 1)
-shader_parameter/tint_color = Color(0.15, 0.55, 0.3, 1)
+[sub_resource type="Gradient" id="Gradient_bg"]
+offsets = PackedFloat32Array(0, 0.55, 1)
+colors = PackedColorArray(0.11, 0.3, 0.21, 1, 0.05, 0.12, 0.09, 1, 0.02, 0.04, 0.03, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_bg"]
+gradient = SubResource("Gradient_bg")
+width = 1024
+height = 1024
+fill = 1
+fill_from = Vector2(0.5, 0.4)
+fill_to = Vector2(1.1, 1.05)
+
+[sub_resource type="Gradient" id="Gradient_glow"]
+offsets = PackedFloat32Array(0, 0.7, 1)
+colors = PackedColorArray(0.35, 0.95, 0.55, 0.28, 0.2, 0.6, 0.38, 0.08, 0.1, 0.3, 0.2, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_glow"]
+gradient = SubResource("Gradient_glow")
+width = 512
+height = 512
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_playbutton"]
-bg_color = Color(0.13, 0.75, 0.32, 1)
+bg_color = Color(0.16, 0.72, 0.38, 1)
 border_width_left = 3
 border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
-border_color = Color(0.03, 0.03, 0.03, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
+border_color = Color(0.04, 0.12, 0.07, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0, 0, 0, 0.45)
+shadow_size = 10
+shadow_offset = Vector2(0, 5)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_playbutton_hover"]
-bg_color = Color(0.2, 0.95, 0.42, 1)
+bg_color = Color(0.24, 0.92, 0.5, 1)
 border_width_left = 3
 border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
-border_color = Color(0.03, 0.03, 0.03, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
+border_color = Color(0.04, 0.12, 0.07, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.2, 0.9, 0.45, 0.35)
+shadow_size = 14
+shadow_offset = Vector2(0, 4)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_exitbutton"]
-bg_color = Color(0.72, 0.1, 0.18, 1)
+bg_color = Color(0.22, 0.24, 0.3, 1)
 border_width_left = 3
 border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
-border_color = Color(0.03, 0.03, 0.03, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
+border_color = Color(0.05, 0.05, 0.07, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0, 0, 0, 0.45)
+shadow_size = 10
+shadow_offset = Vector2(0, 5)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_exitbutton_hover"]
-bg_color = Color(0.9, 0.15, 0.25, 1)
+bg_color = Color(0.34, 0.37, 0.44, 1)
 border_width_left = 3
 border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
-border_color = Color(0.03, 0.03, 0.03, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
+border_color = Color(0.05, 0.05, 0.07, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0, 0, 0, 0.5)
+shadow_size = 14
+shadow_offset = Vector2(0, 4)
 
 [node name="WinScreen" type="Control" unique_id=2142739552]
 layout_mode = 3
@@ -71,20 +97,32 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_winscr")
 
-[node name="Background" type="ColorRect" parent="." unique_id=225700856]
-material = SubResource("ShaderMaterial_bg")
+[node name="Background" type="TextureRect" parent="." unique_id=225700856]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.05, 0.03, 0.03, 1)
+texture = SubResource("GradientTexture2D_bg")
+expand_mode = 1
 
-[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1815635455]
-position = Vector2(605, 155)
-scale = Vector2(0.5, 0.5)
-texture = ExtResource("5_winimg")
+[node name="Glow" type="TextureRect" parent="." unique_id=225700857]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -520.0
+offset_top = -430.0
+offset_right = 520.0
+offset_bottom = 250.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("GradientTexture2D_glow")
+expand_mode = 1
 
 [node name="CenterContainer" type="CenterContainer" parent="." unique_id=1186452265]
 layout_mode = 1
@@ -96,47 +134,55 @@ grow_vertical = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer" unique_id=79523256]
 layout_mode = 2
-size_flags_horizontal = 2
-size_flags_vertical = 2
-theme_override_constants/separation = 40
+theme_override_constants/separation = 26
 alignment = 1
 
+[node name="WinImage" type="TextureRect" parent="CenterContainer/VBoxContainer" unique_id=911627498]
+custom_minimum_size = Vector2(560, 373)
+layout_mode = 2
+size_flags_horizontal = 4
+texture = ExtResource("5_winimg")
+expand_mode = 1
+stretch_mode = 5
+
 [node name="Spacer" type="Control" parent="CenterContainer/VBoxContainer" unique_id=911627499]
-custom_minimum_size = Vector2(0, 30)
+custom_minimum_size = Vector2(0, 10)
 layout_mode = 2
 
 [node name="ButtonContainer" type="HBoxContainer" parent="CenterContainer/VBoxContainer" unique_id=1499038448]
 layout_mode = 2
-theme_override_constants/separation = 30
+theme_override_constants/separation = 34
 alignment = 1
 
 [node name="MainMenuButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer" unique_id=509407488]
-custom_minimum_size = Vector2(180, 70)
+custom_minimum_size = Vector2(240, 78)
 layout_mode = 2
-size_flags_horizontal = 0
-theme_override_colors/font_color = Color(0.03, 0.03, 0.03, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+focus_mode = 0
+theme_override_colors/font_color = Color(0.98, 1, 0.98, 1)
+theme_override_colors/font_outline_color = Color(0, 0.1, 0.04, 1)
+theme_override_constants/outline_size = 6
 theme_override_fonts/font = ExtResource("4_babydoll")
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 28
 theme_override_styles/normal = SubResource("StyleBoxFlat_playbutton")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_playbutton_hover")
 theme_override_styles/hover = SubResource("StyleBoxFlat_playbutton_hover")
-theme_override_styles/focus = SubResource("StyleBoxFlat_playbutton_hover")
-text = "MAIN MENU"
+theme_override_styles/focus = SubResource("StyleBoxFlat_playbutton")
+text = "PLAY AGAIN"
 
 [node name="CancelButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer" unique_id=387091399]
-custom_minimum_size = Vector2(180, 70)
+custom_minimum_size = Vector2(240, 78)
 layout_mode = 2
-size_flags_horizontal = 0
-theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
+focus_mode = 0
+theme_override_colors/font_color = Color(0.92, 0.94, 0.98, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
 theme_override_fonts/font = ExtResource("4_babydoll")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 28
 theme_override_styles/normal = SubResource("StyleBoxFlat_exitbutton")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_exitbutton_hover")
 theme_override_styles/hover = SubResource("StyleBoxFlat_exitbutton_hover")
-theme_override_styles/focus = SubResource("StyleBoxFlat_exitbutton_hover")
-text = "CANCEL"
+theme_override_styles/focus = SubResource("StyleBoxFlat_exitbutton")
+text = "MAIN MENU"
 
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/MainMenuButton" to="." method="_on_main_menu_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/CancelButton" to="." method="_on_cancel_pressed"]

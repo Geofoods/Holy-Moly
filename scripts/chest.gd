@@ -19,7 +19,7 @@ func _ready() -> void:
 func _input(event: InputEvent) -> void:
 	if not player_nearby or is_open:
 		return
-	if event is InputEventKey and event.keycode == KEY_E and event.pressed and not event.echo:
+	if event is InputEventKey and event.physical_keycode == KEY_E and event.pressed and not event.echo:
 		_open_chest()
 
 func _process(_delta: float) -> void:

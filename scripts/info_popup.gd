@@ -42,7 +42,7 @@ func _ready() -> void:
 		_select_entry(Bestiary.get_entries()[0]["id"])
 
 func _input(event: InputEvent) -> void:
-	if is_open and event is InputEventKey and event.pressed and (event.keycode == KEY_ESCAPE or event.keycode == KEY_P):
+	if is_open and event is InputEventKey and event.pressed and (event.physical_keycode == KEY_ESCAPE or event.physical_keycode == KEY_P):
 		close()
 		get_viewport().set_input_as_handled()
 
