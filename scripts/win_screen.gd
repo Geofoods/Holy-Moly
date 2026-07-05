@@ -2,8 +2,6 @@ extends Control
 
 func _ready():
 	LevelMusic.stop()
-	var viewport_size: Vector2 = get_viewport_rect().size
-	$Sprite2D.position = viewport_size / 2.0
 	var vbox = $CenterContainer/VBoxContainer
 	vbox.modulate.a = 0.0
 	vbox.scale = Vector2(0.85, 0.85)
@@ -11,8 +9,23 @@ func _ready():
 	_set_buttons_enabled(false)
 	ScoreManager.finalize()
 	_add_score_display(vbox)
+	for btn in [$CenterContainer/VBoxContainer/ButtonContainer/MainMenuButton, $CenterContainer/VBoxContainer/ButtonContainer/CancelButton]:
+		_setup_button_hover(btn)
 	_spawn_confetti()
 	animate_win()
+
+func _setup_button_hover(btn: Button) -> void:
+	btn.mouse_entered.connect(func():
+		if btn.disabled:
+			return
+		SFX.play_ui("ui_hover", -18.0, 1.8)
+		var t := create_tween()
+		t.tween_property(btn, "scale", Vector2(1.06, 1.06), 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	)
+	btn.mouse_exited.connect(func():
+		var t := create_tween()
+		t.tween_property(btn, "scale", Vector2.ONE, 0.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	)
 
 func _add_score_display(vbox: VBoxContainer) -> void:
 	var font := load("res://Baby Doll.otf") as Font
@@ -41,7 +54,8 @@ func _add_score_display(vbox: VBoxContainer) -> void:
 	box.add_child(best_label)
 
 	vbox.add_child(box)
-	vbox.move_child(box, 0)
+	# Place the score just under the "YOU WIN" image (index 0), above the buttons.
+	vbox.move_child(box, 1)
 
 func _spawn_confetti() -> void:
 	var viewport_size: Vector2 = get_viewport_rect().size
@@ -84,8 +98,13 @@ func animate_menu_reveal() -> void:
 	tween.tween_property(vbox, "scale", Vector2(1.0, 1.0), 0.55).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 func _set_buttons_enabled(enabled: bool) -> void:
-	$CenterContainer/VBoxContainer/ButtonContainer/MainMenuButton.disabled = not enabled
-	$CenterContainer/VBoxContainer/ButtonContainer/CancelButton.disabled = not enabled
+	var main_btn = $CenterContainer/VBoxContainer/ButtonContainer/MainMenuButton
+	var cancel_btn = $CenterContainer/VBoxContainer/ButtonContainer/CancelButton
+	main_btn.disabled = not enabled
+	cancel_btn.disabled = not enabled
+	if enabled:
+		main_btn.pivot_offset = main_btn.size / 2.0
+		cancel_btn.pivot_offset = cancel_btn.size / 2.0
 
 func _on_main_menu_pressed():
 	SFX.play_ui("ui_click")
