@@ -5,20 +5,8 @@ const HOP_COUNT := 4
 const HOP_HEIGHT := 90.0
 const HOP_DURATION := 1.7
 const GROUND_RATIO := 0.72
-<<<<<<< Updated upstream
-const TIPS := [
-	"> Press shift to dig and dash.",
-	"> Press ESC to check your HP.",
-	"> Do NOT fall for the corruption.",
-	"> Moles can paralyse worms with their spit.",
-	"> Made for the Pixel Forge game jam.",
-]
 
-var tip_tween: Tween
-var tip_rng := RandomNumberGenerator.new()
 var _level_keys: Array = []
-=======
->>>>>>> Stashed changes
 
 func _ready():
 	var vp_size: Vector2 = get_viewport_rect().size
