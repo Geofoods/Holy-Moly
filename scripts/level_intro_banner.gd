@@ -1,6 +1,6 @@
 extends CanvasLayer
 
-const HOLD_DURATION := 3.0
+const HOLD_DURATION := 8.0
 const SLIDE_IN_TIME := 0.4
 const SLIDE_OUT_TIME := 0.3
 

@@ -66,7 +66,7 @@ func _build_steps() -> void:
 			"checkpoint": Vector2(6050, -116),
 		},
 		{
-			"text": "A Goblin! It throws explosive mushrooms at you. Keep moving and close the gap to strike.",
+			"text": "A Goblin! It throws explosive mushrooms at you. Right-click to PARRY them back, or close the gap to strike.",
 			"kind": "trigger",
 			"node": "GoblinTrigger",
 			"checkpoint": Vector2(7300, -116),
