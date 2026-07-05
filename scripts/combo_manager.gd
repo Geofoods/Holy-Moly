@@ -1,6 +1,6 @@
 extends CanvasLayer
 
-const COMBO_WINDOW := 10.0
+const COMBO_WINDOW := 7.0
 const SPEED_BONUS_PER_KILL := 0.08
 const MAX_SPEED_BONUS := 0.6
 const COYOTE_BASE := 0.08

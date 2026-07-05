@@ -143,11 +143,11 @@ layer_0/tile_data = PackedInt32Array(-1900553, 131072, 1, -1835017, 131072, 1, -
 layer_1/name = "Decoration"
 
 [node name="chest" parent="." unique_id=328821009 instance=ExtResource("10_lepkc")]
-position = Vector2(1562, -1674)
+position = Vector2(1565, -1635)
 scale = Vector2(0.4, 0.4)
 
 [node name="chest2" parent="." unique_id=1522440845 instance=ExtResource("10_lepkc")]
-position = Vector2(1633, -637)
+position = Vector2(1629, -597)
 scale = Vector2(0.4, 0.4)
 
 [node name="chest3" parent="." unique_id=1160311448 instance=ExtResource("10_lepkc")]
@@ -155,7 +155,7 @@ position = Vector2(4496.9995, -2080)
 scale = Vector2(0.4, 0.4)
 
 [node name="chest4" parent="." unique_id=1946197924 instance=ExtResource("10_lepkc")]
-position = Vector2(3386.9998, -2155)
+position = Vector2(3390.0002, -2118)
 scale = Vector2(0.4, 0.4)
 
 [node name="Costume5" type="Sprite2D" parent="." unique_id=233345077]
@@ -205,15 +205,15 @@ position = Vector2(2550, -371)
 position = Vector2(1615, -34)
 
 [node name="candle" parent="." unique_id=546040729 instance=ExtResource("14_d8cpw")]
-position = Vector2(-41, -1236)
+position = Vector2(-40, -1217)
 scale = Vector2(0.5, 0.5)
 
 [node name="candle2" parent="." unique_id=926166913 instance=ExtResource("14_d8cpw")]
-position = Vector2(1000, -1317)
+position = Vector2(1002, -1294)
 scale = Vector2(0.5, 0.5)
 
 [node name="candle4" parent="." unique_id=1560969481 instance=ExtResource("14_d8cpw")]
-position = Vector2(1961, -1075)
+position = Vector2(1962, -1056)
 scale = Vector2(0.5, 0.5)
 
 [node name="candle5" parent="." unique_id=265983052 instance=ExtResource("14_d8cpw")]
@@ -225,7 +225,7 @@ position = Vector2(1244, -2115)
 scale = Vector2(0.5, 0.5)
 
 [node name="candle7" parent="." unique_id=1284076784 instance=ExtResource("14_d8cpw")]
-position = Vector2(2757, -996)
+position = Vector2(2757, -977)
 scale = Vector2(0.5, 0.5)
 
 [node name="candle8" parent="." unique_id=484407656 instance=ExtResource("14_d8cpw")]

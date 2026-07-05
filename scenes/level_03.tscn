@@ -206,7 +206,7 @@ position = Vector2(-141.00002, 998)
 scale = Vector2(0.560354, 0.560354)
 
 [node name="candle3" parent="." unique_id=565501381 instance=ExtResource("12_yv1v3")]
-position = Vector2(-354, -273)
+position = Vector2(-356, -256)
 scale = Vector2(0.475173, 0.475173)
 
 [node name="chest4" parent="." unique_id=883232796 instance=ExtResource("11_jjwm3")]

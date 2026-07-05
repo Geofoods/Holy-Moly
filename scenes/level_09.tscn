@@ -16,7 +16,7 @@
 [ext_resource type="PackedScene" uid="uid://bcd57whed7bys" path="res://chest.tscn" id="15_wjc4k"]
 [ext_resource type="PackedScene" uid="uid://u77s8ew4xenh" path="res://scenes/beetleenemy.tscn" id="16_1ohpt"]
 [ext_resource type="PackedScene" uid="uid://iuqjuk37ur0d" path="res://scenes/slimeenemy.tscn" id="17_dxywq"]
-[ext_resource type="Script" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
+[ext_resource type="Script" uid="uid://dpsujuff7o60j" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
 [ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
 [ext_resource type="PackedScene" path="res://scenes/info_popup.tscn" id="info_popup_res"]
 
@@ -160,7 +160,7 @@ position = Vector2(2524, 3473)
 position = Vector2(2531, 4636)
 
 [node name="chest2" parent="." unique_id=1635100925 instance=ExtResource("15_wjc4k")]
-position = Vector2(2965, 2987)
+position = Vector2(2973, 3055)
 
 [node name="chest3" parent="." unique_id=1257036121 instance=ExtResource("15_wjc4k")]
 position = Vector2(2689, 5656)
@@ -172,16 +172,16 @@ position = Vector2(2502, 4146)
 position = Vector2(2974, 4141)
 
 [node name="candle" parent="." unique_id=158104047 instance=ExtResource("7_dxywq")]
-position = Vector2(825, 2286)
+position = Vector2(823, 2303)
 
 [node name="candle2" parent="." unique_id=1311477702 instance=ExtResource("7_dxywq")]
 position = Vector2(1819, 2299)
 
 [node name="chest11" parent="." unique_id=950738903 instance=ExtResource("15_wjc4k")]
-position = Vector2(961, 1465)
+position = Vector2(898, 2250)
 
 [node name="chest12" parent="." unique_id=2001015260 instance=ExtResource("15_wjc4k")]
-position = Vector2(1719, 1533)
+position = Vector2(1668, 2257)
 
 [node name="Enemy7" parent="." unique_id=1602679699 instance=ExtResource("17_dxywq")]
 position = Vector2(2482, 5267)
@@ -199,13 +199,13 @@ position = Vector2(2344, 8144)
 position = Vector2(2742, 6917)
 
 [node name="chest5" parent="." unique_id=349026447 instance=ExtResource("15_wjc4k")]
-position = Vector2(2364, 10303)
+position = Vector2(2357, 10326)
 
 [node name="chest6" parent="." unique_id=1646928046 instance=ExtResource("15_wjc4k")]
-position = Vector2(2675, 10296)
+position = Vector2(2669, 10331)
 
 [node name="chest7" parent="." unique_id=1118490638 instance=ExtResource("15_wjc4k")]
-position = Vector2(3038, 10287)
+position = Vector2(3059, 10334)
 
 [node name="chest8" parent="." unique_id=326341337 instance=ExtResource("15_wjc4k")]
 position = Vector2(2445, 8715)
@@ -214,7 +214,7 @@ position = Vector2(2445, 8715)
 position = Vector2(2972, 8710)
 
 [node name="chest10" parent="." unique_id=556803005 instance=ExtResource("15_wjc4k")]
-position = Vector2(2459, 9732)
+position = Vector2(2448, 9766)
 
 [node name="Enemy11" parent="." unique_id=732242054 instance=ExtResource("16_1ohpt")]
 position = Vector2(2798, 9291)

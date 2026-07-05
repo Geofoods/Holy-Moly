@@ -149,22 +149,22 @@ position = Vector2(847, -748)
 position = Vector2(2328, -519)
 
 [node name="chest3" parent="." unique_id=511880532 instance=ExtResource("12_40wum")]
-position = Vector2(3508, -439)
+position = Vector2(3509, -416)
 
 [node name="chest4" parent="." unique_id=424473258 instance=ExtResource("12_40wum")]
 position = Vector2(2840, -2351)
 
 [node name="chest5" parent="." unique_id=325662142 instance=ExtResource("12_40wum")]
-position = Vector2(4640, -2605)
+position = Vector2(4703, -2579)
 
 [node name="chest6" parent="." unique_id=1200340897 instance=ExtResource("12_40wum")]
-position = Vector2(5368, -844)
+position = Vector2(5503, -819)
 
 [node name="chest7" parent="." unique_id=1155248777 instance=ExtResource("12_40wum")]
 position = Vector2(3677, 371)
 
 [node name="chest8" parent="." unique_id=1510287148 instance=ExtResource("12_40wum")]
-position = Vector2(4089, 1166)
+position = Vector2(4076, 1182)
 
 [node name="Enemy" parent="." unique_id=866104770 instance=ExtResource("2_enemy")]
 position = Vector2(3433, -1917)
@@ -197,10 +197,10 @@ position = Vector2(5835, 1428)
 position = Vector2(6211, 1309)
 
 [node name="chest9" parent="." unique_id=103025247 instance=ExtResource("12_40wum")]
-position = Vector2(6211, 774)
+position = Vector2(5956, 1423)
 
 [node name="chest10" parent="." unique_id=1759423177 instance=ExtResource("12_40wum")]
-position = Vector2(5577, 772)
+position = Vector2(5437, 1343)
 
 [node name="candle" parent="." unique_id=158104047 instance=ExtResource("15_21f2n")]
 position = Vector2(529, -763)
@@ -212,7 +212,7 @@ position = Vector2(1682, -845)
 position = Vector2(4849, -772)
 
 [node name="candle4" parent="." unique_id=1614754281 instance=ExtResource("15_21f2n")]
-position = Vector2(5262, -901)
+position = Vector2(5280, -752)
 
 [node name="candle5" parent="." unique_id=1614099280 instance=ExtResource("15_21f2n")]
 position = Vector2(3260, 352)
@@ -221,10 +221,10 @@ position = Vector2(3260, 352)
 position = Vector2(3617, 282)
 
 [node name="candle7" parent="." unique_id=764755825 instance=ExtResource("15_21f2n")]
-position = Vector2(1246, 1080)
+position = Vector2(1600, 1162)
 
 [node name="candle8" parent="." unique_id=2079570923 instance=ExtResource("15_21f2n")]
-position = Vector2(4466, -2537)
+position = Vector2(4352, -2524)
 
 [node name="candle9" parent="." unique_id=1445162701 instance=ExtResource("15_21f2n")]
 position = Vector2(1723, -1893)

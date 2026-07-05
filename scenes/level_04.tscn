@@ -8,7 +8,7 @@
 [ext_resource type="Shader" uid="uid://qjf1ibg12yh2" path="res://shaders/vignette.gdshader" id="7_vignette"]
 [ext_resource type="PackedScene" path="res://scenes/death_plane.tscn" id="10_deathplane"]
 [ext_resource type="PackedScene" uid="uid://k06dbe7sq1ph" path="res://scenes/goblinenemy.tscn" id="10_oqick"]
-[ext_resource type="PackedScene" path="res://scenes/parallax_background2.tscn" id="11_nmhu5"]
+[ext_resource type="PackedScene" uid="uid://wjt35doljo8p" path="res://scenes/parallax_background2.tscn" id="11_nmhu5"]
 [ext_resource type="PackedScene" uid="uid://brmtyiqcy1wkv" path="res://scenes/inventory_ui.tscn" id="12_invui"]
 [ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="15_7fv2j"]
 [ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="16_r75pg"]
@@ -75,7 +75,7 @@ position = Vector2(92, -296)
 scale = Vector2(4, 4)
 position_smoothing_enabled = true
 
-[node name="CanvasLayer" type="CanvasLayer" parent="." layer = 2 unique_id=71896557]
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=71896557]
 
 [node name="heart" parent="CanvasLayer" unique_id=1207891791 instance=ExtResource("3_sugp2")]
 position = Vector2(117.99999, 113.99999)
@@ -176,10 +176,10 @@ position = Vector2(959.75, 4637)
 shape = SubResource("RectangleShape2D_8i68l")
 
 [node name="chest" parent="." unique_id=950738903 instance=ExtResource("17_ovgwr")]
-position = Vector2(-1044, 2736)
+position = Vector2(-1031, 2784)
 
 [node name="chest2" parent="." unique_id=1020398611 instance=ExtResource("17_ovgwr")]
-position = Vector2(333, 3309)
+position = Vector2(335, 3343)
 
 [node name="chest3" parent="." unique_id=226934388 instance=ExtResource("17_ovgwr")]
 position = Vector2(2791, 2139)
@@ -203,16 +203,16 @@ position = Vector2(190, 1459)
 position = Vector2(198, 974)
 
 [node name="candle" parent="." unique_id=158104047 instance=ExtResource("19_vpfgx")]
-position = Vector2(-1089, 2520)
+position = Vector2(-833, 2848)
 
 [node name="candle2" parent="." unique_id=513856667 instance=ExtResource("19_vpfgx")]
-position = Vector2(494, 3246)
+position = Vector2(518, 3410)
 
 [node name="candle3" parent="." unique_id=403670929 instance=ExtResource("19_vpfgx")]
-position = Vector2(2967, 2159)
+position = Vector2(2966, 2203)
 
 [node name="candle4" parent="." unique_id=921844355 instance=ExtResource("19_vpfgx")]
-position = Vector2(-1110, 739)
+position = Vector2(-1152, 928)
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]

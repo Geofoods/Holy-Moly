@@ -17,7 +17,7 @@
 [ext_resource type="PackedScene" uid="uid://cdxu1kg5or16d" path="res://candle.tscn" id="18_4xveb"]
 [ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="19_ratuh"]
 [ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="20_sucws"]
-[ext_resource type="Script" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
+[ext_resource type="Script" uid="uid://dpsujuff7o60j" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
 [ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
 [ext_resource type="PackedScene" path="res://scenes/info_popup.tscn" id="info_popup_res"]
 [ext_resource type="PackedScene" path="res://scenes/level_intro_banner.tscn" id="level_banner_res"]
@@ -183,10 +183,10 @@ position = Vector2(1640, 1468)
 position = Vector2(998, 1443)
 
 [node name="chest2" parent="." unique_id=1794711332 instance=ExtResource("12_u86im")]
-position = Vector2(1158, 1025)
+position = Vector2(1185, 1495)
 
 [node name="chest3" parent="." unique_id=1541984064 instance=ExtResource("12_u86im")]
-position = Vector2(1549, 996)
+position = Vector2(1525, 1514)
 
 [node name="Enemy7" parent="." unique_id=662763700 instance=ExtResource("14_mhf1v")]
 position = Vector2(3148, 1791)
@@ -228,19 +228,19 @@ position = Vector2(1216, -522)
 position = Vector2(1367, -796)
 
 [node name="chest8" parent="." unique_id=389226830 instance=ExtResource("12_u86im")]
-position = Vector2(4048, 258)
+position = Vector2(4036, 316)
 
 [node name="chest9" parent="." unique_id=762337133 instance=ExtResource("12_u86im")]
-position = Vector2(4397, 261)
+position = Vector2(4386, 298)
 
 [node name="chest10" parent="." unique_id=446607709 instance=ExtResource("12_u86im")]
-position = Vector2(4719, 261)
+position = Vector2(4692, 306)
 
 [node name="chest11" parent="." unique_id=1424190323 instance=ExtResource("12_u86im")]
-position = Vector2(5014, 246)
+position = Vector2(5018, 303)
 
 [node name="chest12" parent="." unique_id=705858414 instance=ExtResource("12_u86im")]
-position = Vector2(5360, 258)
+position = Vector2(5386, 318)
 
 [node name="Enemy22" parent="." unique_id=2003546335 instance=ExtResource("15_ewdkf")]
 position = Vector2(4986, 1944)
@@ -255,34 +255,34 @@ position = Vector2(3083, 4657)
 position = Vector2(4047, 4661)
 
 [node name="candle" parent="." unique_id=158104047 instance=ExtResource("18_4xveb")]
-position = Vector2(-687, -827)
+position = Vector2(-694, -751)
 
 [node name="candle2" parent="." unique_id=339213160 instance=ExtResource("18_4xveb")]
-position = Vector2(125, -864)
+position = Vector2(123, -741)
 
 [node name="candle3" parent="." unique_id=288935792 instance=ExtResource("18_4xveb")]
 position = Vector2(1079, -739)
 
 [node name="candle4" parent="." unique_id=309408803 instance=ExtResource("18_4xveb")]
-position = Vector2(-1035, 46)
+position = Vector2(-1046, 198)
 
 [node name="candle5" parent="." unique_id=964744941 instance=ExtResource("18_4xveb")]
 position = Vector2(-445, 799)
 
 [node name="candle6" parent="." unique_id=1837052392 instance=ExtResource("18_4xveb")]
-position = Vector2(205, 2499)
+position = Vector2(-177, 2442)
 
 [node name="candle7" parent="." unique_id=2057639717 instance=ExtResource("18_4xveb")]
-position = Vector2(3315, 4477)
+position = Vector2(3321, 4528)
 
 [node name="candle8" parent="." unique_id=819244330 instance=ExtResource("18_4xveb")]
-position = Vector2(3817, 4468)
+position = Vector2(3827, 4525)
 
 [node name="candle9" parent="." unique_id=961665613 instance=ExtResource("18_4xveb")]
-position = Vector2(4599, -472)
+position = Vector2(4599, -355)
 
 [node name="chest14" parent="." unique_id=1596124221 instance=ExtResource("12_u86im")]
-position = Vector2(377, 2490)
+position = Vector2(358, 2547)
 
 [node name="Costume5" type="Sprite2D" parent="." unique_id=198815993]
 position = Vector2(3443.9878, 4767)

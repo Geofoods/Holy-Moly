@@ -153,7 +153,7 @@ script = ExtResource("dyn_vignette")
 position = Vector2(-111, 1020)
 
 [node name="candle" parent="." unique_id=546040729 instance=ExtResource("12_ikbui")]
-position = Vector2(58.000008, 1066)
+position = Vector2(37, 1100)
 scale = Vector2(0.67999965, 0.67999965)
 
 [node name="Enemy3" parent="." unique_id=866104770 instance=ExtResource("2_enemy")]
@@ -182,7 +182,7 @@ shape = SubResource("RectangleShape2D_vqvml")
 script = ExtResource("firefly_script")
 
 [node name="Costume5" type="Sprite2D" parent="." unique_id=1329603915]
-position = Vector2(2515.9253, 1289)
+position = Vector2(2642, 1194)
 scale = Vector2(18.090199, 1.7175142)
 texture = ExtResource("15_xo5qq")
 

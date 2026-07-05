@@ -36,6 +36,9 @@ var launched_from_jump := false
 var _dig_dash_weapon_was_visible := false
 var _coyote_timer := 0.0
 var _jump_held := false
+var _stuck_timer := 0.0
+var _last_position := Vector2.ZERO
+const STUCK_THRESHOLD := 1.0
 
 ## Set by a scene (e.g. the tutorial) that wants to intercept death instead of
 ## the default Game Over transition, e.g. to restart just the current section.
@@ -308,7 +311,7 @@ func _physics_process(delta: float) -> void:
 	if not is_on_floor() and not launched_from_jump:
 		air_time += delta
 
-	# Don't take contact damage from enemies
+	_check_stuck(delta)
 
 	update_depth_display()
 	_update_camera_position(delta)
@@ -615,3 +618,33 @@ func _end_dig_dash() -> void:
 	if has_node("Weapon") and _dig_dash_weapon_was_visible:
 		$Weapon.show()
 	$AnimatedSprite2D.play("jumpbold")
+
+func _check_stuck(delta: float) -> void:
+	var has_input := Input.get_axis("ui_left", "ui_right") != 0 or Input.is_action_pressed("ui_accept")
+	var moved := global_position.distance_squared_to(_last_position) > 4.0
+	if has_input and not moved and not is_digging and not is_tunneling:
+		_stuck_timer += delta
+	else:
+		_stuck_timer = 0.0
+	_last_position = global_position
+
+	if _stuck_timer >= STUCK_THRESHOLD and tilemap:
+		_stuck_timer = 0.0
+		_break_surrounding_tiles()
+
+func _break_surrounding_tiles() -> void:
+	var sfx = load("res://scripts/tile_break_sfx.gd")
+	var mole_tile := tilemap.local_to_map(tilemap.to_local(global_position))
+	var offsets := [
+		Vector2i(-1, 0), Vector2i(1, 0), Vector2i(0, -1), Vector2i(0, 1),
+		Vector2i(-1, -1), Vector2i(1, -1), Vector2i(-1, 1), Vector2i(1, 1),
+	]
+	var broke_any := false
+	for off in offsets:
+		var tile_pos: Vector2i = mole_tile + off
+		if tilemap.get_cell_source_id(0, tile_pos) != -1:
+			sfx.break_tile(tilemap, tile_pos, get_parent())
+			broke_any = true
+	if broke_any:
+		spawn_dirt_particles(global_position)
+		screen_shake(6.0, 0.15)
