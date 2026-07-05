@@ -3,7 +3,7 @@ extends CharacterBody2D
 const MAX_HEALTH := 40.0
 const PAN_DURATION := 1.5
 const HOLD_DURATION := 1.5
-const DESCENT_SPEED := 200.0
+const DESCENT_SPEED := 400.0
 const SPIT_INTERVAL := 3.0
 const PROJECTILE_SPEED := 400.0
 
@@ -203,8 +203,7 @@ func _physics_process(delta: float) -> void:
 		_spit_cooldown = SPIT_INTERVAL
 
 	_break_tiles_in_path()
-	velocity.y = DESCENT_SPEED
-	move_and_slide()
+	global_position.y += DESCENT_SPEED * delta
 
 func _spit() -> void:
 	var mole := get_tree().get_first_node_in_group("mole") as Node2D
@@ -296,6 +295,7 @@ func _end_cutscene() -> void:
 	var mole_cam := _cutscene_mole.get_node("Camera2D") as Camera2D
 	mole_cam.enabled = true
 	mole_cam.zoom = Vector2(0.5, 0.5)
+	mole_cam.position.y = -500
 
 	process_mode = PROCESS_MODE_INHERIT
 	trigger.process_mode = PROCESS_MODE_INHERIT

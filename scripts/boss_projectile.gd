@@ -62,7 +62,14 @@ func _explode() -> void:
 	SFX.play("explosion", global_position)
 	_spawn_explosion_particles()
 	_break_tiles()
-	queue_free()
+	set_physics_process(false)
+	set_process(false)
+	if has_node("CollisionShape2D"):
+		$CollisionShape2D.set_deferred("disabled", true)
+	var tw := create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(self, "scale", scale * 3.0, 0.4)
+	tw.parallel().tween_property(self, "modulate:a", 0.0, 0.4)
+	tw.tween_callback(queue_free)
 
 func _spawn_explosion_particles() -> void:
 	var particles := GPUParticles2D.new()
