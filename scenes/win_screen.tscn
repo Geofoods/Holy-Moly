@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://b3w7fiq01gdak"]
+[gd_scene format=3 uid="uid://b3w7fiq01gdak"]
 
 [ext_resource type="Script" uid="uid://c7nbgm1ch54sp" path="res://scripts/win_screen.gd" id="1_winscr"]
 [ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="4_babydoll"]
@@ -26,7 +26,7 @@ width = 512
 height = 512
 fill = 1
 fill_from = Vector2(0.5, 0.5)
-fill_to = Vector2(1.0, 0.5)
+fill_to = Vector2(1, 0.5)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_playbutton"]
 bg_color = Color(0.16, 0.72, 0.38, 1)
@@ -106,7 +106,6 @@ grow_horizontal = 2
 grow_vertical = 2
 texture = SubResource("GradientTexture2D_bg")
 expand_mode = 1
-stretch_mode = 0
 
 [node name="Glow" type="TextureRect" parent="." unique_id=225700857]
 layout_mode = 1
@@ -124,7 +123,6 @@ grow_vertical = 2
 mouse_filter = 2
 texture = SubResource("GradientTexture2D_glow")
 expand_mode = 1
-stretch_mode = 0
 
 [node name="CenterContainer" type="CenterContainer" parent="." unique_id=1186452265]
 layout_mode = 1
