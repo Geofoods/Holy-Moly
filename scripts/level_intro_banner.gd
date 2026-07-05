@@ -1,8 +1,8 @@
 extends CanvasLayer
 
-const HOLD_DURATION := 5.0
-const SLIDE_IN_TIME := 0.45
-const SLIDE_OUT_TIME := 0.35
+const HOLD_DURATION := 3.0
+const SLIDE_IN_TIME := 0.4
+const SLIDE_OUT_TIME := 0.3
 
 @onready var panel: Control = $Panel
 @onready var level_num_label: Label = $Panel/Margin/VBox/LevelNumLabel
@@ -13,9 +13,11 @@ const SLIDE_OUT_TIME := 0.35
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	var vp_size: Vector2 = get_viewport().get_visible_rect().size
-	panel.size = Vector2(minf(720.0, vp_size.x - 80.0), 150.0)
+	panel.size = Vector2(minf(820.0, vp_size.x - 60.0), 190.0)
 	panel.position = Vector2((vp_size.x - panel.size.x) / 2.0, -panel.size.y - 20.0)
 	panel.modulate.a = 0.0
+	panel.pivot_offset = Vector2(panel.size.x / 2.0, 0.0)
+	panel.scale = Vector2(0.94, 0.94)
 
 	var scene_path := get_tree().current_scene.scene_file_path
 	var info: Dictionary = LevelData.get_info(scene_path)
@@ -36,6 +38,7 @@ func _play() -> void:
 	var tween := create_tween()
 	tween.tween_property(panel, "position:y", shown_y, SLIDE_IN_TIME).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.parallel().tween_property(panel, "modulate:a", 1.0, SLIDE_IN_TIME * 0.7)
+	tween.parallel().tween_property(panel, "scale", Vector2(1.0, 1.0), SLIDE_IN_TIME).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.tween_interval(HOLD_DURATION - SLIDE_IN_TIME - SLIDE_OUT_TIME)
 	tween.tween_property(panel, "position:y", hidden_y, SLIDE_OUT_TIME).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	tween.parallel().tween_property(panel, "modulate:a", 0.0, SLIDE_OUT_TIME)
