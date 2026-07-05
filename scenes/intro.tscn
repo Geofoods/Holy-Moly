@@ -254,22 +254,6 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_tutorialbutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_tutorialbutton_hover")
 text = "TUTORIAL"
 
-[node name="CancelButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer" unique_id=223072363]
-custom_minimum_size = Vector2(180, 70)
-layout_mode = 2
-size_flags_horizontal = 0
-theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_fonts/font = ExtResource("6_es01l")
-theme_override_font_sizes/font_size = 24
-theme_override_styles/normal = SubResource("StyleBoxFlat_exitbutton")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_exitbutton_hover")
-theme_override_styles/hover = SubResource("StyleBoxFlat_exitbutton_hover")
-theme_override_styles/focus = SubResource("StyleBoxFlat_exitbutton_hover")
-text = "QUIT"
-
-
-
 [node name="CreditsLabel" type="Label" parent="." unique_id=29629912]
 layout_mode = 0
 anchor_top = 1.0
@@ -289,4 +273,3 @@ horizontal_alignment = 1
 
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/PlayButton" to="." method="_on_play_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/TutorialButton" to="." method="_on_tutorial_pressed"]
-[connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/CancelButton" to="." method="_on_cancel_pressed"]

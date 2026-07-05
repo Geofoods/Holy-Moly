@@ -146,9 +146,6 @@ func _build_restart_button() -> void:
 	restart_container.position = Vector2(24, s.y / 2.0 - 40)
 	
 	var btn := Button.new()
-	btn.text = "↻"
-	btn.add_theme_font_override("font", HOTBAR_FONT)
-	btn.add_theme_font_size_override("font_size", 32)
 	btn.custom_minimum_size = Vector2(64, 64)
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color("b33939")
@@ -165,7 +162,12 @@ func _build_restart_button() -> void:
 	btn.add_theme_stylebox_override("hover", style_hover)
 	btn.add_theme_stylebox_override("pressed", style)
 	btn.add_theme_stylebox_override("focus", style)
-	
+
+	var icon := preload("res://scripts/reload_icon.gd").new()
+	icon.set_anchors_preset(Control.PRESET_FULL_RECT)
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	btn.add_child(icon)
+
 	var lbl := Label.new()
 	lbl.text = "R"
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

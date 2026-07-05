@@ -36,7 +36,7 @@ func _build_steps() -> void:
 			"on_start": func(): mole.set_physics_process(true); mole.set_process(true),
 		},
 		{
-			"text": "MOVE: press A / D or ◄ ►. Walk to the right!",
+			"text": "MOVE: press A / D or the arrow keys. Walk to the right!",
 			"kind": "trigger",
 			"node": "MoveTrigger",
 		},
@@ -49,6 +49,10 @@ func _build_steps() -> void:
 			"text": "A treasure chest! Walk into it to open it and grab the loot inside.",
 			"kind": "chest",
 			"node": "TutorialChest",
+		},
+		{
+			"text": "Alright, click on the chest and wall to break them!",
+			"kind": "click",
 		},
 		{
 			"text": "A Goblin! It throws explosive mushrooms.\nRIGHT-CLICK to PARRY them back, then close in. KILL it to continue!",

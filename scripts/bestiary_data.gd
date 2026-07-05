@@ -143,7 +143,7 @@ const CONTROLS: Array[Dictionary] = [
 	{
 		"category": "Menus",
 		"rows": [
-			{"label": "P", "detail": "Pause the game. Resume, return to the main menu, or quit."},
+			{"label": "P", "detail": "Pause the game. Resume, restart, or return to the main menu."},
 			{"label": "Info button (bottom-right)", "detail": "Opens this screen any time, in a level or from the main menu."},
 		],
 	},

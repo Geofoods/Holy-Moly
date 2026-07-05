@@ -136,7 +136,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="PausePanel" type="PanelContainer" parent="CenterContainer" unique_id=1329555518]
-custom_minimum_size = Vector2(500, 620)
+custom_minimum_size = Vector2(500, 510)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_pausebg")
 
@@ -218,20 +218,6 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_exitbutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_exitbutton_hover")
 text = "  MENU   "
 
-[node name="CancelButton" type="Button" parent="CenterContainer/PausePanel/VBoxContainer/ButtonContainer" unique_id=1098464102]
-custom_minimum_size = Vector2(0, 80)
-layout_mode = 2
-size_flags_horizontal = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_fonts/font = ExtResource("2_myx47")
-theme_override_font_sizes/font_size = 32
-theme_override_styles/normal = SubResource("StyleBoxFlat_cancelbutton")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_cancelbutton_hover")
-theme_override_styles/hover = SubResource("StyleBoxFlat_cancelbutton_hover")
-theme_override_styles/focus = SubResource("StyleBoxFlat_cancelbutton_hover")
-text = " CANCEL "
-
 [node name="Label" type="Label" parent="." unique_id=1644145906]
 offset_left = 1069.0
 offset_top = -577.0
@@ -246,4 +232,3 @@ script = ExtResource("4_7l7mv")
 [connection signal="pressed" from="CenterContainer/PausePanel/VBoxContainer/ButtonContainer/RestartButton" to="." method="_on_restart_pressed"]
 [connection signal="pressed" from="CenterContainer/PausePanel/VBoxContainer/ButtonContainer/FieldGuideButton" to="." method="_on_field_guide_pressed"]
 [connection signal="pressed" from="CenterContainer/PausePanel/VBoxContainer/ButtonContainer/MainMenuButton" to="." method="_on_main_menu_pressed"]
-[connection signal="pressed" from="CenterContainer/PausePanel/VBoxContainer/ButtonContainer/CancelButton" to="." method="_on_cancel_pressed"]

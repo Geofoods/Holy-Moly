@@ -67,7 +67,6 @@ func _set_input_enabled(enabled: bool) -> void:
 	button_container.get_node("RestartButton").disabled = not enabled
 	button_container.get_node("FieldGuideButton").disabled = not enabled
 	button_container.get_node("MainMenuButton").disabled = not enabled
-	button_container.get_node("CancelButton").disabled = not enabled
 
 func _position_hp_label() -> void:
 	var panel = $CenterContainer/PausePanel as Control
@@ -108,7 +107,3 @@ func _on_field_guide_pressed() -> void:
 func _on_main_menu_pressed() -> void:
 	get_tree().paused = false
 	get_tree().change_scene_to_file("res://scenes/intro.tscn")
-
-func _on_cancel_pressed() -> void:
-	get_tree().paused = false
-	get_tree().quit()
