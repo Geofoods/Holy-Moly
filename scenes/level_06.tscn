@@ -11,13 +11,12 @@
 [ext_resource type="PackedScene" uid="uid://k06dbe7sq1ph" path="res://scenes/goblinenemy.tscn" id="11_k7nmt"]
 [ext_resource type="PackedScene" uid="uid://bcd57whed7bys" path="res://chest.tscn" id="12_40wum"]
 [ext_resource type="PackedScene" uid="uid://brmtyiqcy1wkv" path="res://scenes/inventory_ui.tscn" id="12_invui"]
-[ext_resource type="PackedScene" uid="uid://wjt35doljo8p" path="res://scenes/parallax_background2.tscn" id="12_ph8se"]
-[ext_resource type="PackedScene" uid="uid://u77s8ew4xenh" path="res://scenes/beetleenemy.tscn" id="13_40wum"]
+[ext_resource type="PackedScene" path="res://scenes/info_popup.tscn" id="info_popup_res"]
+[ext_resource type="PackedScene" path="res://scenes/level_intro_banner.tscn" id="level_banner_res"]
+[ext_resource type="PackedScene" path="res://scenes/parallax_background2.tscn" id="12_ph8se"]
+[ext_resource type="PackedScene" path="res://scenes/beetleenemy.tscn" id="13_40wum"]
 [ext_resource type="PackedScene" path="res://scenes/firefly_spawner.tscn" id="13_spawner"]
 [ext_resource type="PackedScene" uid="uid://cdxu1kg5or16d" path="res://candle.tscn" id="15_21f2n"]
-[ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="17_wwuk5"]
-[ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="18_ho47o"]
-[ext_resource type="PackedScene" path="res://scenes/info_popup.tscn" id="info_popup_res"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.1, 0.1, 0.12, 0.85)
@@ -49,10 +48,8 @@ shader_parameter/inner_radius = 0.25
 shader_parameter/outer_radius = 0.55
 shader_parameter/darkness = 0.55
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_x0hry"]
-size = Vector2(4079.5, 933)
-
 [node name="Node2D3" type="Node2D" unique_id=1979316305]
+texture_filter = 0
 
 [node name="DeathPlane" parent="." unique_id=1942262957 instance=ExtResource("10_deathplane")]
 
@@ -81,7 +78,7 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_pausebutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_pausebutton_hover")
 text = "II ESC"
 
-[node name="InfoButton" type="Button" parent="CanvasLayer" unique_id=149518602]
+[node name="InfoButton" type="Button" parent="CanvasLayer"]
 anchors_preset = 3
 anchor_left = 1.0
 anchor_top = 1.0
@@ -107,7 +104,9 @@ text = "?"
 
 [node name="PauseMenu" parent="." unique_id=1779626465 instance=ExtResource("4_pause")]
 
-[node name="InfoPopup" parent="." unique_id=1535560857 instance=ExtResource("info_popup_res")]
+[node name="InfoPopup" parent="." instance=ExtResource("info_popup_res")]
+
+[node name="LevelIntroBanner" parent="." instance=ExtResource("level_banner_res")]
 
 [node name="VignetteLayer" type="CanvasLayer" parent="." unique_id=182643830]
 
@@ -227,26 +226,6 @@ position = Vector2(4466, -2537)
 
 [node name="candle9" parent="." unique_id=1445162701 instance=ExtResource("15_21f2n")]
 position = Vector2(1723, -1893)
-
-[node name="Costume5" type="Sprite2D" parent="." unique_id=610416396]
-position = Vector2(7082.0005, 1928.0001)
-scale = Vector2(13.883869, 1.7175142)
-texture = ExtResource("17_wwuk5")
-
-[node name="ColorRect" type="ColorRect" parent="." unique_id=1968853203]
-offset_left = 3834.0
-offset_top = 2139.0
-offset_right = 10317.0
-offset_bottom = 3860.0
-color = Color(0, 0, 0, 1)
-
-[node name="nextlevel" type="Area2D" parent="." unique_id=2027482975]
-position = Vector2(4119, 1384)
-script = ExtResource("18_ho47o")
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="nextlevel" unique_id=559454441]
-position = Vector2(2921.75, 1047)
-shape = SubResource("RectangleShape2D_x0hry")
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]
