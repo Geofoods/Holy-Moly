@@ -60,7 +60,7 @@ func _build_steps() -> void:
 			"kind": "click",
 		},
 		{
-			"text": "A Beetle! It charges fast but can't turn mid-rush. Sidestep and punish while it recovers.",
+			"text": "A Beetle! It charges fast but can't turn mid-rush. Sidestep the rush, then punish while they recover.",
 			"kind": "trigger",
 			"node": "BeetleTrigger",
 			"checkpoint": Vector2(6050, -116),
@@ -72,18 +72,30 @@ func _build_steps() -> void:
 			"checkpoint": Vector2(7300, -116),
 		},
 		{
-			"text": "You got a Bomb! Press its slot number (shown in the hotbar), then Left-click toward the wall to blow it open.",
+			"text": "You got a Bomb! Press its slot number (shown in the hotbar), then Left-click toward the wall to blow it open. Bombs deal massive damage to enemies and tiles!",
 			"kind": "trigger",
 			"node": "BombWallTrigger",
 			"checkpoint": Vector2(8350, -116),
 			"on_start": func(): Inventory.add_item(preload("res://resources/bomb.tres")),
 		},
 		{
-			"text": "You got a Drill! It tunnels through rock and enemies. Select it, then Left-click toward the wall ahead.",
+			"text": "You got a Drill! It tunnels through rock and damages enemies. Select it, then Left-click toward the wall ahead. It lasts a few seconds.",
 			"kind": "trigger",
 			"node": "DrillWallTrigger",
 			"checkpoint": Vector2(9200, -116),
 			"on_start": func(): Inventory.add_item(preload("res://resources/drill.tres")),
+		},
+		{
+			"text": "COMBAT TIPS: Keep moving to dodge attacks. Use your Shovel for close-range hits. Parry (right-click) to send projectiles back at enemies!",
+			"kind": "click",
+		},
+		{
+			"text": "SURVIVAL TIPS: Stay alert for enemies around corners. Use the terrain to your advantage. A perfect combo lets you move faster!",
+			"kind": "click",
+		},
+		{
+			"text": "ITEMS & HOTBAR: Pick up Bombs and Drills to unlock new ways to fight and break through walls. Press 1, 2, or 3 to select items.",
+			"kind": "click",
 		},
 	]
 
@@ -149,7 +161,8 @@ func _finish() -> void:
 	_clear_pending_signal()
 	if dialogue.next_pressed.is_connected(_advance):
 		dialogue.next_pressed.disconnect(_advance)
-	dialogue.show_text("Great job! You now know the basics. You're ready to begin your adventure. Good luck!", 0, 0, true)
+	var ending_text = "Perfect! You've mastered the basics:\n• MOVE (A/D or ◄►) and JUMP (W/SPACE)\n• ATTACK (Left-click) and PARRY (Right-click)\n• BOMB for massive damage and destruction\n• DRILL to tunnel and pierce enemies\n\nRemember: Stay mobile, parry projectiles, and use items strategically. Your combo multiplier speeds you up! Ready for the real adventure?"
+	dialogue.show_text(ending_text, 0, 0, true)
 	dialogue.next_button.text = "PLAY NOW ▸"
 	dialogue.next_pressed.connect(_on_play_now_pressed, CONNECT_ONE_SHOT)
 
