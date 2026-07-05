@@ -15,9 +15,10 @@
 [ext_resource type="PackedScene" uid="uid://dnp3icrndkjm8" path="res://scenes/antenemy.tscn" id="12_pojnb"]
 [ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="12_rt7wb"]
 [ext_resource type="PackedScene" uid="uid://cdxu1kg5or16d" path="res://candle.tscn" id="14_d8cpw"]
-[ext_resource type="PackedScene" path="res://scenes/firefly_spawner.tscn" id="15_spawner"]
+[ext_resource type="Script" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
 [ext_resource type="PackedScene" uid="uid://u77s8ew4xenh" path="res://scenes/beetleenemy.tscn" id="16_eceou"]
 [ext_resource type="PackedScene" uid="uid://wjt35doljo8p" path="res://scenes/parallax_background2.tscn" id="16_o2pic"]
+[ext_resource type="Script" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.1, 0.1, 0.12, 0.85)
@@ -126,6 +127,7 @@ text = "?"
 [node name="VignetteLayer" type="CanvasLayer" parent="." unique_id=182643830]
 
 [node name="VignetteRect" type="ColorRect" parent="VignetteLayer" unique_id=1731371193]
+script = ExtResource("dyn_vignette")
 material = SubResource("ShaderMaterial_vignette")
 anchors_preset = 15
 anchor_right = 1.0
@@ -251,7 +253,8 @@ scale = Vector2(0.5, 0.5)
 position = Vector2(2677, 766)
 scale = Vector2(0.5, 0.5)
 
-[node name="FireflySpawner" parent="." unique_id=1343869836 instance=ExtResource("15_spawner")]
+[node name="FireflySpawner" type="Node2D" parent="."]
+script = ExtResource("firefly_script")
 
 [node name="Enemy10" parent="." unique_id=1849714905 instance=ExtResource("16_eceou")]
 position = Vector2(3181, -858)

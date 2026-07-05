@@ -4,7 +4,6 @@ const LIFETIME := 4.0
 const EXPLOSION_TILE_RADIUS := 1
 
 var velocity := Vector2.ZERO
-var _rotation_speed := randf_range(2.0, 5.0) * (1 if randi() % 2 == 0 else -1)
 var _pulse_phase := randf() * TAU
 
 func setup(vel: Vector2) -> void:
@@ -18,7 +17,6 @@ func _ready() -> void:
 		sprite.play("default")
 
 func _process(delta: float) -> void:
-	rotation += _rotation_speed * delta
 	_pulse_phase += delta * 4.0
 	var pulse := 1.0 + sin(_pulse_phase) * 0.08
 	scale = Vector2(0.3, 0.3) * pulse

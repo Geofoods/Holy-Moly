@@ -12,12 +12,13 @@
 [ext_resource type="PackedScene" uid="uid://brmtyiqcy1wkv" path="res://scenes/inventory_ui.tscn" id="12_invui"]
 [ext_resource type="PackedScene" uid="uid://k06dbe7sq1ph" path="res://scenes/goblinenemy.tscn" id="12_lw6sx"]
 [ext_resource type="PackedScene" uid="uid://iuqjuk37ur0d" path="res://scenes/slimeenemy.tscn" id="13_qihgo"]
-[ext_resource type="PackedScene" path="res://scenes/firefly_spawner.tscn" id="13_spawner"]
+[ext_resource type="Script" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
 [ext_resource type="PackedScene" uid="uid://u77s8ew4xenh" path="res://scenes/beetleenemy.tscn" id="15_k8v36"]
 [ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="16_qihgo"]
 [ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="17_k8v36"]
 [ext_resource type="PackedScene" path="res://scenes/info_popup.tscn" id="info_popup_res"]
 [ext_resource type="PackedScene" path="res://scenes/level_intro_banner.tscn" id="level_banner_res"]
+[ext_resource type="Script" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.1, 0.1, 0.12, 0.85)
@@ -125,6 +126,7 @@ text = "?"
 [node name="VignetteLayer" type="CanvasLayer" parent="." unique_id=182643830]
 
 [node name="VignetteRect" type="ColorRect" parent="VignetteLayer" unique_id=1731371193]
+script = ExtResource("dyn_vignette")
 material = SubResource("ShaderMaterial_vignette")
 anchors_preset = 15
 anchor_right = 1.0
@@ -133,7 +135,8 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="FireflySpawner" parent="." unique_id=1416174766 instance=ExtResource("13_spawner")]
+[node name="FireflySpawner" type="Node2D" parent="."]
+script = ExtResource("firefly_script")
 
 [node name="TileMap" type="TileMap" parent="." unique_id=190893331]
 position = Vector2(441, 2026)

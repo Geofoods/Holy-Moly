@@ -421,8 +421,6 @@ static func spawn_break_particles(tilemap: TileMap, tile_pos: Vector2i, atlas_co
 	var gradient := Gradient.new()
 	gradient.set_color(0, colors[0])
 	gradient.set_color(1, fade_color)
-	var grad_tex := GradientTexture2D.new()
-	grad_tex.gradient = gradient
-	particles.color_ramp = grad_tex
+	particles.color_ramp = gradient
 
 	particles.get_tree().create_timer(1.5).timeout.connect(particles.queue_free)

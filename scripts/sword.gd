@@ -220,9 +220,7 @@ func _spawn_deflect_shine(pos: Vector2) -> void:
 	var fade := Gradient.new()
 	fade.set_color(0, Color(1.0, 1.0, 1.0, 1.0))
 	fade.set_color(1, Color(0.5, 0.75, 1.0, 0.0))
-	var grad_tex := GradientTexture2D.new()
-	grad_tex.gradient = fade
-	particles.color_ramp = grad_tex
+	particles.color_ramp = fade
 	get_parent().get_parent().add_child(particles)
 	particles.global_position = pos
 	get_tree().create_timer(1.0).timeout.connect(particles.queue_free)

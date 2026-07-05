@@ -1,6 +1,6 @@
 extends CharacterBody2D
 
-const MAX_HEALTH := 20.0
+const MAX_HEALTH := 40.0
 const PAN_DURATION := 1.5
 const HOLD_DURATION := 1.5
 const DESCENT_SPEED := 200.0
@@ -357,9 +357,7 @@ func _play_death_effect() -> void:
 	var fade := Gradient.new()
 	fade.set_color(0, Color(0.8, 0.3, 1.0, 1))
 	fade.set_color(1, Color(0.4, 0.1, 0.6, 0))
-	var grad_tex := GradientTexture2D.new()
-	grad_tex.gradient = fade
-	death_particles.color_ramp = grad_tex
+	death_particles.color_ramp = fade
 	add_child(death_particles)
 	death_particles.global_position = sprite.global_position
 	get_tree().create_timer(1.5).timeout.connect(death_particles.queue_free)

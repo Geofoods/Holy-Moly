@@ -73,3 +73,26 @@ func _play_open_animation() -> void:
 		glow_tween.tween_property(glow, "modulate:a", 0.9, 0.15)
 		glow_tween.tween_property(glow, "scale", Vector2(1.3, 1.3), 0.4).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 		glow_tween.chain().tween_property(glow, "modulate:a", 0.0, 0.4)
+
+	# ADD: particle burst
+	var particles := CPUParticles2D.new()
+	particles.emitting = true
+	particles.one_shot = true
+	particles.amount = 16
+	particles.lifetime = 0.6
+	particles.explosiveness = 1.0
+	particles.direction = Vector2(0, -1)
+	particles.spread = 180.0
+	particles.initial_velocity_min = 80.0
+	particles.initial_velocity_max = 200.0
+	particles.gravity = Vector2(0, 400)
+	particles.scale_amount_min = 2.0
+	particles.scale_amount_max = 5.0
+	particles.color = Color(1.0, 0.85, 0.3, 1.0)
+	var fade := Gradient.new()
+	fade.set_color(0, Color(1.0, 0.9, 0.4, 1.0))
+	fade.set_color(1, Color(1.0, 0.7, 0.1, 0.0))
+	particles.color_ramp = fade
+	particles.z_index = 10
+	add_child(particles)
+	get_tree().create_timer(1.0).timeout.connect(particles.queue_free)

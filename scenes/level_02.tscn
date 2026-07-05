@@ -15,8 +15,9 @@
 [ext_resource type="PackedScene" path="res://scenes/info_popup.tscn" id="info_popup_res"]
 [ext_resource type="PackedScene" path="res://scenes/level_intro_banner.tscn" id="level_banner_res"]
 [ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="13_ikbui"]
-[ext_resource type="PackedScene" path="res://scenes/firefly_spawner.tscn" id="14_spawner"]
+[ext_resource type="Script" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
 [ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="15_xo5qq"]
+[ext_resource type="Script" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.1, 0.1, 0.12, 0.85)
@@ -139,6 +140,7 @@ visible = false
 [node name="VignetteLayer" type="CanvasLayer" parent="." unique_id=182643830]
 
 [node name="VignetteRect" type="ColorRect" parent="VignetteLayer" unique_id=1731371193]
+script = ExtResource("dyn_vignette")
 material = SubResource("ShaderMaterial_vignette")
 anchors_preset = 15
 anchor_right = 1.0
@@ -176,7 +178,8 @@ script = ExtResource("13_ikbui")
 position = Vector2(3008, 1669)
 shape = SubResource("RectangleShape2D_vqvml")
 
-[node name="FireflySpawner" parent="." unique_id=1006708542 instance=ExtResource("14_spawner")]
+[node name="FireflySpawner" type="Node2D" parent="."]
+script = ExtResource("firefly_script")
 
 [node name="Costume5" type="Sprite2D" parent="." unique_id=1329603915]
 position = Vector2(2515.9253, 1289)

@@ -13,6 +13,7 @@
 [ext_resource type="PackedScene" uid="uid://brmtyiqcy1wkv" path="res://scenes/inventory_ui.tscn" id="12_invui"]
 [ext_resource type="PackedScene" path="res://scenes/info_popup.tscn" id="info_popup_res"]
 [ext_resource type="PackedScene" path="res://scenes/level_intro_banner.tscn" id="level_banner_res"]
+[ext_resource type="Script" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.1, 0.1, 0.12, 0.85)
@@ -42,6 +43,9 @@ corner_radius_bottom_left = 8
 size = Vector2(12788, 933)
 
 [node name="Node2D" type="Node2D" unique_id=1979316305]
+
+[node name="FireflySpawner" type="Node2D" parent="."]
+script = ExtResource("firefly_script")
 texture_filter = 0
 
 [node name="TileMap" type="TileMap" parent="." unique_id=193735831]

@@ -31,8 +31,11 @@ func _on_area_entered(area: Area2D) -> void:
 	if not area.is_in_group("enemy_hurtbox"):
 		return
 	var enemy := area.get_parent()
-	if enemy and is_instance_valid(enemy) and enemy.has_method("die"):
-		enemy.die()
+	if enemy and is_instance_valid(enemy):
+		if enemy.has_method("take_damage"):
+			enemy.take_damage(3)
+		elif enemy.has_method("die"):
+			enemy.die()
 
 func _process(delta: float) -> void:
 	elapsed += delta

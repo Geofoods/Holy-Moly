@@ -62,6 +62,12 @@ func _explode() -> void:
 		return
 	dead = true
 	SFX.play("explosion", global_position)
+
+	var explosion_particles := preload("res://Retro Explosion.tscn").instantiate()
+	explosion_particles.global_position = global_position
+	get_parent().add_child(explosion_particles)
+	explosion_particles.emitting = true
+
 	var mole := get_tree().get_first_node_in_group("mole")
 	if mole and is_instance_valid(mole):
 		var dist := global_position.distance_to(mole.global_position)
@@ -85,8 +91,10 @@ func _explode() -> void:
 		if not is_instance_valid(hurtbox):
 			continue
 		var enemy := hurtbox.get_parent()
-		if enemy and is_instance_valid(enemy) and enemy.has_method("die"):
-			if global_position.distance_to(enemy.global_position) <= explosion_radius:
+		if enemy and is_instance_valid(enemy) and global_position.distance_to(enemy.global_position) <= explosion_radius:
+			if enemy.has_method("take_damage"):
+				enemy.take_damage(5)
+			elif enemy.has_method("die"):
 				enemy.die()
 
 	var tween := create_tween()

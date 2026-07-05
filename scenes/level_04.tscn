@@ -12,7 +12,8 @@
 [ext_resource type="PackedScene" uid="uid://brmtyiqcy1wkv" path="res://scenes/inventory_ui.tscn" id="12_invui"]
 [ext_resource type="PackedScene" path="res://scenes/info_popup.tscn" id="info_popup_res"]
 [ext_resource type="PackedScene" path="res://scenes/level_intro_banner.tscn" id="level_banner_res"]
-[ext_resource type="PackedScene" path="res://scenes/firefly_spawner.tscn" id="13_spawner"]
+[ext_resource type="Script" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
+[ext_resource type="Script" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.1, 0.1, 0.12, 0.85)
@@ -126,6 +127,7 @@ text = "?"
 [node name="VignetteLayer" type="CanvasLayer" parent="." unique_id=182643830]
 
 [node name="VignetteRect" type="ColorRect" parent="VignetteLayer" unique_id=1731371193]
+script = ExtResource("dyn_vignette")
 material = SubResource("ShaderMaterial_vignette")
 anchors_preset = 15
 anchor_right = 1.0
@@ -144,7 +146,8 @@ position = Vector2(-479, 2524)
 [node name="Enemy3" parent="." unique_id=929530222 instance=ExtResource("10_oqick")]
 position = Vector2(1060, 2123)
 
-[node name="FireflySpawner" parent="." unique_id=939757082 instance=ExtResource("13_spawner")]
+[node name="FireflySpawner" type="Node2D" parent="."]
+script = ExtResource("firefly_script")
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]
