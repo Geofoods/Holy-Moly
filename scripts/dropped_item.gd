@@ -24,11 +24,11 @@ func _ready() -> void:
 	var player = get_tree().get_first_node_in_group("mole")
 	if player:
 		add_collision_exception_with(player)
-		
+
 	# Spawn with some random velocity popped out of the chest
 	# e.g., upwards and slightly left/right
 	_velocity = Vector2(randf_range(-150.0, 150.0), randf_range(-400.0, -250.0))
-	
+
 	# Delay pickup slightly so player doesn't immediately consume it
 	get_tree().create_timer(0.4).timeout.connect(func():
 		_can_pickup = true

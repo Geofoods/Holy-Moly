@@ -21,6 +21,7 @@ var _shoot_timer := SHOOT_INTERVAL
 var _stun_timer := 0.0
 const MOVE_SFX_INTERVAL := 0.4
 var ant_bullet_scene := preload("res://scenes/ant_bullet.tscn")
+var _mole_in_contact := false
 @onready var hurtbox: Area2D = $Hurtbox
 @onready var hitbox: Area2D = $Hitbox
 @onready var visual: AnimatedSprite2D = $Visual
@@ -28,6 +29,7 @@ var ant_bullet_scene := preload("res://scenes/ant_bullet.tscn")
 func _ready() -> void:
 	hurtbox.area_entered.connect(_on_hurtbox_area_entered)
 	hitbox.body_entered.connect(_on_hitbox_body_entered)
+	hitbox.body_exited.connect(_on_hitbox_body_exited)
 	hurtbox.add_to_group("enemy_hurtbox")
 	visual.z_index = 1
 	visual.play()
@@ -116,8 +118,13 @@ func _find_target() -> void:
 		target_mole = null
 
 func _on_hitbox_body_entered(body: Node) -> void:
-	if body.is_in_group("mole"):
+	if body.is_in_group("mole") and not _mole_in_contact:
+		_mole_in_contact = true
 		body.take_damage(1, global_position, true)
+
+func _on_hitbox_body_exited(body: Node) -> void:
+	if body.is_in_group("mole"):
+		_mole_in_contact = false
 
 func _on_hurtbox_area_entered(area: Area2D) -> void:
 	if area == hitbox or not area.monitoring:

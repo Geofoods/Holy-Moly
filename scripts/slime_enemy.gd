@@ -12,6 +12,7 @@ var target_mole: Node2D = null
 var was_on_floor := true
 var has_landed := false
 var _stun_timer := 0.0
+var _mole_in_contact := false
 
 @onready var hurtbox: Area2D = $Area2D
 @onready var visual: Sprite2D = $Visual
@@ -19,6 +20,7 @@ var _stun_timer := 0.0
 func _ready() -> void:
 	hurtbox.area_entered.connect(_on_hurtbox_area_entered)
 	hurtbox.body_entered.connect(_on_body_entered)
+	hurtbox.body_exited.connect(_on_body_exited)
 	hurtbox.add_to_group("enemy_hurtbox")
 
 func _physics_process(delta: float) -> void:
@@ -82,8 +84,13 @@ func _land() -> void:
 	SFX.play("land", global_position, -10.0, 0.4)
 
 func _on_body_entered(body: Node) -> void:
-	if body.is_in_group("mole"):
+	if body.is_in_group("mole") and not _mole_in_contact:
+		_mole_in_contact = true
 		body.take_damage(1, global_position, true)
+
+func _on_body_exited(body: Node) -> void:
+	if body.is_in_group("mole"):
+		_mole_in_contact = false
 
 func _on_hurtbox_area_entered(area: Area2D) -> void:
 	var parent: Node = area.get_parent()

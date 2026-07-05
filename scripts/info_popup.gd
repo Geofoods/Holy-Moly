@@ -1,6 +1,6 @@
 extends CanvasLayer
 
-const DANGER_LABELS := ["", "LOW", "MILD", "MODERATE", "HIGH", "EXTREME"]
+const DANGER_LABELS := ["", "LOW", "MILD", "MODERATE", "HIGH", "EXTREME", "MERCILESS"]
 const DANGER_COLORS := [
 	Color.WHITE,
 	Color(0.25, 0.65, 0.3, 1),
@@ -8,6 +8,7 @@ const DANGER_COLORS := [
 	Color(0.85, 0.55, 0.1, 1),
 	Color(0.8, 0.25, 0.15, 1),
 	Color(0.55, 0.1, 0.1, 1),
+	Color(0.9, 0.3, 0.8, 1),
 ]
 
 @onready var dim_background: ColorRect = $DimBackground
@@ -179,7 +180,7 @@ func _select_entry(id: String) -> void:
 	sep.add_theme_font_size_override("font_size", 14)
 	sep.add_theme_color_override("font_color", Color(0.5, 0.4, 0.25, 1))
 	danger_row.add_child(sep)
-	danger_row.add_child(_make_heading(DANGER_LABELS[clampi(danger, 1, 5)], 14, DANGER_COLORS[clampi(danger, 1, 5)]))
+	danger_row.add_child(_make_heading(DANGER_LABELS[clampi(danger, 1, 6)], 14, DANGER_COLORS[clampi(danger, 1, 6)]))
 
 	detail_vbox.add_child(HSeparator.new())
 

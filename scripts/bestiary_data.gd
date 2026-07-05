@@ -86,6 +86,18 @@ const ENTRIES: Array[Dictionary] = [
 		"attack_pattern": "Instantly heals you when consumed.",
 		"strategy": "Save it for emergencies when your health is running low.",
 	},
+	{
+		"id": "corrupted_heart",
+		"name": "Corrupted Heart",
+		"icon": "res://boss_bite.webp",
+		"icon_region": Rect2(0, 0, 900, 600),
+		"category": "Final Boss",
+		"danger_level": 6,
+		"description": "The corrupted source of darkness deep below the surface. A massive entity that has twisted the very tunnels around itself.",
+		"behavior": "Emerges from the abyss when you reach the deepest level. It descends slowly while relentlessly attacking, spitting projectiles and spawning treasure chests.",
+		"attack_pattern": "Fires projectiles in single or triple-spread patterns every 3 seconds. Spawns treasure chests periodically. Contact with the entity deals damage.",
+		"strategy": "Crack open the chests he spawns for drills to deal massive damage to the boss, whilst avoiding his brutal onslaught. Or just use your shovel to wack him a lot, that works too...",
+	},
 ]
 
 const CONTROLS: Array[Dictionary] = [

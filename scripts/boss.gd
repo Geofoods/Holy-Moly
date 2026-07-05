@@ -291,7 +291,7 @@ func _start_cutscene(mole: Node) -> void:
 	add_child(_cutscene_cam)
 	_cutscene_cam.make_current()
 
-	_cutscene_start_pos = _cutscene_cam.global_position
+	_cutscene_start_pos = (mole as Node2D).global_position
 	_cutscene_target_pos = $AnimatedSprite2D.global_position
 	_cutscene_stage = 0
 	_cutscene_time = 0.0

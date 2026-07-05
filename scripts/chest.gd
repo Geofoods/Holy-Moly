@@ -81,11 +81,17 @@ func break_as_block() -> void:
 func _get_loot_item() -> ItemData:
 	if item != null:
 		return item
-	var bomb := preload("res://resources/bomb.tres")
 	var drill := preload("res://resources/drill.tres")
 	var holy_water := preload("res://resources/holy_water.tres")
+	if _is_final_stage():
+		return drill if randf() < 0.7 else holy_water
+	var bomb := preload("res://resources/bomb.tres")
 	var roll := randf()
 	return bomb if roll < 0.4 else drill if roll < 0.8 else holy_water
+
+func _is_final_stage() -> bool:
+	var current_scene := get_tree().current_scene
+	return current_scene != null and current_scene.scene_file_path.ends_with("level_09.tscn")
 
 func _grant_item() -> void:
 	var loot := _get_loot_item()
