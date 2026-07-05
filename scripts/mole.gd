@@ -87,6 +87,7 @@ func _ready() -> void:
 	if camera:
 		camera.zoom = Vector2(1.5, 1.5)
 	tilemap = get_parent().get_node_or_null("TileMap")
+	LevelMusic.start()
 	var ev_w = InputEventKey.new()
 	ev_w.keycode = KEY_W
 	InputMap.action_add_event("ui_accept", ev_w)
@@ -461,7 +462,64 @@ func heal(amount: float) -> bool:
 		return false
 	health += amount
 	SFX.play("heal", global_position)
+	_spawn_potion_mist()
 	return true
+
+func _spawn_potion_mist() -> void:
+	# Rising blue mist particles
+	var mist := CPUParticles2D.new()
+	mist.emitting = true
+	mist.one_shot = false
+	mist.amount = 24
+	mist.lifetime = 0.8
+	mist.explosiveness = 0.0
+	mist.direction = Vector2(0, -1)
+	mist.spread = 60.0
+	mist.initial_velocity_min = 40.0
+	mist.initial_velocity_max = 100.0
+	mist.gravity = Vector2(0, -30)
+	mist.damping_min = 20.0
+	mist.damping_max = 40.0
+	mist.scale_amount_min = 6.0
+	mist.scale_amount_max = 14.0
+	mist.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	mist.emission_rect_extents = Vector2(30, 40)
+	var grad := Gradient.new()
+	grad.set_color(0, Color(0.3, 0.55, 1.0, 0.7))
+	grad.set_color(1, Color(0.2, 0.4, 0.9, 0.0))
+	mist.color_ramp = grad
+	mist.z_index = 10
+	add_child(mist)
+	mist.position = Vector2(0, -20)
+
+	# Splash burst particles
+	var splash := CPUParticles2D.new()
+	splash.emitting = true
+	splash.one_shot = true
+	splash.amount = 16
+	splash.lifetime = 0.5
+	splash.explosiveness = 1.0
+	splash.direction = Vector2.ZERO
+	splash.spread = 180.0
+	splash.initial_velocity_min = 60.0
+	splash.initial_velocity_max = 160.0
+	splash.gravity = Vector2(0, 200)
+	splash.scale_amount_min = 3.0
+	splash.scale_amount_max = 8.0
+	var splash_grad := Gradient.new()
+	splash_grad.set_color(0, Color(0.4, 0.7, 1.0, 0.9))
+	splash_grad.set_color(1, Color(0.15, 0.3, 0.8, 0.0))
+	splash.color_ramp = splash_grad
+	splash.z_index = 10
+	add_child(splash)
+	splash.position = Vector2(0, -30)
+
+	# Stop mist after 1.2s, clean up both after 2s
+	get_tree().create_timer(1.2).timeout.connect(func(): mist.emitting = false)
+	get_tree().create_timer(2.5).timeout.connect(func():
+		if is_instance_valid(mist): mist.queue_free()
+		if is_instance_valid(splash): splash.queue_free()
+	)
 
 func _activate_speed_boost() -> void:
 	speed_boost_active = true

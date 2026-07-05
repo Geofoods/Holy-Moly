@@ -1,6 +1,7 @@
 extends Control
 
 func _ready():
+	LevelMusic.stop()
 	var viewport_size: Vector2 = get_viewport_rect().size
 	$Sprite2D.position = viewport_size / 2.0
 	var vbox = $CenterContainer/VBoxContainer

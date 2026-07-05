@@ -13,6 +13,7 @@ var selected_slot: int = -1:
 	set(value):
 		selected_slot = value
 		selected_slot_changed.emit(value)
+		SFX.play_ui("ui_click", -12.0, 1.5)
 
 var _initialized := false
 

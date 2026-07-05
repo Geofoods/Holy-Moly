@@ -62,8 +62,8 @@ func _build_ui() -> void:
 
 		var tex := TextureRect.new()
 		tex.name = "IconTexture"
-		tex.size = Vector2(60, 60)
-		tex.position = Vector2((SLOT_SIZE.x - 60) / 2, 6)
+		tex.size = Vector2(120, 120)
+		tex.position = Vector2((SLOT_SIZE.x - 120) / 2, (SLOT_SIZE.y - 120) / 2)
 		tex.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		tex.expand = true
 		tex.mouse_filter = Control.MOUSE_FILTER_PASS

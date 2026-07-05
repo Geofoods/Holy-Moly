@@ -5,7 +5,11 @@ const GROUND_RATIO := 0.72
 const FALL_START_RATIO := 0.22
 const FALL_X_RATIO := 0.78
 
+var _game_over_music: AudioStreamPlayer = null
+
 func _ready():
+	LevelMusic.stop()
+	_start_game_over_music()
 	var viewport_size: Vector2 = get_viewport_rect().size
 	$AnimatedSprite2D.position = viewport_size / 2.0
 	var vbox = $CenterContainer/VBoxContainer
@@ -74,8 +78,24 @@ func _set_buttons_enabled(enabled: bool) -> void:
 	$CenterContainer/VBoxContainer/ButtonContainer/PlayAgainButton.disabled = not enabled
 	$CenterContainer/VBoxContainer/ButtonContainer/CancelButton.disabled = not enabled
 
+func _start_game_over_music() -> void:
+	_game_over_music = AudioStreamPlayer.new()
+	_game_over_music.stream = preload("res://soundreality-crystal-cave-136472.mp3")
+	_game_over_music.volume_db = -14.0
+	add_child(_game_over_music)
+	_game_over_music.finished.connect(_game_over_music.play)
+	_game_over_music.play()
+
+func _fade_out_game_over_music() -> void:
+	if _game_over_music and is_instance_valid(_game_over_music):
+		var tween := create_tween()
+		tween.tween_property(_game_over_music, "volume_db", -40.0, 0.8)
+		tween.tween_callback(_game_over_music.queue_free)
+		_game_over_music = null
+
 func _on_play_again_pressed():
 	SFX.play_ui("ui_click")
+	_fade_out_game_over_music()
 	Inventory.reset()
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 	get_tree().root.add_child(transition)
@@ -83,6 +103,7 @@ func _on_play_again_pressed():
 
 func _on_cancel_pressed():
 	SFX.play_ui("ui_click")
+	_fade_out_game_over_music()
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 	get_tree().root.add_child(transition)
 	transition.change_to("res://scenes/intro.tscn")

@@ -103,13 +103,9 @@ func _flash_label() -> void:
 	_scale_tween.tween_property(_label, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 func _play_combo_sound() -> void:
-	var pitch := 0.8 + float(mini(combo, 12)) * 0.08
-	var volume := -10.0 + float(mini(combo, 8)) * 0.5
-	# Play coin sound with rising pitch based on combo
-	if not SFX._sounds.has("coin") or SFX._sounds["coin"].size() == 0:
-		return
-	var streams: Array = SFX._sounds["coin"]
-	var stream: AudioStream = streams[randi() % streams.size()]
+	var pitch := 0.8 + float(mini(combo, 12)) * 0.1
+	var volume := -8.0 + float(mini(combo, 8)) * 0.5
+	var stream := preload("res://combo sound mole.wav")
 	var player := AudioStreamPlayer.new()
 	player.stream = stream
 	player.volume_db = volume

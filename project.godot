@@ -22,6 +22,7 @@ SFX="*res://scripts/sfx_manager.gd"
 Bestiary="*res://scripts/bestiary_data.gd"
 LevelData="*res://scripts/level_data.gd"
 ComboManager="*res://scripts/combo_manager.gd"
+LevelMusic="*res://scripts/level_music.gd"
 
 [display]
 

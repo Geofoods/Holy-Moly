@@ -60,6 +60,8 @@ func open() -> void:
 	tween.tween_property(dim_background, "modulate:a", 1.0, 0.2).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tween.tween_property(panel, "modulate:a", 1.0, 0.2).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tween.tween_property(panel, "scale", Vector2(1.0, 1.0), 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	LevelMusic.pause()
+	_pause_scene_music()
 	_start_browse_music()
 
 func close() -> void:
@@ -67,6 +69,8 @@ func close() -> void:
 		return
 	is_open = false
 	_stop_browse_music()
+	LevelMusic.resume()
+	_resume_scene_music()
 	var tween := create_tween()
 	tween.set_parallel(true)
 	tween.tween_property(dim_background, "modulate:a", 0.0, 0.15)
@@ -210,6 +214,22 @@ func _populate_controls() -> void:
 			detail_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			row_box.add_child(detail_label)
 		controls_vbox.add_child(HSeparator.new())
+
+func _pause_scene_music() -> void:
+	var scene := get_tree().current_scene
+	if not scene:
+		return
+	var music = scene.get_node_or_null("MenuMusic")
+	if music and music is AudioStreamPlayer:
+		music.stream_paused = true
+
+func _resume_scene_music() -> void:
+	var scene := get_tree().current_scene
+	if not scene:
+		return
+	var music = scene.get_node_or_null("MenuMusic")
+	if music and music is AudioStreamPlayer:
+		music.stream_paused = false
 
 func _start_browse_music() -> void:
 	if _browse_music and is_instance_valid(_browse_music):

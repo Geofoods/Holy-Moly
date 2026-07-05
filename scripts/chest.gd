@@ -72,6 +72,13 @@ func _grant_item() -> void:
 func _show_item_rise(loot: ItemData) -> void:
 	if not loot.icon_texture:
 		return
+	# Loot reveal sound - delayed sparkle
+	get_tree().create_timer(0.15).timeout.connect(func():
+		SFX.play("item_pickup", global_position, -4.0, 0.1)
+	)
+	get_tree().create_timer(0.3).timeout.connect(func():
+		SFX.play("coin", global_position, -6.0, 0.1)
+	)
 	var sprite := Sprite2D.new()
 	sprite.texture = loot.icon_texture
 	sprite.global_position = global_position + Vector2(0, -40)

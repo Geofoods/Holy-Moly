@@ -11,6 +11,7 @@ var _last_hop_index := -1
 var _intro_music: AudioStreamPlayer = null
 
 func _ready():
+	LevelMusic.stop()
 	var vp_size: Vector2 = get_viewport_rect().size
 	size = vp_size
 	$Background.size = vp_size
