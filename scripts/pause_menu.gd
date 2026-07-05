@@ -22,7 +22,7 @@ func _ready() -> void:
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed:
-		if event.keycode == KEY_P:
+		if event.physical_keycode == KEY_P:
 			toggle_pause()
 			get_tree().root.set_input_as_handled()
 

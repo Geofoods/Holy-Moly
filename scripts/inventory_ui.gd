@@ -188,7 +188,7 @@ func _on_restart_action() -> void:
 	transition.change_to(Inventory.current_level_path)
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_R:
+	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_R:
 		if not get_tree().paused:
 			_on_restart_action()
 			get_viewport().set_input_as_handled()
