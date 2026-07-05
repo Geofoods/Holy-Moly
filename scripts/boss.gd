@@ -1,6 +1,6 @@
 extends CharacterBody2D
 
-const MAX_HEALTH := 40.0
+const MAX_HEALTH := 70.0
 const PAN_DURATION := 0.75
 const HOLD_DURATION := 0.75
 const DESCENT_SPEED := 20.0
@@ -40,6 +40,10 @@ var _health_bar_label: Label = null
 var _health_bar_name: Label = null
 var _health_bar_tween: Tween = null
 var _displayed_health: float = 0.0
+
+const INDICATOR_SCREEN_MARGIN := 70.0
+var _indicator_layer: CanvasLayer = null
+var _indicator_arrow: Polygon2D = null
 
 func _ready() -> void:
 	anim.stop()
@@ -170,6 +174,65 @@ func _destroy_health_bar() -> void:
 		_health_bar_layer = null
 	)
 
+func _create_offscreen_indicator() -> void:
+	_indicator_layer = CanvasLayer.new()
+	_indicator_layer.name = "BossOffscreenIndicator"
+	_indicator_layer.layer = 95
+	get_parent().add_child(_indicator_layer)
+
+	_indicator_arrow = Polygon2D.new()
+	_indicator_arrow.polygon = PackedVector2Array([
+		Vector2(0, -24),
+		Vector2(18, 16),
+		Vector2(0, 6),
+		Vector2(-18, 16),
+	])
+	_indicator_arrow.color = Color(0.9, 0.1, 0.1, 0.95)
+	_indicator_arrow.visible = false
+	_indicator_layer.add_child(_indicator_arrow)
+
+	var pulse_tween := create_tween().set_loops()
+	pulse_tween.tween_property(_indicator_arrow, "scale", Vector2(1.15, 1.15), 0.4).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	pulse_tween.tween_property(_indicator_arrow, "scale", Vector2(1.0, 1.0), 0.4).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+func _update_offscreen_indicator() -> void:
+	if not _indicator_arrow:
+		return
+	var camera := get_viewport().get_camera_2d()
+	if not camera:
+		_indicator_arrow.visible = false
+		return
+
+	var viewport_size := get_viewport().get_visible_rect().size
+	var screen_pos: Vector2 = (anim.global_position - camera.global_position) * camera.zoom + viewport_size / 2.0
+	var margin := INDICATOR_SCREEN_MARGIN
+
+	if screen_pos.x >= margin and screen_pos.x <= viewport_size.x - margin and screen_pos.y >= margin and screen_pos.y <= viewport_size.y - margin:
+		_indicator_arrow.visible = false
+		return
+
+	_indicator_arrow.visible = true
+
+	var center := viewport_size / 2.0
+	var dir := screen_pos - center
+	if dir == Vector2.ZERO:
+		dir = Vector2.UP
+	dir = dir.normalized()
+
+	var half := center - Vector2(margin, margin)
+	var scale_x: float = half.x / abs(dir.x) if dir.x != 0.0 else INF
+	var scale_y: float = half.y / abs(dir.y) if dir.y != 0.0 else INF
+	var clamp_scale: float = min(scale_x, scale_y)
+
+	_indicator_arrow.position = center + dir * clamp_scale
+	_indicator_arrow.rotation = dir.angle() + PI / 2.0
+
+func _destroy_offscreen_indicator() -> void:
+	if _indicator_layer and is_instance_valid(_indicator_layer):
+		_indicator_layer.queue_free()
+	_indicator_layer = null
+	_indicator_arrow = null
+
 func _process(delta: float) -> void:
 	if _cutscene_stage < 0:
 		return
@@ -213,6 +276,7 @@ func _physics_process(delta: float) -> void:
 
 	_break_tiles_in_path()
 	global_position.y += DESCENT_SPEED * delta
+	_update_offscreen_indicator()
 
 func _spit() -> void:
 	var mole := get_tree().get_first_node_in_group("mole") as Node2D
@@ -322,6 +386,7 @@ func _end_cutscene() -> void:
 	_cutscene_mole = null
 
 	_create_health_bar()
+	_create_offscreen_indicator()
 
 func _spawn_chest() -> void:
 	var mole := get_tree().get_first_node_in_group("mole") as Node2D
@@ -339,6 +404,8 @@ func _on_hurtbox_area_entered(area: Area2D) -> void:
 		take_damage(1)
 
 func take_damage(amount: float) -> void:
+	if health <= 0:
+		return
 	health -= amount
 	modulate = Color(2, 1.5, 1.5, 1)
 	var flash_tween := create_tween()
@@ -355,17 +422,61 @@ func die() -> void:
 	ScoreManager.add_kill(20, global_position)
 	set_physics_process(false)
 	hurtbox.set_deferred("monitorable", false)
-	var tw := create_tween()
-	tw.tween_property(self, "modulate:a", 0.0, 0.5)
-	tw.tween_callback(queue_free)
 	_destroy_health_bar()
+	_destroy_offscreen_indicator()
 	_play_death_effect()
-	get_tree().create_timer(1.0).timeout.connect(_go_to_win_screen)
+	_break_apart()
+	var tw := create_tween()
+	tw.tween_interval(1.0)
+	tw.tween_callback(_go_to_win_screen)
+	tw.tween_callback(queue_free)
 
 func _go_to_win_screen() -> void:
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 	get_tree().root.add_child(transition)
 	transition.change_to("res://scenes/win_screen.tscn")
+
+func _break_apart() -> void:
+	anim.visible = false
+
+	var frame_tex := anim.sprite_frames.get_frame_texture(anim.animation, anim.frame)
+	var atlas := frame_tex as AtlasTexture
+	var source_tex := atlas.atlas if atlas else frame_tex
+	var source_region := atlas.region if atlas else Rect2(Vector2.ZERO, frame_tex.get_size())
+
+	var w := source_region.size.x
+	var h := source_region.size.y
+	var ox := source_region.position.x
+	var oy := source_region.position.y
+
+	var cols := 4
+	var rows := 2
+	var pw := w / cols
+	var ph := h / rows
+	var center_offset := Vector2(w * 0.5, h * 0.5)
+
+	for col in cols:
+		for row in rows:
+			var local_center := Vector2(col * pw + pw * 0.5, row * ph + ph * 0.5) - center_offset
+			var sub_rect := Rect2(ox + col * pw, oy + row * ph, pw, ph)
+
+			var piece := Sprite2D.new()
+			piece.texture = source_tex
+			piece.region_enabled = true
+			piece.region_rect = sub_rect
+			piece.scale = anim.scale * 0.5
+			piece.position = anim.position + local_center
+			add_child(piece)
+
+			var angle := randf_range(0.0, TAU)
+			var speed := randf_range(150.0, 350.0)
+			var vel := Vector2.RIGHT.rotated(angle) * speed
+
+			var pt := create_tween()
+			pt.tween_property(piece, "position", piece.position + vel, 0.5).set_ease(Tween.EASE_OUT)
+			pt.parallel().tween_property(piece, "rotation", randf_range(-4.0, 4.0), 0.5).set_ease(Tween.EASE_OUT)
+			pt.parallel().tween_property(piece, "modulate", Color(1, 1, 1, 0), 0.5).set_ease(Tween.EASE_IN)
+			pt.tween_callback(piece.queue_free)
 
 func _play_death_effect() -> void:
 	var sprite := $AnimatedSprite2D
