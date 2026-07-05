@@ -10,9 +10,9 @@
 [ext_resource type="PackedScene" uid="uid://bcd57whed7bys" path="res://chest.tscn" id="10_choun"]
 [ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="11_eb6dy"]
 [ext_resource type="PackedScene" uid="uid://brmtyiqcy1wkv" path="res://scenes/inventory_ui.tscn" id="12_invui"]
+[ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
 [ext_resource type="PackedScene" path="res://scenes/info_popup.tscn" id="info_popup_res"]
 [ext_resource type="PackedScene" path="res://scenes/level_intro_banner.tscn" id="level_banner_res"]
-[ext_resource type="Script" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.1, 0.1, 0.12, 0.85)
@@ -43,9 +43,8 @@ size = Vector2(12788, 933)
 
 [node name="Node2D" type="Node2D" unique_id=1979316305]
 
-[node name="FireflySpawner" type="Node2D" parent="."]
+[node name="FireflySpawner" type="Node2D" parent="." unique_id=522481684]
 script = ExtResource("firefly_script")
-texture_filter = 0
 
 [node name="TileMap" type="TileMap" parent="." unique_id=193735831]
 scale = Vector2(0.5, 0.5)
@@ -68,8 +67,7 @@ position_smoothing_enabled = true
 [node name="Enemy" parent="." unique_id=1155690396 instance=ExtResource("2_enemy")]
 position = Vector2(300, -116)
 
-
-[node name="CanvasLayer" type="CanvasLayer" parent="." layer = 2 unique_id=71896557]
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=71896557]
 layer = 2
 
 [node name="heart" parent="CanvasLayer" unique_id=1207891791 instance=ExtResource("3_sugp2")]
@@ -123,7 +121,7 @@ text = "?"
 
 [node name="PauseMenu" parent="." unique_id=1779626465 instance=ExtResource("4_pause")]
 
-[node name="LevelIntroBanner" parent="." instance=ExtResource("level_banner_res")]
+[node name="LevelIntroBanner" parent="." unique_id=52537147 instance=ExtResource("level_banner_res")]
 
 [node name="chest" parent="." unique_id=950738903 instance=ExtResource("10_choun")]
 position = Vector2(3383, 300)
