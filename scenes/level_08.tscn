@@ -1,26 +1,26 @@
 [gd_scene format=3 uid="uid://d3kk4y8f8tfwv"]
 
+[ext_resource type="PackedScene" uid="uid://c3fg4jh63xhyr" path="res://scenes/parallax_background3.tscn" id="1_2exuq"]
 [ext_resource type="PackedScene" uid="uid://p1of6ummc17j" path="res://scenes/mole.tscn" id="1_o5qli"]
 [ext_resource type="PackedScene" uid="uid://dnp3icrndkjm8" path="res://scenes/antenemy.tscn" id="2_enemy"]
 [ext_resource type="PackedScene" uid="uid://c6xus6tuhcmfo" path="res://scenes/heart.tscn" id="3_sugp2"]
 [ext_resource type="PackedScene" uid="uid://d2i1x8x1y6qa" path="res://scenes/pause_menu.tscn" id="4_pause"]
 [ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="6_tipki"]
 [ext_resource type="Shader" uid="uid://qjf1ibg12yh2" path="res://shaders/vignette.gdshader" id="7_vignette"]
-[ext_resource type="PackedScene" path="res://scenes/parallax_background.tscn" id="8_parallax"]
 [ext_resource type="PackedScene" path="res://scenes/death_plane.tscn" id="10_deathplane"]
 [ext_resource type="TileSet" uid="uid://d07lidnoim34q" path="res://tileset.tres" id="11_x3xbi"]
 [ext_resource type="PackedScene" uid="uid://brmtyiqcy1wkv" path="res://scenes/inventory_ui.tscn" id="12_invui"]
 [ext_resource type="PackedScene" uid="uid://k06dbe7sq1ph" path="res://scenes/goblinenemy.tscn" id="12_lw6sx"]
 [ext_resource type="PackedScene" uid="uid://iuqjuk37ur0d" path="res://scenes/slimeenemy.tscn" id="13_qihgo"]
-[ext_resource type="Script" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
 [ext_resource type="PackedScene" uid="uid://u77s8ew4xenh" path="res://scenes/beetleenemy.tscn" id="15_k8v36"]
 [ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="16_qihgo"]
 [ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="17_k8v36"]
 [ext_resource type="PackedScene" uid="uid://bcd57whed7bys" path="res://chest.tscn" id="19_sy85i"]
 [ext_resource type="PackedScene" uid="uid://cdxu1kg5or16d" path="res://candle.tscn" id="20_2exuq"]
+[ext_resource type="Script" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
+[ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
 [ext_resource type="PackedScene" path="res://scenes/info_popup.tscn" id="info_popup_res"]
 [ext_resource type="PackedScene" path="res://scenes/level_intro_banner.tscn" id="level_banner_res"]
-[ext_resource type="Script" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.1, 0.1, 0.12, 0.85)
@@ -60,7 +60,7 @@ size = Vector2(4079.5, 933)
 
 [node name="Node2D" type="Node2D" unique_id=1979316305]
 
-[node name="ParallaxBackground" parent="." unique_id=211574599 instance=ExtResource("8_parallax")]
+[node name="ParallaxBackground" parent="." unique_id=1010942744 instance=ExtResource("1_2exuq")]
 
 [node name="DeathPlane" parent="." unique_id=1799419016 instance=ExtResource("10_deathplane")]
 
@@ -131,7 +131,6 @@ text = "?"
 [node name="VignetteLayer" type="CanvasLayer" parent="." unique_id=182643830]
 
 [node name="VignetteRect" type="ColorRect" parent="VignetteLayer" unique_id=1731371193]
-script = ExtResource("dyn_vignette")
 material = SubResource("ShaderMaterial_vignette")
 anchors_preset = 15
 anchor_right = 1.0
@@ -139,8 +138,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+script = ExtResource("dyn_vignette")
 
-[node name="FireflySpawner" type="Node2D" parent="."]
+[node name="FireflySpawner" type="Node2D" parent="." unique_id=467127367]
 script = ExtResource("firefly_script")
 
 [node name="TileMap" type="TileMap" parent="." unique_id=190893331]
@@ -169,16 +169,16 @@ position = Vector2(1591, 2478)
 position = Vector2(1752, 2420)
 
 [node name="Enemy7" parent="." unique_id=2131977365 instance=ExtResource("2_enemy")]
-position = Vector2(2311, 2497)
+position = Vector2(2260, 2204)
 
 [node name="Enemy8" parent="." unique_id=1331643817 instance=ExtResource("2_enemy")]
-position = Vector2(2519, 2502)
+position = Vector2(2530, 2190)
 
 [node name="Enemy9" parent="." unique_id=925485121 instance=ExtResource("15_k8v36")]
-position = Vector2(3118, 2530)
+position = Vector2(3417, 2258)
 
 [node name="Enemy10" parent="." unique_id=1876189299 instance=ExtResource("15_k8v36")]
-position = Vector2(3309, 2487)
+position = Vector2(3139, 2122)
 
 [node name="Enemy11" parent="." unique_id=2029124245 instance=ExtResource("12_lw6sx")]
 position = Vector2(3770, 2427)

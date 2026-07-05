@@ -43,6 +43,14 @@ func animate_mole_death() -> void:
 	fall_tween.tween_property(mole, "rotation_degrees", 280.0, 0.55).set_trans(Tween.TRANS_LINEAR)
 	await fall_tween.finished
 
+	var break_sound := AudioStreamPlayer2D.new()
+	break_sound.stream = load("res://sounds/break_corrupted_1.ogg")
+	break_sound.volume_db = -2.0
+	break_sound.pitch_scale = randf_range(0.8, 1.0)
+	add_child(break_sound)
+	break_sound.play()
+	break_sound.finished.connect(break_sound.queue_free)
+
 	$DeathFlash.modulate.a = 0.55
 	var flash_tween := create_tween()
 	flash_tween.tween_property($DeathFlash, "modulate:a", 0.0, 0.35)

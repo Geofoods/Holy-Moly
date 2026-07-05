@@ -209,7 +209,7 @@ collision_layer = 0
 [node name="CollisionShape2D" type="CollisionShape2D" parent="DrillWallTrigger"]
 shape = SubResource("RectangleShape2D_enemytrigger")
 
-[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=636277602]
+[node name="CanvasLayer" type="CanvasLayer" parent="." layer = 2 unique_id=636277602]
 
 [node name="heart" parent="CanvasLayer" unique_id=610837279 instance=ExtResource("4_heart")]
 position = Vector2(117.99999, 113.99999)

@@ -76,6 +76,7 @@ func _throw_mushroom() -> void:
 	SFX.play("enemy_fire", global_position)
 	is_throwing = true
 	throw_anim_timer = 0.4
+	visual.play("default")
 
 	if not target_mole or not is_instance_valid(target_mole):
 		is_throwing = false
@@ -115,9 +116,9 @@ func take_damage(amount: float) -> void:
 func _draw() -> void:
 	if health <= 0 or health >= MAX_HEALTH:
 		return
-	var bar_w := 48.0
-	var bar_h := 5.0
-	var offset := Vector2(-bar_w / 2, -70)
+	var bar_w := 96.0
+	var bar_h := 10.0
+	var offset := Vector2(-bar_w / 2, -80)
 	var ratio := health / MAX_HEALTH
 
 	draw_rect(Rect2(offset, Vector2(bar_w, bar_h)), Color(0.15, 0.15, 0.15, 0.9))

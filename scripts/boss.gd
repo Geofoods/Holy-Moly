@@ -3,7 +3,7 @@ extends CharacterBody2D
 const MAX_HEALTH := 40.0
 const PAN_DURATION := 1.5
 const HOLD_DURATION := 1.5
-const DESCENT_SPEED := 400.0
+const DESCENT_SPEED := 50.0
 const SPIT_INTERVAL := 3.0
 const PROJECTILE_SPEED := 400.0
 
@@ -326,6 +326,9 @@ func take_damage(amount: float) -> void:
 	var flash_tween := create_tween()
 	flash_tween.tween_property(self, "modulate", Color.WHITE, 0.15)
 	_animate_health_bar()
+	var mole := get_tree().get_first_node_in_group("mole")
+	if mole and mole.has_method("screen_shake"):
+		mole.screen_shake(14.0, 0.25)
 	if health <= 0:
 		die()
 

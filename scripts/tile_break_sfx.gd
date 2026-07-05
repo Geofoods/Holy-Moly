@@ -297,6 +297,12 @@ static func break_tile(tilemap: TileMap, tile_pos: Vector2i, parent: Node, force
 
 	_break_single_tile(tilemap, tile_pos, atlas_coords, parent, force)
 
+	var tree := parent.get_tree()
+	if tree:
+		var mole := tree.get_first_node_in_group("mole")
+		if mole and mole.has_method("screen_shake"):
+			mole.screen_shake(4.0, 0.1)
+
 	# Also break decoration layer tile at same position
 	_break_decoration_tile(tilemap, tile_pos, parent)
 

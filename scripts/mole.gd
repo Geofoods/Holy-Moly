@@ -13,7 +13,7 @@ const HURT_AIR_DURATION = 0.35
 const KNOCKBACK_X = 260.0
 const MIDAIR_SPRITE_DELAY = 0.25
 const CAMERA_FOLLOW_SPEED = 10.0
-const CAMERA_MOUSE_INFLUENCE = 0.2
+const CAMERA_MOUSE_INFLUENCE = 0.08
 const DIRT_PARTICLE_LIFETIME = 0.45
 const DIRT_PARTICLE_AMOUNT = 18
 
@@ -117,6 +117,7 @@ func _ready() -> void:
 	Inventory.selected_slot = 0
 	_setup_held_item_sprites()
 	_reverb = AudioServer.get_bus_effect(0, 0) as AudioEffectReverb
+	_setup_level_reverb()
 
 func _setup_inventory_actions() -> void:
 	var keys := [KEY_1, KEY_2, KEY_3]
@@ -192,7 +193,6 @@ func _update_held_item() -> void:
 		$HeldDrill.visible = (item != null and item.item_name == "Drill")
 
 const SURFACE_Y := 850.0
-const MAX_REVERB_DEPTH := 600.0
 var _reverb: AudioEffectReverb = null
 
 func update_depth_display() -> void:
@@ -200,10 +200,16 @@ func update_depth_display() -> void:
 	var label = get_parent().get_node_or_null("CanvasLayer/DepthLabel")
 	if label:
 		label.text = "Depth: %dm" % int(depth)
-	if _reverb:
-		var t := clampf(depth / MAX_REVERB_DEPTH, 0.0, 1.0)
-		_reverb.wet = t * 0.6
-		_reverb.room_size = 0.1 + t * 0.75
+
+func _setup_level_reverb() -> void:
+	if not _reverb:
+		return
+	var path := get_tree().current_scene.scene_file_path
+	var info := LevelData.get_info(path)
+	var level := info.get("number", 1) as int
+	var t := clampf((level - 1) / 8.0, 0.0, 1.0)
+	_reverb.wet = t * 0.5
+	_reverb.room_size = 0.1 + t * 0.7
 
 func _physics_process(delta: float) -> void:
 	# Gravity

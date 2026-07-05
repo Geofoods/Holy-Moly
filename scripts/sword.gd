@@ -235,6 +235,9 @@ func _on_hitbox_area_entered(area: Area2D) -> void:
 		if enemy not in hit_enemies:
 			hit_enemies.append(enemy)
 			SFX.play("enemy_hit", enemy.global_position)
+			var mole = get_parent()
+			if mole.has_method("screen_shake"):
+				mole.screen_shake(8.0, 0.15)
 
 func _deflect_bullet(bullet: Node) -> void:
 	var target_pos := get_global_mouse_position()

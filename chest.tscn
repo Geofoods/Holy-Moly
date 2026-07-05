@@ -25,6 +25,9 @@ size = Vector2(220, 112)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_8uwsg"]
 size = Vector2(680, 618)
 
+[sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_trlyu"]
+polygon = PackedVector2Array(-116, -13, 100, -13, 99, 96, -116, 97)
+
 [node name="chest" type="RigidBody2D" unique_id=950738903]
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=626438151]
@@ -45,12 +48,15 @@ shape = SubResource("RectangleShape2D_8uwsg")
 
 [node name="PromptLabel" type="Label" parent="Area2D" unique_id=101916510]
 visible = false
-offset_top = -100.0
-offset_bottom = -100.0
+position = Vector2(-80, -100)
+size = Vector2(160, 40)
+horizontal_alignment = 1
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 2
 theme_override_fonts/font = ExtResource("3_font")
 theme_override_font_sizes/font_size = 32
 text = "Press E"
-horizontal_alignment = 1
+
+[node name="LightOccluder2D" type="LightOccluder2D" parent="." unique_id=143185970]
+occluder = SubResource("OccluderPolygon2D_trlyu")

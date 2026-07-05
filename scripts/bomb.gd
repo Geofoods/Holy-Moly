@@ -79,6 +79,8 @@ func _explode() -> void:
 	explosion_particles.emitting = true
 
 	var mole := get_tree().get_first_node_in_group("mole")
+	if mole and mole.has_method("screen_shake"):
+		mole.screen_shake(20.0, 0.35)
 	if mole and is_instance_valid(mole) and not deflected:
 		var dist := global_position.distance_to(mole.global_position)
 		if dist <= explosion_radius and mole.has_method("take_damage"):

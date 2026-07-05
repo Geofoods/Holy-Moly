@@ -73,7 +73,7 @@ position = Vector2(300, -116)
 visible = false
 position = Vector2(600, -116)
 
-[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=71896557]
+[node name="CanvasLayer" type="CanvasLayer" parent="." layer = 2 unique_id=71896557]
 layer = 2
 
 [node name="heart" parent="CanvasLayer" unique_id=1207891791 instance=ExtResource("3_sugp2")]
