@@ -22,7 +22,7 @@ const LEVELS: Dictionary = {
 	"res://scenes/level_04.tscn": {
 		"number": 4,
 		"name": "Goblin Outpost",
-		"tip": "Goblins notice you fast and charge almost instantly. Keep your distance until you're ready to swing.",
+		"tip": "Goblins throw explosive mushrooms -- Right-Click to PARRY them back! Parried mushrooms explode and damage nearby enemies.",
 	},
 	"res://scenes/level_05.tscn": {
 		"number": 5,
