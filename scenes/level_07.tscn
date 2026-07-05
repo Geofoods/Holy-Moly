@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://dnalp7pe0fqi0"]
 
 [ext_resource type="PackedScene" uid="uid://p1of6ummc17j" path="res://scenes/mole.tscn" id="1_o5qli"]
-[ext_resource type="PackedScene" uid="uid://c3fg4jh63xhyr" path="res://scenes/parallax_background3.tscn" id="1_sucws"]
+[ext_resource type="PackedScene" path="res://scenes/parallax_background3.tscn" id="1_sucws"]
 [ext_resource type="PackedScene" uid="uid://dnp3icrndkjm8" path="res://scenes/antenemy.tscn" id="2_enemy"]
 [ext_resource type="PackedScene" uid="uid://c6xus6tuhcmfo" path="res://scenes/heart.tscn" id="3_sugp2"]
 [ext_resource type="PackedScene" uid="uid://d2i1x8x1y6qa" path="res://scenes/pause_menu.tscn" id="4_pause"]
@@ -303,6 +303,12 @@ script = ExtResource("20_sucws")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="nextlevel" unique_id=1221817835]
 position = Vector2(12196, 5165)
 shape = SubResource("RectangleShape2D_nfrlo")
+
+[node name="Enemy" parent="." unique_id=1810183930 instance=ExtResource("15_ewdkf")]
+position = Vector2(1012, 2205)
+
+[node name="Enemy19" parent="." unique_id=1972383140 instance=ExtResource("15_ewdkf")]
+position = Vector2(1434, 2200)
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]

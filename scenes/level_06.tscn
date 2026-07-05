@@ -16,6 +16,7 @@
 [ext_resource type="PackedScene" uid="uid://cdxu1kg5or16d" path="res://candle.tscn" id="15_21f2n"]
 [ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="19_x0hry"]
 [ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="20_mtlme"]
+[ext_resource type="PackedScene" uid="uid://iuqjuk37ur0d" path="res://scenes/slimeenemy.tscn" id="21_mtlme"]
 [ext_resource type="Script" uid="uid://dpsujuff7o60j" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
 [ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
 [ext_resource type="PackedScene" path="res://scenes/info_popup.tscn" id="info_popup_res"]
@@ -132,6 +133,7 @@ scale = Vector2(0.25, 0.25)
 [node name="Camera2D" type="Camera2D" parent="CharacterBody2D2" unique_id=1117004402]
 position = Vector2(92, -296)
 scale = Vector2(4, 4)
+zoom = Vector2(0.5, 0.5)
 position_smoothing_enabled = true
 
 [node name="TileMap" type="TileMap" parent="." unique_id=965183279]
@@ -256,6 +258,27 @@ shape = SubResource("RectangleShape2D_ou5rw")
 [node name="candle12" parent="." unique_id=1081875245 instance=ExtResource("15_21f2n")]
 position = Vector2(2677, 766)
 scale = Vector2(0.5, 0.5)
+
+[node name="Enemy11" parent="." unique_id=626350322 instance=ExtResource("21_mtlme")]
+position = Vector2(6237, 970)
+
+[node name="Enemy12" parent="." unique_id=1467732427 instance=ExtResource("21_mtlme")]
+position = Vector2(5458, 953)
+
+[node name="Enemy13" parent="." unique_id=163666502 instance=ExtResource("21_mtlme")]
+position = Vector2(856, -993)
+
+[node name="Enemy14" parent="." unique_id=1366430244 instance=ExtResource("21_mtlme")]
+position = Vector2(2799, -272)
+
+[node name="Enemy15" parent="." unique_id=508588221 instance=ExtResource("21_mtlme")]
+position = Vector2(2400, -124)
+
+[node name="Enemy16" parent="." unique_id=1315477666 instance=ExtResource("21_mtlme")]
+position = Vector2(3496, -1319)
+
+[node name="Enemy17" parent="." unique_id=112817802 instance=ExtResource("21_mtlme")]
+position = Vector2(4352, -2795)
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]
