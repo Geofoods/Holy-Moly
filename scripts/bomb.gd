@@ -12,6 +12,7 @@ var fuse_active := false
 var fuse_elapsed := 0.0
 var tick_cooldown := 0.0
 var is_flashing := false
+var deflected := false
 
 @onready var sprite: Sprite2D = $Sprite2D
 
@@ -57,6 +58,15 @@ func _start_flash() -> void:
 	tween.parallel().tween_property(self, "scale", Vector2(1.5, 1.5), FLASH_TIME * 0.8).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	tween.tween_callback(_explode)
 
+func deflect(target_pos: Vector2) -> void:
+	if deflected:
+		return
+	deflected = true
+	var dir := (target_pos - global_position).normalized()
+	linear_velocity = dir * maxf(linear_velocity.length() * 1.5, 500.0)
+	if sprite:
+		sprite.modulate = Color(0.6, 0.9, 1.0, 1.0)
+
 func _explode() -> void:
 	if dead:
 		return
@@ -69,10 +79,33 @@ func _explode() -> void:
 	explosion_particles.emitting = true
 
 	var mole := get_tree().get_first_node_in_group("mole")
-	if mole and is_instance_valid(mole):
+	if mole and is_instance_valid(mole) and not deflected:
 		var dist := global_position.distance_to(mole.global_position)
 		if dist <= explosion_radius and mole.has_method("take_damage"):
 			mole.take_damage(explosion_damage, global_position, true)
+
+	var smoke := CPUParticles2D.new()
+	smoke.emitting = true
+	smoke.one_shot = true
+	smoke.amount = 40
+	smoke.lifetime = 0.5
+	smoke.explosiveness = 0.9
+	smoke.direction = Vector2.ZERO
+	smoke.spread = 180.0
+	smoke.initial_velocity_min = explosion_radius * 1.5
+	smoke.initial_velocity_max = explosion_radius * 2.5
+	smoke.damping_min = explosion_radius * 2.5
+	smoke.damping_max = explosion_radius * 3.5
+	smoke.scale_amount_min = 10.0
+	smoke.scale_amount_max = 20.0
+	smoke.color = Color(0.2, 0.2, 0.2, 0.9)
+	var fade := Gradient.new()
+	fade.set_color(0, Color(0.2, 0.2, 0.2, 0.9))
+	fade.set_color(1, Color(0.1, 0.1, 0.1, 0.0))
+	smoke.color_ramp = fade
+	get_parent().add_child(smoke)
+	smoke.global_position = global_position
+	get_tree().create_timer(1.0).timeout.connect(smoke.queue_free)
 
 	var tilemap: TileMap = get_parent().get_node_or_null("TileMap")
 	if tilemap:

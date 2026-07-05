@@ -59,12 +59,12 @@ func increment() -> void:
 func get_speed_multiplier() -> float:
 	if combo <= 0:
 		return 1.0
-	return 1.0 + minf(combo * SPEED_BONUS_PER_KILL, MAX_SPEED_BONUS)
+	return 1.0 + minf(float(combo) * SPEED_BONUS_PER_KILL, MAX_SPEED_BONUS)
 
 func get_coyote_time() -> float:
 	if combo <= 0:
 		return COYOTE_BASE
-	return minf(COYOTE_BASE + combo * COYOTE_BONUS_PER_KILL, COYOTE_MAX)
+	return minf(COYOTE_BASE + float(combo) * COYOTE_BONUS_PER_KILL, COYOTE_MAX)
 
 func _reset_combo() -> void:
 	combo = 0
@@ -103,8 +103,8 @@ func _flash_label() -> void:
 	_scale_tween.tween_property(_label, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 func _play_combo_sound() -> void:
-	var pitch := 0.8 + mini(combo, 12) * 0.08
-	var volume := -10.0 + mini(combo, 8) * 0.5
+	var pitch := 0.8 + float(mini(combo, 12)) * 0.08
+	var volume := -10.0 + float(mini(combo, 8)) * 0.5
 	# Play coin sound with rising pitch based on combo
 	if not SFX._sounds.has("coin") or SFX._sounds["coin"].size() == 0:
 		return
