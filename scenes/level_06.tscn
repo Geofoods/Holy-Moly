@@ -81,7 +81,7 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_pausebutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_pausebutton_hover")
 text = "II ESC"
 
-[node name="InfoButton" type="Button" parent="CanvasLayer" unique_id=2049895672]
+[node name="InfoButton" type="Button" parent="CanvasLayer" unique_id=149518602]
 anchors_preset = 3
 anchor_left = 1.0
 anchor_top = 1.0
@@ -107,7 +107,7 @@ text = "?"
 
 [node name="PauseMenu" parent="." unique_id=1779626465 instance=ExtResource("4_pause")]
 
-[node name="InfoPopup" parent="." unique_id=1863022479 instance=ExtResource("info_popup_res")]
+[node name="InfoPopup" parent="." unique_id=1535560857 instance=ExtResource("info_popup_res")]
 
 [node name="VignetteLayer" type="CanvasLayer" parent="." unique_id=182643830]
 
