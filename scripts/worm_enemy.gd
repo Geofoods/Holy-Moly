@@ -112,6 +112,7 @@ func _on_hurtbox_area_entered(_area: Area2D) -> void:
 func die() -> void:
 	SFX.play("enemy_death", global_position)
 	ComboManager.increment()
+	ScoreManager.add_kill(1, global_position)
 	set_physics_process(false)
 	hitbox.set_deferred("monitoring", false)
 	hurtbox.set_deferred("monitorable", false)

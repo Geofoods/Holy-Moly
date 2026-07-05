@@ -39,8 +39,24 @@ func _ready():
 	cancel_btn.mouse_exited.connect(_on_button_unhover.bind(cancel_btn))
 	
 	_setup_level_picker(level_picker)
+	_add_high_score_label()
 
 	animate_intro()
+
+func _add_high_score_label() -> void:
+	var vbox = $CenterContainer/VBoxContainer
+	var font := load("res://Baby Doll.otf") as Font
+	var label := Label.new()
+	label.name = "HighScoreLabel"
+	label.text = "HIGH SCORE  •  %d" % ScoreManager.high_score
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.add_theme_font_override("font", font)
+	label.add_theme_font_size_override("font_size", 30)
+	label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4, 1))
+	label.add_theme_constant_override("outline_size", 5)
+	label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+	vbox.add_child(label)
+	vbox.move_child(label, 1)
 
 func animate_intro():
 	_intro_music = AudioStreamPlayer.new()
@@ -169,6 +185,7 @@ func _on_play_pressed() -> void:
 	var play_btn = $CenterContainer/VBoxContainer/ButtonContainer/PlayButton
 	play_btn.disabled = true
 	Inventory.reset()
+	ScoreManager.start_new_run()
 	var picker = $CenterContainer/VBoxContainer/ButtonContainer/LevelPickerOption as OptionButton
 	var selected: int = picker.selected
 	var target := "res://scenes/main.tscn"
@@ -184,6 +201,7 @@ func _on_tutorial_pressed() -> void:
 	var tutorial_btn = $CenterContainer/VBoxContainer/ButtonContainer/TutorialButton
 	tutorial_btn.disabled = true
 	Inventory.reset()
+	ScoreManager.start_new_run()
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 	get_tree().root.add_child(transition)
 	transition.change_to("res://scenes/tutorial.tscn")

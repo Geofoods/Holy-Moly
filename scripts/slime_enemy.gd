@@ -122,6 +122,7 @@ func _draw() -> void:
 func die() -> void:
 	SFX.play("enemy_death", global_position)
 	ComboManager.increment()
+	ScoreManager.add_kill(1, global_position)
 	set_physics_process(false)
 	hurtbox.set_deferred("monitorable", false)
 

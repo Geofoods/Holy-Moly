@@ -352,6 +352,7 @@ func take_damage(amount: float) -> void:
 
 func die() -> void:
 	ComboManager.increment()
+	ScoreManager.add_kill(20, global_position)
 	set_physics_process(false)
 	hurtbox.set_deferred("monitorable", false)
 	var tw := create_tween()
