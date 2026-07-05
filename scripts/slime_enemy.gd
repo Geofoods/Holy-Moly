@@ -51,6 +51,7 @@ func _create_body_visual() -> void:
 	var tex := ImageTexture.create_from_image(img)
 	var sprite := Sprite2D.new()
 	sprite.texture = tex
+	sprite.scale = Vector2(2, 2)
 	sprite.position = Vector2(-20, -5)
 	add_child(sprite)
 	move_child(sprite, 0)
