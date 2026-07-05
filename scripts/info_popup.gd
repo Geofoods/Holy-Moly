@@ -21,6 +21,8 @@ const DANGER_COLORS := [
 @onready var controls_vbox: VBoxContainer = $CenterContainer/Panel/Margin/VBox/ContentPanel/ControlsView/ControlsMargin/ControlsVBox
 
 var _font := preload("res://Baby Doll.otf")
+var _browse_music_stream := preload("res://easy-breeze-ra-main-version-33378-02-16.mp3")
+var _browse_music: AudioStreamPlayer = null
 var is_open := false
 var _was_paused_before := false
 var _selected_id := ""
@@ -58,11 +60,13 @@ func open() -> void:
 	tween.tween_property(dim_background, "modulate:a", 1.0, 0.2).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tween.tween_property(panel, "modulate:a", 1.0, 0.2).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tween.tween_property(panel, "scale", Vector2(1.0, 1.0), 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_start_browse_music()
 
 func close() -> void:
 	if not is_open:
 		return
 	is_open = false
+	_stop_browse_music()
 	var tween := create_tween()
 	tween.set_parallel(true)
 	tween.tween_property(dim_background, "modulate:a", 0.0, 0.15)
@@ -206,3 +210,22 @@ func _populate_controls() -> void:
 			detail_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			row_box.add_child(detail_label)
 		controls_vbox.add_child(HSeparator.new())
+
+func _start_browse_music() -> void:
+	if _browse_music and is_instance_valid(_browse_music):
+		return
+	_browse_music = AudioStreamPlayer.new()
+	_browse_music.stream = _browse_music_stream
+	_browse_music.volume_db = -12.0
+	_browse_music.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(_browse_music)
+	_browse_music.finished.connect(_browse_music.play)
+	_browse_music.play()
+
+func _stop_browse_music() -> void:
+	if not _browse_music or not is_instance_valid(_browse_music):
+		return
+	var tween := create_tween()
+	tween.tween_property(_browse_music, "volume_db", -40.0, 0.5)
+	tween.tween_callback(_browse_music.queue_free)
+	_browse_music = null

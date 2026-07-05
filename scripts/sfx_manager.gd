@@ -19,6 +19,7 @@ func _ready() -> void:
 	_load("parry_activate", ["res://sounds/parry_activate.ogg"])
 	_load("coin", ["res://sounds/coin.ogg"])
 	_load("ui_click", ["res://sounds/ui_click.ogg"])
+	_load("ui_hover", ["res://sounds/coin.ogg"])
 	_load("drill", ["res://sounds/drill.wav"])
 	_load("bomb_tick", ["res://sounds/bomb_tick.wav"])
 
@@ -45,7 +46,7 @@ func play(key: String, pos: Vector2 = Vector2.ZERO, volume_db: float = -6.0, pit
 	player.play()
 	player.finished.connect(player.queue_free)
 
-func play_ui(key: String, volume_db: float = -8.0) -> void:
+func play_ui(key: String, volume_db: float = -8.0, pitch: float = 1.0) -> void:
 	if not _sounds.has(key) or _sounds[key].size() == 0:
 		return
 	var streams: Array = _sounds[key]
@@ -53,6 +54,7 @@ func play_ui(key: String, volume_db: float = -8.0) -> void:
 	var player := AudioStreamPlayer.new()
 	player.stream = stream
 	player.volume_db = volume_db
+	player.pitch_scale = pitch
 	add_child(player)
 	player.play()
 	player.finished.connect(player.queue_free)
