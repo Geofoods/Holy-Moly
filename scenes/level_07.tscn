@@ -16,6 +16,8 @@
 [ext_resource type="PackedScene" uid="uid://u77s8ew4xenh" path="res://scenes/beetleenemy.tscn" id="14_mhf1v"]
 [ext_resource type="PackedScene" uid="uid://iuqjuk37ur0d" path="res://scenes/slimeenemy.tscn" id="15_ewdkf"]
 [ext_resource type="PackedScene" uid="uid://cdxu1kg5or16d" path="res://candle.tscn" id="18_4xveb"]
+[ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="19_ratuh"]
+[ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="20_sucws"]
 [ext_resource type="PackedScene" path="res://scenes/info_popup.tscn" id="info_popup_res"]
 [ext_resource type="PackedScene" path="res://scenes/level_intro_banner.tscn" id="level_banner_res"]
 
@@ -49,6 +51,9 @@ shader_parameter/inner_radius = 0.25
 shader_parameter/outer_radius = 0.55
 shader_parameter/darkness = 0.6
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_nfrlo"]
+size = Vector2(4079.5, 933)
+
 [node name="Node2D3" type="Node2D" unique_id=1979316305]
 
 [node name="ParallaxBackground" parent="." unique_id=211574599 instance=ExtResource("8_parallax")]
@@ -66,10 +71,8 @@ zoom = Vector2(0.5, 0.5)
 position_smoothing_enabled = true
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=71896557]
-visible = false
 
 [node name="heart" parent="CanvasLayer" unique_id=1207891791 instance=ExtResource("3_sugp2")]
-visible = false
 position = Vector2(117.99999, 113.99999)
 scale = Vector2(0.24147864, 0.24147864)
 
@@ -115,19 +118,14 @@ theme_override_styles/focus = SubResource("StyleBoxFlat_pausebutton_hover")
 text = "?"
 
 [node name="InventoryUI" parent="." unique_id=1644753890 instance=ExtResource("12_invui")]
-visible = false
 
 [node name="PauseMenu" parent="." unique_id=1779626465 instance=ExtResource("4_pause")]
-visible = false
 
 [node name="InfoPopup" parent="." unique_id=1248272108 instance=ExtResource("info_popup_res")]
-visible = false
 
 [node name="LevelIntroBanner" parent="." unique_id=1356053321 instance=ExtResource("level_banner_res")]
-visible = false
 
 [node name="VignetteLayer" type="CanvasLayer" parent="." unique_id=182643830]
-visible = false
 
 [node name="VignetteRect" type="ColorRect" parent="VignetteLayer" unique_id=1731371193]
 material = SubResource("ShaderMaterial_vignette")
@@ -278,6 +276,28 @@ position = Vector2(3817, 4468)
 
 [node name="candle9" parent="." unique_id=961665613 instance=ExtResource("18_4xveb")]
 position = Vector2(4599, -472)
+
+[node name="chest14" parent="." unique_id=1596124221 instance=ExtResource("12_u86im")]
+position = Vector2(377, 2490)
+
+[node name="Costume5" type="Sprite2D" parent="." unique_id=198815993]
+position = Vector2(8704.001, 4679)
+scale = Vector2(13.883869, 1.7175142)
+texture = ExtResource("19_ratuh")
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=1255054880]
+offset_left = 5480.0
+offset_top = 4882.0
+offset_right = 11963.0
+offset_bottom = 6603.0
+color = Color(0, 0, 0, 1)
+
+[node name="nextlevel" type="Area2D" parent="." unique_id=802151679]
+script = ExtResource("20_sucws")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="nextlevel" unique_id=1221817835]
+position = Vector2(7655, 5384)
+shape = SubResource("RectangleShape2D_nfrlo")
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]
