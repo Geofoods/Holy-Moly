@@ -2,6 +2,7 @@ extends CharacterBody2D
 
 const SPEED = 350.0
 const JUMP_VELOCITY = -800.0
+const JUMP_CUT_MULTIPLIER = 0.4
 const ACCELERATION = 1800.0
 const FRICTION = 1800.0
 const AIR_FRICTION = 800.0
@@ -33,6 +34,8 @@ var hurt_anim_time_left := 0.0
 var air_time := 0.0
 var launched_from_jump := false
 var _dig_dash_weapon_was_visible := false
+var _coyote_timer := 0.0
+var _jump_held := false
 
 ## Set by a scene (e.g. the tutorial) that wants to intercept death instead of
 ## the default Game Over transition, e.g. to restart just the current section.
@@ -238,15 +241,30 @@ func _physics_process(delta: float) -> void:
 		_update_camera_position(delta)
 		return
 
-	# Jump
-	if Input.is_action_just_pressed("ui_accept") and is_on_floor():
+	# Coyote time
+	if is_on_floor():
+		_coyote_timer = ComboManager.get_coyote_time()
+	else:
+		_coyote_timer -= delta
+
+	# Jump (with coyote time)
+	var can_jump := is_on_floor() or _coyote_timer > 0.0
+	if Input.is_action_just_pressed("ui_accept") and can_jump:
 		velocity.y = JUMP_VELOCITY
+		_jump_held = true
+		_coyote_timer = 0.0
 		SFX.play("jump", global_position, -12.0)
 		spawn_mole_hole()
 		var direction_at_jump := Input.get_axis("ui_left", "ui_right")
 		is_sideways_jump = direction_at_jump != 0
 		air_time = 1.0
 		launched_from_jump = true
+
+	# Variable jump height — release early for short hop
+	if Input.is_action_just_released("ui_accept"):
+		_jump_held = false
+		if velocity.y < 0:
+			velocity.y *= JUMP_CUT_MULTIPLIER
 
 	# Landing detection — was in air, now on floor
 	if is_on_floor() and not was_on_floor:
@@ -255,15 +273,19 @@ func _physics_process(delta: float) -> void:
 		is_sideways_jump = false
 		air_time = 0.0
 		launched_from_jump = false
+		_jump_held = false
 
 	was_on_floor = is_on_floor()
 
-	# Movement
+	# Movement (with combo speed boost)
 	var direction := Input.get_axis("ui_left", "ui_right")
+	var effective_speed := SPEED * ComboManager.get_speed_multiplier()
+	if speed_boost_active:
+		effective_speed *= 1.4
 
 	if direction:
 		var accel = ACCELERATION if is_on_floor() else ACCELERATION * 0.6
-		velocity.x = move_toward(velocity.x, direction * SPEED, accel * delta)
+		velocity.x = move_toward(velocity.x, direction * effective_speed, accel * delta)
 		$AnimatedSprite2D.flip_h = direction < 0
 	else:
 		var friction = FRICTION if is_on_floor() else AIR_FRICTION

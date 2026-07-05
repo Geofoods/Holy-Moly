@@ -21,6 +21,11 @@ Inventory="*res://scripts/inventory.gd"
 SFX="*res://scripts/sfx_manager.gd"
 Bestiary="*res://scripts/bestiary_data.gd"
 LevelData="*res://scripts/level_data.gd"
+ComboManager="*res://scripts/combo_manager.gd"
+
+[display]
+
+window/size/mode=4
 
 [physics]
 
