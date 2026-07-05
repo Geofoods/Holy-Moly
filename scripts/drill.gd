@@ -86,7 +86,11 @@ func _process(delta: float) -> void:
 
 	for tile_pos in tiles:
 		if tile_pos != prev_tile_pos:
-			sfx.break_tile(tilemap, tile_pos, get_parent())
+			var has_collision := tilemap.get_cell_source_id(0, tile_pos) != -1
+			if has_collision:
+				sfx.break_tile(tilemap, tile_pos, get_parent())
+			else:
+				sfx.break_decoration_tile(tilemap, tile_pos, get_parent())
 			prev_tile_pos = tile_pos
 
 	if elapsed >= DRILL_DURATION:

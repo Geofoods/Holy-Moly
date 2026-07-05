@@ -89,6 +89,8 @@ func _physics_process(delta: float) -> void:
 func _find_target() -> void:
 	if target_mole == null or not is_instance_valid(target_mole):
 		target_mole = get_tree().get_first_node_in_group("mole")
+		if target_mole:
+			add_collision_exception_with(target_mole)
 
 func _jump_toward_target() -> void:
 	var dir: float = sign(target_mole.global_position.x - global_position.x)

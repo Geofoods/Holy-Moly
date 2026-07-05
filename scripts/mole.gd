@@ -222,11 +222,12 @@ func _physics_process(delta: float) -> void:
 				if collider is TileMap:
 					var tm := collider as TileMap
 					var tile_pos = tm.local_to_map(tm.to_local(collision.get_position()))
-					var source_id := tm.get_cell_source_id(0, tile_pos)
-					if source_id == -1:
-						continue
 					var sfx = load("res://scripts/tile_break_sfx.gd")
-					sfx.break_tile(collider, tile_pos, get_parent())
+					var source_id := tm.get_cell_source_id(0, tile_pos)
+					if source_id != -1:
+						sfx.break_tile(collider, tile_pos, get_parent())
+					else:
+						sfx.break_decoration_tile(collider, tile_pos, get_parent())
 					spawn_dirt_particles(collision.get_position())
 		was_on_floor = is_on_floor()
 		_update_camera_position(delta)

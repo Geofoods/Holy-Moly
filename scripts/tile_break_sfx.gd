@@ -297,8 +297,10 @@ static func break_tile(tilemap: TileMap, tile_pos: Vector2i, parent: Node, force
 
 	_break_single_tile(tilemap, tile_pos, atlas_coords, parent, force)
 
+	# Also break decoration layer tile at same position
+	_break_decoration_tile(tilemap, tile_pos, parent)
+
 	if is_stalactite(atlas_coords):
-		# Stalactites hang from ceiling — breaking any piece drops everything below
 		var below_tiles: Array[Vector2i] = []
 		for dy in range(1, 20):
 			var below := Vector2i(tile_pos.x, tile_pos.y + dy)
@@ -311,6 +313,41 @@ static func break_tile(tilemap: TileMap, tile_pos: Vector2i, parent: Node, force
 			below_tiles.append(below)
 		if below_tiles.size() > 0:
 			_cascade_break(tilemap, below_tiles, parent, 0)
+
+static func break_decoration_tile(tilemap: TileMap, tile_pos: Vector2i, parent: Node) -> void:
+	_break_decoration_tile(tilemap, tile_pos, parent)
+
+static func _break_decoration_tile(tilemap: TileMap, tile_pos: Vector2i, parent: Node) -> void:
+	if tilemap.get_layers_count() < 2:
+		return
+	var source_id := tilemap.get_cell_source_id(1, tile_pos)
+	if source_id == -1:
+		return
+	var atlas_coords := tilemap.get_cell_atlas_coords(1, tile_pos)
+	_break_single_decoration_tile(tilemap, tile_pos, atlas_coords, parent)
+
+static func _break_single_decoration_tile(tilemap: TileMap, tile_pos: Vector2i, atlas_coords: Vector2i, parent: Node) -> void:
+	var source_id := tilemap.get_cell_source_id(1, tile_pos)
+	if source_id == -1:
+		return
+
+	var tile_type := get_tile_type(atlas_coords)
+	var variants: Array = SOUNDS[tile_type]
+	var sound: AudioStream = variants[randi() % variants.size()]
+
+	var world_pos := tilemap.to_global(tilemap.map_to_local(tile_pos))
+
+	var player := AudioStreamPlayer2D.new()
+	player.stream = sound
+	player.pitch_scale = randf_range(0.9, 1.1)
+	player.volume_db = -8.0
+	parent.add_child(player)
+	player.global_position = world_pos
+	player.play()
+	player.finished.connect(player.queue_free)
+
+	spawn_break_particles(tilemap, tile_pos, atlas_coords, parent)
+	tilemap.erase_cell(1, tile_pos)
 
 static func _cascade_break(tilemap: TileMap, tiles: Array[Vector2i], parent: Node, index: int) -> void:
 	if index >= tiles.size():

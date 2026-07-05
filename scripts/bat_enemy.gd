@@ -25,6 +25,8 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if target_mole == null or not is_instance_valid(target_mole):
 		target_mole = get_tree().get_first_node_in_group("mole")
+		if target_mole:
+			add_collision_exception_with(target_mole)
 
 	var dist := INF
 	if target_mole != null:

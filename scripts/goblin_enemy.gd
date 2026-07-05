@@ -21,7 +21,7 @@ func _ready() -> void:
 	hurtbox.area_entered.connect(_on_hurtbox_area_entered)
 	hurtbox.body_entered.connect(_on_body_entered)
 	hurtbox.add_to_group("enemy_hurtbox")
-	visual.z_index = -1
+	visual.z_index = 1
 	visual.play()
 	_base_scale_x = abs(visual.scale.x)
 
@@ -63,6 +63,8 @@ func _is_on_screen() -> bool:
 func _find_target() -> void:
 	if target_mole == null or not is_instance_valid(target_mole):
 		target_mole = get_tree().get_first_node_in_group("mole")
+		if target_mole:
+			add_collision_exception_with(target_mole)
 
 func _update_facing() -> void:
 	if not target_mole or not is_instance_valid(target_mole):

@@ -33,6 +33,9 @@ func _ready() -> void:
 	hurtbox.add_to_group("enemy_hurtbox")
 	_tilemap = get_parent().get_node_or_null("TileMap") as TileMap
 	_tile_break_script = load("res://scripts/tile_break_sfx.gd")
+	var mole = get_tree().get_first_node_in_group("mole")
+	if mole:
+		add_collision_exception_with(mole)
 
 func _process(delta: float) -> void:
 	if _cutscene_stage < 0:

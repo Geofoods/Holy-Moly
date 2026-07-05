@@ -24,7 +24,7 @@ func _ready() -> void:
 	hurtbox.area_entered.connect(_on_hurtbox_area_entered)
 	hurtbox.body_entered.connect(_on_body_entered)
 	hurtbox.add_to_group("enemy_hurtbox")
-	visual.z_index = -1
+	visual.z_index = 1
 	visual.play()
 
 func _physics_process(delta: float) -> void:
@@ -97,9 +97,11 @@ func _break_tiles_on_collision() -> void:
 		if collider is TileMap:
 			var tilemap := collider as TileMap
 			var tile_pos := tilemap.local_to_map(tilemap.to_local(collision.get_position()))
+			var sfx = load("res://scripts/tile_break_sfx.gd")
 			if tilemap.get_cell_source_id(0, tile_pos) != -1:
-				var sfx = load("res://scripts/tile_break_sfx.gd")
 				sfx.break_tile(tilemap, tile_pos, get_parent())
+			else:
+				sfx.break_decoration_tile(tilemap, tile_pos, get_parent())
 
 func _update_visual_direction() -> void:
 	var dir: float = sign(velocity.x) if velocity.x != 0.0 else direction
@@ -108,6 +110,8 @@ func _update_visual_direction() -> void:
 func _find_target() -> void:
 	if target_mole == null or not is_instance_valid(target_mole):
 		target_mole = get_tree().get_first_node_in_group("mole")
+		if target_mole:
+			add_collision_exception_with(target_mole)
 	elif global_position.distance_squared_to(target_mole.global_position) > DETECT_RANGE * DETECT_RANGE * 4:
 		target_mole = null
 
