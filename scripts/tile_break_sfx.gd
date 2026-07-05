@@ -289,13 +289,13 @@ static func is_stalactite(atlas_coords: Vector2i) -> bool:
 			return true
 	return false
 
-static func break_tile(tilemap: TileMap, tile_pos: Vector2i, parent: Node) -> void:
+static func break_tile(tilemap: TileMap, tile_pos: Vector2i, parent: Node, force: bool = false) -> void:
 	var source_id := tilemap.get_cell_source_id(0, tile_pos)
 	if source_id == -1:
 		return
 	var atlas_coords := tilemap.get_cell_atlas_coords(0, tile_pos)
 
-	_break_single_tile(tilemap, tile_pos, atlas_coords, parent)
+	_break_single_tile(tilemap, tile_pos, atlas_coords, parent, force)
 
 	if is_stalactite(atlas_coords):
 		# Stalactites hang from ceiling — breaking any piece drops everything below
@@ -324,12 +324,12 @@ static func _cascade_break(tilemap: TileMap, tiles: Array[Vector2i], parent: Nod
 		_break_single_tile(tilemap, pos, a, parent)
 	parent.get_tree().create_timer(0.06).timeout.connect(_cascade_break.bind(tilemap, tiles, parent, index + 1))
 
-static func _break_single_tile(tilemap: TileMap, tile_pos: Vector2i, atlas_coords: Vector2i, parent: Node) -> void:
+static func _break_single_tile(tilemap: TileMap, tile_pos: Vector2i, atlas_coords: Vector2i, parent: Node, force: bool = false) -> void:
 	var source_id := tilemap.get_cell_source_id(0, tile_pos)
 	if source_id == -1:
 		return
 	var tile_data := tilemap.get_cell_tile_data(0, tile_pos)
-	if tile_data and tile_data.get_custom_data("bedrock"):
+	if not force and tile_data and tile_data.get_custom_data("bedrock"):
 		return
 
 	var tile_type := get_tile_type(atlas_coords)

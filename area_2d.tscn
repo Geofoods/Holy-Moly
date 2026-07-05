@@ -1,0 +1,46 @@
+[gd_scene format=3 uid="uid://fr3a4280jq6q"]
+
+[ext_resource type="Texture2D" uid="uid://c1s7lgwgr4g3" path="res://scenes/projectile.png" id="1_gf172"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dl81w"]
+atlas = ExtResource("1_gf172")
+region = Rect2(0, 0, 900, 600)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5rgpn"]
+atlas = ExtResource("1_gf172")
+region = Rect2(900, 0, 900, 600)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_c0nl8"]
+atlas = ExtResource("1_gf172")
+region = Rect2(1800, 0, 900, 600)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_1dtnr"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dl81w")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5rgpn")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_c0nl8")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_gf172"]
+radius = 60.0
+height = 380.0
+
+[node name="Area2D" type="Area2D" unique_id=370439695]
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=164702838]
+sprite_frames = SubResource("SpriteFrames_1dtnr")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1000376813]
+position = Vector2(-98, 3)
+rotation = 1.5855986
+shape = SubResource("CapsuleShape2D_gf172")

@@ -3,6 +3,7 @@ extends CharacterBody2D
 const MAX_HEALTH := 20.0
 const PAN_DURATION := 1.5
 const HOLD_DURATION := 1.5
+const DESCENT_SPEED := 50.0
 
 var health := MAX_HEALTH
 var _boss_active := false
@@ -16,6 +17,10 @@ var _cutscene_start_pos := Vector2.ZERO
 var _cutscene_target_pos := Vector2.ZERO
 var _cutscene_start_cam_pos := Vector2.ZERO
 
+var _tilemap: TileMap = null
+var _tile_break_script: GDScript = null
+var _last_break_tile_y := -999999
+
 @onready var anim: AnimatedSprite2D = $AnimatedSprite2D
 @onready var trigger: Area2D = $CutsceneTrigger
 @onready var hurtbox: Area2D = $Hurtbox
@@ -26,6 +31,8 @@ func _ready() -> void:
 	trigger.body_entered.connect(_on_trigger_entered)
 	hurtbox.area_entered.connect(_on_hurtbox_area_entered)
 	hurtbox.add_to_group("enemy_hurtbox")
+	_tilemap = get_parent().get_node_or_null("TileMap") as TileMap
+	_tile_break_script = load("res://scripts/tile_break_sfx.gd")
 
 func _process(delta: float) -> void:
 	if _cutscene_stage < 0:
@@ -53,6 +60,36 @@ func _process(delta: float) -> void:
 			_cutscene_cam.global_position = _cutscene_start_pos.lerp(_cutscene_target_pos, t)
 			if t >= 1.0:
 				_end_cutscene()
+
+func _physics_process(delta: float) -> void:
+	if not _boss_active:
+		return
+
+	_break_tiles_in_path()
+	velocity.y = DESCENT_SPEED
+	move_and_slide()
+
+func _break_tiles_in_path() -> void:
+	if not _tilemap:
+		return
+
+	var shape_node := $CollisionShape2D as CollisionShape2D
+	var center := shape_node.global_position
+	var tile_center := _tilemap.local_to_map(_tilemap.to_local(center))
+	if tile_center.y <= _last_break_tile_y:
+		return
+	_last_break_tile_y = tile_center.y
+
+	var shape := shape_node.shape as RectangleShape2D
+	var half := shape.size / 2.0
+
+	var top_left := _tilemap.local_to_map(_tilemap.to_local(Vector2(center.x - half.x, center.y - half.y)))
+	var bottom_right := _tilemap.local_to_map(_tilemap.to_local(Vector2(center.x + half.x, center.y + half.y)))
+
+	for x in range(top_left.x, bottom_right.x + 1):
+		for y in range(top_left.y, bottom_right.y + 1):
+			var tp := Vector2i(x, y)
+			_tile_break_script.break_tile(_tilemap, tp, get_parent(), true)
 
 func _on_trigger_entered(body: Node) -> void:
 	if _boss_active or _cutscene_playing:
@@ -99,6 +136,7 @@ func _end_cutscene() -> void:
 	process_mode = PROCESS_MODE_INHERIT
 	trigger.process_mode = PROCESS_MODE_INHERIT
 
+	_last_break_tile_y = -999999
 	_boss_active = true
 	_cutscene_playing = false
 	anim.play("default")
