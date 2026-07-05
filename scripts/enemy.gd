@@ -5,7 +5,7 @@ const CLIMB_SPEED = 140.0
 const GRAVITY = 1960.0
 const CLIMB_DURATION = 0.6
 const DETECT_RANGE := 300.0
-const CLIMB_CHANCE = 0.5
+const CLIMB_CHANCE = 0.4
 const MAX_HEALTH := 3.0
 
 var direction := 1.0
@@ -26,12 +26,6 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	_find_target()
-
-	if target_mole:
-		var diff := target_mole.global_position.x - global_position.x
-		if abs(diff) >= 10.0:
-			direction = sign(diff)
-
 	if is_climbing:
 		climb_timer -= delta
 		velocity.y = -CLIMB_SPEED
@@ -50,7 +44,7 @@ func _physics_process(delta: float) -> void:
 	velocity.x = direction * SPEED
 
 	if is_on_wall():
-		if randf() < CLIMB_CHANCE and target_mole and target_mole.global_position.y < global_position.y - 30:
+		if randf() < CLIMB_CHANCE:
 			is_climbing = true
 			climb_timer = CLIMB_DURATION
 		else:

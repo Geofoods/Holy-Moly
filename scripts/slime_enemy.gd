@@ -60,8 +60,21 @@ func _physics_process(delta: float) -> void:
 
 	if target_mole:
 		var dist := global_position.distance_squared_to(target_mole.global_position)
-		if dist < DETECT_RANGE * DETECT_RANGE:
+		if dist < DETECT_RANGE * DETECT_RANGE and _has_line_of_sight(target_mole):
 			_jump_toward_target()
+
+func _has_line_of_sight(target: Node2D) -> bool:
+	if abs(target.global_position.y - global_position.y) > 120.0:
+		return false
+	var space_state := get_world_2d().direct_space_state
+	var query := PhysicsRayQueryParameters2D.create(global_position, target.global_position, 1)
+	query.exclude = [get_rid()]
+	var result := space_state.intersect_ray(query)
+	if result.is_empty():
+		return true
+	if result.position.distance_to(target.global_position) < 40.0:
+		return true
+	return false
 
 func _find_target() -> void:
 	if target_mole == null or not is_instance_valid(target_mole):

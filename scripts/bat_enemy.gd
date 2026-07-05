@@ -32,7 +32,7 @@ func _physics_process(delta: float) -> void:
 	if target_mole != null:
 		dist = global_position.distance_to(target_mole.global_position)
 
-	swooping = target_mole != null and dist < DETECT_RANGE
+	swooping = target_mole != null and dist < DETECT_RANGE and _has_line_of_sight(target_mole)
 
 	if swooping and target_mole != null:
 		var swoop_dir := (target_mole.global_position - global_position).normalized()
@@ -51,6 +51,17 @@ func _physics_process(delta: float) -> void:
 	visual.flip_h = velocity.x < 0 if velocity.x != 0 else direction < 0
 
 	move_and_slide()
+
+func _has_line_of_sight(target: Node2D) -> bool:
+	if target == null:
+		return false
+	var space_state := get_world_2d().direct_space_state
+	var query := PhysicsRayQueryParameters2D.create(global_position, target.global_position, 1)
+	query.exclude = [get_rid()]
+	var result := space_state.intersect_ray(query)
+	if result.is_empty():
+		return true
+	return result.collider == target or result.collider == target.get_parent()
 
 func _on_hitbox_body_entered(body: Node) -> void:
 	if body.is_in_group("mole"):

@@ -48,7 +48,7 @@ func _physics_process(delta: float) -> void:
 	_update_facing()
 
 	throw_cooldown -= delta
-	if throw_cooldown <= 0.0 and target_mole and _is_on_screen():
+	if throw_cooldown <= 0.0 and target_mole and _is_on_screen() and _has_line_of_sight(target_mole):
 		_throw_mushroom()
 
 func _is_on_screen() -> bool:
@@ -59,6 +59,18 @@ func _is_on_screen() -> bool:
 	var visible_world := viewport_size / camera.zoom
 	var screen_rect := Rect2(camera.global_position - visible_world * 0.5, visible_world)
 	return screen_rect.has_point(global_position)
+
+func _has_line_of_sight(target: Node2D) -> bool:
+	var space_state := get_world_2d().direct_space_state
+	var query := PhysicsRayQueryParameters2D.create(global_position, target.global_position, 1)
+	query.exclude = [get_rid()]
+	var result := space_state.intersect_ray(query)
+	if result.is_empty():
+		return true
+	# Check if the hit point is very close to the target (wall is behind them)
+	if result.position.distance_to(target.global_position) < 40.0:
+		return true
+	return false
 
 func _find_target() -> void:
 	if target_mole == null or not is_instance_valid(target_mole):

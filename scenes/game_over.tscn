@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://mmg7oyq1lu61" path="res://scripts/game_over.gd" id="1_gameover"]
 [ext_resource type="Texture2D" uid="uid://buaps737jhmeo" path="res://sprites/molejumpbold.png" id="2_molejump"]
 [ext_resource type="Shader" uid="uid://ch2hh4i0b8k0l" path="res://shaders/corrupted_bg.gdshader" id="4_shader"]
+[ext_resource type="Texture2D" uid="uid://c3jm7jbq1dale" path="res://Bricks.webp" id="7_bricks"]
 [ext_resource type="Texture2D" uid="uid://v8nv0wnkuqeb" path="res://Gameover.webp" id="5_gameoverimg"]
 [ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="6_babydoll"]
 [ext_resource type="Texture2D" uid="uid://cy65itxnylhih" path="res://boss_bite.webp" id="6_v3hpu"]
@@ -205,13 +206,15 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 script = ExtResource("1_gameover")
 
-[node name="Background" type="ColorRect" parent="." unique_id=1182234500]
+[node name="Background" type="TextureRect" parent="." unique_id=1182234500]
 material = SubResource("ShaderMaterial_bg")
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0.05, 0.03, 0.03, 1)
+texture = ExtResource("7_bricks")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="MoleAnimation" type="TextureRect" parent="." unique_id=814121239]
 layout_mode = 0

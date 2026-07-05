@@ -44,7 +44,7 @@ func _physics_process(delta: float) -> void:
 			visual.flip_h = direction < 0
 			if target_mole:
 				var offset := target_mole.global_position - global_position
-				if abs(offset.x) < DETECT_RANGE_X and abs(offset.y) < DETECT_RANGE_Y:
+				if abs(offset.x) < DETECT_RANGE_X and abs(offset.y) < DETECT_RANGE_Y and _has_line_of_sight(target_mole):
 					state = State.CHARGING
 					state_timer = CHARGE_DURATION
 					direction = sign(offset.x) if offset.x != 0.0 else direction
@@ -65,6 +65,18 @@ func _physics_process(delta: float) -> void:
 				state = State.PATROL
 
 	move_and_slide()
+
+func _has_line_of_sight(target: Node2D) -> bool:
+	if abs(target.global_position.y - global_position.y) > 80.0:
+		return false
+	var ray_end := Vector2(target.global_position.x, global_position.y)
+	var space_state := get_world_2d().direct_space_state
+	var query := PhysicsRayQueryParameters2D.create(global_position, ray_end, 1)
+	query.exclude = [get_rid()]
+	var result := space_state.intersect_ray(query)
+	if result.is_empty():
+		return true
+	return result.collider == target or result.collider == target.get_parent()
 
 func _check_edges() -> void:
 	if is_on_wall():

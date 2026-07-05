@@ -69,7 +69,7 @@ func _setup_tile_highlight() -> void:
 	tile_highlight.hide()
 
 func _update_tile_highlight() -> void:
-	if not visible or is_swinging:
+	if is_swinging:
 		if tile_highlight:
 			tile_highlight.hide()
 		return
@@ -153,12 +153,12 @@ func _update_trail() -> void:
 		trail.add_point(point)
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not visible:
-		return
 	if event is InputEventMouseButton and event.pressed:
-		if event.button_index == MOUSE_BUTTON_LEFT and not is_swinging and not is_parrying:
-			swing()
-		elif event.button_index == MOUSE_BUTTON_RIGHT and not is_swinging and not is_parrying and parry_cooldown <= 0.0:
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			_break_tile_at_mouse()
+			if visible and not is_swinging and not is_parrying:
+				swing()
+		elif event.button_index == MOUSE_BUTTON_RIGHT and visible and not is_swinging and not is_parrying and parry_cooldown <= 0.0:
 			_start_parry()
 
 func _start_parry() -> void:
@@ -204,8 +204,6 @@ func swing() -> void:
 	trail_points.clear()
 
 	hitbox.area_entered.connect(_on_hitbox_area_entered)
-
-	_break_tile_at_mouse()
 
 	var aim := rotation
 
@@ -360,8 +358,6 @@ func dig_slash() -> void:
 	trail_points.clear()
 
 	hitbox.area_entered.connect(_on_hitbox_area_entered)
-
-	_break_tile_at_mouse()
 
 	var dir := (get_global_mouse_position() - global_position).normalized()
 	var aim := atan2(dir.y, dir.x)

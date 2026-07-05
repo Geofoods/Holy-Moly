@@ -64,7 +64,7 @@ func _patrol(delta: float) -> void:
 
 	if target_mole:
 		var dist: float = global_position.distance_squared_to(target_mole.global_position)
-		if dist < DETECT_RANGE * DETECT_RANGE:
+		if dist < DETECT_RANGE * DETECT_RANGE and _has_line_of_sight(target_mole):
 			_start_charge()
 
 func _rush(_delta: float) -> void:
@@ -140,6 +140,18 @@ func _break_tiles_on_collision() -> void:
 func _update_visual_direction() -> void:
 	var dir: float = sign(velocity.x) if velocity.x != 0.0 else direction
 	visual.scale.x = -abs(visual.scale.x) * sign(dir)
+
+func _has_line_of_sight(target: Node2D) -> bool:
+	if abs(target.global_position.y - global_position.y) > 80.0:
+		return false
+	var ray_end := Vector2(target.global_position.x, global_position.y)
+	var space_state := get_world_2d().direct_space_state
+	var query := PhysicsRayQueryParameters2D.create(global_position, ray_end, 1)
+	query.exclude = [get_rid()]
+	var result := space_state.intersect_ray(query)
+	if result.is_empty():
+		return true
+	return result.collider == target or result.collider == target.get_parent()
 
 func _find_target() -> void:
 	if target_mole == null or not is_instance_valid(target_mole):
