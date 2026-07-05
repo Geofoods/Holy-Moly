@@ -10,6 +10,7 @@
 [ext_resource type="PackedScene" uid="uid://bcd57whed7bys" path="res://chest.tscn" id="10_choun"]
 [ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="11_eb6dy"]
 [ext_resource type="PackedScene" uid="uid://brmtyiqcy1wkv" path="res://scenes/inventory_ui.tscn" id="12_invui"]
+[ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="14_a8y0u"]
 [ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
 [ext_resource type="PackedScene" path="res://scenes/info_popup.tscn" id="info_popup_res"]
 [ext_resource type="PackedScene" path="res://scenes/level_intro_banner.tscn" id="level_banner_res"]
@@ -132,6 +133,20 @@ script = ExtResource("11_eb6dy")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="nextlevel" unique_id=1570220951]
 position = Vector2(2048, 1577)
 shape = SubResource("RectangleShape2D_trceg")
+
+[node name="Costume5" type="Sprite2D" parent="." unique_id=192013909]
+z_index = 999
+position = Vector2(2039.9998, 966)
+scale = Vector2(30.055723, 1.7175142)
+texture = ExtResource("14_a8y0u")
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=1170994223]
+z_index = 999
+offset_left = -5085.0
+offset_top = 1256.9999
+offset_right = 9097.0
+offset_bottom = 2978.0
+color = Color(0, 0, 0, 1)
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]

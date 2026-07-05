@@ -283,15 +283,12 @@ animations = [{
 }]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_gmfyf"]
-radius = 136.00168
+radius = 51.09794
 height = 368.12317
 
 [node name="mole" type="CharacterBody2D" unique_id=501808252]
-texture_filter = 0
 z_index = 1
 scale = Vector2(0.5, 0.5)
-collision_layer = 1
-collision_mask = 1
 script = ExtResource("1_kln4g")
 
 [node name="PointLight2D" type="PointLight2D" parent="." unique_id=1504260063]
@@ -301,7 +298,7 @@ shadow_enabled = true
 shadow_color = Color(0, 0, 0, 1)
 texture = ExtResource("15_obc8e")
 
-[node name="MoleLight" type="PointLight2D" parent="."]
+[node name="MoleLight" type="PointLight2D" parent="." unique_id=1185757517]
 position = Vector2(6, -70)
 scale = Vector2(10, 10)
 range_item_cull_mask = 2
@@ -314,8 +311,7 @@ animation = &"dig"
 autoplay = "idlebold"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1888999731]
-position = Vector2(4, -73)
-rotation = -1.5580355
+position = Vector2(6, 14.000008)
 shape = SubResource("CapsuleShape2D_gmfyf")
 
 [node name="Weapon" parent="." unique_id=1867143522 instance=ExtResource("5_weapon")]

@@ -1,12 +1,13 @@
 extends CharacterBody2D
 
 const SPEED = 700.0
-const JUMP_VELOCITY = -1200.0
+const JUMP_VELOCITY = -1400.0
 const JUMP_CUT_MULTIPLIER = 0.4
 const ACCELERATION = 3600.0
 const FRICTION = 3600.0
 const AIR_FRICTION = 1600.0
 const TUNNEL_SPEED = 2400.0
+const FAST_FALL_SPEED = 1200.0
 const TUNNEL_DURATION = 0.2
 const HURT_GROUND_DURATION = 0.25
 const HURT_AIR_DURATION = 0.35
@@ -238,7 +239,9 @@ func _setup_level_reverb() -> void:
 
 func _physics_process(delta: float) -> void:
 	if not is_on_floor():
-		velocity += get_gravity() * delta
+		velocity += get_gravity() * delta * 1.5
+		if Input.is_action_pressed("ui_down"):
+			velocity.y = minf(velocity.y, FAST_FALL_SPEED)
 
 	_handle_inventory_input()
 
