@@ -72,7 +72,6 @@ func _grant_item() -> void:
 func _show_item_rise(loot: ItemData) -> void:
 	if not loot.icon_texture:
 		return
-	# Loot reveal sound - delayed sparkle
 	get_tree().create_timer(0.15).timeout.connect(func():
 		SFX.play("item_pickup", global_position, -4.0, 0.1)
 	)
@@ -110,7 +109,6 @@ func _play_open_animation() -> void:
 		glow_tween.tween_property(glow, "scale", Vector2(1.3, 1.3), 0.4).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 		glow_tween.chain().tween_property(glow, "modulate:a", 0.0, 0.4)
 
-	# ADD: particle burst
 	var particles := CPUParticles2D.new()
 	particles.emitting = true
 	particles.one_shot = true

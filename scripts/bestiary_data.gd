@@ -1,8 +1,5 @@
 extends Node
 
-## Single source of truth for the in-game encyclopedia (Info popup).
-## To add a new enemy/hazard/item, append one dictionary to ENTRIES below.
-## The Info popup picks it up automatically.
 
 const ENTRIES: Array[Dictionary] = [
 	{
@@ -27,7 +24,7 @@ const ENTRIES: Array[Dictionary] = [
 		"description": "A scrappy raider that's more aggressive and alert than the average tunnel pest.",
 		"behavior": "Detects you from further away than a Beetle and charges almost immediately, slowing to a stop afterward before resuming its patrol.",
 		"attack_pattern": "Fast 400 px/s charge dealing contact damage, with a short cooldown before it can charge again.",
-		"strategy": "Don't get caught flat-footed by its longer detection range. Swing early or dodge sideways as it closes in. It's recommended to parry (Right-click) the mushroom projectiles it throws—deflecting them back deals damage and keeps you safe. Takes 4 hits to defeat.",
+		"strategy": "Don't get caught flat-footed by its longer detection range. Swing early or dodge sideways as it closes in. It's recommended to parry (Right-click) the mushroom projectiles it throws - deflecting them back deals damage and keeps you safe. Takes 4 hits to defeat.",
 	},
 	{
 		"id": "ant",
@@ -67,8 +64,6 @@ const ENTRIES: Array[Dictionary] = [
 	},
 ]
 
-## Controls / mechanics reference for the Info popup's "Controls" tab.
-## Each entry: a category heading and a list of {label, detail} rows.
 const CONTROLS: Array[Dictionary] = [
 	{
 		"category": "Movement",

@@ -26,20 +26,17 @@ func _process(delta: float) -> void:
 
 	var progress := clampf(fuse_elapsed / (FUSE_TIME - FLASH_TIME), 0.0, 1.0)
 
-	# Ticking sound that speeds up as fuse runs out
 	tick_cooldown -= delta
 	if tick_cooldown <= 0.0:
 		SFX.play("bomb_tick", global_position, -4.0, 0.05)
 		var interval := lerpf(0.5, 0.1, progress)
 		tick_cooldown = interval
 
-	# Pulsing red tint that intensifies over time
 	var pulse_speed := lerpf(8.0, 25.0, progress)
 	var pulse := 0.5 + sin(fuse_elapsed * pulse_speed) * 0.5
 	var red_intensity := lerpf(0.3, 1.0, progress)
 	sprite.modulate = Color(1.0, 1.0 - red_intensity * 0.5 + pulse * 0.2, 1.0 - red_intensity * 0.7 + pulse * 0.1, 1.0)
 
-	# Start the flash phase before explosion
 	if fuse_elapsed >= FUSE_TIME - FLASH_TIME:
 		_start_flash()
 
@@ -49,7 +46,6 @@ func arm() -> void:
 func _start_flash() -> void:
 	is_flashing = true
 	var tween := create_tween()
-	# Minecraft-style: flash white and enlarge briefly
 	tween.tween_property(sprite, "modulate", Color(8.0, 8.0, 8.0, 1.0), 0.08).set_trans(Tween.TRANS_QUAD)
 	tween.tween_property(sprite, "modulate", Color(1.0, 1.0, 1.0, 1.0), 0.06)
 	tween.tween_property(sprite, "modulate", Color(10.0, 10.0, 10.0, 1.0), 0.06).set_trans(Tween.TRANS_QUAD)

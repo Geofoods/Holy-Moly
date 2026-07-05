@@ -21,7 +21,6 @@ func _play_exit_sound() -> void:
 	player.pitch_scale = 1.8
 	get_tree().root.add_child(player)
 	player.play()
-	# Auto-stop after 2 seconds (cut the tail) and fade out
 	var tween := get_tree().create_tween()
 	tween.tween_interval(1.5)
 	tween.tween_property(player, "volume_db", -40.0, 0.5)

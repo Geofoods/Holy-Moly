@@ -13,7 +13,6 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	var vp_size: Vector2 = get_viewport().get_visible_rect().size
 	
-	# Center the panel
 	panel.size = Vector2(600.0, 220.0)
 	panel.position = (vp_size - panel.size) / 2.0
 	panel.modulate.a = 0.0

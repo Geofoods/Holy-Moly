@@ -102,11 +102,9 @@ func _charge_up(delta: float) -> void:
 	velocity.x = 0.0
 
 	charge_timer -= delta
-	# Shake the visual to show it's winding up
 	visual.offset.x = randf_range(-3.0, 3.0)
 	visual.offset.y = randf_range(-1.5, 1.5)
 
-	# Tick sound that speeds up as charge completes
 	_charge_sfx_timer -= delta
 	if _charge_sfx_timer <= 0.0:
 		var progress := 1.0 - (charge_timer / CHARGE_UP_DURATION)
@@ -131,7 +129,6 @@ func _start_charge() -> void:
 	direction = sign(target_mole.global_position.x - global_position.x)
 	velocity.x = 0.0
 
-	# Red flashing tween
 	if _charge_tween and _charge_tween.is_valid():
 		_charge_tween.kill()
 	_charge_tween = create_tween()

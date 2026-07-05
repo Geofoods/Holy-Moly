@@ -35,10 +35,7 @@ const SOUNDS := {
 	],
 }
 
-# Explicit mapping: Vector2i(column, row) in atlas -> TileType
-# Visually matched to tileset.png (160x160 grid)
 const TILE_MAP := {
-	# Row 0: terrain surface tiles
 	Vector2i(0, 0): TileType.DIRT,       # sandy dirt with grass top
 	Vector2i(1, 0): TileType.STONE,      # pink cobblestone
 	Vector2i(2, 0): TileType.STONE,      # red stone bricks
@@ -53,7 +50,6 @@ const TILE_MAP := {
 	Vector2i(11, 0): TileType.CRYSTAL,   # chain piece
 	Vector2i(12, 0): TileType.CRYSTAL,   # small chain end
 
-	# Row 1: underground terrain
 	Vector2i(0, 1): TileType.STONE,      # red/pink stone
 	Vector2i(1, 1): TileType.STONE,      # red stone
 	Vector2i(2, 1): TileType.STONE,      # dark red stone
@@ -68,7 +64,6 @@ const TILE_MAP := {
 	Vector2i(11, 1): TileType.CORRUPTED, # corrupted slope
 	Vector2i(12, 1): TileType.CORRUPTED, # corrupted edge
 
-	# Row 2: stalactite caps
 	Vector2i(0, 2): TileType.DIRT,       # empty/dirt
 	Vector2i(1, 2): TileType.DIRT,       # empty/dirt
 	Vector2i(3, 2): TileType.WOOD,       # tan stalactite top
@@ -78,7 +73,6 @@ const TILE_MAP := {
 	Vector2i(7, 2): TileType.WOOD,       # stalactite variant
 	Vector2i(8, 2): TileType.WOOD,       # stalactite variant
 
-	# Row 3: stalactite bodies
 	Vector2i(3, 3): TileType.WOOD,       # tan stalactite body
 	Vector2i(4, 3): TileType.CRYSTAL,    # ice stalactite body
 	Vector2i(5, 3): TileType.WOOD,       # orange stalactite body
@@ -86,13 +80,11 @@ const TILE_MAP := {
 	Vector2i(7, 3): TileType.WOOD,       # stalactite body
 	Vector2i(8, 3): TileType.WOOD,       # stalactite body
 
-	# Row 4: stalactite lower
 	Vector2i(3, 4): TileType.WOOD,       # tan stalactite lower
 	Vector2i(4, 4): TileType.CRYSTAL,    # ice stalactite lower
 	Vector2i(5, 4): TileType.WOOD,       # orange stalactite lower
 	Vector2i(6, 4): TileType.CORRUPTED,  # corrupted stalactite lower
 
-	# Row 5: large mushrooms
 	Vector2i(3, 5): TileType.MUSHROOM,   # orange mushroom
 	Vector2i(4, 5): TileType.MUSHROOM,   # orange mushroom
 	Vector2i(5, 5): TileType.MUSHROOM,   # dark mushroom
@@ -102,7 +94,6 @@ const TILE_MAP := {
 	Vector2i(9, 5): TileType.MUSHROOM,   # blue mushroom
 	Vector2i(10, 5): TileType.MUSHROOM,  # blue mushroom
 
-	# Row 6: small mushrooms
 	Vector2i(3, 6): TileType.MUSHROOM,   # cyan mushroom small
 	Vector2i(4, 6): TileType.MUSHROOM,   # cyan mushroom
 	Vector2i(5, 6): TileType.MUSHROOM,   # tan mushroom
@@ -115,7 +106,6 @@ const TILE_MAP := {
 	Vector2i(12, 6): TileType.MUSHROOM,  # corrupted mushroom
 	Vector2i(13, 6): TileType.MUSHROOM,  # corrupted mushroom
 
-	# Row 7: props + corrupted stalactite tops
 	Vector2i(0, 7): TileType.CRYSTAL,    # amber potion bottle (glass)
 	Vector2i(1, 7): TileType.CRYSTAL,    # amber potion bottle (glass)
 	Vector2i(5, 7): TileType.STONE,      # R.I.P. gravestone
@@ -127,7 +117,6 @@ const TILE_MAP := {
 	Vector2i(12, 7): TileType.CORRUPTED, # corrupted stalactite top
 	Vector2i(13, 7): TileType.CORRUPTED, # corrupted stalactite top
 
-	# Row 8: props + corrupted stalactites
 	Vector2i(0, 8): TileType.CRYSTAL,    # cyan potion (glass)
 	Vector2i(1, 8): TileType.CRYSTAL,    # dark/green potion (glass)
 	Vector2i(3, 8): TileType.WOOD,       # barrel
@@ -141,7 +130,6 @@ const TILE_MAP := {
 	Vector2i(12, 8): TileType.CORRUPTED, # corrupted stalactite
 	Vector2i(13, 8): TileType.CORRUPTED, # corrupted stalactite
 
-	# Row 9: mushroom caps + corrupted
 	Vector2i(0, 9): TileType.CRYSTAL,    # potion
 	Vector2i(4, 9): TileType.MUSHROOM,   # tan mushroom cap
 	Vector2i(5, 9): TileType.MUSHROOM,   # tan mushroom cap
@@ -150,14 +138,12 @@ const TILE_MAP := {
 	Vector2i(12, 9): TileType.CORRUPTED, # corrupted stalactite
 	Vector2i(13, 9): TileType.CORRUPTED, # corrupted stalactite
 
-	# Row 10: mushroom caps + corrupted
 	Vector2i(5, 10): TileType.MUSHROOM,  # orange mushroom cap
 	Vector2i(6, 10): TileType.MUSHROOM,  # corrupted mushroom cap
 	Vector2i(11, 10): TileType.CORRUPTED,# corrupted stalactite
 	Vector2i(12, 10): TileType.CORRUPTED,# corrupted stalactite
 	Vector2i(13, 10): TileType.CORRUPTED,# corrupted stalactite
 
-	# Row 11: mushroom tops + corrupted stalactites
 	Vector2i(7, 11): TileType.MUSHROOM,  # blue mushroom cap
 	Vector2i(8, 11): TileType.MUSHROOM,  # cyan mushroom cap
 	Vector2i(9, 11): TileType.MUSHROOM,  # orange mushroom cap
@@ -166,7 +152,6 @@ const TILE_MAP := {
 	Vector2i(12, 11): TileType.CORRUPTED,# corrupted stalactite
 	Vector2i(13, 11): TileType.CORRUPTED,# corrupted stalactite
 
-	# Row 12: corrupted mushrooms + stalactites
 	Vector2i(8, 12): TileType.MUSHROOM,  # corrupted mushroom
 	Vector2i(9, 12): TileType.MUSHROOM,  # corrupted mushroom
 	Vector2i(10, 12): TileType.MUSHROOM, # corrupted mushroom
@@ -174,7 +159,6 @@ const TILE_MAP := {
 	Vector2i(12, 12): TileType.CORRUPTED,# corrupted stalactite
 	Vector2i(13, 12): TileType.CORRUPTED,# corrupted stalactite
 
-	# Row 13-15: corrupted stalactites
 	Vector2i(10, 13): TileType.CORRUPTED,
 	Vector2i(11, 13): TileType.CORRUPTED,
 	Vector2i(12, 13): TileType.CORRUPTED,
@@ -186,7 +170,6 @@ const TILE_MAP := {
 }
 
 const TILE_COLORS := {
-	# Row 0
 	Vector2i(0, 0): [Color(0.77, 0.63, 0.42), Color(0.65, 0.50, 0.30)],       # sandy dirt
 	Vector2i(1, 0): [Color(0.77, 0.44, 0.44), Color(0.60, 0.35, 0.35)],       # pink stone
 	Vector2i(2, 0): [Color(0.65, 0.30, 0.30), Color(0.50, 0.22, 0.22)],       # red stone
@@ -200,7 +183,6 @@ const TILE_COLORS := {
 	Vector2i(10, 0): [Color(0.70, 0.30, 0.30), Color(0.55, 0.20, 0.20)],      # red chain
 	Vector2i(11, 0): [Color(0.65, 0.28, 0.28), Color(0.50, 0.18, 0.18)],      # chain
 	Vector2i(12, 0): [Color(0.60, 0.25, 0.25), Color(0.45, 0.15, 0.15)],      # chain end
-	# Row 1
 	Vector2i(0, 1): [Color(0.70, 0.38, 0.38), Color(0.55, 0.28, 0.28)],       # red/pink
 	Vector2i(1, 1): [Color(0.60, 0.30, 0.30), Color(0.48, 0.22, 0.22)],       # red
 	Vector2i(2, 1): [Color(0.50, 0.22, 0.22), Color(0.38, 0.15, 0.15)],       # dark red
@@ -214,12 +196,10 @@ const TILE_COLORS := {
 	Vector2i(10, 1): [Color(0.25, 0.10, 0.35), Color(0.32, 0.14, 0.45)],
 	Vector2i(11, 1): [Color(0.28, 0.12, 0.38), Color(0.35, 0.15, 0.48)],
 	Vector2i(12, 1): [Color(0.25, 0.10, 0.35), Color(0.30, 0.12, 0.40)],
-	# Row 2: stalactite caps
 	Vector2i(3, 2): [Color(0.75, 0.62, 0.42), Color(0.60, 0.48, 0.30)],       # tan
 	Vector2i(4, 2): [Color(0.40, 0.80, 0.88), Color(0.55, 0.88, 0.95)],       # cyan
 	Vector2i(5, 2): [Color(0.85, 0.60, 0.20), Color(0.70, 0.45, 0.15)],       # orange
 	Vector2i(6, 2): [Color(0.65, 0.25, 0.15), Color(0.50, 0.18, 0.10)],       # red corrupted
-	# Row 3-4: stalactite bodies
 	Vector2i(3, 3): [Color(0.70, 0.58, 0.38), Color(0.55, 0.42, 0.25)],
 	Vector2i(4, 3): [Color(0.35, 0.75, 0.85), Color(0.50, 0.85, 0.92)],
 	Vector2i(5, 3): [Color(0.80, 0.55, 0.18), Color(0.65, 0.40, 0.12)],
@@ -228,7 +208,6 @@ const TILE_COLORS := {
 	Vector2i(4, 4): [Color(0.35, 0.72, 0.82), Color(0.48, 0.82, 0.90)],
 	Vector2i(5, 4): [Color(0.78, 0.52, 0.15), Color(0.62, 0.38, 0.10)],
 	Vector2i(6, 4): [Color(0.55, 0.20, 0.10), Color(0.42, 0.14, 0.07)],
-	# Row 5-6: mushrooms
 	Vector2i(3, 5): [Color(0.82, 0.52, 0.18), Color(0.70, 0.40, 0.12)],       # orange mush
 	Vector2i(4, 5): [Color(0.80, 0.50, 0.15), Color(0.68, 0.38, 0.10)],
 	Vector2i(5, 5): [Color(0.75, 0.48, 0.15), Color(0.55, 0.30, 0.10)],       # dark mush
@@ -245,11 +224,9 @@ const TILE_COLORS := {
 	Vector2i(8, 6): [Color(0.50, 0.30, 0.15), Color(0.38, 0.20, 0.10)],       # dark/corrupted
 	Vector2i(9, 6): [Color(0.48, 0.28, 0.12), Color(0.35, 0.18, 0.08)],
 	Vector2i(10, 6): [Color(0.45, 0.25, 0.10), Color(0.32, 0.15, 0.06)],
-	# Row 7: props
 	Vector2i(0, 7): [Color(0.85, 0.65, 0.20), Color(0.70, 0.50, 0.15)],       # amber potion
 	Vector2i(1, 7): [Color(0.82, 0.62, 0.18), Color(0.68, 0.48, 0.12)],
 	Vector2i(5, 7): [Color(0.55, 0.50, 0.45), Color(0.40, 0.38, 0.35)],       # gravestone
-	# Row 8: props
 	Vector2i(0, 8): [Color(0.30, 0.75, 0.82), Color(0.45, 0.85, 0.90)],       # cyan potion
 	Vector2i(1, 8): [Color(0.18, 0.40, 0.30), Color(0.25, 0.50, 0.38)],       # green potion
 	Vector2i(3, 8): [Color(0.55, 0.35, 0.18), Color(0.42, 0.25, 0.12)],       # barrel
@@ -303,7 +280,6 @@ static func break_tile(tilemap: TileMap, tile_pos: Vector2i, parent: Node, force
 		if mole and mole.has_method("screen_shake"):
 			mole.screen_shake(4.0, 0.1)
 
-	# Also break decoration layer tile at same position
 	_break_decoration_tile(tilemap, tile_pos, parent)
 
 	if is_stalactite(atlas_coords):

@@ -41,8 +41,6 @@ var _last_position := Vector2.ZERO
 var _stuck_label: Label = null
 const STUCK_THRESHOLD := 4.0
 
-## Set by a scene (e.g. the tutorial) that wants to intercept death instead of
-## the default Game Over transition, e.g. to restart just the current section.
 var death_override: Callable = Callable()
 
 var health: float = 6.0:
@@ -233,7 +231,6 @@ func _setup_level_reverb() -> void:
 	_reverb.room_size = 0.1 + t * 0.7
 
 func _physics_process(delta: float) -> void:
-	# Gravity
 	if not is_on_floor():
 		velocity += get_gravity() * delta
 
@@ -266,7 +263,6 @@ func _physics_process(delta: float) -> void:
 						else:
 							sfx.break_decoration_tile(tm, tile_pos, get_parent())
 						spawn_dirt_particles(contact)
-			# Also break the tile directly in front of the mole
 			var front_pos: Vector2 = global_position + Vector2(tunnel_direction * 40.0, 0.0)
 			var front_tile: Vector2i = tilemap.local_to_map(tilemap.to_local(front_pos))
 			if front_tile not in broken_tiles and tilemap.get_cell_source_id(0, front_tile) != -1:
@@ -281,13 +277,11 @@ func _physics_process(delta: float) -> void:
 		_update_camera_position(delta)
 		return
 
-	# Coyote time
 	if is_on_floor():
 		_coyote_timer = ComboManager.get_coyote_time()
 	else:
 		_coyote_timer -= delta
 
-	# Jump (with coyote time)
 	var can_jump := is_on_floor() or _coyote_timer > 0.0
 	if Input.is_action_just_pressed("ui_accept") and can_jump:
 		velocity.y = JUMP_VELOCITY
@@ -300,15 +294,14 @@ func _physics_process(delta: float) -> void:
 		air_time = 1.0
 		launched_from_jump = true
 
-	# Variable jump height — release early for short hop
 	if Input.is_action_just_released("ui_accept"):
 		_jump_held = false
 		if velocity.y < 0:
 			velocity.y *= JUMP_CUT_MULTIPLIER
 
-	# Landing detection — was in air, now on floor
 	if is_on_floor() and not was_on_floor:
 		SFX.play("land", global_position, -10.0)
+		_spawn_land_dust()
 		remove_mole_hole()
 		is_sideways_jump = false
 		air_time = 0.0
@@ -317,7 +310,6 @@ func _physics_process(delta: float) -> void:
 
 	was_on_floor = is_on_floor()
 
-	# Movement (with combo speed boost)
 	var direction := Input.get_axis("ui_left", "ui_right")
 	var effective_speed := SPEED * ComboManager.get_speed_multiplier()
 	if speed_boost_active:
@@ -331,7 +323,6 @@ func _physics_process(delta: float) -> void:
 		var friction = FRICTION if is_on_floor() else AIR_FRICTION
 		velocity.x = move_toward(velocity.x, 0, friction * delta)
 
-	# Upgrade to sideways jump mid-air (one-way, can't go back)
 	if not is_on_floor() and not is_sideways_jump and direction != 0:
 		is_sideways_jump = true
 
@@ -344,7 +335,6 @@ func _physics_process(delta: float) -> void:
 	update_depth_display()
 	_update_camera_position(delta)
 
-	# Animation
 	if hurt_anim_time_left > 0.0:
 		hurt_anim_time_left = maxf(0.0, hurt_anim_time_left - delta)
 		$AnimatedSprite2D.flip_v = false
@@ -466,7 +456,6 @@ func heal(amount: float) -> bool:
 	return true
 
 func _spawn_potion_mist() -> void:
-	# Rising blue mist particles
 	var mist := CPUParticles2D.new()
 	mist.emitting = true
 	mist.one_shot = false
@@ -492,7 +481,6 @@ func _spawn_potion_mist() -> void:
 	add_child(mist)
 	mist.position = Vector2(0, -20)
 
-	# Splash burst particles
 	var splash := CPUParticles2D.new()
 	splash.emitting = true
 	splash.one_shot = true
@@ -514,7 +502,6 @@ func _spawn_potion_mist() -> void:
 	add_child(splash)
 	splash.position = Vector2(0, -30)
 
-	# Stop mist after 1.2s, clean up both after 2s
 	get_tree().create_timer(1.2).timeout.connect(func(): mist.emitting = false)
 	get_tree().create_timer(2.5).timeout.connect(func():
 		if is_instance_valid(mist): mist.queue_free()
@@ -588,6 +575,7 @@ func take_damage(amount: float, source_position: Vector2 = Vector2.ZERO, has_sou
 	else:
 		SFX.play("hurt", global_position)
 	invulnerable = true
+	_damage_flash()
 	hurt_anim_time_left = HURT_GROUND_DURATION if is_on_floor() else HURT_AIR_DURATION
 	var knockback_direction := -1.0 if $AnimatedSprite2D.flip_h else 1.0
 	if has_source:
@@ -604,6 +592,41 @@ func take_damage(amount: float, source_position: Vector2 = Vector2.ZERO, has_sou
 
 func _end_invulnerability() -> void:
 	invulnerable = false
+
+func _damage_flash() -> void:
+	var canvas_layer := CanvasLayer.new()
+	canvas_layer.layer = 90
+	add_child(canvas_layer)
+	var flash := ColorRect.new()
+	flash.color = Color(0.8, 0.05, 0.05, 0.3)
+	flash.set_anchors_preset(Control.PRESET_FULL_RECT)
+	canvas_layer.add_child(flash)
+	var tween := create_tween()
+	tween.tween_property(flash, "color:a", 0.0, 0.25).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.tween_callback(canvas_layer.queue_free)
+
+func _spawn_land_dust() -> void:
+	var dust := CPUParticles2D.new()
+	dust.emitting = true
+	dust.one_shot = true
+	dust.amount = 10
+	dust.lifetime = 0.35
+	dust.explosiveness = 1.0
+	dust.direction = Vector2(0, -1)
+	dust.spread = 70.0
+	dust.initial_velocity_min = 30.0
+	dust.initial_velocity_max = 80.0
+	dust.gravity = Vector2(0, 200)
+	dust.scale_amount_min = 3.0
+	dust.scale_amount_max = 7.0
+	var grad := Gradient.new()
+	grad.set_color(0, Color(0.55, 0.4, 0.25, 0.6))
+	grad.set_color(1, Color(0.45, 0.3, 0.16, 0.0))
+	dust.color_ramp = grad
+	dust.z_index = 5
+	get_parent().add_child(dust)
+	dust.global_position = global_position + Vector2(0, 10)
+	get_tree().create_timer(0.8).timeout.connect(dust.queue_free)
 
 func hit_freeze(duration: float) -> void:
 	Engine.time_scale = 0.05

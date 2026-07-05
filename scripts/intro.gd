@@ -202,12 +202,10 @@ func _setup_level_picker(picker: OptionButton) -> void:
 
 	picker.item_selected.connect(_on_level_picked)
 
-	# Create a bold black dropdown arrow icon
 	var arrow_size := 24
 	var img := Image.create(arrow_size, arrow_size, false, Image.FORMAT_RGBA8)
 	img.fill(Color(0, 0, 0, 0))
 	var black := Color(0.05, 0.05, 0.05, 1.0)
-	# Draw a filled downward triangle
 	for y in arrow_size:
 		var progress := float(y) / float(arrow_size - 1)
 		var half_w := int((1.0 - progress) * float(arrow_size) * 0.5)

@@ -55,6 +55,7 @@ func increment() -> void:
 	_play_combo_sound()
 	_flash_label()
 	_update_label()
+	_combo_shake()
 
 func get_speed_multiplier() -> float:
 	if combo <= 0:
@@ -101,6 +102,19 @@ func _flash_label() -> void:
 	_label.scale = Vector2(1.3, 1.3)
 	_scale_tween = create_tween()
 	_scale_tween.tween_property(_label, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+func _combo_shake() -> void:
+	var mole = get_tree().get_first_node_in_group("mole")
+	if not mole or not mole.has_method("screen_shake"):
+		return
+	if combo >= 10:
+		mole.screen_shake(14.0, 0.25)
+	elif combo >= 7:
+		mole.screen_shake(10.0, 0.2)
+	elif combo >= 5:
+		mole.screen_shake(7.0, 0.15)
+	elif combo >= 3:
+		mole.screen_shake(4.0, 0.1)
 
 func _play_combo_sound() -> void:
 	var pitch := 0.8 + float(mini(combo, 12)) * 0.1

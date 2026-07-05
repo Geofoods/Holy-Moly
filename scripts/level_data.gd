@@ -1,8 +1,5 @@
 extends Node
 
-## Display name + survival tip shown in the level-intro banner, keyed by the
-## level's scene_file_path. Each tip is written for what that level actually
-## throws at the player (see the enemies/mechanics used in that scene).
 const LEVELS: Dictionary = {
 	"res://scenes/main.tscn": {
 		"number": 1,

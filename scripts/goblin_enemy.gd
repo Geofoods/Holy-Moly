@@ -78,7 +78,6 @@ func _has_line_of_sight(target: Node2D) -> bool:
 	var result := space_state.intersect_ray(query)
 	if result.is_empty():
 		return true
-	# Check if the hit point is very close to the target (wall is behind them)
 	if result.position.distance_to(target.global_position) < 40.0:
 		return true
 	return false

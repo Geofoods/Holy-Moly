@@ -105,9 +105,6 @@ func _show_step(i: int) -> void:
 
 	_clear_pending_signal()
 
-	# Always show a Next button so the player is never stuck waiting on a
-	# trigger/chest that fails to fire — it's a manual fallback alongside
-	# the automatic gameplay-based advance.
 	dialogue.show_text(step["text"], i + 1, steps.size(), true)
 	if dialogue.next_pressed.is_connected(_advance):
 		dialogue.next_pressed.disconnect(_advance)
@@ -140,7 +137,6 @@ func _on_trigger_entered(body: Node) -> void:
 	if body.is_in_group("mole"):
 		_advance()
 	else:
-		# Reconnect if a non-mole body triggered it first (e.g. the enemy).
 		var step: Dictionary = steps[step_index]
 		if step["kind"] == "trigger":
 			var trigger := get_node(String(step["node"]))
