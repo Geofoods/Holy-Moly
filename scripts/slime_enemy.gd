@@ -162,6 +162,7 @@ func _draw() -> void:
 	draw_rect(Rect2(offset, Vector2(bar_w * ratio, bar_h)), fill)
 
 func die() -> void:
+	ComboManager.increment()
 	set_physics_process(false)
 	hurtbox.set_deferred("monitorable", false)
 	var tw := create_tween()
