@@ -10,6 +10,7 @@
 [ext_resource type="PackedScene" path="res://scenes/death_plane.tscn" id="10_deathplane"]
 [ext_resource type="PackedScene" path="res://scenes/inventory_ui.tscn" id="12_invui"]
 [ext_resource type="PackedScene" path="res://scenes/info_popup.tscn" id="info_popup_res"]
+[ext_resource type="PackedScene" path="res://scenes/level_intro_banner.tscn" id="level_banner_res"]
 [ext_resource type="PackedScene" path="res://scenes/firefly_spawner.tscn" id="13_spawner"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
@@ -116,6 +117,8 @@ text = "?"
 [node name="PauseMenu" parent="." unique_id=1779626465 instance=ExtResource("4_pause")]
 
 [node name="InfoPopup" parent="." instance=ExtResource("info_popup_res")]
+
+[node name="LevelIntroBanner" parent="." instance=ExtResource("level_banner_res")]
 
 [node name="VignetteLayer" type="CanvasLayer" parent="." unique_id=182643830]
 visible = false

@@ -12,6 +12,7 @@
 [ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="11_eb6dy"]
 [ext_resource type="PackedScene" uid="uid://brmtyiqcy1wkv" path="res://scenes/inventory_ui.tscn" id="12_invui"]
 [ext_resource type="PackedScene" path="res://scenes/info_popup.tscn" id="info_popup_res"]
+[ext_resource type="PackedScene" path="res://scenes/level_intro_banner.tscn" id="level_banner_res"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.1, 0.1, 0.12, 0.85)
@@ -121,6 +122,8 @@ text = "?"
 [node name="InfoPopup" parent="." unique_id=778241011 instance=ExtResource("info_popup_res")]
 
 [node name="PauseMenu" parent="." unique_id=1779626465 instance=ExtResource("4_pause")]
+
+[node name="LevelIntroBanner" parent="." instance=ExtResource("level_banner_res")]
 
 [node name="chest" parent="." unique_id=950738903 instance=ExtResource("10_choun")]
 position = Vector2(3383, 300)

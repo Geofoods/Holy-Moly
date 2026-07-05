@@ -26,63 +26,63 @@ func _reposition_inventory_ui() -> void:
 func _build_steps() -> void:
 	steps = [
 		{
-			"text": "Welcome, little mole! Corruption is spreading through the burrow, deep across 9 twisted levels below.",
+			"text": "Welcome to the burrow, little mole! Let's learn the basics.",
 			"kind": "click",
 		},
 		{
-			"text": "Enemies will charge, sting and explode, and gaps or hazards can hurt you too. Let's learn how to survive.",
+			"text": "Ready? Let's move.",
 			"kind": "click",
 			"on_start": func(): mole.set_physics_process(true); mole.set_process(true),
 		},
 		{
-			"text": "Use A / D or ◄ ► to move.",
+			"text": "MOVE: press A / D or ◄ ►.",
 			"kind": "trigger",
 			"node": "MoveTrigger",
 		},
 		{
-			"text": "Press W, ▲ or SPACE to jump onto that platform.",
+			"text": "JUMP: press W, ▲, or SPACE to reach that platform.",
 			"kind": "trigger",
 			"node": "JumpTrigger",
 		},
 		{
-			"text": "An Ant! It's the weakest enemy in the burrow. Left-click to swing your shovel and defeat it, or just jump past to avoid it.",
+			"text": "An Ant! The weakest enemy here. Left-click to attack with your shovel, or just outrun it.",
 			"kind": "trigger",
 			"node": "EnemyTrigger",
 			"checkpoint": Vector2(2500, -116),
 		},
 		{
-			"text": "Nice work! Walk into this chest to open it.",
+			"text": "Nice! Walk into the chest to open it.",
 			"kind": "chest",
 			"node": "Chest",
 		},
 		{
-			"text": "Handy trick: Right-click raises your shovel as a guard for about 1.25 seconds, deflecting anything it blocks back toward your cursor. It has a 3 second cooldown after use.",
+			"text": "TIP: Right-click blocks and reflects attacks for a moment. 3 second cooldown.",
 			"kind": "click",
 		},
 		{
-			"text": "A Beetle! It rushes you fast once it spots you, but can't change direction mid-charge. Swing to meet it head on, or jump over the charge.",
+			"text": "A Beetle! It charges fast but can't turn mid-rush. Attack it or dodge the charge.",
 			"kind": "trigger",
 			"node": "BeetleTrigger",
 			"checkpoint": Vector2(6050, -116),
 		},
 		{
-			"text": "A Goblin! It's faster to notice you than the Beetle and charges almost immediately. Don't get caught flat-footed.",
+			"text": "A Goblin! It notices you sooner than a Beetle and charges almost instantly. Stay sharp.",
 			"kind": "trigger",
 			"node": "GoblinTrigger",
 			"checkpoint": Vector2(7300, -116),
 		},
 		{
-			"text": "You've got a Bomb! Press its number key to select it, then Left-click to throw it at that wall and blast your way through.",
+			"text": "You picked up a Bomb! Press its slot number, then Left-click to blow open that wall.",
 			"kind": "trigger",
 			"node": "BombWallTrigger",
-			"checkpoint": Vector2(12200, -116),
+			"checkpoint": Vector2(8350, -116),
 			"on_start": func(): Inventory.add_item(preload("res://resources/bomb.tres")),
 		},
 		{
-			"text": "Now try the Drill! It tunnels through rock and instantly defeats any enemy in its path, and it never hurts you. Select it, then Left-click toward the wall ahead.",
+			"text": "You picked up a Bomb Drill! It tunnels through rock and enemies, and never hurts you. Select it, then Left-click toward the wall.",
 			"kind": "trigger",
 			"node": "DrillWallTrigger",
-			"checkpoint": Vector2(13000, -116),
+			"checkpoint": Vector2(9200, -116),
 			"on_start": func(): Inventory.add_item(preload("res://resources/drill.tres")),
 		},
 	]
