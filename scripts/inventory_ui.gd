@@ -95,7 +95,7 @@ func _build_ui() -> void:
 		container.add_child(panel)
 		slot_panels.append(panel)
 		slot_textures.append(tex)
-		slot_labels.append(lbl)
+		slot_labels.append(icon_label)
 	var s = get_viewport().get_visible_rect().size
 	container.position = Vector2(s.x/2,s.y-SLOT_SIZE.y-16)
 

@@ -13,6 +13,7 @@
 [ext_resource type="PackedScene" uid="uid://cdxu1kg5or16d" path="res://candle.tscn" id="12_ikbui"]
 [ext_resource type="PackedScene" uid="uid://brmtyiqcy1wkv" path="res://scenes/inventory_ui.tscn" id="12_invui"]
 [ext_resource type="PackedScene" path="res://scenes/info_popup.tscn" id="info_popup_res"]
+[ext_resource type="PackedScene" path="res://scenes/level_intro_banner.tscn" id="level_banner_res"]
 [ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="13_ikbui"]
 [ext_resource type="PackedScene" path="res://scenes/firefly_spawner.tscn" id="14_spawner"]
 [ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="15_xo5qq"]
@@ -131,6 +132,8 @@ text = "?"
 [node name="PauseMenu" parent="." unique_id=1779626465 instance=ExtResource("4_pause")]
 
 [node name="InfoPopup" parent="." instance=ExtResource("info_popup_res")]
+
+[node name="LevelIntroBanner" parent="." instance=ExtResource("level_banner_res")]
 visible = false
 
 [node name="VignetteLayer" type="CanvasLayer" parent="." unique_id=182643830]

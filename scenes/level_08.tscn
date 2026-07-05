@@ -17,6 +17,7 @@
 [ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="16_qihgo"]
 [ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="17_k8v36"]
 [ext_resource type="PackedScene" path="res://scenes/info_popup.tscn" id="info_popup_res"]
+[ext_resource type="PackedScene" path="res://scenes/level_intro_banner.tscn" id="level_banner_res"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.1, 0.1, 0.12, 0.85)
@@ -118,6 +119,8 @@ text = "?"
 [node name="PauseMenu" parent="." unique_id=1779626465 instance=ExtResource("4_pause")]
 
 [node name="InfoPopup" parent="." unique_id=1242425105 instance=ExtResource("info_popup_res")]
+
+[node name="LevelIntroBanner" parent="." instance=ExtResource("level_banner_res")]
 
 [node name="VignetteLayer" type="CanvasLayer" parent="." unique_id=182643830]
 
