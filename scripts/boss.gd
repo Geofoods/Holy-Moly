@@ -4,10 +4,13 @@ const MAX_HEALTH := 20.0
 const PAN_DURATION := 1.5
 const HOLD_DURATION := 1.5
 const DESCENT_SPEED := 50.0
+const SPIT_INTERVAL := 3.0
+const PROJECTILE_SPEED := 400.0
 
 var health := MAX_HEALTH
 var _boss_active := false
 var _cutscene_playing := false
+var _spit_cooldown := 0.0
 
 var _cutscene_mole: Node = null
 var _cutscene_cam: Camera2D = null
@@ -25,6 +28,8 @@ var _last_break_tile_y := -999999
 @onready var trigger: Area2D = $CutsceneTrigger
 @onready var hurtbox: Area2D = $Hurtbox
 
+var _projectile_scene: PackedScene = null
+
 func _ready() -> void:
 	anim.stop()
 	anim.frame = 0
@@ -33,6 +38,7 @@ func _ready() -> void:
 	hurtbox.add_to_group("enemy_hurtbox")
 	_tilemap = get_parent().get_node_or_null("TileMap") as TileMap
 	_tile_break_script = load("res://scripts/tile_break_sfx.gd")
+	_projectile_scene = preload("res://area_2d.tscn")
 
 func _process(delta: float) -> void:
 	if _cutscene_stage < 0:
@@ -65,9 +71,27 @@ func _physics_process(delta: float) -> void:
 	if not _boss_active:
 		return
 
+	_spit_cooldown -= delta
+	if _spit_cooldown <= 0.0:
+		_spit()
+		_spit_cooldown = SPIT_INTERVAL
+
 	_break_tiles_in_path()
 	velocity.y = DESCENT_SPEED
 	move_and_slide()
+
+func _spit() -> void:
+	var mole := get_tree().get_first_node_in_group("mole") as Node2D
+	if not mole or not is_instance_valid(mole):
+		return
+
+	var dir: Vector2 = (mole.global_position - anim.global_position).normalized()
+	var spawn_pos: Vector2 = anim.global_position + dir * 200.0
+
+	var proj := _projectile_scene.instantiate() as Area2D
+	get_parent().add_child(proj)
+	proj.global_position = spawn_pos
+	proj.setup(dir * PROJECTILE_SPEED)
 
 func _break_tiles_in_path() -> void:
 	if not _tilemap:
@@ -139,6 +163,7 @@ func _end_cutscene() -> void:
 	_last_break_tile_y = -999999
 	_boss_active = true
 	_cutscene_playing = false
+	_spit_cooldown = 1.0
 	anim.play("default")
 
 	_cutscene_mole.process_mode = PROCESS_MODE_INHERIT

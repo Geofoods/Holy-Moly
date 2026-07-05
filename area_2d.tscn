@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://fr3a4280jq6q"]
 
 [ext_resource type="Texture2D" uid="uid://c1s7lgwgr4g3" path="res://scenes/projectile.png" id="1_gf172"]
+[ext_resource type="Script" path="res://scripts/boss_projectile.gd" id="2_script"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_dl81w"]
 atlas = ExtResource("1_gf172")
@@ -36,6 +37,8 @@ radius = 60.0
 height = 380.0
 
 [node name="Area2D" type="Area2D" unique_id=370439695]
+collision_mask = 1
+script = ExtResource("2_script")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=164702838]
 sprite_frames = SubResource("SpriteFrames_1dtnr")
