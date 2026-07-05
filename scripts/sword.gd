@@ -166,6 +166,7 @@ func _start_parry() -> void:
 	is_parrying = true
 	parry_time_left = PARRY_DURATION
 	hitbox.monitoring = true
+	hitbox.collision_mask = 3
 	hitbox_col.position = Vector2(180, 0)
 	hitbox_col.shape = parry_shape
 	hitbox.area_entered.connect(_on_parry_area_entered)
@@ -177,6 +178,7 @@ func _end_parry() -> void:
 	parry_time_left = 0.0
 	parry_cooldown = PARRY_COOLDOWN
 	hitbox.monitoring = false
+	hitbox.collision_mask = 1
 	hitbox_col.position = original_shape_pos
 	hitbox_col.shape = original_shape
 	if hitbox.area_entered.is_connected(_on_parry_area_entered):

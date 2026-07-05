@@ -7,6 +7,7 @@ const CLIMB_DURATION = 0.6
 const DETECT_RANGE := 300.0
 const CLIMB_CHANCE = 0.4
 const MAX_HEALTH := 3.0
+const SHOOT_INTERVAL := 5.0
 
 var direction := 1.0
 var target_mole: Node2D = null
@@ -14,7 +15,9 @@ var is_climbing := false
 var climb_timer := 0.0
 var health := MAX_HEALTH
 var _move_sfx_timer := 0.0
+var _shoot_timer := SHOOT_INTERVAL
 const MOVE_SFX_INTERVAL := 0.4
+var ant_bullet_scene := preload("res://scenes/ant_bullet.tscn")
 @onready var hurtbox: Area2D = $Hurtbox
 @onready var hitbox: Area2D = $Hitbox
 @onready var visual: AnimatedSprite2D = $Visual
@@ -55,6 +58,30 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	_update_visual_direction()
 	_play_move_sound(delta)
+	_update_shooting(delta)
+
+func _update_shooting(delta: float) -> void:
+	if health <= 0:
+		return
+	var mole = get_tree().get_first_node_in_group("mole")
+	if not mole or not is_instance_valid(mole):
+		return
+	var dist := global_position.distance_to(mole.global_position)
+	if dist > 1000.0 or dist < 120.0:
+		return
+	_shoot_timer -= delta
+	if _shoot_timer <= 0.0:
+		_shoot_timer = SHOOT_INTERVAL
+		_shoot_bullet(mole)
+
+func _shoot_bullet(target: Node2D) -> void:
+	SFX.play("enemy_fire", global_position, -4.0, 0.2)
+	SFX.play("parry_activate", global_position, -14.0, 0.6)
+	var bullet = ant_bullet_scene.instantiate()
+	get_parent().add_child(bullet)
+	bullet.global_position = global_position + Vector2(0, -20)
+	bullet.direction = (target.global_position - global_position).normalized()
+	bullet.source_ant = self
 
 func _play_move_sound(delta: float) -> void:
 	if health <= 0 or velocity.x == 0.0:

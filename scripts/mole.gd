@@ -41,6 +41,11 @@ var _last_position := Vector2.ZERO
 var _stuck_label: Label = null
 const STUCK_THRESHOLD := 4.0
 
+var slow_timer := 0.0
+var _slow_ui: Control = null
+var _slow_bar: ColorRect = null
+var _slow_label: Label = null
+
 var death_override: Callable = Callable()
 
 var health: float = 6.0:
@@ -122,6 +127,7 @@ func _ready() -> void:
 	_reverb = AudioServer.get_bus_effect(0, 0) as AudioEffectReverb
 	_setup_level_reverb()
 	_setup_stuck_label()
+	_setup_slow_ui()
 
 func _setup_stuck_label() -> void:
 	var canvas := CanvasLayer.new()
@@ -314,6 +320,8 @@ func _physics_process(delta: float) -> void:
 	var effective_speed := SPEED * ComboManager.get_speed_multiplier()
 	if speed_boost_active:
 		effective_speed *= 1.4
+	if slow_timer > 0.0:
+		effective_speed *= 0.4
 
 	if direction:
 		var accel = ACCELERATION if is_on_floor() else ACCELERATION * 0.6
@@ -331,6 +339,7 @@ func _physics_process(delta: float) -> void:
 		air_time += delta
 
 	_check_stuck(delta)
+	_update_slow(delta)
 
 	update_depth_display()
 	_update_camera_position(delta)
@@ -764,3 +773,80 @@ func _break_surrounding_tiles() -> void:
 	if broke_any:
 		spawn_dirt_particles(global_position)
 		screen_shake(6.0, 0.15)
+
+func apply_slow(duration: float) -> void:
+	slow_timer = maxf(slow_timer, duration)
+	if _slow_ui:
+		_slow_ui.visible = true
+
+func _update_slow(delta: float) -> void:
+	if slow_timer <= 0.0:
+		return
+	slow_timer -= delta
+	if slow_timer <= 0.0:
+		slow_timer = 0.0
+		if _slow_ui:
+			_slow_ui.visible = false
+	elif _slow_ui and _slow_ui.visible:
+		_slow_label.text = "SLOWED %.1fs" % slow_timer
+		var ratio := slow_timer / 3.0
+		_slow_bar.anchor_right = ratio
+
+func _setup_slow_ui() -> void:
+	var canvas := CanvasLayer.new()
+	canvas.layer = 95
+	add_child(canvas)
+
+	_slow_ui = Control.new()
+	_slow_ui.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_slow_ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_slow_ui.visible = false
+	canvas.add_child(_slow_ui)
+
+	var panel := PanelContainer.new()
+	panel.anchor_left = 1.0
+	panel.anchor_right = 1.0
+	panel.anchor_top = 0.5
+	panel.anchor_bottom = 0.5
+	panel.offset_left = -200
+	panel.offset_right = -20
+	panel.offset_top = -40
+	panel.offset_bottom = 40
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.0, 0.0, 0.0, 0.6)
+	style.corner_radius_top_left = 6
+	style.corner_radius_top_right = 6
+	style.corner_radius_bottom_left = 6
+	style.corner_radius_bottom_right = 6
+	style.content_margin_left = 12
+	style.content_margin_right = 12
+	style.content_margin_top = 8
+	style.content_margin_bottom = 8
+	panel.add_theme_stylebox_override("panel", style)
+	_slow_ui.add_child(panel)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 6)
+	panel.add_child(vbox)
+
+	_slow_label = Label.new()
+	_slow_label.text = "SLOWED 3.0s"
+	_slow_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var font := load("res://Baby Doll.otf") as Font
+	_slow_label.add_theme_font_override("font", font)
+	_slow_label.add_theme_font_size_override("font_size", 24)
+	_slow_label.add_theme_color_override("font_color", Color(1.0, 0.5, 0.0, 1.0))
+	_slow_label.add_theme_constant_override("outline_size", 3)
+	_slow_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	vbox.add_child(_slow_label)
+
+	var bar_bg := ColorRect.new()
+	bar_bg.custom_minimum_size = Vector2(160, 14)
+	bar_bg.color = Color(0.2, 0.2, 0.2, 0.9)
+	vbox.add_child(bar_bg)
+
+	_slow_bar = ColorRect.new()
+	_slow_bar.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_slow_bar.color = Color(1.0, 0.5, 0.0, 0.9)
+	bar_bg.add_child(_slow_bar)
