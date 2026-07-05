@@ -38,7 +38,8 @@ var _coyote_timer := 0.0
 var _jump_held := false
 var _stuck_timer := 0.0
 var _last_position := Vector2.ZERO
-const STUCK_THRESHOLD := 1.0
+var _stuck_label: Label = null
+const STUCK_THRESHOLD := 4.0
 
 ## Set by a scene (e.g. the tutorial) that wants to intercept death instead of
 ## the default Game Over transition, e.g. to restart just the current section.
@@ -121,6 +122,22 @@ func _ready() -> void:
 	_setup_held_item_sprites()
 	_reverb = AudioServer.get_bus_effect(0, 0) as AudioEffectReverb
 	_setup_level_reverb()
+	_setup_stuck_label()
+
+func _setup_stuck_label() -> void:
+	var canvas := CanvasLayer.new()
+	canvas.layer = 100
+	add_child(canvas)
+	_stuck_label = Label.new()
+	_stuck_label.anchor_right = 1.0
+	_stuck_label.offset_right = -130.0
+	_stuck_label.offset_top = 30.0
+	_stuck_label.offset_left = -380.0
+	_stuck_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_stuck_label.add_theme_font_size_override("font_size", 16)
+	_stuck_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.3, 0.9))
+	_stuck_label.visible = false
+	canvas.add_child(_stuck_label)
 
 func _setup_inventory_actions() -> void:
 	var keys := [KEY_1, KEY_2, KEY_3]
@@ -231,19 +248,29 @@ func _physics_process(delta: float) -> void:
 		velocity.x = tunnel_direction * TUNNEL_SPEED
 		move_and_slide()
 		if tilemap:
+			var sfx = load("res://scripts/tile_break_sfx.gd")
+			var broken_tiles: Array[Vector2i] = []
 			for i in get_slide_collision_count():
 				var collision = get_slide_collision(i)
 				var collider = collision.get_collider()
 				if collider is TileMap:
 					var tm := collider as TileMap
-					var tile_pos = tm.local_to_map(tm.to_local(collision.get_position()))
-					var sfx = load("res://scripts/tile_break_sfx.gd")
-					var source_id := tm.get_cell_source_id(0, tile_pos)
-					if source_id != -1:
-						sfx.break_tile(collider, tile_pos, get_parent())
-					else:
-						sfx.break_decoration_tile(collider, tile_pos, get_parent())
-					spawn_dirt_particles(collision.get_position())
+					var contact: Vector2 = collision.get_position()
+					var nudged: Vector2 = contact + collision.get_normal() * -8.0
+					var tile_pos: Vector2i = tm.local_to_map(tm.to_local(nudged))
+					if tile_pos not in broken_tiles:
+						broken_tiles.append(tile_pos)
+						if tm.get_cell_source_id(0, tile_pos) != -1:
+							sfx.break_tile(tm, tile_pos, get_parent())
+						else:
+							sfx.break_decoration_tile(tm, tile_pos, get_parent())
+						spawn_dirt_particles(contact)
+			# Also break the tile directly in front of the mole
+			var front_pos: Vector2 = global_position + Vector2(tunnel_direction * 40.0, 0.0)
+			var front_tile: Vector2i = tilemap.local_to_map(tilemap.to_local(front_pos))
+			if front_tile not in broken_tiles and tilemap.get_cell_source_id(0, front_tile) != -1:
+				sfx.break_tile(tilemap, front_tile, get_parent())
+				spawn_dirt_particles(tilemap.to_global(tilemap.map_to_local(front_tile)))
 		was_on_floor = is_on_floor()
 		_update_camera_position(delta)
 		return
@@ -627,6 +654,14 @@ func _check_stuck(delta: float) -> void:
 	else:
 		_stuck_timer = 0.0
 	_last_position = global_position
+
+	if _stuck_label:
+		if _stuck_timer >= 1.0:
+			var remaining := ceili(STUCK_THRESHOLD - _stuck_timer)
+			_stuck_label.text = "Stuck? Breaking free in %ds..." % remaining
+			_stuck_label.visible = true
+		else:
+			_stuck_label.visible = false
 
 	if _stuck_timer >= STUCK_THRESHOLD and tilemap:
 		_stuck_timer = 0.0
