@@ -2,12 +2,12 @@ extends CharacterBody2D
 
 enum State { PATROL, RUSHING, COOLDOWN }
 
-const PATROL_SPEED := 60.0
-const RUSH_SPEED := 550.0
-const GRAVITY := 980.0
+const PATROL_SPEED := 120.0
+const RUSH_SPEED := 1100.0
+const GRAVITY := 1960.0
 const DETECT_RANGE := 350.0
-const RUSH_DURATION := 1.2
-const COOLDOWN_DURATION := 2.5
+const RUSH_DURATION := 0.6
+const COOLDOWN_DURATION := 1.25
 const MAX_HEALTH := 4.0
 
 var state := State.PATROL

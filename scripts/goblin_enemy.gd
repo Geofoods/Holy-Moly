@@ -1,8 +1,8 @@
 extends CharacterBody2D
 
-const GRAVITY := 980.0
-const THROW_INTERVAL := 1.5
-const THROW_VELOCITY := 800.0
+const GRAVITY := 1960.0
+const THROW_INTERVAL := 0.75
+const THROW_VELOCITY := 1600.0
 const MAX_HEALTH := 4.0
 
 var health := MAX_HEALTH

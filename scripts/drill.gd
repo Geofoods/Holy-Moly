@@ -1,7 +1,7 @@
 extends Area2D
 
-const DRILL_DURATION := 2.0
-const SPEED := 500.0
+const DRILL_DURATION := 1.0
+const SPEED := 1000.0
 
 var velocity := Vector2.ZERO
 var elapsed := 0.0

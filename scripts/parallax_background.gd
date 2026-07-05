@@ -56,6 +56,7 @@ func _process(_delta: float) -> void:
 
 	var cam_x: float = camera.global_position.x
 	var cam_y: float = camera.global_position.y
+	var vp_size: Vector2 = get_viewport_rect().size
 
 	for i in layer_sprites.size():
 		var speed: float = scroll_speeds[i]
@@ -63,7 +64,11 @@ func _process(_delta: float) -> void:
 		var a: Sprite2D = pair[0]
 		var b: Sprite2D = pair[1]
 		var tex_size: Vector2 = a.texture.get_size()
-		var scaled_w: float = tex_size.x * a.scale.x
+		var zoom_scale: float = 1.0 / max(camera.zoom.x, 0.01)
+		var scale_factor: Vector2 = vp_size / tex_size * parallax_scale * zoom_scale
+		a.scale = scale_factor
+		b.scale = scale_factor
+		var scaled_w: float = tex_size.x * scale_factor.x
 
 		var offset_x: float = -cam_x * speed * x_scroll_multiplier
 		offset_x = fmod(offset_x, scaled_w)

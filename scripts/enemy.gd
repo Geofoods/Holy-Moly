@@ -1,10 +1,10 @@
 extends CharacterBody2D
 
-const SPEED = 80.0
-const CLIMB_SPEED = 70.0
-const GRAVITY = 980.0
-const DETECT_RANGE = 600.0
-const CLIMB_DURATION = 1.2
+const SPEED = 160.0
+const CLIMB_SPEED = 140.0
+const GRAVITY = 1960.0
+const CLIMB_DURATION = 0.6
+const DETECT_RANGE := 300.0
 const CLIMB_CHANCE = 0.5
 const MAX_HEALTH := 3.0
 

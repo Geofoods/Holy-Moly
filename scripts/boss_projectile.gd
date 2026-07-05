@@ -1,6 +1,6 @@
 extends Area2D
 
-const LIFETIME := 4.0
+const LIFETIME := 2.0
 const EXPLOSION_TILE_RADIUS := 1
 
 var velocity := Vector2.ZERO
@@ -21,7 +21,7 @@ func _ready() -> void:
 		sprite.play("default")
 
 func _process(delta: float) -> void:
-	_pulse_phase += delta * 4.0
+	_pulse_phase += delta * 8.0
 	var pulse := 1.0 + sin(_pulse_phase) * 0.08
 	scale = Vector2(0.3, 0.3) * pulse
 

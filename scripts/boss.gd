@@ -1,11 +1,12 @@
 extends CharacterBody2D
 
-const MAX_HEALTH := 40.0
-const PAN_DURATION := 1.5
-const HOLD_DURATION := 1.5
-const DESCENT_SPEED := 10.0
-const SPIT_INTERVAL := 3.0
-const PROJECTILE_SPEED := 400.0
+const MAX_HEALTH := 100.0
+const PAN_DURATION := 0.75
+const HOLD_DURATION := 0.75
+const DESCENT_SPEED := 20.0
+const SPIT_INTERVAL := 1.5
+const PROJECTILE_SPEED := 800.0
+const CHEST_SPAWN_INTERVAL := 10.0
 
 var health := MAX_HEALTH
 var _boss_active := false
@@ -29,6 +30,8 @@ var _last_break_tile_y := -999999
 @onready var hurtbox: Area2D = $Hurtbox
 
 var _projectile_scene: PackedScene = null
+var _chest_scene: PackedScene = null
+var _chest_spawn_timer: float = 10.0
 
 var _health_bar_layer: CanvasLayer = null
 var _health_bar_bg: ColorRect = null
@@ -47,6 +50,7 @@ func _ready() -> void:
 	_tilemap = get_parent().get_node_or_null("TileMap") as TileMap
 	_tile_break_script = load("res://scripts/tile_break_sfx.gd")
 	_projectile_scene = preload("res://area_2d.tscn")
+	_chest_scene = preload("res://chest.tscn")
 
 func _create_health_bar() -> void:
 	_health_bar_layer = CanvasLayer.new()
@@ -202,6 +206,11 @@ func _physics_process(delta: float) -> void:
 		_spit()
 		_spit_cooldown = SPIT_INTERVAL
 
+	_chest_spawn_timer -= delta
+	if _chest_spawn_timer <= 0.0:
+		_spawn_chest()
+		_chest_spawn_timer = CHEST_SPAWN_INTERVAL
+
 	_break_tiles_in_path()
 	global_position.y += DESCENT_SPEED * delta
 
@@ -304,6 +313,7 @@ func _end_cutscene() -> void:
 	_boss_active = true
 	_cutscene_playing = false
 	_spit_cooldown = 1.0
+	_chest_spawn_timer = CHEST_SPAWN_INTERVAL
 	anim.play("default")
 
 	_cutscene_mole.process_mode = PROCESS_MODE_INHERIT
@@ -312,6 +322,14 @@ func _end_cutscene() -> void:
 	_cutscene_mole = null
 
 	_create_health_bar()
+
+func _spawn_chest() -> void:
+	var mole := get_tree().get_first_node_in_group("mole") as Node2D
+	if not mole or not is_instance_valid(mole):
+		return
+	var chest := _chest_scene.instantiate()
+	chest.global_position = mole.global_position + Vector2(0, -500)
+	get_parent().add_child(chest)
 
 func _on_hurtbox_area_entered(area: Area2D) -> void:
 	if not _boss_active:

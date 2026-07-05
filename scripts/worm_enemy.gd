@@ -1,12 +1,12 @@
 extends CharacterBody2D
 
-const PATROL_SPEED = 80.0
-const CHARGE_SPEED = 400.0
-const GRAVITY = 980.0
+const PATROL_SPEED = 160.0
+const CHARGE_SPEED = 800.0
+const GRAVITY = 1960.0
 const DETECT_RANGE_X = 350.0
 const DETECT_RANGE_Y = 60.0
-const CHARGE_DURATION = 0.8
-const CHARGE_COOLDOWN = 1.5
+const CHARGE_DURATION = 0.4
+const CHARGE_COOLDOWN = 0.75
 
 enum State { PATROL, CHARGING, COOLDOWN }
 

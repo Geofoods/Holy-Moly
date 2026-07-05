@@ -60,7 +60,7 @@ size = Vector2(1139, 371)
 size = Vector2(288, 2258)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hurtbox"]
-size = Vector2(1200, 500)
+size = Vector2(1500, 900)
 
 [node name="boss" type="CharacterBody2D" unique_id=1642361016]
 collision_layer = 4

@@ -1,8 +1,8 @@
 extends CharacterBody2D
 
-const GRAVITY = 980.0
+const GRAVITY = 1960.0
 const DETECT_RANGE = 250.0
-const FUSE_TIME = 1.5
+const FUSE_TIME = 0.75
 const EXPLOSION_RADIUS = 200.0
 const EXPLOSION_DAMAGE = 2.0
 const TILE_BREAK_RADIUS = 2

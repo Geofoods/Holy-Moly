@@ -1,6 +1,6 @@
 extends Area2D
 
-const LIFETIME = 3.0
+const LIFETIME = 1.5
 const DEFLECT_SPEED_MULT = 1.4
 
 var velocity := Vector2.ZERO
