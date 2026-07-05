@@ -1,7 +1,7 @@
 extends Area2D
 
 const LIFETIME := 4.0
-const EXPLOSION_TILE_RADIUS := 3
+const EXPLOSION_TILE_RADIUS := 1
 
 var velocity := Vector2.ZERO
 
@@ -11,6 +11,9 @@ func setup(vel: Vector2) -> void:
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	get_tree().create_timer(LIFETIME).timeout.connect(_explode)
+	var sprite := $AnimatedSprite2D as AnimatedSprite2D
+	if sprite:
+		sprite.play("default")
 
 func _physics_process(delta: float) -> void:
 	position += velocity * delta

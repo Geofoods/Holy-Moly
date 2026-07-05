@@ -22,6 +22,10 @@ SFX="*res://scripts/sfx_manager.gd"
 Bestiary="*res://scripts/bestiary_data.gd"
 LevelData="*res://scripts/level_data.gd"
 
+[display]
+
+window/size/mode=4
+
 [physics]
 
 3d/physics_engine="Jolt Physics"

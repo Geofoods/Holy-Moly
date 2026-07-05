@@ -3,7 +3,7 @@ extends CharacterBody2D
 const MAX_HEALTH := 20.0
 const PAN_DURATION := 1.5
 const HOLD_DURATION := 1.5
-const DESCENT_SPEED := 50.0
+const DESCENT_SPEED := 200.0
 const SPIT_INTERVAL := 3.0
 const PROJECTILE_SPEED := 400.0
 
@@ -30,6 +30,14 @@ var _last_break_tile_y := -999999
 
 var _projectile_scene: PackedScene = null
 
+var _health_bar_layer: CanvasLayer = null
+var _health_bar_bg: ColorRect = null
+var _health_bar_fill: ColorRect = null
+var _health_bar_label: Label = null
+var _health_bar_name: Label = null
+var _health_bar_tween: Tween = null
+var _displayed_health: float = 0.0
+
 func _ready() -> void:
 	anim.stop()
 	anim.frame = 0
@@ -39,6 +47,124 @@ func _ready() -> void:
 	_tilemap = get_parent().get_node_or_null("TileMap") as TileMap
 	_tile_break_script = load("res://scripts/tile_break_sfx.gd")
 	_projectile_scene = preload("res://area_2d.tscn")
+
+func _create_health_bar() -> void:
+	_health_bar_layer = CanvasLayer.new()
+	_health_bar_layer.name = "BossHealthBar"
+	get_parent().add_child(_health_bar_layer)
+
+	var font: Font = load("res://Baby Doll.otf")
+	var screen := _health_bar_layer.get_viewport().get_visible_rect().size
+
+	var panel := Panel.new()
+	panel.size = Vector2(420, 44)
+	panel.position = Vector2(screen.x / 2.0 - 210, -50)
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.08, 0.08, 0.1, 0.85)
+	panel_style.border_width_left = 2
+	panel_style.border_width_top = 2
+	panel_style.border_width_right = 2
+	panel_style.border_width_bottom = 2
+	panel_style.border_color = Color(0.6, 0.3, 0.8, 1)
+	panel_style.corner_radius_top_left = 8
+	panel_style.corner_radius_top_right = 8
+	panel_style.corner_radius_bottom_left = 8
+	panel_style.corner_radius_bottom_right = 8
+	panel.add_theme_stylebox_override("panel", panel_style)
+	_health_bar_layer.add_child(panel)
+
+	_health_bar_name = Label.new()
+	_health_bar_name.text = "THE CORRUPTED ONE"
+	_health_bar_name.size = Vector2(420, 20)
+	_health_bar_name.position = Vector2(screen.x / 2.0 - 210, -72)
+	_health_bar_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_health_bar_name.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_health_bar_name.add_theme_font_override("font", font)
+	_health_bar_name.add_theme_font_size_override("font_size", 14)
+	_health_bar_name.add_theme_color_override("font_color", Color(0.9, 0.7, 1.0, 1))
+	_health_bar_name.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	_health_bar_name.add_theme_constant_override("outline_size", 2)
+	_health_bar_layer.add_child(_health_bar_name)
+
+	_health_bar_bg = ColorRect.new()
+	_health_bar_bg.size = Vector2(400, 18)
+	_health_bar_bg.position = Vector2(screen.x / 2.0 - 200, 4)
+	_health_bar_bg.color = Color(0.12, 0.12, 0.15, 0.9)
+	_health_bar_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(_health_bar_bg)
+
+	_health_bar_fill = ColorRect.new()
+	_health_bar_fill.size = Vector2(400, 18)
+	_health_bar_fill.position = Vector2(screen.x / 2.0 - 200, 4)
+	_health_bar_fill.color = Color(0.2, 0.8, 0.3, 1)
+	_health_bar_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(_health_bar_fill)
+
+	_health_bar_label = Label.new()
+	_health_bar_label.size = Vector2(400, 18)
+	_health_bar_label.position = Vector2(screen.x / 2.0 - 200, 4)
+	_health_bar_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_health_bar_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_health_bar_label.add_theme_font_override("font", font)
+	_health_bar_label.add_theme_font_size_override("font_size", 11)
+	_health_bar_label.add_theme_color_override("font_color", Color(1, 1, 1, 0.9))
+	_health_bar_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
+	_health_bar_label.add_theme_constant_override("outline_size", 1)
+	panel.add_child(_health_bar_label)
+
+	_displayed_health = health
+	_update_health_bar_instant()
+
+	var slide_tween := create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+	slide_tween.tween_property(panel, "position:y", 10.0, 0.5)
+	slide_tween.parallel().tween_property(_health_bar_name, "position:y", -26.0, 0.5)
+
+func _update_health_bar_instant() -> void:
+	var ratio := _displayed_health / MAX_HEALTH
+	_health_bar_fill.size.x = 400.0 * ratio
+	_health_bar_fill.color = _health_color(ratio)
+	_health_bar_label.text = "%d / %d" % [int(_displayed_health), MAX_HEALTH]
+
+func _health_color(ratio: float) -> Color:
+	if ratio > 0.5:
+		return Color(0.2, 0.8, 0.3, 1).lerp(Color(0.9, 0.8, 0.2, 1), (1.0 - ratio) * 2.0)
+	elif ratio > 0.25:
+		return Color(0.9, 0.8, 0.2, 1).lerp(Color(0.9, 0.3, 0.2, 1), (0.5 - ratio) * 4.0)
+	else:
+		return Color(0.9, 0.3, 0.2, 1)
+
+func _animate_health_bar() -> void:
+	if _health_bar_tween and _health_bar_tween.is_valid():
+		_health_bar_tween.kill()
+	_health_bar_tween = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_SINE)
+	var target_ratio := health / MAX_HEALTH
+	var start_width := _health_bar_fill.size.x
+	var target_width := 400.0 * target_ratio
+	_health_bar_tween.tween_method(
+		func(w: float): 
+			_health_bar_fill.size.x = w
+			var r := w / 400.0
+			_health_bar_fill.color = _health_color(r)
+			_health_bar_label.text = "%d / %d" % [int(r * MAX_HEALTH), MAX_HEALTH],
+		start_width, target_width, 0.3
+	)
+
+func _destroy_health_bar() -> void:
+	if _health_bar_tween and _health_bar_tween.is_valid():
+		_health_bar_tween.kill()
+	if not _health_bar_layer:
+		return
+	var panel := _health_bar_layer.get_child(0) as Control
+	var death_tween := create_tween().set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_SINE)
+	death_tween.tween_property(_health_bar_fill, "size:x", 0.0, 0.8)
+	death_tween.parallel().tween_method(
+		func(a: float): panel.modulate.a = a; _health_bar_name.modulate.a = a; _health_bar_label.modulate.a = a,
+		1.0, 0.0, 0.8
+	)
+	death_tween.tween_callback(func(): 
+		_health_bar_layer.queue_free()
+		_health_bar_layer = null
+	)
 
 func _process(delta: float) -> void:
 	if _cutscene_stage < 0:
@@ -88,10 +214,23 @@ func _spit() -> void:
 	var dir: Vector2 = (mole.global_position - anim.global_position).normalized()
 	var spawn_pos: Vector2 = anim.global_position + dir * 200.0
 
-	var proj := _projectile_scene.instantiate() as Area2D
-	get_parent().add_child(proj)
-	proj.global_position = spawn_pos
-	proj.setup(dir * PROJECTILE_SPEED)
+	var count := 1 if randf() < 0.5 else 3
+	var spread := deg_to_rad(45.0)
+	var offsets: Array[float] = []
+	if count == 1:
+		offsets = [0.0]
+	else:
+		offsets = [-spread, 0.0, spread]
+
+	for offset in offsets:
+		var rot := atan2(dir.y, dir.x) + offset
+		var spread_dir := Vector2(cos(rot), sin(rot))
+		var proj := _projectile_scene.instantiate() as Area2D
+		get_parent().add_child(proj)
+		proj.global_position = spawn_pos
+		proj.scale = Vector2(0.3, 0.3)
+		proj.rotation = rot
+		proj.setup(spread_dir * PROJECTILE_SPEED)
 
 func _break_tiles_in_path() -> void:
 	if not _tilemap:
@@ -126,21 +265,21 @@ func _on_trigger_entered(body: Node) -> void:
 func _start_cutscene(mole: Node) -> void:
 	_cutscene_mole = mole
 
+	var current_cam := get_viewport().get_camera_2d() as Camera2D
+	_cutscene_start_cam_pos = current_cam.global_position
+	current_cam.enabled = false
+
 	mole.process_mode = PROCESS_MODE_DISABLED
 	get_tree().paused = true
 
 	process_mode = PROCESS_MODE_ALWAYS
 	trigger.process_mode = PROCESS_MODE_ALWAYS
 
-	var mole_cam := mole.get_node("Camera2D") as Camera2D
-	_cutscene_start_cam_pos = mole_cam.global_position
-	mole_cam.enabled = false
-
 	_cutscene_cam = Camera2D.new()
 	_cutscene_cam.name = "CutsceneCam"
 	_cutscene_cam.process_mode = PROCESS_MODE_ALWAYS
 	_cutscene_cam.global_position = _cutscene_start_cam_pos
-	_cutscene_cam.zoom = mole_cam.zoom
+	_cutscene_cam.zoom = Vector2(2.0, 2.0)
 	add_child(_cutscene_cam)
 	_cutscene_cam.make_current()
 
@@ -156,6 +295,7 @@ func _end_cutscene() -> void:
 
 	var mole_cam := _cutscene_mole.get_node("Camera2D") as Camera2D
 	mole_cam.enabled = true
+	mole_cam.zoom = Vector2(0.5, 0.5)
 
 	process_mode = PROCESS_MODE_INHERIT
 	trigger.process_mode = PROCESS_MODE_INHERIT
@@ -171,6 +311,8 @@ func _end_cutscene() -> void:
 
 	_cutscene_mole = null
 
+	_create_health_bar()
+
 func _on_hurtbox_area_entered(area: Area2D) -> void:
 	if not _boss_active:
 		return
@@ -180,6 +322,10 @@ func _on_hurtbox_area_entered(area: Area2D) -> void:
 
 func take_damage(amount: float) -> void:
 	health -= amount
+	modulate = Color(2, 1.5, 1.5, 1)
+	var flash_tween := create_tween()
+	flash_tween.tween_property(self, "modulate", Color.WHITE, 0.15)
+	_animate_health_bar()
 	if health <= 0:
 		die()
 
@@ -189,3 +335,29 @@ func die() -> void:
 	var tw := create_tween()
 	tw.tween_property(self, "modulate:a", 0.0, 0.5)
 	tw.tween_callback(queue_free)
+	_destroy_health_bar()
+	_play_death_effect()
+
+func _play_death_effect() -> void:
+	var sprite := $AnimatedSprite2D
+	var death_particles := CPUParticles2D.new()
+	death_particles.emitting = true
+	death_particles.one_shot = true
+	death_particles.amount = 60
+	death_particles.lifetime = 1.0
+	death_particles.explosiveness = 1.0
+	death_particles.direction = Vector2.ZERO
+	death_particles.spread = 180.0
+	death_particles.initial_velocity_min = 100.0
+	death_particles.initial_velocity_max = 400.0
+	death_particles.gravity = Vector2(0, 200)
+	death_particles.scale_amount_min = 2.0
+	death_particles.scale_amount_max = 5.0
+	death_particles.color = Color(0.6, 0.2, 0.9, 1)
+	var fade := Gradient.new()
+	fade.set_color(0, Color(0.8, 0.3, 1.0, 1))
+	fade.set_color(1, Color(0.4, 0.1, 0.6, 0))
+	death_particles.color_ramp = fade
+	add_child(death_particles)
+	death_particles.global_position = sprite.global_position
+	get_tree().create_timer(1.5).timeout.connect(death_particles.queue_free)
