@@ -91,7 +91,9 @@ clip_contents = true
 
 [node name="Panel" type="PanelContainer" parent="CenterContainer" unique_id=2080864583]
 anchors_preset = 8
+anchor_left = 0.5
 anchor_top = 0.0
+anchor_right = 0.5
 anchor_bottom = 1.0
 custom_minimum_size = Vector2(980, 0)
 layout_mode = 1

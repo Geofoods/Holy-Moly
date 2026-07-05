@@ -279,7 +279,7 @@ position = Vector2(1800, -50)
 shape = SubResource("RectangleShape2D_trigger")
 
 [node name="AntEnemy" parent="." unique_id=964661713 instance=ExtResource("ant_res")]
-position = Vector2(1912, -168)
+position = Vector2(2328, -168)
 
 [node name="TutorialChest" parent="." unique_id=411925599 instance=ExtResource("chest_res")]
 position = Vector2(1336, -153)
@@ -287,21 +287,21 @@ position = Vector2(1336, -153)
 [node name="BeetleTrigger" type="Area2D" parent="." unique_id=744878920]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="BeetleTrigger" unique_id=1323467954]
-position = Vector2(2500, -50)
+position = Vector2(2900, -50)
 shape = SubResource("RectangleShape2D_trigger")
 
 [node name="BeetleEnemy" parent="." unique_id=563442811 instance=ExtResource("beetle_res")]
-position = Vector2(2328, -180)
+position = Vector2(3073, -180)
 
 [node name="GoblinTrigger" type="Area2D" parent="." unique_id=1445622354]
 position = Vector2(-2, -33)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="GoblinTrigger" unique_id=439768262]
-position = Vector2(2900, -50)
+position = Vector2(2500, -50)
 shape = SubResource("RectangleShape2D_trigger")
 
 [node name="GoblinEnemy" parent="." unique_id=270937187 instance=ExtResource("goblin_res")]
-position = Vector2(3073, -149)
+position = Vector2(1912, -149)
 
 [node name="BombWallTrigger" type="Area2D" parent="." unique_id=357744486]
 

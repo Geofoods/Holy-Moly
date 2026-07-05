@@ -1,38 +1,37 @@
 extends CanvasLayer
 
 signal next_pressed
+signal prev_pressed
 
 const TYPE_SPEED := 0.018
-const PANEL_MARGIN_SIDE := 60.0
-const PANEL_HEIGHT := 150.0
-const PANEL_BOTTOM_OFFSET := 40.0
+const SLIDE_DISTANCE := 240.0
 
 @onready var panel: PanelContainer = $Panel
 @onready var step_label: Label = $Panel/MarginContainer/VBoxContainer/StepLabel
 @onready var main_label: Label = $Panel/MarginContainer/VBoxContainer/MainLabel
 @onready var next_button: Button = $Panel/MarginContainer/VBoxContainer/NextRow/NextButton
+@onready var prev_button: Button = $Panel/MarginContainer/VBoxContainer/NextRow/PrevButton
 
 var _full_text := ""
 var _type_tween: Tween
-var _hidden_y := 0.0
-var _shown_y := 0.0
 
 func _ready() -> void:
 	next_button.pressed.connect(func():
 		SFX.play_ui("ui_click")
 		next_pressed.emit()
 	)
-	
-	var vp_size: Vector2 = get_viewport().get_visible_rect().size
-	panel.size = Vector2(vp_size.x - PANEL_MARGIN_SIDE * 2.0, PANEL_HEIGHT)
-	panel.position = Vector2(PANEL_MARGIN_SIDE, vp_size.y - PANEL_HEIGHT - PANEL_BOTTOM_OFFSET)
+	prev_button.pressed.connect(func():
+		SFX.play_ui("ui_click")
+		prev_pressed.emit()
+	)
 
-	_shown_y = panel.position.y
-	_hidden_y = _shown_y + panel.size.y + 40.0
-	panel.position.y = _hidden_y
+	# The panel sizes and positions itself from the scene (bottom-anchored, grows
+	# upward with content), so the buttons are always visible. We only animate the
+	# whole layer sliding in and fading.
+	offset.y = SLIDE_DISTANCE
 	panel.modulate.a = 0.0
 
-func show_text(text: String, step: int = 0, total: int = 0, show_next: bool = false) -> void:
+func show_text(text: String, step: int = 0, total: int = 0, show_next: bool = false, show_prev: bool = false) -> void:
 	_full_text = text
 	if total > 0:
 		step_label.text = "TUTORIAL  •  STEP %d / %d" % [step, total]
@@ -40,11 +39,13 @@ func show_text(text: String, step: int = 0, total: int = 0, show_next: bool = fa
 	else:
 		step_label.hide()
 	next_button.visible = show_next
+	prev_button.visible = show_prev
 	main_label.text = ""
 
 	var tween := create_tween()
-	tween.tween_property(panel, "position:y", _shown_y, 0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tween.parallel().tween_property(panel, "modulate:a", 1.0, 0.25)
+	tween.set_parallel(true)
+	tween.tween_property(self, "offset:y", 0.0, 0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(panel, "modulate:a", 1.0, 0.25)
 
 	_type_text()
 
@@ -66,5 +67,6 @@ func skip_typing() -> void:
 
 func hide_box() -> void:
 	var tween := create_tween()
-	tween.tween_property(panel, "position:y", _hidden_y, 0.3).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-	tween.parallel().tween_property(panel, "modulate:a", 0.0, 0.25)
+	tween.set_parallel(true)
+	tween.tween_property(self, "offset:y", SLIDE_DISTANCE, 0.3).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	tween.tween_property(panel, "modulate:a", 0.0, 0.25)

@@ -1,5 +1,7 @@
 extends CharacterBody2D
 
+signal died
+
 const SPEED = 160.0
 const CLIMB_SPEED = 140.0
 const GRAVITY = 1960.0
@@ -156,6 +158,7 @@ func _draw() -> void:
 	draw_rect(Rect2(offset, Vector2(bar_w * ratio, bar_h)), fill)
 
 func die() -> void:
+	died.emit()
 	SFX.play("enemy_death", global_position)
 	ComboManager.increment()
 	set_physics_process(false)

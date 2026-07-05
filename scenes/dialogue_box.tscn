@@ -41,16 +41,45 @@ corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_prev"]
+bg_color = Color(0.42, 0.42, 0.48, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.03, 0.03, 0.03, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_prev_hover"]
+bg_color = Color(0.56, 0.56, 0.62, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.03, 0.03, 0.03, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
 [node name="DialogueBox" type="CanvasLayer"]
 layer = 20
 script = ExtResource("1_dialogue")
 
 [node name="Panel" type="PanelContainer" parent="."]
-layout_mode = 0
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
 offset_left = 60.0
-offset_top = 300.0
-offset_right = 1092.0
-offset_bottom = 450.0
+offset_top = -190.0
+offset_right = -60.0
+offset_bottom = -40.0
+grow_horizontal = 2
+grow_vertical = 0
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
 [node name="MarginContainer" type="MarginContainer" parent="Panel"]
@@ -82,11 +111,28 @@ vertical_alignment = 0
 
 [node name="NextRow" type="HBoxContainer" parent="Panel/MarginContainer/VBoxContainer"]
 layout_mode = 2
-alignment = 2
+
+[node name="PrevButton" type="Button" parent="Panel/MarginContainer/VBoxContainer/NextRow"]
+custom_minimum_size = Vector2(120, 42)
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_prev")
+theme_override_styles/hover = SubResource("StyleBoxFlat_prev_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_prev_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_prev_hover")
+text = "◂ BACK"
+
+[node name="Spacer" type="Control" parent="Panel/MarginContainer/VBoxContainer/NextRow"]
+layout_mode = 2
+size_flags_horizontal = 3
 
 [node name="NextButton" type="Button" parent="Panel/MarginContainer/VBoxContainer/NextRow"]
 custom_minimum_size = Vector2(120, 42)
 layout_mode = 2
+focus_mode = 0
 theme_override_colors/font_color = Color(0.03, 0.03, 0.03, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 18

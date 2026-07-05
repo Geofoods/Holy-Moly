@@ -54,6 +54,7 @@ func open() -> void:
 	visible = true
 	dim_background.modulate.a = 0.0
 	panel.modulate.a = 0.0
+	panel.pivot_offset = panel.size / 2.0
 	panel.scale = Vector2(0.9, 0.9)
 	var tween := create_tween()
 	tween.set_parallel(true)

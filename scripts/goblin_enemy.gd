@@ -1,5 +1,7 @@
 extends CharacterBody2D
 
+signal died
+
 const GRAVITY := 1960.0
 const THROW_INTERVAL := 2.5
 const THROW_VELOCITY := 1600.0
@@ -164,6 +166,7 @@ func _draw() -> void:
 	draw_rect(Rect2(offset, Vector2(bar_w * ratio, bar_h)), fill)
 
 func die() -> void:
+	died.emit()
 	SFX.play("enemy_death", global_position)
 	ComboManager.increment()
 	set_physics_process(false)

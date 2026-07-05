@@ -5,14 +5,15 @@ extends Node2D
 
 var steps := []
 var step_index := -1
-var _pending_signal: Signal
-var _has_pending_signal := false
 var current_checkpoint: Vector2 = Vector2(-28, -116)
+var _started_steps := {}
+var _kill_enemy: Node = null
 
 func _ready() -> void:
 	mole.set_physics_process(false)
 	mole.set_process(false)
 	mole.death_override = _on_tutorial_death
+	dialogue.prev_pressed.connect(_go_back)
 	_build_steps()
 	_show_step(0)
 	_reposition_inventory_ui()
@@ -30,12 +31,12 @@ func _build_steps() -> void:
 			"kind": "click",
 		},
 		{
-			"text": "Ready? Let's move.",
+			"text": "Ready? Let's move!",
 			"kind": "click",
 			"on_start": func(): mole.set_physics_process(true); mole.set_process(true),
 		},
 		{
-			"text": "MOVE: press A / D or ◄ ►.",
+			"text": "MOVE: press A / D or ◄ ►. Walk to the right!",
 			"kind": "trigger",
 			"node": "MoveTrigger",
 		},
@@ -45,30 +46,26 @@ func _build_steps() -> void:
 			"node": "JumpTrigger",
 		},
 		{
-			"text": "An Ant! LEFT-CLICK to attack it with your shovel, or just run past it.",
-			"kind": "trigger",
-			"node": "EnemyTrigger",
-			"checkpoint": Vector2(1800, -116),
-		},
-		{
-			"text": "Nice! Walk into the chest to open it.",
+			"text": "A treasure chest! Walk into it to open it and grab the loot inside.",
 			"kind": "chest",
 			"node": "TutorialChest",
 		},
 		{
-			"text": "RIGHT-CLICK to PARRY! It deflects projectiles back at enemies for 3 seconds, then cooldown.",
-			"kind": "click",
+			"text": "A Goblin! It throws explosive mushrooms.\nRIGHT-CLICK to PARRY them back, then close in. KILL it to continue!",
+			"kind": "kill",
+			"enemy": "GoblinEnemy",
+			"checkpoint": Vector2(1800, -116),
+		},
+		{
+			"text": "An Ant! LEFT-CLICK to attack it with your shovel. KILL it to continue!",
+			"kind": "kill",
+			"enemy": "AntEnemy",
+			"checkpoint": Vector2(2200, -116),
 		},
 		{
 			"text": "A Beetle! It charges fast but can't turn mid-rush. Sidestep it, then strike!",
 			"kind": "trigger",
 			"node": "BeetleTrigger",
-			"checkpoint": Vector2(2500, -116),
-		},
-		{
-			"text": "A Goblin! Throws explosive mushrooms. Dodge or PARRY them back, then close in!",
-			"kind": "trigger",
-			"node": "GoblinTrigger",
 			"checkpoint": Vector2(2900, -116),
 		},
 		{
@@ -86,11 +83,7 @@ func _build_steps() -> void:
 			"on_start": func(): Inventory.add_item(preload("res://resources/drill.tres")),
 		},
 		{
-			"text": "PRESS SHIFT to DIG DASH! You tunnel forward, breaking through everything in your path!",
-			"kind": "click",
-		},
-		{
-			"text": "COMBO TIP: Kill enemies quickly to build a combo! Combos make you FASTER and give you extra jump time. Chain kills to keep it going!",
+			"text": "DIG DASH: press SHIFT to tunnel forward, smashing through rocks and enemies in your path!",
 			"kind": "click",
 		},
 	]
@@ -100,60 +93,53 @@ func _show_step(i: int) -> void:
 	var step: Dictionary = steps[i]
 	if step.has("checkpoint"):
 		current_checkpoint = step["checkpoint"]
-	if step.has("on_start"):
+	# Only run a step's on_start once, so going BACK then forward again doesn't
+	# re-grant items or re-run setup.
+	if step.has("on_start") and not _started_steps.has(i):
+		_started_steps[i] = true
 		step["on_start"].call()
 
-	_clear_pending_signal()
-
-	dialogue.show_text(step["text"], i + 1, steps.size(), true)
+	_disconnect_kill()
 	if dialogue.next_pressed.is_connected(_advance):
 		dialogue.next_pressed.disconnect(_advance)
-	dialogue.next_pressed.connect(_advance, CONNECT_ONE_SHOT)
 
-	match step["kind"]:
-		"trigger":
-			var trigger := get_node(String(step["node"]))
-			_pending_signal = trigger.body_entered
-			_has_pending_signal = true
-			trigger.body_entered.connect(_on_trigger_entered, CONNECT_ONE_SHOT)
-		"chest":
-			var chest := get_node(String(step["node"]))
-			var interaction: Node = chest.get_node_or_null("Area2D")
-			if interaction == null or not interaction.has_signal("opened"):
-				interaction = chest
-			_pending_signal = interaction.opened
-			_has_pending_signal = true
-			interaction.opened.connect(_advance, CONNECT_ONE_SHOT)
+	# "kill" steps hide NEXT and auto-advance only when the target enemy dies, so
+	# the player must defeat it. If the enemy is already gone (e.g. the player hit
+	# BACK after killing it) we fall back to a NEXT button. Every other step
+	# advances only on a NEXT click. BACK is hidden on the very first step.
+	var show_next := true
+	if step.get("kind", "") == "kill":
+		var enemy := get_node_or_null(NodePath(String(step["enemy"])))
+		if enemy != null and is_instance_valid(enemy):
+			show_next = false
+			_kill_enemy = enemy
+			enemy.connect("died", _advance, CONNECT_ONE_SHOT)
 
-func _clear_pending_signal() -> void:
-	if _has_pending_signal and _pending_signal.get_object():
-		if _pending_signal.is_connected(_on_trigger_entered):
-			_pending_signal.disconnect(_on_trigger_entered)
-		if _pending_signal.is_connected(_advance):
-			_pending_signal.disconnect(_advance)
-	_has_pending_signal = false
+	dialogue.show_text(step["text"], i + 1, steps.size(), show_next, i > 0)
+	if show_next:
+		dialogue.next_pressed.connect(_advance, CONNECT_ONE_SHOT)
 
-func _on_trigger_entered(body: Node) -> void:
-	if body.is_in_group("mole"):
-		_advance()
-	else:
-		var step: Dictionary = steps[step_index]
-		if step["kind"] == "trigger":
-			var trigger := get_node(String(step["node"]))
-			trigger.body_entered.connect(_on_trigger_entered, CONNECT_ONE_SHOT)
+func _disconnect_kill() -> void:
+	if _kill_enemy != null and is_instance_valid(_kill_enemy):
+		if _kill_enemy.is_connected("died", _advance):
+			_kill_enemy.disconnect("died", _advance)
+	_kill_enemy = null
 
 func _advance() -> void:
-	_clear_pending_signal()
 	if step_index + 1 >= steps.size():
 		_finish()
 	else:
 		_show_step(step_index + 1)
 
+func _go_back() -> void:
+	if step_index > 0:
+		_show_step(step_index - 1)
+
 func _finish() -> void:
-	_clear_pending_signal()
+	_disconnect_kill()
 	if dialogue.next_pressed.is_connected(_advance):
 		dialogue.next_pressed.disconnect(_advance)
-	var ending_text = "Perfect! You're ready!\n\nControls:\n• MOVE: A/D  •  JUMP: SPACE (hold for height!)\n• ATTACK: Left-click  •  PARRY: Right-click\n• DIG DASH: SHIFT  •  ITEMS: 1, 2, 3\n\nGood luck, little mole!"
+	var ending_text = "Perfect! You're ready, little mole.\nChain kills for COMBOS — good luck down there!"
 	dialogue.show_text(ending_text, 0, 0, true)
 	dialogue.next_button.text = "PLAY NOW ▸"
 	dialogue.next_pressed.connect(_on_play_now_pressed, CONNECT_ONE_SHOT)
