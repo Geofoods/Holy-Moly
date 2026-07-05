@@ -10,6 +10,7 @@ const POISON_DAMAGE_INTERVAL := 0.5
 const POISON_TILE_INTERVAL := 1.0
 const POISON_RADIUS := 150.0
 const TILE_BREAK_RADIUS := 2
+const BODY_COLOR := Color(0.15, 0.7, 0.15, 1.0)
 
 var health := MAX_HEALTH
 var target_mole: Node2D = null
@@ -17,16 +18,42 @@ var was_on_floor := true
 var poison_timer := 0.0
 var poison_damage_tick := 0.0
 var poison_tile_tick := 0.0
-var has_landed := true
+var has_landed := false
+
+var _tilemap: TileMap = null
+var _tile_break_script: GDScript = null
 
 @onready var hurtbox: Area2D = $Area2D
 @onready var poison_sprite: Sprite2D = $Poison
 
 func _ready() -> void:
+	_create_body_visual()
 	hurtbox.area_entered.connect(_on_hurtbox_area_entered)
 	hurtbox.body_entered.connect(_on_body_entered)
 	hurtbox.add_to_group("enemy_hurtbox")
 	poison_sprite.modulate.a = 0.0
+	_tilemap = get_parent().get_node_or_null("TileMap") as TileMap
+	_tile_break_script = load("res://scripts/tile_break_sfx.gd")
+
+func _create_body_visual() -> void:
+	var img := Image.create(54, 43, false, Image.FORMAT_RGBA8)
+	img.fill(Color.TRANSPARENT)
+	var cx := 27.0
+	var cy := 21.0
+	var rx := 24.0
+	var ry := 18.0
+	for x in 54:
+		for y in 43:
+			var dx := x + 0.5 - cx
+			var dy := y + 0.5 - cy
+			if dx * dx / (rx * rx) + dy * dy / (ry * ry) <= 1.0:
+				img.set_pixel(x, y, BODY_COLOR)
+	var tex := ImageTexture.create_from_image(img)
+	var sprite := Sprite2D.new()
+	sprite.texture = tex
+	sprite.position = Vector2(-20, -5)
+	add_child(sprite)
+	move_child(sprite, 0)
 
 func _physics_process(delta: float) -> void:
 	_find_target()
@@ -76,9 +103,10 @@ func _land() -> void:
 	poison_damage_tick = 0.0
 	poison_tile_tick = 0.0
 	poison_sprite.modulate.a = 0.6
+	poison_sprite.scale = Vector2(0.31, 0.31)
 
 	var tw := create_tween()
-	tw.tween_property(poison_sprite, "scale", poison_sprite.scale * 3.0, 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(poison_sprite, "scale", Vector2(0.93, 0.93), 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 func _process_poison() -> void:
 	if poison_damage_tick <= 0.0:
@@ -90,14 +118,12 @@ func _process_poison() -> void:
 
 	if poison_tile_tick <= 0.0:
 		poison_tile_tick = POISON_TILE_INTERVAL
-		var tilemap: TileMap = get_parent().get_node_or_null("TileMap")
-		if tilemap:
-			var center := tilemap.local_to_map(tilemap.to_local(global_position))
-			var sfx: GDScript = load("res://scripts/tile_break_sfx.gd")
+		if _tilemap:
+			var center := _tilemap.local_to_map(_tilemap.to_local(global_position))
 			for dx in range(-TILE_BREAK_RADIUS, TILE_BREAK_RADIUS + 1):
 				for dy in range(-TILE_BREAK_RADIUS, TILE_BREAK_RADIUS + 1):
 					var tp := Vector2i(center.x + dx, center.y + dy)
-					sfx.break_tile(tilemap, tp, get_parent())
+					_tile_break_script.break_tile(_tilemap, tp, get_parent())
 
 func _on_body_entered(body: Node) -> void:
 	if body.is_in_group("mole"):
