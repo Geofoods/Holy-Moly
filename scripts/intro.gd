@@ -170,7 +170,7 @@ func _on_play_pressed() -> void:
 	play_btn.disabled = true
 	Inventory.reset()
 	var picker = $CenterContainer/VBoxContainer/ButtonContainer/LevelPickerOption as OptionButton
-	var selected := picker.selected
+	var selected: int = picker.selected
 	var target := "res://scenes/main.tscn"
 	if selected > 0 and selected - 1 < _level_keys.size():
 		target = _level_keys[selected - 1]

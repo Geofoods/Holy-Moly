@@ -32,14 +32,30 @@ func _ready() -> void:
 
 	_play()
 
+var _tween: Tween = null
+var _dismissing := false
+
 func _play() -> void:
-	var tween := create_tween()
-	tween.set_trans(Tween.TRANS_BACK)
-	tween.set_ease(Tween.EASE_OUT)
-	tween.tween_property(panel, "scale", Vector2(1.0, 1.0), POP_IN_TIME)
-	tween.parallel().tween_property(panel, "modulate:a", 1.0, POP_IN_TIME * 0.8)
-	tween.tween_interval(SHOW_DURATION - POP_IN_TIME - FADE_OUT_TIME)
-	tween.set_trans(Tween.TRANS_SINE)
-	tween.set_ease(Tween.EASE_IN)
-	tween.tween_property(panel, "modulate:a", 0.0, FADE_OUT_TIME)
-	tween.tween_callback(queue_free)
+	_tween = create_tween()
+	_tween.set_trans(Tween.TRANS_BACK)
+	_tween.set_ease(Tween.EASE_OUT)
+	_tween.tween_property(panel, "scale", Vector2(1.0, 1.0), POP_IN_TIME)
+	_tween.parallel().tween_property(panel, "modulate:a", 1.0, POP_IN_TIME * 0.8)
+	_tween.tween_interval(SHOW_DURATION - POP_IN_TIME - FADE_OUT_TIME)
+	_tween.tween_callback(_fade_out)
+
+func _fade_out() -> void:
+	if _dismissing:
+		return
+	_dismissing = true
+	var tw := create_tween()
+	tw.set_trans(Tween.TRANS_SINE)
+	tw.set_ease(Tween.EASE_IN)
+	tw.tween_property(panel, "modulate:a", 0.0, FADE_OUT_TIME)
+	tw.tween_callback(queue_free)
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed:
+		if _tween and _tween.is_valid():
+			_tween.kill()
+		_fade_out()
