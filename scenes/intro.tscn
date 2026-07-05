@@ -2,27 +2,10 @@
 
 [ext_resource type="Script" uid="uid://dnwg1dwhl0esb" path="res://scripts/intro.gd" id="1_h1b2y"]
 [ext_resource type="Texture2D" uid="uid://buaps737jhmeo" path="res://sprites/molejumpbold.png" id="2_molejump"]
-[ext_resource type="Script" uid="uid://g3nfpfdy0iv2" path="res://scripts/glitch_title.gd" id="3_glitch"]
-[ext_resource type="Shader" uid="uid://ch2hh4i0b8k0l" path="res://shaders/corrupted_bg.gdshader" id="4_shader"]
-[ext_resource type="Texture2D" uid="uid://cpabxkmqhhx5n" path="res://holymolylogo.png" id="5_wfs7u"]
 [ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="6_es01l"]
 [ext_resource type="PackedScene" path="res://scenes/info_popup.tscn" id="7_info"]
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_bg"]
-shader = ExtResource("4_shader")
-shader_parameter/scanline_count = 240.0
-shader_parameter/scanline_opacity = 0.18
-shader_parameter/noise_strength = 0.05
-shader_parameter/glitch_speed = 1.2
-shader_parameter/base_color = Color(0.035, 0.05, 0.04, 1)
-shader_parameter/tint_color = Color(0.15, 0.55, 0.3, 1)
-
-[sub_resource type="SystemFont" id="SystemFont_mono"]
-font_names = PackedStringArray("Consolas", "Cascadia Mono", "Courier New", "monospace")
-
-[sub_resource type="FontVariation" id="FontVariation_title"]
-base_font = SubResource("SystemFont_mono")
-spacing_glyph = 6
+[ext_resource type="Texture2D" path="res://Bricks.webp" id="8_bricks"]
+[ext_resource type="Texture2D" path="res://holymolybanner.webp" id="9_banner"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_playbutton"]
 bg_color = Color(0.13, 0.85, 0.35, 1)
@@ -141,10 +124,11 @@ layout_mode = 3
 anchors_preset = 0
 script = ExtResource("1_h1b2y")
 
-[node name="Background" type="ColorRect" parent="." unique_id=1935340133]
-material = SubResource("ShaderMaterial_bg")
+[node name="Background" type="TextureRect" parent="." unique_id=1935340133]
 layout_mode = 1
-color = Color(0.035, 0.05, 0.04, 1)
+texture = ExtResource("8_bricks")
+expand_mode = 1
+stretch_mode = 1
 
 [node name="MoleShadow" type="ColorRect" parent="." unique_id=978552661]
 modulate = Color(0, 0, 0, 0.35)
@@ -174,65 +158,14 @@ size_flags_vertical = 2
 theme_override_constants/separation = 40
 alignment = 1
 
-[node name="TitleWrapper" type="Control" parent="CenterContainer/VBoxContainer" unique_id=1959195757]
-custom_minimum_size = Vector2(560, 100)
+[node name="BannerImage" type="TextureRect" parent="CenterContainer/VBoxContainer" unique_id=1959195757]
+custom_minimum_size = Vector2(800, 310)
 layout_mode = 2
 size_flags_horizontal = 4
-script = ExtResource("3_glitch")
-
-[node name="TitleRed" type="Label" parent="CenterContainer/VBoxContainer/TitleWrapper" unique_id=126714200]
-visible = false
-layout_mode = 1
-theme_override_colors/font_color = Color(1, 0.1, 0.25, 0.5)
-theme_override_fonts/font = SubResource("FontVariation_title")
-theme_override_font_sizes/font_size = 72
-text = "HOLY MOLEY"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="TitleCyan" type="Label" parent="CenterContainer/VBoxContainer/TitleWrapper" unique_id=1047122747]
-visible = false
-layout_mode = 1
-theme_override_colors/font_color = Color(0.1, 0.95, 0.9, 0.5)
-theme_override_fonts/font = SubResource("FontVariation_title")
-theme_override_font_sizes/font_size = 72
-text = "HOLY MOLEY"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="TitleMain" type="Label" parent="CenterContainer/VBoxContainer/TitleWrapper" unique_id=1559339768]
-visible = false
-layout_mode = 1
-theme_override_colors/font_color = Color(0.35, 1, 0.55, 1)
-theme_override_colors/font_shadow_color = Color(0.1, 0.9, 0.4, 0.6)
-theme_override_colors/font_outline_color = Color(0.02, 0.02, 0.02, 1)
-theme_override_constants/shadow_offset_x = 0
-theme_override_constants/shadow_offset_y = 4
-theme_override_constants/outline_size = 6
-theme_override_fonts/font = SubResource("FontVariation_title")
-theme_override_font_sizes/font_size = 72
-text = "HOLY MOLEY"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="Sprite2D" type="Sprite2D" parent="CenterContainer/VBoxContainer/TitleWrapper" unique_id=2042309207]
-position = Vector2(287, 30)
-scale = Vector2(0.5, 0.5)
-texture = ExtResource("5_wfs7u")
-
-[node name="TipWrapper" type="Control" parent="CenterContainer/VBoxContainer" unique_id=1166636007]
-custom_minimum_size = Vector2(0, 34)
-layout_mode = 2
-
-[node name="SubtitleLabel" type="Label" parent="CenterContainer/VBoxContainer/TipWrapper" unique_id=1825271191]
-layout_mode = 0
-position = Vector2(0, 2)
-size = Vector2(560, 30)
-theme_override_colors/font_color = Color(0.55, 0.75, 0.6, 1)
-theme_override_fonts/font = ExtResource("6_es01l")
-theme_override_font_sizes/font_size = 24
-text = "> dig. jump. survive._"
-horizontal_alignment = 1
+clip_contents = true
+texture = ExtResource("9_banner")
+expand_mode = 1
+stretch_mode = 6
 
 [node name="Spacer" type="Control" parent="CenterContainer/VBoxContainer" unique_id=1959195758]
 custom_minimum_size = Vector2(0, 30)
@@ -316,6 +249,23 @@ theme_override_styles/focus = SubResource("StyleBoxFlat_infobutton_hover")
 text = "?"
 
 [node name="InfoPopup" parent="." unique_id=778241002 instance=ExtResource("7_info")]
+
+[node name="CreditsLabel" type="Label" parent="."]
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -46.0
+offset_bottom = -14.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 0.9)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("6_es01l")
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+text = "Made by Bryan, George, Nimansh, Javis"
 
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/PlayButton" to="." method="_on_play_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/TutorialButton" to="." method="_on_tutorial_pressed"]

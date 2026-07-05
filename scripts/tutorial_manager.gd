@@ -40,12 +40,12 @@ func _build_steps() -> void:
 			"node": "MoveTrigger",
 		},
 		{
-			"text": "JUMP: press W, ▲, or SPACE. Hold longer for higher jumps, tap for short hops!",
+			"text": "JUMP: press W, ▲, or SPACE!\n**HOLD SPACE LONGER = JUMP HIGHER!** Tap for short hops.",
 			"kind": "trigger",
 			"node": "JumpTrigger",
 		},
 		{
-			"text": "An Ant! The weakest enemy here. Left-click to attack with your shovel, or just outrun it.",
+			"text": "An Ant! Attack it with Left-click, or just outrun it.",
 			"kind": "trigger",
 			"node": "EnemyTrigger",
 			"checkpoint": Vector2(2500, -116),
@@ -56,45 +56,37 @@ func _build_steps() -> void:
 			"node": "Chest",
 		},
 		{
-			"text": "TIP: Right-click to PARRY — it deflects enemy projectiles back at them! 3 second cooldown.",
+			"text": "RIGHT-CLICK to PARRY! It deflects projectiles back at enemies for 3 seconds, then cooldown.",
 			"kind": "click",
 		},
 		{
-			"text": "A Beetle! It charges fast but can't turn mid-rush. Sidestep the rush, then punish while they recover.",
+			"text": "A Beetle! It charges fast but can't turn mid-rush. Sidestep it, then strike!",
 			"kind": "trigger",
 			"node": "BeetleTrigger",
 			"checkpoint": Vector2(6050, -116),
 		},
 		{
-			"text": "A Goblin! It throws explosive mushrooms at you. Right-click to PARRY them back, or close the gap to strike.",
+			"text": "A Goblin! Throws explosive mushrooms. Dodge or PARRY them back, then close in!",
 			"kind": "trigger",
 			"node": "GoblinTrigger",
 			"checkpoint": Vector2(7300, -116),
 		},
 		{
-			"text": "You got a Bomb! Press its slot number (shown in the hotbar), then Left-click toward the wall to blow it open. Bombs deal massive damage to enemies and tiles!",
+			"text": "You got a BOMB! Press 1-3 to select, then LEFT-CLICK toward a wall. Massive damage and destruction!",
 			"kind": "trigger",
 			"node": "BombWallTrigger",
 			"checkpoint": Vector2(8350, -116),
 			"on_start": func(): Inventory.add_item(preload("res://resources/bomb.tres")),
 		},
 		{
-			"text": "You got a Drill! It tunnels through rock and damages enemies. Select it, then Left-click toward the wall ahead. It lasts a few seconds.",
+			"text": "You got a DRILL! Select it, LEFT-CLICK toward walls. It tunnels through rocks and pierces enemies!",
 			"kind": "trigger",
 			"node": "DrillWallTrigger",
 			"checkpoint": Vector2(9200, -116),
 			"on_start": func(): Inventory.add_item(preload("res://resources/drill.tres")),
 		},
 		{
-			"text": "COMBAT TIPS: Keep moving to dodge attacks. Use your Shovel for close-range hits. Parry (right-click) to send projectiles back at enemies!",
-			"kind": "click",
-		},
-		{
-			"text": "SURVIVAL TIPS: Stay alert for enemies around corners. Use the terrain to your advantage. A perfect combo lets you move faster!",
-			"kind": "click",
-		},
-		{
-			"text": "ITEMS & HOTBAR: Pick up Bombs and Drills to unlock new ways to fight and break through walls. Press 1, 2, or 3 to select items.",
+			"text": "PRESS SHIFT to DIG DASH! You tunnel forward, breaking through everything in your path!",
 			"kind": "click",
 		},
 	]
@@ -161,7 +153,7 @@ func _finish() -> void:
 	_clear_pending_signal()
 	if dialogue.next_pressed.is_connected(_advance):
 		dialogue.next_pressed.disconnect(_advance)
-	var ending_text = "Perfect! You've mastered the basics:\n• MOVE (A/D or ◄►) and JUMP (W/SPACE)\n• ATTACK (Left-click) and PARRY (Right-click)\n• BOMB for massive damage and destruction\n• DRILL to tunnel and pierce enemies\n\nRemember: Stay mobile, parry projectiles, and use items strategically. Your combo multiplier speeds you up! Ready for the real adventure?"
+	var ending_text = "Perfect! You're ready!\n\nControls:\n• MOVE: A/D  •  JUMP: SPACE (hold for height!)\n• ATTACK: Left-click  •  PARRY: Right-click\n• DIG DASH: SHIFT  •  ITEMS: 1, 2, 3\n\nGood luck, little mole!"
 	dialogue.show_text(ending_text, 0, 0, true)
 	dialogue.next_button.text = "PLAY NOW ▸"
 	dialogue.next_pressed.connect(_on_play_now_pressed, CONNECT_ONE_SHOT)
