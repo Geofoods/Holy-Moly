@@ -10,15 +10,15 @@
 [ext_resource type="PackedScene" uid="uid://bcd57whed7bys" path="res://chest.tscn" id="10_lepkc"]
 [ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="11_lepkc"]
 [ext_resource type="PackedScene" uid="uid://brmtyiqcy1wkv" path="res://scenes/inventory_ui.tscn" id="12_invui"]
-[ext_resource type="PackedScene" path="res://scenes/info_popup.tscn" id="info_popup_res"]
-[ext_resource type="PackedScene" path="res://scenes/level_intro_banner.tscn" id="level_banner_res"]
 [ext_resource type="PackedScene" uid="uid://dnp3icrndkjm8" path="res://scenes/antenemy.tscn" id="12_pojnb"]
 [ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="12_rt7wb"]
 [ext_resource type="PackedScene" uid="uid://cdxu1kg5or16d" path="res://candle.tscn" id="14_d8cpw"]
-[ext_resource type="Script" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
 [ext_resource type="PackedScene" uid="uid://u77s8ew4xenh" path="res://scenes/beetleenemy.tscn" id="16_eceou"]
 [ext_resource type="PackedScene" uid="uid://wjt35doljo8p" path="res://scenes/parallax_background2.tscn" id="16_o2pic"]
-[ext_resource type="Script" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
+[ext_resource type="Script" uid="uid://dpsujuff7o60j" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
+[ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
+[ext_resource type="PackedScene" path="res://scenes/info_popup.tscn" id="info_popup_res"]
+[ext_resource type="PackedScene" path="res://scenes/level_intro_banner.tscn" id="level_banner_res"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.1, 0.1, 0.12, 0.85)
@@ -54,7 +54,6 @@ shader_parameter/darkness = 0.5
 size = Vector2(4079.5, 933)
 
 [node name="Node2D2" type="Node2D" unique_id=1979316305]
-texture_filter = 0
 
 [node name="ParallaxBackgroun2" parent="." unique_id=1654768929 instance=ExtResource("16_o2pic")]
 
@@ -69,7 +68,7 @@ position = Vector2(92, -296)
 scale = Vector2(4, 4)
 position_smoothing_enabled = true
 
-[node name="CanvasLayer" type="CanvasLayer" parent="." layer = 2 unique_id=71896557]
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=71896557]
 
 [node name="heart" parent="CanvasLayer" unique_id=1207891791 instance=ExtResource("3_sugp2")]
 position = Vector2(117.99999, 113.99999)
@@ -94,7 +93,7 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_pausebutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_pausebutton_hover")
 text = "II ESC"
 
-[node name="InfoButton" type="Button" parent="CanvasLayer"]
+[node name="InfoButton" type="Button" parent="CanvasLayer" unique_id=785825124]
 anchors_preset = 3
 anchor_left = 1.0
 anchor_top = 1.0
@@ -120,14 +119,13 @@ text = "?"
 
 [node name="PauseMenu" parent="." unique_id=1779626465 instance=ExtResource("4_pause")]
 
-[node name="InfoPopup" parent="." instance=ExtResource("info_popup_res")]
+[node name="InfoPopup" parent="." unique_id=1921993709 instance=ExtResource("info_popup_res")]
 
-[node name="LevelIntroBanner" parent="." instance=ExtResource("level_banner_res")]
+[node name="LevelIntroBanner" parent="." unique_id=972211828 instance=ExtResource("level_banner_res")]
 
 [node name="VignetteLayer" type="CanvasLayer" parent="." unique_id=182643830]
 
 [node name="VignetteRect" type="ColorRect" parent="VignetteLayer" unique_id=1731371193]
-script = ExtResource("dyn_vignette")
 material = SubResource("ShaderMaterial_vignette")
 anchors_preset = 15
 anchor_right = 1.0
@@ -135,6 +133,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+script = ExtResource("dyn_vignette")
 
 [node name="TileMap" type="TileMap" parent="." unique_id=1811742437]
 scale = Vector2(0.5, 0.5)
@@ -179,10 +178,10 @@ position = Vector2(2921.75, 1047)
 shape = SubResource("RectangleShape2D_lepkc")
 
 [node name="Enemy" parent="." unique_id=866104770 instance=ExtResource("12_pojnb")]
-position = Vector2(-178, -609)
+position = Vector2(-173, -609)
 
 [node name="Enemy2" parent="." unique_id=1269880179 instance=ExtResource("12_pojnb")]
-position = Vector2(608, -846)
+position = Vector2(992, -619)
 
 [node name="Enemy3" parent="." unique_id=487178129 instance=ExtResource("12_pojnb")]
 position = Vector2(1787, -1089)
@@ -197,10 +196,10 @@ position = Vector2(3551, -1826)
 position = Vector2(4523, -536)
 
 [node name="Enemy7" parent="." unique_id=605448755 instance=ExtResource("12_pojnb")]
-position = Vector2(1562, -2133)
+position = Vector2(1609, -2136)
 
 [node name="Enemy8" parent="." unique_id=2134331474 instance=ExtResource("12_pojnb")]
-position = Vector2(2544, -382)
+position = Vector2(2550, -371)
 
 [node name="Enemy9" parent="." unique_id=1183022241 instance=ExtResource("12_pojnb")]
 position = Vector2(1615, -34)
@@ -211,10 +210,6 @@ scale = Vector2(0.5, 0.5)
 
 [node name="candle2" parent="." unique_id=926166913 instance=ExtResource("14_d8cpw")]
 position = Vector2(1000, -1317)
-scale = Vector2(0.5, 0.5)
-
-[node name="candle3" parent="." unique_id=1826928843 instance=ExtResource("14_d8cpw")]
-position = Vector2(352, -600)
 scale = Vector2(0.5, 0.5)
 
 [node name="candle4" parent="." unique_id=1560969481 instance=ExtResource("14_d8cpw")]
@@ -253,7 +248,7 @@ scale = Vector2(0.5, 0.5)
 position = Vector2(2677, 766)
 scale = Vector2(0.5, 0.5)
 
-[node name="FireflySpawner" type="Node2D" parent="."]
+[node name="FireflySpawner" type="Node2D" parent="." unique_id=1901719315]
 script = ExtResource("firefly_script")
 
 [node name="Enemy10" parent="." unique_id=1849714905 instance=ExtResource("16_eceou")]
@@ -263,7 +258,16 @@ position = Vector2(3181, -858)
 position = Vector2(2437, -1034)
 
 [node name="Enemy12" parent="." unique_id=463146960 instance=ExtResource("16_eceou")]
-position = Vector2(2143, -1946)
+position = Vector2(2162, -1915)
+
+[node name="Enemy12" parent="Enemy12" unique_id=1984340582 instance=ExtResource("16_eceou")]
+position = Vector2(2162, -1915)
+
+[node name="Enemy15" parent="." unique_id=339862022 instance=ExtResource("16_eceou")]
+position = Vector2(3063, -382)
+
+[node name="Enemy12" parent="Enemy15" unique_id=841066502 instance=ExtResource("16_eceou")]
+position = Vector2(2162, -1915)
 
 [node name="Enemy13" parent="." unique_id=1576950735 instance=ExtResource("16_eceou")]
 position = Vector2(4099, -1037)

@@ -11,13 +11,13 @@
 [ext_resource type="PackedScene" uid="uid://k06dbe7sq1ph" path="res://scenes/goblinenemy.tscn" id="11_k7nmt"]
 [ext_resource type="PackedScene" uid="uid://bcd57whed7bys" path="res://chest.tscn" id="12_40wum"]
 [ext_resource type="PackedScene" uid="uid://brmtyiqcy1wkv" path="res://scenes/inventory_ui.tscn" id="12_invui"]
+[ext_resource type="PackedScene" uid="uid://wjt35doljo8p" path="res://scenes/parallax_background2.tscn" id="12_ph8se"]
+[ext_resource type="PackedScene" uid="uid://u77s8ew4xenh" path="res://scenes/beetleenemy.tscn" id="13_40wum"]
+[ext_resource type="PackedScene" uid="uid://cdxu1kg5or16d" path="res://candle.tscn" id="15_21f2n"]
+[ext_resource type="Script" uid="uid://dpsujuff7o60j" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
+[ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
 [ext_resource type="PackedScene" path="res://scenes/info_popup.tscn" id="info_popup_res"]
 [ext_resource type="PackedScene" path="res://scenes/level_intro_banner.tscn" id="level_banner_res"]
-[ext_resource type="PackedScene" path="res://scenes/parallax_background2.tscn" id="12_ph8se"]
-[ext_resource type="PackedScene" path="res://scenes/beetleenemy.tscn" id="13_40wum"]
-[ext_resource type="Script" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
-[ext_resource type="PackedScene" uid="uid://cdxu1kg5or16d" path="res://candle.tscn" id="15_21f2n"]
-[ext_resource type="Script" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.1, 0.1, 0.12, 0.85)
@@ -50,11 +50,10 @@ shader_parameter/outer_radius = 0.55
 shader_parameter/darkness = 0.55
 
 [node name="Node2D3" type="Node2D" unique_id=1979316305]
-texture_filter = 0
 
 [node name="DeathPlane" parent="." unique_id=1942262957 instance=ExtResource("10_deathplane")]
 
-[node name="CanvasLayer" type="CanvasLayer" parent="." layer = 2 unique_id=71896557]
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=71896557]
 
 [node name="heart" parent="CanvasLayer" unique_id=1207891791 instance=ExtResource("3_sugp2")]
 position = Vector2(117.99999, 113.99999)
@@ -79,7 +78,7 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_pausebutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_pausebutton_hover")
 text = "II ESC"
 
-[node name="InfoButton" type="Button" parent="CanvasLayer"]
+[node name="InfoButton" type="Button" parent="CanvasLayer" unique_id=1950100089]
 anchors_preset = 3
 anchor_left = 1.0
 anchor_top = 1.0
@@ -105,14 +104,13 @@ text = "?"
 
 [node name="PauseMenu" parent="." unique_id=1779626465 instance=ExtResource("4_pause")]
 
-[node name="InfoPopup" parent="." instance=ExtResource("info_popup_res")]
+[node name="InfoPopup" parent="." unique_id=488124646 instance=ExtResource("info_popup_res")]
 
-[node name="LevelIntroBanner" parent="." instance=ExtResource("level_banner_res")]
+[node name="LevelIntroBanner" parent="." unique_id=1125762116 instance=ExtResource("level_banner_res")]
 
 [node name="VignetteLayer" type="CanvasLayer" parent="." unique_id=182643830]
 
 [node name="VignetteRect" type="ColorRect" parent="VignetteLayer" unique_id=1731371193]
-script = ExtResource("dyn_vignette")
 material = SubResource("ShaderMaterial_vignette")
 anchors_preset = 15
 anchor_right = 1.0
@@ -120,6 +118,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+script = ExtResource("dyn_vignette")
 
 [node name="CharacterBody2D2" parent="." unique_id=501808252 instance=ExtResource("1_o5qli")]
 position = Vector2(1872, -2971)
@@ -138,7 +137,7 @@ layer_0/tile_data = PackedInt32Array(-1507306, 327680, 0, -1441770, 262144, 2, -
 layer_1/name = "Decoration"
 layer_1/tile_data = PackedInt32Array(-1572841, 458752, 8, -1572833, 655360, 8, -1572822, 458752, 8, -1572810, 524288, 8, -1114058, 589824, 8, -982997, 589824, 8, -1572844, 327680, 7, -1638380, 65536, 7, -1638374, 851968, 7, -1703910, 851968, 6, -1572838, 851968, 8, -1966033, 327680, 3, -1900497, 327680, 4, -1834961, 327680, 5, -2228172, 851968, 6, -2162636, 851968, 7, -2097100, 851968, 8, -720887, 327680, 3, -655351, 327680, 4, -589815, 327680, 5, -589816, 458752, 5, -589812, 589824, 12, -720885, 720896, 12, -655349, 720896, 13, -589813, 720896, 14, -655353, 655360, 7, -655345, 655360, 6, -655346, 589824, 6, -983014, 589824, 6, -983013, 524288, 6, -983010, 589824, 7, -786397, 655360, 7, -786398, 524288, 7, -655338, 393216, 5, -655337, 589824, 5, -655336, 655360, 5, -786411, 851968, 6, -720875, 851968, 7, -655339, 851968, 8, -982998, 589824, 12, -1114057, 655360, 12, -1572817, 655360, 12, -1572816, 589824, 12, -2097101, 589824, 12, -65516, 851968, 6, 20, 851968, 7, 65556, 851968, 8, 458773, 851968, 6, 524309, 851968, 7, 589845, 851968, 8, 589844, 655360, 5, 65557, 589824, 5, 65558, 524288, 8, 327704, 524288, 8, 589847, 524288, 8, 917528, 458752, 8, 917529, 458752, 8, 1245216, 327680, 6, 1245227, 327680, 6, 1245226, 327680, 7, 1245217, 655360, 5, 1245228, 655360, 5, 1179690, 65536, 7, 917530, 458752, 8, 917520, 327680, 6, 917519, 327680, 7, 917521, 65536, 8, -393186, 65536, 8, -393189, 327680, 7, -393185, 655360, 5, -393190, 393216, 5, -458726, 393216, 3, -720874, 720896, 12, -655340, 327680, 7, -327635, 458752, 8, -327638, 262144, 8, -458709, 720896, 12, -393173, 720896, 13, -327637, 720896, 14, -1834960, 589824, 6, -1769419, 589824, 0, -1769418, 655360, 0, -1769417, 655360, 0, -1769416, 720896, 0, 917539, 262144, 8, 917544, 524288, 12, 1114181, 393216, 10, 1179723, 327680, 10, 1114194, 393216, 10, 1048640, 327680, 10, 1114197, 393216, 10, 1114193, 720896, 11, 1114177, 720896, 11, 917566, 720896, 11, 852030, 720896, 9, 1048657, 720896, 9, 1048641, 720896, 9, 1179719, 720896, 14, 1114183, 720896, 13, 1048647, 720896, 12, -655291, 327680, 7, -655292, 327680, 6, -720827, 65536, 7, -655299, 458752, 8, 327724, 589824, 7, 327727, 720896, 8, 262191, 720896, 7, 196655, 720896, 6, 262182, 327680, 7, 196646, 0, 7, 262183, 589824, 7, 262181, 655360, 7, -65504, 589824, 8, -196575, 393216, 3, -131039, 393216, 4, -65503, 393216, 5, -65500, 262144, 8)
 
-[node name="FireflySpawner" type="Node2D" parent="."]
+[node name="FireflySpawner" type="Node2D" parent="." unique_id=1661884641]
 script = ExtResource("firefly_script")
 
 [node name="ParallaxBackgroun2" parent="." unique_id=1654768929 instance=ExtResource("12_ph8se")]
@@ -195,7 +194,7 @@ position = Vector2(3485, 1508)
 position = Vector2(5835, 1428)
 
 [node name="Enemy10" parent="." unique_id=1726601508 instance=ExtResource("11_k7nmt")]
-position = Vector2(6118, 1289)
+position = Vector2(6211, 1309)
 
 [node name="chest9" parent="." unique_id=103025247 instance=ExtResource("12_40wum")]
 position = Vector2(6211, 774)

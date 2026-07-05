@@ -12,12 +12,12 @@
 [ext_resource type="PackedScene" uid="uid://bcd57whed7bys" path="res://chest.tscn" id="11_jjwm3"]
 [ext_resource type="PackedScene" uid="uid://brmtyiqcy1wkv" path="res://scenes/inventory_ui.tscn" id="12_invui"]
 [ext_resource type="PackedScene" uid="uid://cdxu1kg5or16d" path="res://candle.tscn" id="12_yv1v3"]
-[ext_resource type="Script" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
 [ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="14_fpl26"]
 [ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="15_fevqv"]
+[ext_resource type="Script" uid="uid://dpsujuff7o60j" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
+[ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
 [ext_resource type="PackedScene" path="res://scenes/info_popup.tscn" id="info_popup_res"]
 [ext_resource type="PackedScene" path="res://scenes/level_intro_banner.tscn" id="level_banner_res"]
-[ext_resource type="Script" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.1, 0.1, 0.12, 0.85)
@@ -87,7 +87,7 @@ position = Vector2(3041, 688)
 [node name="Enemy4" parent="." unique_id=1007590088 instance=ExtResource("2_enemy")]
 position = Vector2(7040, -116)
 
-[node name="CanvasLayer" type="CanvasLayer" parent="." layer = 2 unique_id=71896557]
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=71896557]
 
 [node name="heart" parent="CanvasLayer" unique_id=1207891791 instance=ExtResource("3_sugp2")]
 position = Vector2(117.99999, 113.99999)
@@ -145,14 +145,18 @@ text = "?"
 [node name="VignetteLayer" type="CanvasLayer" parent="." unique_id=182643830]
 
 [node name="VignetteRect" type="ColorRect" parent="VignetteLayer" unique_id=1731371193]
-script = ExtResource("dyn_vignette")
 material = SubResource("ShaderMaterial_vignette")
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = -6.0
+offset_top = 11.0
+offset_right = -6.0
+offset_bottom = 11.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+script = ExtResource("dyn_vignette")
 
 [node name="chest" parent="." unique_id=328821009 instance=ExtResource("11_jjwm3")]
 position = Vector2(1965, 1491)
@@ -211,7 +215,7 @@ position = Vector2(3101, -261)
 [node name="chest5" parent="." unique_id=2038037181 instance=ExtResource("11_jjwm3")]
 position = Vector2(-206, 937)
 
-[node name="FireflySpawner" type="Node2D" parent="."]
+[node name="FireflySpawner" type="Node2D" parent="." unique_id=1927745016]
 script = ExtResource("firefly_script")
 
 [node name="Costume5" type="Sprite2D" parent="." unique_id=1462549335]

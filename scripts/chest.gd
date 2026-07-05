@@ -25,11 +25,21 @@ func _process(_delta: float) -> void:
 	player_nearby = false
 	for b in bodies:
 		if b.is_in_group("mole"):
-			player_nearby = true
+			if _has_line_of_sight(b):
+				player_nearby = true
 			break
 	var prompt = $PromptLabel
 	if prompt:
 		prompt.visible = player_nearby
+
+func _has_line_of_sight(target: Node2D) -> bool:
+	var space_state := get_world_2d().direct_space_state
+	var query := PhysicsRayQueryParameters2D.create(global_position, target.global_position, 1)
+	query.exclude = [self]
+	var result := space_state.intersect_ray(query)
+	if result.is_empty():
+		return true
+	return result.collider == target
 
 func _open_chest() -> void:
 	is_open = true
