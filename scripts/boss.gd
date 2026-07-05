@@ -2,11 +2,17 @@ extends CharacterBody2D
 
 const MAX_HEALTH := 70.0
 const PAN_DURATION := 0.75
-const HOLD_DURATION := 0.75
 const DESCENT_SPEED := 20.0
 const SPIT_INTERVAL := 3.0
 const PROJECTILE_SPEED := 800.0
 const CHEST_SPAWN_INTERVAL := 10.0
+const BOUNCE_FORCE := 700.0
+
+const INTRO_LINES := [
+	"hello there little mole,",
+	"it seems like you've wandered your way into the darkest depths..",
+	"this is as far as you get.",
+]
 
 var health := MAX_HEALTH
 var _boss_active := false
@@ -21,6 +27,12 @@ var _cutscene_start_pos := Vector2.ZERO
 var _cutscene_target_pos := Vector2.ZERO
 var _cutscene_start_cam_pos := Vector2.ZERO
 
+var _dialogue_box: CanvasLayer = null
+var _dialogue_line_index := 0
+var _dialogue_finished := false
+
+var _mole_in_bounce_zone := false
+
 var _tilemap: TileMap = null
 var _tile_break_script: GDScript = null
 var _last_break_tile_y := -999999
@@ -28,6 +40,7 @@ var _last_break_tile_y := -999999
 @onready var anim: AnimatedSprite2D = $AnimatedSprite2D
 @onready var trigger: Area2D = $CutsceneTrigger
 @onready var hurtbox: Area2D = $Hurtbox
+@onready var bounce_zone: Area2D = $BounceZone
 
 var _projectile_scene: PackedScene = null
 var _chest_scene: PackedScene = null
@@ -51,6 +64,8 @@ func _ready() -> void:
 	trigger.body_entered.connect(_on_trigger_entered)
 	hurtbox.area_entered.connect(_on_hurtbox_area_entered)
 	hurtbox.add_to_group("enemy_hurtbox")
+	bounce_zone.body_entered.connect(_on_bounce_zone_body_entered)
+	bounce_zone.body_exited.connect(_on_bounce_zone_body_exited)
 	_tilemap = get_parent().get_node_or_null("TileMap") as TileMap
 	_tile_break_script = load("res://scripts/tile_break_sfx.gd")
 	_projectile_scene = preload("res://area_2d.tscn")
@@ -247,8 +262,9 @@ func _process(delta: float) -> void:
 			if t >= 1.0:
 				_cutscene_stage = 1
 				_cutscene_time = 0.0
+				_start_intro_dialogue()
 		1:
-			if _cutscene_time >= HOLD_DURATION:
+			if _dialogue_finished:
 				_cutscene_stage = 2
 				_cutscene_time = 0.0
 				_cutscene_start_pos = _cutscene_cam.global_position
@@ -359,6 +375,83 @@ func _start_cutscene(mole: Node) -> void:
 	_cutscene_target_pos = $AnimatedSprite2D.global_position
 	_cutscene_stage = 0
 	_cutscene_time = 0.0
+
+func _start_intro_dialogue() -> void:
+	_dialogue_finished = false
+	_dialogue_line_index = 0
+	_dialogue_box = preload("res://scenes/dialogue_box.tscn").instantiate()
+	_dialogue_box.process_mode = PROCESS_MODE_ALWAYS
+	get_tree().root.add_child(_dialogue_box)
+	_dialogue_box.next_pressed.connect(_on_intro_dialogue_next)
+	_show_intro_dialogue_line()
+
+func _show_intro_dialogue_line() -> void:
+	var is_last := _dialogue_line_index == INTRO_LINES.size() - 1
+	_dialogue_box.show_text(INTRO_LINES[_dialogue_line_index], 0, 0, true, false)
+	if is_last:
+		_dialogue_box.next_button.text = "START FIGHT!"
+		_style_next_button_red()
+
+func _on_intro_dialogue_next() -> void:
+	if _dialogue_line_index >= INTRO_LINES.size() - 1:
+		_dialogue_box.next_pressed.disconnect(_on_intro_dialogue_next)
+		var box := _dialogue_box
+		_dialogue_box = null
+		box.hide_box()
+		get_tree().create_timer(0.35).timeout.connect(func():
+			if is_instance_valid(box):
+				box.queue_free()
+		)
+		_dialogue_finished = true
+		return
+	_dialogue_line_index += 1
+	_show_intro_dialogue_line()
+
+func _style_next_button_red() -> void:
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = Color(0.8, 0.15, 0.15, 1)
+	normal.border_width_left = 2
+	normal.border_width_top = 2
+	normal.border_width_right = 2
+	normal.border_width_bottom = 2
+	normal.border_color = Color(0.03, 0.03, 0.03, 1)
+	normal.corner_radius_top_left = 6
+	normal.corner_radius_top_right = 6
+	normal.corner_radius_bottom_right = 6
+	normal.corner_radius_bottom_left = 6
+
+	var hover := StyleBoxFlat.new()
+	hover.bg_color = Color(0.95, 0.25, 0.2, 1)
+	hover.border_width_left = 2
+	hover.border_width_top = 2
+	hover.border_width_right = 2
+	hover.border_width_bottom = 2
+	hover.border_color = Color(0.03, 0.03, 0.03, 1)
+	hover.corner_radius_top_left = 6
+	hover.corner_radius_top_right = 6
+	hover.corner_radius_bottom_right = 6
+	hover.corner_radius_bottom_left = 6
+
+	_dialogue_box.next_button.add_theme_stylebox_override("normal", normal)
+	_dialogue_box.next_button.add_theme_stylebox_override("hover", hover)
+	_dialogue_box.next_button.add_theme_stylebox_override("pressed", hover)
+	_dialogue_box.next_button.add_theme_stylebox_override("focus", normal)
+
+func _on_bounce_zone_body_entered(body: Node) -> void:
+	if not _boss_active or not body.is_in_group("mole") or _mole_in_bounce_zone:
+		return
+	_mole_in_bounce_zone = true
+	var dir: Vector2 = body.global_position - bounce_zone.global_position
+	if dir == Vector2.ZERO:
+		dir = Vector2.UP
+	dir = dir.normalized()
+	body.velocity = dir * BOUNCE_FORCE + Vector2(0, -200)
+	if body.has_method("screen_shake"):
+		body.screen_shake(10.0, 0.2)
+
+func _on_bounce_zone_body_exited(body: Node) -> void:
+	if body.is_in_group("mole"):
+		_mole_in_bounce_zone = false
 
 func _end_cutscene() -> void:
 	_cutscene_stage = -1
