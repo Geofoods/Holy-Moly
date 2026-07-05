@@ -20,6 +20,7 @@ func _ready() -> void:
 	_load("coin", ["res://sounds/coin.ogg"])
 	_load("ui_click", ["res://sounds/ui_click.ogg"])
 	_load("ui_hover", ["res://sounds/coin.ogg"])
+	_load("break_wood", ["res://sounds/break_wood_1.ogg", "res://sounds/break_wood_2.ogg", "res://sounds/break_wood_3.ogg"])
 	_load("drill", ["res://sounds/drill.wav"])
 	_load("bomb_tick", ["res://sounds/bomb_tick.wav"])
 

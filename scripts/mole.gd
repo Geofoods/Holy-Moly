@@ -269,6 +269,8 @@ func _physics_process(delta: float) -> void:
 						else:
 							sfx.break_decoration_tile(tm, tile_pos, get_parent())
 						spawn_dirt_particles(contact)
+				elif sfx.break_opened_chest_from_node(collider):
+					spawn_dirt_particles(collision.get_position())
 			var front_pos: Vector2 = global_position + Vector2(tunnel_direction * 40.0, 0.0)
 			var front_tile: Vector2i = tilemap.local_to_map(tilemap.to_local(front_pos))
 			if front_tile not in broken_tiles and tilemap.get_cell_source_id(0, front_tile) != -1:

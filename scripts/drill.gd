@@ -28,6 +28,9 @@ func setup(dir: Vector2) -> void:
 	rotation = velocity.angle() + PI / 2
 
 func _on_area_entered(area: Area2D) -> void:
+	if area.is_in_group("opened_chest"):
+		area.call("break_as_block")
+		return
 	if not area.is_in_group("enemy_hurtbox"):
 		return
 	var enemy := area.get_parent()

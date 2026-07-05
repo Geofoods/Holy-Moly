@@ -117,6 +117,7 @@ func _explode() -> void:
 					sfx.break_tile(tilemap, tp, get_parent())
 				else:
 					sfx.break_decoration_tile(tilemap, tp, get_parent())
+		sfx.break_opened_chests_near(get_parent(), global_position, explosion_radius)
 
 	for hurtbox in get_tree().get_nodes_in_group("enemy_hurtbox"):
 		if not is_instance_valid(hurtbox):

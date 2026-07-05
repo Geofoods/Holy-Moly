@@ -3,8 +3,15 @@ extends Area2D
 signal opened
 
 var is_open := false
+var is_breaking := false
 var player_nearby := false
 @export var item: ItemData = null
+
+@onready var chest_base: Control = $Interaction/Base
+@onready var chest_band: Control = $Interaction/Band
+@onready var chest_lock: Control = $Interaction/Lock
+@onready var chest_lid: Node2D = $Interaction/Lid
+@onready var chest_prompt: Label = $PromptLabel
 
 func _ready() -> void:
 	pass
@@ -17,9 +24,8 @@ func _input(event: InputEvent) -> void:
 
 func _process(_delta: float) -> void:
 	if is_open:
-		var prompt = $PromptLabel
-		if prompt:
-			prompt.visible = false
+		if chest_prompt:
+			chest_prompt.visible = false
 		return
 	var bodies := get_overlapping_bodies()
 	player_nearby = false
@@ -28,9 +34,8 @@ func _process(_delta: float) -> void:
 			if _has_line_of_sight(b):
 				player_nearby = true
 			break
-	var prompt = $PromptLabel
-	if prompt:
-		prompt.visible = player_nearby
+	if chest_prompt:
+		chest_prompt.visible = player_nearby
 
 func _has_line_of_sight(target: Node2D) -> bool:
 	var space_state := get_world_2d().direct_space_state
@@ -43,6 +48,7 @@ func _has_line_of_sight(target: Node2D) -> bool:
 
 func _open_chest() -> void:
 	is_open = true
+	add_to_group("opened_chest")
 	SFX.play("chest_open", global_position)
 	var spr = get_node_or_null("../AnimatedSprite2D")
 	if spr is AnimatedSprite2D:
@@ -54,6 +60,23 @@ func _open_chest() -> void:
 		mole.screen_shake(6.0, 0.15)
 	opened.emit()
 	_grant_item()
+
+func break_as_block() -> void:
+	if not is_open or is_breaking:
+		return
+	is_breaking = true
+	remove_from_group("opened_chest")
+	monitoring = false
+	monitorable = false
+	var chest_body := get_parent()
+	if chest_body is CollisionObject2D:
+		chest_body.collision_layer = 0
+		chest_body.collision_mask = 0
+	if chest_prompt:
+		chest_prompt.visible = false
+	SFX.play("break_wood", global_position, -4.0, 0.08)
+
+	_play_break_shatter()
 
 func _get_loot_item() -> ItemData:
 	if item != null:
@@ -69,10 +92,58 @@ func _grant_item() -> void:
 	var dropped_item_scene := preload("res://scenes/dropped_item.tscn")
 	var dropped_item = dropped_item_scene.instantiate()
 	dropped_item.item_data = loot
-	get_parent().add_child(dropped_item)
+	var chest_body := get_parent()
+	var chest_scene_parent := chest_body.get_parent() if chest_body else null
+	if chest_scene_parent == null:
+		chest_scene_parent = get_tree().current_scene
+	chest_scene_parent.add_child(dropped_item)
 	dropped_item.global_position = global_position + Vector2(0, -20)
-	
+
 	SFX.play("coin", global_position, -6.0, 0.1)
+
+func _play_break_shatter() -> void:
+	if chest_lid:
+		chest_lid.visible = false
+	if chest_base:
+		chest_base.visible = false
+	if chest_band:
+		chest_band.visible = false
+	if chest_lock:
+		chest_lock.visible = false
+
+	var chest_body := get_parent()
+	var pieces: Array[Control] = []
+	var piece_defs := [
+		{"color": Color(0.4, 0.25, 0.12, 1.0), "rect": Rect2(-45, -50, 90, 60), "offset": Vector2(-12, -8)},
+		{"color": Color(0.4, 0.25, 0.12, 1.0), "rect": Rect2(-45, 10, 90, 14), "offset": Vector2(10, 14)},
+		{"color": Color(0.18, 0.11, 0.05, 1.0), "rect": Rect2(-45, -22, 90, 12), "offset": Vector2(-14, 4)},
+		{"color": Color(0.85, 0.7, 0.2, 1.0), "rect": Rect2(-8, -24, 16, 16), "offset": Vector2(18, -6)},
+		{"color": Color(0.55, 0.38, 0.16, 1.0), "rect": Rect2(-45, -14, 90, 14), "offset": Vector2(-22, -18)},
+		{"color": Color(0.55, 0.38, 0.16, 1.0), "rect": Rect2(-45, -50, 90, 14), "offset": Vector2(20, -20)},
+		{"color": Color(0.4, 0.25, 0.12, 1.0), "rect": Rect2(-45, -8, 90, 18), "offset": Vector2(-20, 10)},
+		{"color": Color(0.18, 0.11, 0.05, 1.0), "rect": Rect2(-45, -30, 90, 10), "offset": Vector2(16, 8)},
+	]
+
+	for entry in piece_defs:
+		var piece := ColorRect.new()
+		piece.color = entry["color"]
+		piece.position = entry["rect"].position
+		piece.size = entry["rect"].size
+		piece.z_index = 15
+		piece.modulate.a = 1.0
+		chest_body.add_child(piece)
+		pieces.append(piece)
+		piece.position += entry["offset"]
+
+	var tween := create_tween()
+	tween.set_parallel(true)
+	for piece in pieces:
+		var dir := Vector2(randf_range(-1.0, 1.0), randf_range(-1.6, -0.2)).normalized()
+		var target := piece.position + dir * randf_range(45.0, 120.0)
+		tween.tween_property(piece, "position", target, 0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tween.parallel().tween_property(piece, "rotation_degrees", randf_range(-160.0, 160.0), 0.35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tween.parallel().tween_property(piece, "modulate:a", 0.0, 0.35).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	tween.chain().tween_callback(Callable(chest_body, "queue_free"))
 
 
 func _play_open_animation() -> void:

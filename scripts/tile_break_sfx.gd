@@ -267,12 +267,15 @@ static func is_stalactite(atlas_coords: Vector2i) -> bool:
 	return false
 
 static func break_tile(tilemap: TileMap, tile_pos: Vector2i, parent: Node, force: bool = false) -> void:
+	var world_pos := tilemap.to_global(tilemap.map_to_local(tile_pos))
 	var source_id := tilemap.get_cell_source_id(0, tile_pos)
 	if source_id == -1:
+		_break_opened_chests_near(parent, world_pos)
 		return
 	var atlas_coords := tilemap.get_cell_atlas_coords(0, tile_pos)
 
 	_break_single_tile(tilemap, tile_pos, atlas_coords, parent, force)
+	_break_opened_chests_near(parent, world_pos)
 
 	var tree := parent.get_tree()
 	if tree:
@@ -298,6 +301,37 @@ static func break_tile(tilemap: TileMap, tile_pos: Vector2i, parent: Node, force
 
 static func break_decoration_tile(tilemap: TileMap, tile_pos: Vector2i, parent: Node) -> void:
 	_break_decoration_tile(tilemap, tile_pos, parent)
+	var world_pos := tilemap.to_global(tilemap.map_to_local(tile_pos))
+	_break_opened_chests_near(parent, world_pos)
+
+static func break_opened_chest_at_point(parent: Node, world_pos: Vector2) -> bool:
+	if not is_instance_valid(parent):
+		return false
+	var tree := parent.get_tree()
+	if tree == null:
+		return false
+	for chest in tree.get_nodes_in_group("opened_chest"):
+		if not is_instance_valid(chest) or not (chest is Area2D):
+			continue
+		if _opened_chest_contains_point(chest as Area2D, world_pos):
+			if chest.has_method("break_as_block"):
+				chest.call("break_as_block")
+				return true
+	return false
+
+static func break_opened_chest_from_node(node: Node) -> bool:
+	if not is_instance_valid(node):
+		return false
+	var chest := node
+	if not chest.is_in_group("opened_chest") and chest.has_node("Interaction"):
+		chest = chest.get_node("Interaction")
+	if chest.is_in_group("opened_chest") and chest.has_method("break_as_block"):
+		chest.call("break_as_block")
+		return true
+	return false
+
+static func break_opened_chests_near(parent: Node, world_pos: Vector2, radius: float = 120.0) -> void:
+	_break_opened_chests_near(parent, world_pos, radius)
 
 static func _break_decoration_tile(tilemap: TileMap, tile_pos: Vector2i, parent: Node) -> void:
 	if tilemap.get_layers_count() < 2:
@@ -406,3 +440,25 @@ static func spawn_break_particles(tilemap: TileMap, tile_pos: Vector2i, atlas_co
 	particles.color_ramp = gradient
 
 	particles.get_tree().create_timer(1.5).timeout.connect(particles.queue_free)
+
+static func _break_opened_chests_near(parent: Node, world_pos: Vector2, radius: float = 120.0) -> void:
+	if not is_instance_valid(parent):
+		return
+	var tree := parent.get_tree()
+	if tree == null:
+		return
+	for chest in tree.get_nodes_in_group("opened_chest"):
+		if not is_instance_valid(chest):
+			continue
+		if chest is Node2D and chest.global_position.distance_to(world_pos) <= radius:
+			if chest.has_method("break_as_block"):
+				chest.call("break_as_block")
+
+static func _opened_chest_contains_point(chest: Area2D, world_pos: Vector2) -> bool:
+	var shape_node := chest.get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if shape_node and shape_node.shape is RectangleShape2D:
+		var rect_shape := shape_node.shape as RectangleShape2D
+		var local_pos := shape_node.global_transform.affine_inverse() * world_pos
+		var rect := Rect2(-rect_shape.size * 0.5, rect_shape.size)
+		return rect.has_point(local_pos)
+	return chest.global_position.distance_to(world_pos) <= 100.0

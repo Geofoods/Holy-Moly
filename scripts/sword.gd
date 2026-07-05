@@ -230,6 +230,9 @@ func _end_swing() -> void:
 	hitbox.area_entered.disconnect(_on_hitbox_area_entered)
 
 func _on_hitbox_area_entered(area: Area2D) -> void:
+	if area.is_in_group("opened_chest"):
+		area.call("break_as_block")
+		return
 	if area.is_in_group("enemy_hurtbox"):
 		var enemy = area.get_parent()
 		if enemy not in hit_enemies:
@@ -378,19 +381,22 @@ func dig_slash() -> void:
 	tween.tween_callback(_end_swing)
 
 func _break_tile_at_mouse() -> void:
-	var tilemap := get_parent().get_parent().get_node_or_null("TileMap") as TileMap
+	var world := get_parent().get_parent()
+	var mouse_global = get_global_mouse_position()
+	var sfx = load("res://scripts/tile_break_sfx.gd")
+	if sfx.break_opened_chest_at_point(world, mouse_global):
+		return
+	var tilemap := world.get_node_or_null("TileMap") as TileMap
 	if not tilemap:
 		return
-	var mouse_global = get_global_mouse_position()
 	var tile_pos = tilemap.local_to_map(tilemap.to_local(mouse_global))
-	var sfx = load("res://scripts/tile_break_sfx.gd")
 	var source_id := tilemap.get_cell_source_id(0, tile_pos)
 	var broke_tile := false
 	if source_id != -1:
-		sfx.break_tile(tilemap, tile_pos, get_parent().get_parent())
+		sfx.break_tile(tilemap, tile_pos, world)
 		broke_tile = true
 	elif tilemap.get_layers_count() >= 2 and tilemap.get_cell_source_id(1, tile_pos) != -1:
-		sfx.break_decoration_tile(tilemap, tile_pos, get_parent().get_parent())
+		sfx.break_decoration_tile(tilemap, tile_pos, world)
 		broke_tile = true
 	if broke_tile:
 		var mole = get_parent()
