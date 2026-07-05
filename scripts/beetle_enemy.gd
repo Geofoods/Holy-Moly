@@ -10,6 +10,7 @@ const CHARGE_UP_DURATION := 1.5
 const RUSH_DURATION := 0.6
 const COOLDOWN_DURATION := 1.25
 const MAX_HEALTH := 4.0
+const TURN_COOLDOWN := 0.35
 
 var state := State.PATROL
 var direction := 1.0
@@ -24,6 +25,7 @@ var _move_sfx_timer := 0.0
 const MOVE_SFX_INTERVAL := 0.35
 var _charge_sfx_timer := 0.0
 var _stun_timer := 0.0
+var _turn_cooldown_timer := 0.0
 @onready var hurtbox: Area2D = $Area2D
 @onready var visual: AnimatedSprite2D = $Visual
 
@@ -36,6 +38,7 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	_find_target()
+	_turn_cooldown_timer -= delta
 
 	if _stun_timer > 0.0:
 		_stun_timer -= delta
@@ -72,8 +75,9 @@ func _patrol(delta: float) -> void:
 
 	velocity.x = direction * PATROL_SPEED
 
-	if is_on_wall():
+	if is_on_wall() and _turn_cooldown_timer <= 0.0:
 		direction *= -1
+		_turn_cooldown_timer = TURN_COOLDOWN
 
 	if target_mole:
 		var dist: float = global_position.distance_squared_to(target_mole.global_position)
