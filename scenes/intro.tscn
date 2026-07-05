@@ -1,11 +1,11 @@
 [gd_scene format=3 uid="uid://d2i1x8x1y6p8"]
 
 [ext_resource type="Script" uid="uid://dnwg1dwhl0esb" path="res://scripts/intro.gd" id="1_h1b2y"]
+[ext_resource type="Texture2D" uid="uid://by3w2khn64egu" path="res://backgrnd.png" id="2_es01l"]
 [ext_resource type="Texture2D" uid="uid://buaps737jhmeo" path="res://sprites/molejumpbold.png" id="2_molejump"]
+[ext_resource type="Texture2D" uid="uid://cpabxkmqhhx5n" path="res://holymolylogo.png" id="4_0naf5"]
 [ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="6_es01l"]
 [ext_resource type="PackedScene" path="res://scenes/info_popup.tscn" id="7_info"]
-[ext_resource type="Texture2D" path="res://Bricks.webp" id="8_bricks"]
-[ext_resource type="Texture2D" path="res://holymolybanner.webp" id="9_banner"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_playbutton"]
 bg_color = Color(0.13, 0.85, 0.35, 1)
@@ -13,83 +13,27 @@ border_width_left = 3
 border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
-border_color = Color(0.2, 1.0, 0.5, 0.4)
+border_color = Color(0.2, 1, 0.5, 0.4)
 corner_radius_top_left = 12
 corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
-shadow_size = 8
 shadow_color = Color(0.1, 0.9, 0.3, 0.35)
+shadow_size = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_playbutton_hover"]
-bg_color = Color(0.2, 1.0, 0.45, 1)
+bg_color = Color(0.2, 1, 0.45, 1)
 border_width_left = 3
 border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
-border_color = Color(0.4, 1.0, 0.7, 1)
+border_color = Color(0.4, 1, 0.7, 1)
 corner_radius_top_left = 12
 corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
+shadow_color = Color(0.1, 1, 0.4, 0.5)
 shadow_size = 12
-shadow_color = Color(0.1, 1.0, 0.4, 0.5)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_exitbutton"]
-bg_color = Color(0.72, 0.1, 0.18, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(1.0, 0.3, 0.4, 0.4)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-shadow_size = 8
-shadow_color = Color(0.9, 0.1, 0.2, 0.35)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tutorialbutton"]
-bg_color = Color(0.15, 0.55, 0.9, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.4, 0.75, 1.0, 0.4)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-shadow_size = 8
-shadow_color = Color(0.1, 0.5, 0.9, 0.35)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tutorialbutton_hover"]
-bg_color = Color(0.25, 0.65, 1.0, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.5, 0.85, 1.0, 1)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-shadow_size = 12
-shadow_color = Color(0.2, 0.6, 1.0, 0.5)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_exitbutton_hover"]
-bg_color = Color(1.0, 0.2, 0.3, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(1.0, 0.5, 0.6, 1)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-shadow_size = 12
-shadow_color = Color(0.9, 0.1, 0.2, 0.5)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_levelpicker"]
 bg_color = Color(0.82, 0.65, 0.22, 1)
@@ -102,8 +46,8 @@ corner_radius_top_left = 12
 corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
-shadow_size = 8
 shadow_color = Color(0.6, 0.45, 0.1, 0.35)
+shadow_size = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_levelpicker_hover"]
 bg_color = Color(0.92, 0.75, 0.3, 1)
@@ -111,13 +55,69 @@ border_width_left = 3
 border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
-border_color = Color(1.0, 0.9, 0.55, 1)
+border_color = Color(1, 0.9, 0.55, 1)
 corner_radius_top_left = 12
 corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
-shadow_size = 12
 shadow_color = Color(0.7, 0.55, 0.15, 0.5)
+shadow_size = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tutorialbutton"]
+bg_color = Color(0.15, 0.55, 0.9, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.4, 0.75, 1, 0.4)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0.1, 0.5, 0.9, 0.35)
+shadow_size = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tutorialbutton_hover"]
+bg_color = Color(0.25, 0.65, 1, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.5, 0.85, 1, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0.2, 0.6, 1, 0.5)
+shadow_size = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_exitbutton"]
+bg_color = Color(0.72, 0.1, 0.18, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.3, 0.4, 0.4)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0.9, 0.1, 0.2, 0.35)
+shadow_size = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_exitbutton_hover"]
+bg_color = Color(1, 0.2, 0.3, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.5, 0.6, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0.9, 0.1, 0.2, 0.5)
+shadow_size = 12
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_infobutton"]
 bg_color = Color(0.72, 0.58, 0.32, 1)
@@ -130,8 +130,8 @@ corner_radius_top_left = 24
 corner_radius_top_right = 24
 corner_radius_bottom_right = 24
 corner_radius_bottom_left = 24
-shadow_size = 8
 shadow_color = Color(0.5, 0.4, 0.15, 0.4)
+shadow_size = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_infobutton_hover"]
 bg_color = Color(0.85, 0.7, 0.4, 1)
@@ -139,13 +139,13 @@ border_width_left = 3
 border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
-border_color = Color(1.0, 0.92, 0.7, 0.8)
+border_color = Color(1, 0.92, 0.7, 0.8)
 corner_radius_top_left = 24
 corner_radius_top_right = 24
 corner_radius_bottom_right = 24
 corner_radius_bottom_left = 24
-shadow_size = 12
 shadow_color = Color(0.6, 0.5, 0.2, 0.5)
+shadow_size = 12
 
 [node name="IntroScreen" type="Control" unique_id=899664745]
 layout_mode = 3
@@ -154,7 +154,7 @@ script = ExtResource("1_h1b2y")
 
 [node name="Background" type="TextureRect" parent="." unique_id=1935340133]
 layout_mode = 1
-texture = ExtResource("8_bricks")
+texture = ExtResource("2_es01l")
 expand_mode = 1
 stretch_mode = 1
 
@@ -187,11 +187,11 @@ theme_override_constants/separation = 40
 alignment = 1
 
 [node name="BannerImage" type="TextureRect" parent="CenterContainer/VBoxContainer" unique_id=1959195757]
+clip_contents = true
 custom_minimum_size = Vector2(800, 310)
 layout_mode = 2
 size_flags_horizontal = 4
-clip_contents = true
-texture = ExtResource("9_banner")
+texture = ExtResource("4_0naf5")
 expand_mode = 1
 stretch_mode = 6
 
@@ -218,7 +218,7 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_playbutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_playbutton_hover")
 text = "PLAY"
 
-[node name="LevelPickerOption" type="OptionButton" parent="CenterContainer/VBoxContainer/ButtonContainer"]
+[node name="LevelPickerOption" type="OptionButton" parent="CenterContainer/VBoxContainer/ButtonContainer" unique_id=1483564925]
 custom_minimum_size = Vector2(340, 70)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.03, 0.03, 0.03, 1)
@@ -259,7 +259,7 @@ theme_override_styles/focus = SubResource("StyleBoxFlat_exitbutton_hover")
 text = "QUIT"
 
 [node name="InfoButton" type="Button" parent="." unique_id=778241001]
-anchors_preset = 3
+layout_mode = 0
 anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
@@ -281,8 +281,8 @@ text = "?"
 
 [node name="InfoPopup" parent="." unique_id=778241002 instance=ExtResource("7_info")]
 
-[node name="CreditsLabel" type="Label" parent="."]
-anchors_preset = 12
+[node name="CreditsLabel" type="Label" parent="." unique_id=29629912]
+layout_mode = 0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -295,8 +295,8 @@ theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4
 theme_override_fonts/font = ExtResource("6_es01l")
 theme_override_font_sizes/font_size = 18
-horizontal_alignment = 1
 text = "Made by Bryan, George, Nimansh, Javis"
+horizontal_alignment = 1
 
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/PlayButton" to="." method="_on_play_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/TutorialButton" to="." method="_on_tutorial_pressed"]
