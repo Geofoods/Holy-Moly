@@ -148,7 +148,7 @@ func _on_tutorial_pressed() -> void:
 
 func _setup_level_picker(picker: OptionButton) -> void:
 	picker.clear()
-	picker.add_item("SELECT LEVEL")
+	picker.add_item("LEVELS")
 	picker.set_item_disabled(0, true)
 
 	_level_keys = LevelData.LEVELS.keys()
@@ -159,6 +159,23 @@ func _setup_level_picker(picker: OptionButton) -> void:
 		picker.add_item("Level %d - %s" % [info["number"], info["name"]])
 
 	picker.item_selected.connect(_on_level_picked)
+
+	# Create a bold black dropdown arrow icon
+	var arrow_size := 24
+	var img := Image.create(arrow_size, arrow_size, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	var black := Color(0.05, 0.05, 0.05, 1.0)
+	# Draw a filled downward triangle
+	for y in arrow_size:
+		var progress := float(y) / float(arrow_size - 1)
+		var half_w := int((1.0 - progress) * float(arrow_size) * 0.5)
+		var cx: int = arrow_size / 2
+		for x in range(cx - half_w, cx + half_w + 1):
+			if x >= 0 and x < arrow_size:
+				img.set_pixel(x, y, black)
+	var arrow_tex := ImageTexture.create_from_image(img)
+	picker.add_theme_icon_override("arrow", arrow_tex)
+	picker.add_theme_constant_override("arrow_margin", 12)
 
 func _on_level_picked(_index: int) -> void:
 	SFX.play_ui("ui_click")

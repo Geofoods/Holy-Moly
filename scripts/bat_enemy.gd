@@ -4,6 +4,7 @@ const SPEED = 300.0
 const SINE_AMPLITUDE = 80.0
 const SINE_FREQUENCY = 5.0
 const SWOOP_SPEED = 500.0
+const DETECT_RANGE = 300.0
 
 var direction := 1.0
 var sine_time := 0.0
