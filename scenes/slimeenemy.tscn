@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://iuqjuk37ur0d"]
 
-[ext_resource type="Script" path="res://scripts/slime_enemy.gd" id="1_qykxs"]
+[ext_resource type="Script" uid="uid://dbd1eeg4lrdsh" path="res://scripts/slime_enemy.gd" id="1_qykxs"]
 [ext_resource type="Texture2D" uid="uid://bpu26fxw1vrf2" path="res://poison.webp" id="2_qar1a"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
@@ -8,18 +8,13 @@ size = Vector2(108, 86)
 
 [node name="Enemy" type="CharacterBody2D" unique_id=866104770]
 position = Vector2(2, -1)
-scale = Vector2(0.25, 0.25)
+scale = Vector2(0.4, 0.4)
 collision_layer = 4
 script = ExtResource("1_qykxs")
 
-[node name="Visual" type="Sprite2D" parent="."]
-position = Vector2(-20, -5)
-scale = Vector2(2, 2)
-texture = ExtResource("2_qar1a")
-
-[node name="Poison" type="Sprite2D" parent="." unique_id=1195409220]
-position = Vector2(-16.500002, -13.000002)
-scale = Vector2(0.1, 0.1)
+[node name="Visual" type="Sprite2D" parent="." unique_id=1825470452]
+position = Vector2(-19.999985, -12.000008)
+scale = Vector2(0.3288889, 0.33333337)
 texture = ExtResource("2_qar1a")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1102294679]

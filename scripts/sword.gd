@@ -241,6 +241,10 @@ func _on_hitbox_area_entered(area: Area2D) -> void:
 			var mole = get_parent()
 			if mole.has_method("screen_shake"):
 				mole.screen_shake(8.0, 0.15)
+			if enemy is CharacterBody2D:
+				var knockback_dir = (enemy.global_position - mole.global_position).normalized()
+				enemy.velocity = knockback_dir * 600.0
+				enemy.velocity.y = -250.0
 
 func _deflect_bullet(bullet: Node) -> void:
 	var target_pos := get_global_mouse_position()

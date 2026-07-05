@@ -1,6 +1,6 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://3wwhicdeo8hl"]
 
-[ext_resource type="Script" path="res://scripts/info_popup.gd" id="1_info"]
+[ext_resource type="Script" uid="uid://dqaglk3j1uknk" path="res://scripts/info_popup.gd" id="1_info"]
 [ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="2_font"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_parchment"]
@@ -14,40 +14,8 @@ corner_radius_top_left = 18
 corner_radius_top_right = 18
 corner_radius_bottom_right = 18
 corner_radius_bottom_left = 18
-shadow_size = 16
 shadow_color = Color(0, 0, 0, 0.45)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_inner"]
-bg_color = Color(0.97, 0.91, 0.78, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.6, 0.44, 0.24, 0.6)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tab_off"]
-bg_color = Color(0.8, 0.68, 0.46, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.42, 0.28, 0.14, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tab_on"]
-bg_color = Color(0.97, 0.91, 0.78, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.42, 0.28, 0.14, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
+shadow_size = 16
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_close"]
 bg_color = Color(0.72, 0.1, 0.18, 1)
@@ -73,55 +41,83 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_listbtn"]
-bg_color = Color(0.85, 0.75, 0.55, 0.0)
-border_width_bottom = 2
-border_color = Color(0.6, 0.44, 0.24, 0.4)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_listbtn_selected"]
-bg_color = Color(0.8, 0.62, 0.32, 0.55)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tab_off"]
+bg_color = Color(0.8, 0.68, 0.46, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.42, 0.28, 0.14, 1)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
+corner_radius_top_left = 8
+corner_radius_top_right = 8
 
-[node name="InfoPopup" type="CanvasLayer"]
-layer = 25
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tab_on"]
+bg_color = Color(0.97, 0.91, 0.78, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.42, 0.28, 0.14, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_inner"]
+bg_color = Color(0.97, 0.91, 0.78, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.6, 0.44, 0.24, 0.6)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[node name="InfoPopup" type="CanvasLayer" unique_id=642113826]
+layer = 999
 script = ExtResource("1_info")
 
-[node name="DimBackground" type="ColorRect" parent="."]
+[node name="DimBackground" type="ColorRect" parent="." unique_id=1773085134]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 color = Color(0, 0, 0, 0.6)
 
-[node name="CenterContainer" type="CenterContainer" parent="."]
+[node name="CenterContainer" type="Control" parent="." unique_id=1360763012]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+clip_contents = true
 
-[node name="Panel" type="PanelContainer" parent="CenterContainer"]
-custom_minimum_size = Vector2(980, 660)
-layout_mode = 2
+[node name="Panel" type="PanelContainer" parent="CenterContainer" unique_id=2080864583]
+anchors_preset = 8
+anchor_top = 0.0
+anchor_bottom = 1.0
+custom_minimum_size = Vector2(980, 0)
+layout_mode = 1
+offset_left = -490
+offset_right = 490
+offset_top = 40
+offset_bottom = -40
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_parchment")
 
-[node name="Margin" type="MarginContainer" parent="CenterContainer/Panel"]
+[node name="Margin" type="MarginContainer" parent="CenterContainer/Panel" unique_id=1129462501]
 layout_mode = 2
 theme_override_constants/margin_left = 28
 theme_override_constants/margin_top = 22
 theme_override_constants/margin_right = 28
 theme_override_constants/margin_bottom = 22
 
-[node name="VBox" type="VBoxContainer" parent="CenterContainer/Panel/Margin"]
+[node name="VBox" type="VBoxContainer" parent="CenterContainer/Panel/Margin" unique_id=321052840]
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="HeaderRow" type="HBoxContainer" parent="CenterContainer/Panel/Margin/VBox"]
+[node name="HeaderRow" type="HBoxContainer" parent="CenterContainer/Panel/Margin/VBox" unique_id=805533870]
 layout_mode = 2
 
-[node name="TitleLabel" type="Label" parent="CenterContainer/Panel/Margin/VBox/HeaderRow"]
+[node name="TitleLabel" type="Label" parent="CenterContainer/Panel/Margin/VBox/HeaderRow" unique_id=725306261]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.32, 0.2, 0.08, 1)
@@ -129,40 +125,39 @@ theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 36
 text = "FIELD GUIDE"
 
-[node name="CloseButton" type="Button" parent="CenterContainer/Panel/Margin/VBox/HeaderRow"]
+[node name="CloseButton" type="Button" parent="CenterContainer/Panel/Margin/VBox/HeaderRow" unique_id=601344645]
 custom_minimum_size = Vector2(46, 46)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("StyleBoxFlat_close")
-theme_override_styles/hover = SubResource("StyleBoxFlat_close_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_close_hover")
+theme_override_styles/hover = SubResource("StyleBoxFlat_close_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_close_hover")
 text = "X"
 
-[node name="TabRow" type="HBoxContainer" parent="CenterContainer/Panel/Margin/VBox"]
+[node name="TabRow" type="HBoxContainer" parent="CenterContainer/Panel/Margin/VBox" unique_id=1453054151]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="BestiaryTab" type="Button" parent="CenterContainer/Panel/Margin/VBox/TabRow"]
+[node name="BestiaryTab" type="Button" parent="CenterContainer/Panel/Margin/VBox/TabRow" unique_id=1852587820]
 custom_minimum_size = Vector2(180, 44)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.32, 0.2, 0.08, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_tab_off")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_tab_on")
+theme_override_styles/hover = SubResource("StyleBoxFlat_tab_on")
+theme_override_styles/hover_pressed = SubResource("StyleBoxFlat_tab_on")
 toggle_mode = true
 button_pressed = true
-theme_override_colors/font_color = Color(0.32, 0.2, 0.08, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 18
-theme_override_styles/normal = SubResource("StyleBoxFlat_tab_off")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_tab_on")
-theme_override_styles/hover = SubResource("StyleBoxFlat_tab_on")
-theme_override_styles/hover_pressed = SubResource("StyleBoxFlat_tab_on")
 text = "BESTIARY"
 
-[node name="ControlsTab" type="Button" parent="CenterContainer/Panel/Margin/VBox/TabRow"]
+[node name="ControlsTab" type="Button" parent="CenterContainer/Panel/Margin/VBox/TabRow" unique_id=1835568074]
 custom_minimum_size = Vector2(180, 44)
 layout_mode = 2
-toggle_mode = true
 theme_override_colors/font_color = Color(0.32, 0.2, 0.08, 1)
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 18
@@ -170,29 +165,30 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_tab_off")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_tab_on")
 theme_override_styles/hover = SubResource("StyleBoxFlat_tab_on")
 theme_override_styles/hover_pressed = SubResource("StyleBoxFlat_tab_on")
+toggle_mode = true
 text = "CONTROLS"
 
-[node name="ContentPanel" type="PanelContainer" parent="CenterContainer/Panel/Margin/VBox"]
-custom_minimum_size = Vector2(0, 520)
+[node name="ContentPanel" type="PanelContainer" parent="CenterContainer/Panel/Margin/VBox" unique_id=1189548140]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_inner")
 
-[node name="BestiaryView" type="HBoxContainer" parent="CenterContainer/Panel/Margin/VBox/ContentPanel"]
+[node name="BestiaryView" type="HBoxContainer" parent="CenterContainer/Panel/Margin/VBox/ContentPanel" unique_id=2041363629]
 layout_mode = 2
+size_flags_vertical = 3
 theme_override_constants/separation = 0
 
-[node name="ListScroll" type="ScrollContainer" parent="CenterContainer/Panel/Margin/VBox/ContentPanel/BestiaryView"]
+[node name="ListScroll" type="ScrollContainer" parent="CenterContainer/Panel/Margin/VBox/ContentPanel/BestiaryView" unique_id=1433567798]
 custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
 horizontal_scroll_mode = 0
 
-[node name="ListVBox" type="VBoxContainer" parent="CenterContainer/Panel/Margin/VBox/ContentPanel/BestiaryView/ListScroll"]
+[node name="ListVBox" type="VBoxContainer" parent="CenterContainer/Panel/Margin/VBox/ContentPanel/BestiaryView/ListScroll" unique_id=72970268]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 2
 
-[node name="DetailMargin" type="MarginContainer" parent="CenterContainer/Panel/Margin/VBox/ContentPanel/BestiaryView"]
+[node name="DetailMargin" type="MarginContainer" parent="CenterContainer/Panel/Margin/VBox/ContentPanel/BestiaryView" unique_id=457437839]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/margin_left = 20
@@ -200,21 +196,23 @@ theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 12
 
-[node name="DetailScroll" type="ScrollContainer" parent="CenterContainer/Panel/Margin/VBox/ContentPanel/BestiaryView/DetailMargin"]
+[node name="DetailScroll" type="ScrollContainer" parent="CenterContainer/Panel/Margin/VBox/ContentPanel/BestiaryView/DetailMargin" unique_id=395167279]
 layout_mode = 2
+size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="DetailVBox" type="VBoxContainer" parent="CenterContainer/Panel/Margin/VBox/ContentPanel/BestiaryView/DetailMargin/DetailScroll"]
+[node name="DetailVBox" type="VBoxContainer" parent="CenterContainer/Panel/Margin/VBox/ContentPanel/BestiaryView/DetailMargin/DetailScroll" unique_id=1730420279]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 8
 
-[node name="ControlsView" type="ScrollContainer" parent="CenterContainer/Panel/Margin/VBox/ContentPanel"]
+[node name="ControlsView" type="ScrollContainer" parent="CenterContainer/Panel/Margin/VBox/ContentPanel" unique_id=1703606555]
 visible = false
 layout_mode = 2
+size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="ControlsMargin" type="MarginContainer" parent="CenterContainer/Panel/Margin/VBox/ContentPanel/ControlsView"]
+[node name="ControlsMargin" type="MarginContainer" parent="CenterContainer/Panel/Margin/VBox/ContentPanel/ControlsView" unique_id=106771315]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/margin_left = 20
@@ -222,7 +220,7 @@ theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 12
 
-[node name="ControlsVBox" type="VBoxContainer" parent="CenterContainer/Panel/Margin/VBox/ContentPanel/ControlsView/ControlsMargin"]
+[node name="ControlsVBox" type="VBoxContainer" parent="CenterContainer/Panel/Margin/VBox/ContentPanel/ControlsView/ControlsMargin" unique_id=761412643]
 layout_mode = 2
 theme_override_constants/separation = 14
 

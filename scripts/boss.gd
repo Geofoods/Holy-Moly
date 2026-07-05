@@ -1,10 +1,10 @@
 extends CharacterBody2D
 
-const MAX_HEALTH := 100.0
+const MAX_HEALTH := 40.0
 const PAN_DURATION := 0.75
 const HOLD_DURATION := 0.75
 const DESCENT_SPEED := 20.0
-const SPIT_INTERVAL := 1.5
+const SPIT_INTERVAL := 3.0
 const PROJECTILE_SPEED := 800.0
 const CHEST_SPAWN_INTERVAL := 10.0
 

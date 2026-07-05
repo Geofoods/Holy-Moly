@@ -107,14 +107,17 @@ func _combo_shake() -> void:
 	var mole = get_tree().get_first_node_in_group("mole")
 	if not mole or not mole.has_method("screen_shake"):
 		return
+	var intensity := 6.0
+	var duration := 0.15
 	if combo >= 10:
-		mole.screen_shake(14.0, 0.25)
+		intensity = 14.0; duration = 0.25
 	elif combo >= 7:
-		mole.screen_shake(10.0, 0.2)
+		intensity = 10.0; duration = 0.2
 	elif combo >= 5:
-		mole.screen_shake(7.0, 0.15)
+		intensity = 7.0; duration = 0.15
 	elif combo >= 3:
-		mole.screen_shake(4.0, 0.1)
+		intensity = 4.0; duration = 0.1
+	mole.screen_shake(intensity, duration)
 
 func _play_combo_sound() -> void:
 	var pitch := 0.8 + float(mini(combo, 12)) * 0.1

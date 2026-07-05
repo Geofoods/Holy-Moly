@@ -1,49 +1,49 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://cc3uivb5mk5x5"]
 
-[ext_resource type="Texture2D" path="res://1.png" id="1_tex"]
-[ext_resource type="Texture2D" path="res://2.png" id="2_tex"]
-[ext_resource type="Texture2D" path="res://3.png" id="3_tex"]
-[ext_resource type="Texture2D" path="res://4.png" id="4_tex"]
+[ext_resource type="Texture2D" uid="uid://xv528vtig2kh" path="res://1.png" id="1_tex"]
+[ext_resource type="Texture2D" uid="uid://cqyx03qm53oyg" path="res://2.png" id="2_tex"]
+[ext_resource type="Texture2D" uid="uid://b6utvm1g37xbh" path="res://3.png" id="3_tex"]
+[ext_resource type="Texture2D" uid="uid://ms25h64vbgar" path="res://4.png" id="4_tex"]
 
-[node name="ParallaxBackground" type="Node2D"]
+[node name="ParallaxBackground" type="Node2D" unique_id=285942024]
 z_index = -10
 
-[node name="Layer0" type="Parallax2D" parent="."]
+[node name="Layer0" type="Parallax2D" parent="." unique_id=1905436390]
 scroll_scale = Vector2(0.006, 0.0025)
-repeat_size = Vector2(2304, 0)
-repeat_times = Vector2i(10, 1)
+repeat_size = Vector2(2304, 1296)
+repeat_times = 2
 
-[node name="Sprite" type="Sprite2D" parent="Layer0"]
+[node name="Sprite" type="Sprite2D" parent="Layer0" unique_id=619660320]
+scale = Vector2(4, 4)
 texture = ExtResource("1_tex")
 centered = false
-scale = Vector2(4, 4)
 
-[node name="Layer1" type="Parallax2D" parent="."]
+[node name="Layer1" type="Parallax2D" parent="." unique_id=523383506]
 scroll_scale = Vector2(0.018, 0.0075)
-repeat_size = Vector2(2304, 0)
-repeat_times = Vector2i(10, 1)
+repeat_size = Vector2(2304, 1296)
+repeat_times = 2
 
-[node name="Sprite" type="Sprite2D" parent="Layer1"]
+[node name="Sprite" type="Sprite2D" parent="Layer1" unique_id=1675234796]
+scale = Vector2(4, 4)
 texture = ExtResource("2_tex")
 centered = false
-scale = Vector2(4, 4)
 
-[node name="Layer2" type="Parallax2D" parent="."]
+[node name="Layer2" type="Parallax2D" parent="." unique_id=2006629193]
 scroll_scale = Vector2(0.05, 0.02)
-repeat_size = Vector2(2304, 0)
-repeat_times = Vector2i(10, 1)
+repeat_size = Vector2(2304, 1296)
+repeat_times = 2
 
-[node name="Sprite" type="Sprite2D" parent="Layer2"]
+[node name="Sprite" type="Sprite2D" parent="Layer2" unique_id=604041333]
+scale = Vector2(4, 4)
 texture = ExtResource("3_tex")
 centered = false
-scale = Vector2(4, 4)
 
-[node name="Layer3" type="Parallax2D" parent="."]
+[node name="Layer3" type="Parallax2D" parent="." unique_id=1812628906]
 scroll_scale = Vector2(0.1, 0.04)
-repeat_size = Vector2(2304, 0)
-repeat_times = Vector2i(10, 1)
+repeat_size = Vector2(2304, 1296)
+repeat_times = 2
 
-[node name="Sprite" type="Sprite2D" parent="Layer3"]
+[node name="Sprite" type="Sprite2D" parent="Layer3" unique_id=1989623677]
+scale = Vector2(4, 4)
 texture = ExtResource("4_tex")
 centered = false
-scale = Vector2(4, 4)

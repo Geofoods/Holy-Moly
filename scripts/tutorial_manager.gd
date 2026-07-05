@@ -40,20 +40,20 @@ func _build_steps() -> void:
 			"node": "MoveTrigger",
 		},
 		{
-			"text": "JUMP: press W, ▲, or SPACE!\n**HOLD SPACE LONGER = JUMP HIGHER!** Tap for short hops.",
+			"text": "JUMP: press W, ▲, or SPACE!\n**HOLD SPACE LONGER = JUMP HIGHER!** Tap for short hops.\n\nJump over the gap ahead!",
 			"kind": "trigger",
 			"node": "JumpTrigger",
 		},
 		{
-			"text": "An Ant! Attack it with Left-click, or just outrun it.",
+			"text": "An Ant! LEFT-CLICK to attack it with your shovel, or just run past it.",
 			"kind": "trigger",
 			"node": "EnemyTrigger",
-			"checkpoint": Vector2(2500, -116),
+			"checkpoint": Vector2(1800, -116),
 		},
 		{
 			"text": "Nice! Walk into the chest to open it.",
 			"kind": "chest",
-			"node": "Chest",
+			"node": "TutorialChest",
 		},
 		{
 			"text": "RIGHT-CLICK to PARRY! It deflects projectiles back at enemies for 3 seconds, then cooldown.",
@@ -63,26 +63,26 @@ func _build_steps() -> void:
 			"text": "A Beetle! It charges fast but can't turn mid-rush. Sidestep it, then strike!",
 			"kind": "trigger",
 			"node": "BeetleTrigger",
-			"checkpoint": Vector2(6050, -116),
+			"checkpoint": Vector2(2500, -116),
 		},
 		{
 			"text": "A Goblin! Throws explosive mushrooms. Dodge or PARRY them back, then close in!",
 			"kind": "trigger",
 			"node": "GoblinTrigger",
-			"checkpoint": Vector2(7300, -116),
+			"checkpoint": Vector2(2900, -116),
 		},
 		{
 			"text": "You got a BOMB! Press 1-3 to select, then LEFT-CLICK toward a wall. Massive damage and destruction!",
 			"kind": "trigger",
 			"node": "BombWallTrigger",
-			"checkpoint": Vector2(8350, -116),
+			"checkpoint": Vector2(3300, -116),
 			"on_start": func(): Inventory.add_item(preload("res://resources/bomb.tres")),
 		},
 		{
 			"text": "You got a DRILL! Select it, LEFT-CLICK toward walls. It tunnels through rocks and pierces enemies!",
 			"kind": "trigger",
 			"node": "DrillWallTrigger",
-			"checkpoint": Vector2(9200, -116),
+			"checkpoint": Vector2(3600, -116),
 			"on_start": func(): Inventory.add_item(preload("res://resources/drill.tres")),
 		},
 		{
@@ -118,8 +118,8 @@ func _show_step(i: int) -> void:
 			trigger.body_entered.connect(_on_trigger_entered, CONNECT_ONE_SHOT)
 		"chest":
 			var chest := get_node(String(step["node"]))
-			var interaction: Node = chest.get_node_or_null("Interaction")
-			if interaction == null:
+			var interaction: Node = chest.get_node_or_null("Area2D")
+			if interaction == null or not interaction.has_signal("opened"):
 				interaction = chest
 			_pending_signal = interaction.opened
 			_has_pending_signal = true

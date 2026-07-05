@@ -16,6 +16,7 @@ var climb_timer := 0.0
 var health := MAX_HEALTH
 var _move_sfx_timer := 0.0
 var _shoot_timer := SHOOT_INTERVAL
+var _stun_timer := 0.0
 const MOVE_SFX_INTERVAL := 0.4
 var ant_bullet_scene := preload("res://scenes/ant_bullet.tscn")
 @onready var hurtbox: Area2D = $Hurtbox
@@ -31,6 +32,15 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	_find_target()
+
+	if _stun_timer > 0.0:
+		_stun_timer -= delta
+		if not is_on_floor():
+			velocity.y += GRAVITY * delta
+		move_and_slide()
+		_update_visual_direction()
+		return
+
 	if is_climbing:
 		climb_timer -= delta
 		velocity.y = -CLIMB_SPEED
@@ -112,6 +122,11 @@ func _on_hurtbox_area_entered(area: Area2D) -> void:
 		return
 	var parent = area.get_parent()
 	if "is_swinging" in parent and parent.is_swinging:
+		var mole = get_tree().get_first_node_in_group("mole")
+		if mole:
+			var dir = (global_position - mole.global_position).normalized()
+			velocity = dir * 600.0 + Vector2(0, -250)
+			_stun_timer = 0.25
 		take_damage(1)
 
 func take_damage(amount: float) -> void:

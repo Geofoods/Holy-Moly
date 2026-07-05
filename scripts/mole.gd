@@ -89,7 +89,7 @@ func _ready() -> void:
 	add_to_group("mole")
 	var camera := get_node_or_null("Camera2D") as Camera2D
 	if camera:
-		camera.zoom = Vector2(1.5, 1.5)
+		camera.zoom = Vector2(0.5, 0.5)
 	tilemap = get_parent().get_node_or_null("TileMap")
 	LevelMusic.start()
 	var ev_w = InputEventKey.new()
@@ -679,8 +679,8 @@ func deflect_pause() -> void:
 	var camera := get_node_or_null("Camera2D") as Camera2D
 	if not camera:
 		return
-	var original_zoom := Vector2(1.5, 1.5)
-	var punch_zoom := Vector2(1.75, 1.75)
+	var original_zoom := Vector2(0.5, 0.5)
+	var punch_zoom := Vector2(0.6, 0.6)
 	var zoom_tween := create_tween()
 	zoom_tween.tween_property(camera, "zoom", punch_zoom, 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	zoom_tween.tween_interval(0.15)

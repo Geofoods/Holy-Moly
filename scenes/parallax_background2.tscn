@@ -11,7 +11,8 @@ z_index = -10
 
 [node name="Layer0" type="Parallax2D" parent="." unique_id=219831622]
 scroll_scale = Vector2(0.006, 0.0025)
-repeat_size = Vector2(2304, 0)
+repeat_size = Vector2(2304, 1296)
+repeat_times = 2
 
 [node name="Sprite" type="Sprite2D" parent="Layer0" unique_id=2028494087]
 scale = Vector2(4, 4)
@@ -20,7 +21,8 @@ centered = false
 
 [node name="Layer1" type="Parallax2D" parent="." unique_id=1340325726]
 scroll_scale = Vector2(0.018, 0.0075)
-repeat_size = Vector2(2304, 0)
+repeat_size = Vector2(2304, 1296)
+repeat_times = 2
 
 [node name="Sprite" type="Sprite2D" parent="Layer1" unique_id=450919603]
 scale = Vector2(4, 4)
@@ -29,7 +31,8 @@ centered = false
 
 [node name="Layer2" type="Parallax2D" parent="." unique_id=1722863201]
 scroll_scale = Vector2(0.05, 0.02)
-repeat_size = Vector2(2304, 0)
+repeat_size = Vector2(2304, 1296)
+repeat_times = 2
 
 [node name="Sprite" type="Sprite2D" parent="Layer2" unique_id=24721702]
 scale = Vector2(4, 4)
@@ -38,7 +41,8 @@ centered = false
 
 [node name="Layer3" type="Parallax2D" parent="." unique_id=867110154]
 scroll_scale = Vector2(0.1, 0.04)
-repeat_size = Vector2(2304, 0)
+repeat_size = Vector2(2304, 1296)
+repeat_times = 2
 
 [node name="Sprite" type="Sprite2D" parent="Layer3" unique_id=1088071746]
 scale = Vector2(4, 4)

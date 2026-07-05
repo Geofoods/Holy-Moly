@@ -1,7 +1,7 @@
 extends Node2D
 
 const SPEED := 30.0
-const WANDER_RADIUS := 100.0
+const WANDER_RADIUS := 250.0
 
 var origin: Vector2
 var wander_target: Vector2

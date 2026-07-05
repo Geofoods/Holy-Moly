@@ -5,37 +5,32 @@ const DETECT_RANGE := 300.0
 const JUMP_VELOCITY := -900.0
 const JUMP_HORIZONTAL := 700.0
 const MAX_HEALTH := 1.0
-const POISON_DURATION := 2.0
-const POISON_DAMAGE_INTERVAL := 0.25
-const POISON_TILE_INTERVAL := 0.5
-const POISON_RADIUS := 150.0
-const TILE_BREAK_RADIUS := 2
+
 
 var health := MAX_HEALTH
 var target_mole: Node2D = null
 var was_on_floor := true
-var poison_timer := 0.0
-var poison_damage_tick := 0.0
-var poison_tile_tick := 0.0
 var has_landed := false
-
-var _tilemap: TileMap = null
-var _tile_break_script: GDScript = null
+var _stun_timer := 0.0
 
 @onready var hurtbox: Area2D = $Area2D
-@onready var poison_sprite: Sprite2D = $Poison
 @onready var visual: Sprite2D = $Visual
 
 func _ready() -> void:
 	hurtbox.area_entered.connect(_on_hurtbox_area_entered)
 	hurtbox.body_entered.connect(_on_body_entered)
 	hurtbox.add_to_group("enemy_hurtbox")
-	poison_sprite.modulate.a = 0.0
-	_tilemap = get_parent().get_node_or_null("TileMap") as TileMap
-	_tile_break_script = load("res://scripts/tile_break_sfx.gd")
 
 func _physics_process(delta: float) -> void:
 	_find_target()
+
+	if _stun_timer > 0.0:
+		_stun_timer -= delta
+		if not is_on_floor():
+			velocity.y += GRAVITY * delta
+		move_and_slide()
+		was_on_floor = is_on_floor()
+		return
 
 	if not is_on_floor():
 		velocity.y += GRAVITY * delta
@@ -45,16 +40,6 @@ func _physics_process(delta: float) -> void:
 
 	move_and_slide()
 	was_on_floor = is_on_floor()
-
-	if poison_timer > 0.0:
-		poison_timer -= delta
-		poison_damage_tick -= delta
-		poison_tile_tick -= delta
-		_process_poison()
-		if poison_timer <= 0.0:
-			var tw := create_tween()
-			tw.tween_property(poison_sprite, "modulate:a", 0.0, 0.3)
-		return
 
 	if not is_on_floor():
 		return
@@ -95,31 +80,6 @@ func _land() -> void:
 		return
 	has_landed = true
 	SFX.play("land", global_position, -10.0, 0.4)
-	poison_timer = POISON_DURATION
-	poison_damage_tick = 0.0
-	poison_tile_tick = 0.0
-	poison_sprite.modulate.a = 0.6
-	poison_sprite.scale = Vector2(0.1, 0.1)
-
-	var tw := create_tween()
-	tw.tween_property(poison_sprite, "scale", Vector2(0.31, 0.31), 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-
-func _process_poison() -> void:
-	if poison_damage_tick <= 0.0:
-		poison_damage_tick = POISON_DAMAGE_INTERVAL
-		if target_mole and is_instance_valid(target_mole):
-			var dist := global_position.distance_to(target_mole.global_position)
-			if dist <= POISON_RADIUS and target_mole.has_method("take_damage"):
-				target_mole.take_damage(0.5, global_position, true)
-
-	if poison_tile_tick <= 0.0:
-		poison_tile_tick = POISON_TILE_INTERVAL
-		if _tilemap:
-			var center := _tilemap.local_to_map(_tilemap.to_local(global_position))
-			for dx in range(-TILE_BREAK_RADIUS, TILE_BREAK_RADIUS + 1):
-				for dy in range(-TILE_BREAK_RADIUS, TILE_BREAK_RADIUS + 1):
-					var tp := Vector2i(center.x + dx, center.y + dy)
-					_tile_break_script.break_tile(_tilemap, tp, get_parent())
 
 func _on_body_entered(body: Node) -> void:
 	if body.is_in_group("mole"):
@@ -128,6 +88,11 @@ func _on_body_entered(body: Node) -> void:
 func _on_hurtbox_area_entered(area: Area2D) -> void:
 	var parent: Node = area.get_parent()
 	if "is_swinging" in parent and parent.is_swinging:
+		var mole = get_tree().get_first_node_in_group("mole")
+		if mole:
+			var dir = (global_position - mole.global_position).normalized()
+			velocity = dir * 600.0 + Vector2(0, -250)
+			_stun_timer = 0.25
 		take_damage(1)
 
 func take_damage(amount: float) -> void:
@@ -168,7 +133,6 @@ func die() -> void:
 
 func _break_apart() -> void:
 	visual.visible = false
-	poison_sprite.visible = false
 
 	var source_tex := visual.texture
 	var source_region := Rect2(Vector2.ZERO, source_tex.get_size())

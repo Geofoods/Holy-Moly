@@ -62,7 +62,7 @@ scale = Vector2(0.25, 0.25)
 [node name="Camera2D" type="Camera2D" parent="CharacterBody2D2" unique_id=955812054]
 position = Vector2(92, -296)
 scale = Vector2(4, 4)
-zoom = Vector2(1.5, 1.5)
+zoom = Vector2(0.5, 0.5)
 position_smoothing_enabled = true
 
 [node name="Enemy" parent="." unique_id=1155690396 instance=ExtResource("2_enemy")]

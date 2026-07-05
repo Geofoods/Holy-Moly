@@ -1,8 +1,8 @@
 extends Node2D
 
-const MAX_FIREFLIES := 30
-const SPAWN_RADIUS := 1000.0
-const DESPAWN_DIST := 1200.0
+const MAX_FIREFLIES := 80
+const SPAWN_RADIUS := 1800.0
+const DESPAWN_DIST := 2200.0
 
 var firefly_scene := preload("res://scenes/firefly.tscn")
 

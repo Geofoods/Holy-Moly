@@ -291,17 +291,13 @@ z_index = 1
 scale = Vector2(0.5, 0.5)
 script = ExtResource("1_kln4g")
 
-[node name="PointLight2D" type="PointLight2D" parent="." unique_id=1504260063]
-position = Vector2(6, -70)
-scale = Vector2(10, 10)
-shadow_enabled = true
-shadow_color = Color(0, 0, 0, 1)
-texture = ExtResource("15_obc8e")
-
 [node name="MoleLight" type="PointLight2D" parent="." unique_id=1185757517]
-position = Vector2(6, -70)
+position = Vector2(-6.0000305, 13.999985)
 scale = Vector2(10, 10)
-range_item_cull_mask = 2
+range_item_cull_mask = 1023
+shadow_enabled = true
+shadow_color = Color(0.2, 0, 0.0033332824, 1)
+shadow_item_cull_mask = 1023
 texture = ExtResource("15_obc8e")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1243241645]
@@ -312,6 +308,7 @@ autoplay = "idlebold"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1888999731]
 position = Vector2(6, 14.000008)
+rotation = 1.5707964
 shape = SubResource("CapsuleShape2D_gmfyf")
 
 [node name="Weapon" parent="." unique_id=1867143522 instance=ExtResource("5_weapon")]

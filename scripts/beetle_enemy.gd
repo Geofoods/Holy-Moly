@@ -23,6 +23,7 @@ var _charge_tween: Tween = null
 var _move_sfx_timer := 0.0
 const MOVE_SFX_INTERVAL := 0.35
 var _charge_sfx_timer := 0.0
+var _stun_timer := 0.0
 @onready var hurtbox: Area2D = $Area2D
 @onready var visual: AnimatedSprite2D = $Visual
 
@@ -35,6 +36,14 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	_find_target()
+
+	if _stun_timer > 0.0:
+		_stun_timer -= delta
+		if not is_on_floor():
+			velocity.y += GRAVITY * delta
+		move_and_slide()
+		_update_visual_direction()
+		return
 
 	match state:
 		State.PATROL:
@@ -188,6 +197,11 @@ func _find_target() -> void:
 func _on_hurtbox_area_entered(area: Area2D) -> void:
 	var parent = area.get_parent()
 	if "is_swinging" in parent and parent.is_swinging:
+		var mole = get_tree().get_first_node_in_group("mole")
+		if mole:
+			var dir = (global_position - mole.global_position).normalized()
+			velocity = dir * 600.0 + Vector2(0, -250)
+			_stun_timer = 0.25
 		take_damage(1)
 
 func _on_body_entered(body: Node) -> void:

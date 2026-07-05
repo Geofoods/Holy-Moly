@@ -72,6 +72,7 @@ zoom = Vector2(0.5, 0.5)
 position_smoothing_enabled = true
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=71896557]
+layer = 99
 
 [node name="heart" parent="CanvasLayer" unique_id=1207891791 instance=ExtResource("3_sugp2")]
 position = Vector2(117.99999, 113.99999)

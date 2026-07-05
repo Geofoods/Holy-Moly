@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://dnalp7pe0fqi0"]
 
 [ext_resource type="PackedScene" uid="uid://p1of6ummc17j" path="res://scenes/mole.tscn" id="1_o5qli"]
-[ext_resource type="PackedScene" path="res://scenes/parallax_background3.tscn" id="1_sucws"]
+[ext_resource type="PackedScene" uid="uid://c3fg4jh63xhyr" path="res://scenes/parallax_background3.tscn" id="1_sucws"]
 [ext_resource type="PackedScene" uid="uid://dnp3icrndkjm8" path="res://scenes/antenemy.tscn" id="2_enemy"]
 [ext_resource type="PackedScene" uid="uid://c6xus6tuhcmfo" path="res://scenes/heart.tscn" id="3_sugp2"]
 [ext_resource type="PackedScene" uid="uid://d2i1x8x1y6qa" path="res://scenes/pause_menu.tscn" id="4_pause"]
@@ -17,9 +17,9 @@
 [ext_resource type="PackedScene" uid="uid://cdxu1kg5or16d" path="res://candle.tscn" id="18_4xveb"]
 [ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="19_ratuh"]
 [ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="20_sucws"]
-[ext_resource type="Script" uid="uid://dpsujuff7o60j" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
+[ext_resource type="Script" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
 [ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
-[ext_resource type="PackedScene" path="res://scenes/info_popup.tscn" id="info_popup_res"]
+[ext_resource type="PackedScene" uid="uid://3wwhicdeo8hl" path="res://scenes/info_popup.tscn" id="info_popup_res"]
 [ext_resource type="PackedScene" path="res://scenes/level_intro_banner.tscn" id="level_banner_res"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
@@ -73,6 +73,7 @@ zoom = Vector2(0.5, 0.5)
 position_smoothing_enabled = true
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=71896557]
+layer = 99
 
 [node name="heart" parent="CanvasLayer" unique_id=1207891791 instance=ExtResource("3_sugp2")]
 position = Vector2(117.99999, 113.99999)

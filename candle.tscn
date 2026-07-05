@@ -21,7 +21,8 @@ animations = [{
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_pqck8"]
 size = Vector2(80, 29.5)
 
-[node name="candle" type="StaticBody2D" unique_id=158104047]
+[node name="candle" type="RigidBody2D" unique_id=815664404]
+position = Vector2(1, -4)
 collision_layer = 0
 collision_mask = 0
 
