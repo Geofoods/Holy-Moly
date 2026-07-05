@@ -850,3 +850,46 @@ func _setup_slow_ui() -> void:
 	_slow_bar.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_slow_bar.color = Color(1.0, 0.5, 0.0, 0.9)
 	bar_bg.add_child(_slow_bar)
+
+func show_inventory_full_message() -> void:
+	var canvas := get_parent().get_node_or_null("CanvasLayer")
+	if not canvas:
+		return
+	
+	var existing = canvas.get_node_or_null("InventoryFullLabel")
+	if existing:
+		existing.queue_free()
+		
+	var label := Label.new()
+	label.name = "InventoryFullLabel"
+	label.text = "Inventory Full!"
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	
+	label.add_theme_color_override("font_color", Color(1.0, 0.1, 0.1, 1.0))
+	label.add_theme_font_size_override("font_size", 32)
+	var font := load("res://Baby Doll.otf") as Font
+	if font:
+		label.add_theme_font_override("font", font)
+	
+	label.anchor_left = 0.5
+	label.anchor_right = 0.5
+	label.anchor_top = 0.5
+	label.anchor_bottom = 0.5
+	label.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	label.grow_vertical = Control.GROW_DIRECTION_BOTH
+	label.offset_left = -150
+	label.offset_right = 150
+	label.offset_top = -20
+	label.offset_bottom = 20
+	
+	canvas.add_child(label)
+	
+	var tween := create_tween()
+	label.scale = Vector2(0.8, 0.8)
+	label.pivot_offset = Vector2(150, 20)
+	tween.tween_property(label, "scale", Vector2(1.1, 1.1), 0.15).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(label, "scale", Vector2(1.0, 1.0), 0.1)
+	tween.tween_interval(1.0)
+	tween.tween_property(label, "modulate:a", 0.0, 0.5)
+	tween.tween_callback(label.queue_free)

@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://d3kk4y8f8tfwv"]
 
-[ext_resource type="PackedScene" uid="uid://c3fg4jh63xhyr" path="res://scenes/parallax_background3.tscn" id="1_2exuq"]
+[ext_resource type="PackedScene" path="res://scenes/parallax_background3.tscn" id="1_2exuq"]
 [ext_resource type="PackedScene" uid="uid://p1of6ummc17j" path="res://scenes/mole.tscn" id="1_o5qli"]
 [ext_resource type="PackedScene" uid="uid://dnp3icrndkjm8" path="res://scenes/antenemy.tscn" id="2_enemy"]
 [ext_resource type="PackedScene" uid="uid://c6xus6tuhcmfo" path="res://scenes/heart.tscn" id="3_sugp2"]

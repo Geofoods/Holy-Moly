@@ -66,28 +66,14 @@ func _get_loot_item() -> ItemData:
 
 func _grant_item() -> void:
 	var loot := _get_loot_item()
-	Inventory.add_item(loot)
-	_show_item_rise(loot)
+	var dropped_item_scene := preload("res://scenes/dropped_item.tscn")
+	var dropped_item = dropped_item_scene.instantiate()
+	dropped_item.item_data = loot
+	get_parent().add_child(dropped_item)
+	dropped_item.global_position = global_position + Vector2(0, -20)
+	
+	SFX.play("coin", global_position, -6.0, 0.1)
 
-func _show_item_rise(loot: ItemData) -> void:
-	if not loot.icon_texture:
-		return
-	get_tree().create_timer(0.15).timeout.connect(func():
-		SFX.play("item_pickup", global_position, -4.0, 0.1)
-	)
-	get_tree().create_timer(0.3).timeout.connect(func():
-		SFX.play("coin", global_position, -6.0, 0.1)
-	)
-	var sprite := Sprite2D.new()
-	sprite.texture = loot.icon_texture
-	sprite.global_position = global_position + Vector2(0, -40)
-	sprite.z_index = 20
-	add_child(sprite)
-	var tween := create_tween()
-	tween.set_parallel(true)
-	tween.tween_property(sprite, "global_position:y", sprite.global_position.y - 80.0, 0.8).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tween.tween_property(sprite, "modulate:a", 0.0, 0.8)
-	tween.tween_callback(sprite.queue_free)
 
 func _play_open_animation() -> void:
 	var lid = $Lid
