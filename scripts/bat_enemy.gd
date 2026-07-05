@@ -11,6 +11,8 @@ var sine_time := 0.0
 var base_y := 0.0
 var swooping := false
 var target_mole: Node2D = null
+var _move_sfx_timer := 0.0
+const MOVE_SFX_INTERVAL := 0.35
 
 @onready var hurtbox: Area2D = $Hurtbox
 @onready var hitbox: Area2D = $Hitbox
@@ -51,6 +53,17 @@ func _physics_process(delta: float) -> void:
 	visual.flip_h = velocity.x < 0 if velocity.x != 0 else direction < 0
 
 	move_and_slide()
+	_play_move_sound(delta)
+
+func _play_move_sound(delta: float) -> void:
+	_move_sfx_timer -= delta
+	if _move_sfx_timer <= 0.0:
+		if swooping:
+			_move_sfx_timer = 0.2
+			SFX.play("swing", global_position, -16.0, 0.3)
+		else:
+			_move_sfx_timer = MOVE_SFX_INTERVAL
+			SFX.play("swing", global_position, -22.0, 0.2)
 
 func _has_line_of_sight(target: Node2D) -> bool:
 	if target == null:

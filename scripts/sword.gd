@@ -15,7 +15,7 @@ var is_parrying := false
 var parry_time_left := 0.0
 var parry_cooldown := 0.0
 const PARRY_DURATION := 1.25
-const PARRY_COOLDOWN := 3.0
+const PARRY_COOLDOWN := 1.0
 
 var deflect_sounds: Array[AudioStream] = []
 var original_shape_pos := Vector2.ZERO

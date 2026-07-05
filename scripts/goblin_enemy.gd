@@ -10,6 +10,8 @@ var throw_cooldown := THROW_INTERVAL
 var throw_anim_timer := 0.0
 var target_mole: Node2D = null
 var is_throwing := false
+var _idle_sfx_timer := 2.0
+const IDLE_SFX_INTERVAL := 3.0
 
 var mushroom_scene := preload("res://explodingmushroom.tscn")
 
@@ -46,10 +48,19 @@ func _physics_process(delta: float) -> void:
 	velocity.x = 0.0
 	move_and_slide()
 	_update_facing()
+	_play_idle_sound(delta)
 
 	throw_cooldown -= delta
 	if throw_cooldown <= 0.0 and target_mole and _is_on_screen() and _has_line_of_sight(target_mole):
 		_throw_mushroom()
+
+func _play_idle_sound(delta: float) -> void:
+	if health <= 0:
+		return
+	_idle_sfx_timer -= delta
+	if _idle_sfx_timer <= 0.0:
+		_idle_sfx_timer = IDLE_SFX_INTERVAL + randf_range(-0.5, 0.5)
+		SFX.play("land", global_position, -20.0, 0.6)
 
 func _is_on_screen() -> bool:
 	var camera := get_viewport().get_camera_2d()

@@ -13,6 +13,8 @@ var target_mole: Node2D = null
 var is_climbing := false
 var climb_timer := 0.0
 var health := MAX_HEALTH
+var _move_sfx_timer := 0.0
+const MOVE_SFX_INTERVAL := 0.4
 @onready var hurtbox: Area2D = $Hurtbox
 @onready var hitbox: Area2D = $Hitbox
 @onready var visual: AnimatedSprite2D = $Visual
@@ -52,6 +54,15 @@ func _physics_process(delta: float) -> void:
 
 	move_and_slide()
 	_update_visual_direction()
+	_play_move_sound(delta)
+
+func _play_move_sound(delta: float) -> void:
+	if health <= 0 or velocity.x == 0.0:
+		return
+	_move_sfx_timer -= delta
+	if _move_sfx_timer <= 0.0:
+		_move_sfx_timer = MOVE_SFX_INTERVAL
+		SFX.play("land", global_position, -18.0, 0.4)
 
 func _update_visual_direction() -> void:
 	var dir = sign(velocity.x) if velocity.x != 0.0 else direction

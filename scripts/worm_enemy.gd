@@ -14,6 +14,8 @@ var state := State.PATROL
 var direction := 1.0
 var state_timer := 0.0
 var target_mole: Node2D = null
+var _move_sfx_timer := 0.0
+const MOVE_SFX_INTERVAL := 0.45
 
 @onready var hurtbox: Area2D = $Hurtbox
 @onready var hitbox: Area2D = $Hitbox
@@ -65,6 +67,19 @@ func _physics_process(delta: float) -> void:
 				state = State.PATROL
 
 	move_and_slide()
+	_play_move_sound(delta)
+
+func _play_move_sound(delta: float) -> void:
+	if velocity.x == 0.0:
+		return
+	_move_sfx_timer -= delta
+	if _move_sfx_timer <= 0.0:
+		if state == State.CHARGING:
+			_move_sfx_timer = 0.12
+			SFX.play("dig_dash", global_position, -20.0, 0.3)
+		else:
+			_move_sfx_timer = MOVE_SFX_INTERVAL
+			SFX.play("dig_dash", global_position, -22.0, 0.15)
 
 func _has_line_of_sight(target: Node2D) -> bool:
 	if abs(target.global_position.y - global_position.y) > 80.0:

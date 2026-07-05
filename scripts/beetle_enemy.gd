@@ -20,6 +20,9 @@ var cooldown_timer := 0.0
 var health := MAX_HEALTH
 var was_on_floor := true
 var _charge_tween: Tween = null
+var _move_sfx_timer := 0.0
+const MOVE_SFX_INTERVAL := 0.35
+var _charge_sfx_timer := 0.0
 @onready var hurtbox: Area2D = $Area2D
 @onready var visual: AnimatedSprite2D = $Visual
 
@@ -45,6 +48,7 @@ func _physics_process(delta: float) -> void:
 
 	move_and_slide()
 	_update_visual_direction()
+	_play_move_sound(delta)
 
 	if state == State.RUSHING:
 		_break_tiles_on_collision()
@@ -102,6 +106,15 @@ func _charge_up(delta: float) -> void:
 	visual.offset.x = randf_range(-3.0, 3.0)
 	visual.offset.y = randf_range(-1.5, 1.5)
 
+	# Tick sound that speeds up as charge completes
+	_charge_sfx_timer -= delta
+	if _charge_sfx_timer <= 0.0:
+		var progress := 1.0 - (charge_timer / CHARGE_UP_DURATION)
+		var interval := lerpf(0.3, 0.08, progress)
+		var pitch := lerpf(0.8, 1.6, progress)
+		_charge_sfx_timer = interval
+		SFX.play("bomb_tick", global_position, -12.0, pitch)
+
 	if charge_timer <= 0.0:
 		visual.offset = Vector2.ZERO
 		if _charge_tween and _charge_tween.is_valid():
@@ -109,10 +122,12 @@ func _charge_up(delta: float) -> void:
 		modulate = Color.WHITE
 		state = State.RUSHING
 		rush_timer = RUSH_DURATION
+		SFX.play("dig_dash", global_position, -6.0, 0.1)
 
 func _start_charge() -> void:
 	state = State.CHARGING
 	charge_timer = CHARGE_UP_DURATION
+	_charge_sfx_timer = 0.0
 	direction = sign(target_mole.global_position.x - global_position.x)
 	velocity.x = 0.0
 
@@ -136,6 +151,18 @@ func _break_tiles_on_collision() -> void:
 				sfx.break_tile(tilemap, tile_pos, get_parent())
 			else:
 				sfx.break_decoration_tile(tilemap, tile_pos, get_parent())
+
+func _play_move_sound(delta: float) -> void:
+	if health <= 0 or velocity.x == 0.0:
+		return
+	_move_sfx_timer -= delta
+	if _move_sfx_timer <= 0.0:
+		if state == State.RUSHING:
+			_move_sfx_timer = 0.15
+			SFX.play("land", global_position, -10.0, 0.2)
+		else:
+			_move_sfx_timer = MOVE_SFX_INTERVAL
+			SFX.play("land", global_position, -16.0, 0.5)
 
 func _update_visual_direction() -> void:
 	var dir: float = sign(velocity.x) if velocity.x != 0.0 else direction

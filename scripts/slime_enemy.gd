@@ -87,11 +87,13 @@ func _jump_toward_target() -> void:
 	velocity.y = JUMP_VELOCITY
 	velocity.x = dir * JUMP_HORIZONTAL
 	has_landed = false
+	SFX.play("jump", global_position, -14.0, 0.3)
 
 func _land() -> void:
 	if has_landed:
 		return
 	has_landed = true
+	SFX.play("land", global_position, -10.0, 0.4)
 	poison_timer = POISON_DURATION
 	poison_damage_tick = 0.0
 	poison_tile_tick = 0.0
