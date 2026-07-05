@@ -54,7 +54,7 @@ func _create_health_bar() -> void:
 	get_parent().add_child(_health_bar_layer)
 
 	var font: Font = load("res://Baby Doll.otf")
-	var screen := _health_bar_layer.get_viewport().get_visible_rect().size
+	var screen := get_viewport().get_visible_rect().size
 
 	var panel := Panel.new()
 	panel.size = Vector2(420, 44)
@@ -88,21 +88,21 @@ func _create_health_bar() -> void:
 
 	_health_bar_bg = ColorRect.new()
 	_health_bar_bg.size = Vector2(400, 18)
-	_health_bar_bg.position = Vector2(screen.x / 2.0 - 200, 4)
+	_health_bar_bg.position = Vector2(10, 12)
 	_health_bar_bg.color = Color(0.12, 0.12, 0.15, 0.9)
 	_health_bar_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(_health_bar_bg)
 
 	_health_bar_fill = ColorRect.new()
 	_health_bar_fill.size = Vector2(400, 18)
-	_health_bar_fill.position = Vector2(screen.x / 2.0 - 200, 4)
+	_health_bar_fill.position = Vector2(10, 12)
 	_health_bar_fill.color = Color(0.2, 0.8, 0.3, 1)
 	_health_bar_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(_health_bar_fill)
 
 	_health_bar_label = Label.new()
 	_health_bar_label.size = Vector2(400, 18)
-	_health_bar_label.position = Vector2(screen.x / 2.0 - 200, 4)
+	_health_bar_label.position = Vector2(10, 12)
 	_health_bar_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_health_bar_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_health_bar_label.add_theme_font_override("font", font)
@@ -357,7 +357,9 @@ func _play_death_effect() -> void:
 	var fade := Gradient.new()
 	fade.set_color(0, Color(0.8, 0.3, 1.0, 1))
 	fade.set_color(1, Color(0.4, 0.1, 0.6, 0))
-	death_particles.color_ramp = fade
+	var grad_tex := GradientTexture2D.new()
+	grad_tex.gradient = fade
+	death_particles.color_ramp = grad_tex
 	add_child(death_particles)
 	death_particles.global_position = sprite.global_position
 	get_tree().create_timer(1.5).timeout.connect(death_particles.queue_free)
