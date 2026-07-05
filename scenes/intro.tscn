@@ -257,6 +257,15 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_playbutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_playbutton_hover")
 text = "PLAY"
 
+[node name="LevelPickerOption" type="OptionButton" parent="CenterContainer/VBoxContainer/ButtonContainer"]
+custom_minimum_size = Vector2(180, 70)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.03, 0.03, 0.03, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("6_es01l")
+theme_override_font_sizes/font_size = 28
+alignment = 1
+
 [node name="TutorialButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer" unique_id=223072364]
 custom_minimum_size = Vector2(180, 70)
 layout_mode = 2
