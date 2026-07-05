@@ -89,6 +89,10 @@ func _build_steps() -> void:
 			"text": "PRESS SHIFT to DIG DASH! You tunnel forward, breaking through everything in your path!",
 			"kind": "click",
 		},
+		{
+			"text": "COMBO TIP: Kill enemies quickly to build a combo! Combos make you FASTER and give you extra jump time. Chain kills to keep it going!",
+			"kind": "click",
+		},
 	]
 
 func _show_step(i: int) -> void:

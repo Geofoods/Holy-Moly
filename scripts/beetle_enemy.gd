@@ -1,11 +1,12 @@
 extends CharacterBody2D
 
-enum State { PATROL, RUSHING, COOLDOWN }
+enum State { PATROL, CHARGING, RUSHING, COOLDOWN }
 
 const PATROL_SPEED := 120.0
 const RUSH_SPEED := 1100.0
 const GRAVITY := 1960.0
 const DETECT_RANGE := 350.0
+const CHARGE_UP_DURATION := 1.5
 const RUSH_DURATION := 0.6
 const COOLDOWN_DURATION := 1.25
 const MAX_HEALTH := 4.0
@@ -13,10 +14,12 @@ const MAX_HEALTH := 4.0
 var state := State.PATROL
 var direction := 1.0
 var target_mole: Node2D = null
+var charge_timer := 0.0
 var rush_timer := 0.0
 var cooldown_timer := 0.0
 var health := MAX_HEALTH
 var was_on_floor := true
+var _charge_tween: Tween = null
 @onready var hurtbox: Area2D = $Area2D
 @onready var visual: AnimatedSprite2D = $Visual
 
@@ -33,6 +36,8 @@ func _physics_process(delta: float) -> void:
 	match state:
 		State.PATROL:
 			_patrol(delta)
+		State.CHARGING:
+			_charge_up(delta)
 		State.RUSHING:
 			_rush(delta)
 		State.COOLDOWN:
@@ -60,7 +65,7 @@ func _patrol(delta: float) -> void:
 	if target_mole:
 		var dist: float = global_position.distance_squared_to(target_mole.global_position)
 		if dist < DETECT_RANGE * DETECT_RANGE:
-			_start_rush()
+			_start_charge()
 
 func _rush(_delta: float) -> void:
 	velocity.y = 0.0
@@ -85,10 +90,39 @@ func _cooldown(delta: float) -> void:
 	if cooldown_timer <= 0.0:
 		state = State.PATROL
 
-func _start_rush() -> void:
-	state = State.RUSHING
-	rush_timer = RUSH_DURATION
+func _charge_up(delta: float) -> void:
+	if not is_on_floor():
+		velocity.y += GRAVITY * delta
+	else:
+		velocity.y = 0.0
+	velocity.x = 0.0
+
+	charge_timer -= delta
+	# Shake the visual to show it's winding up
+	visual.offset.x = randf_range(-3.0, 3.0)
+	visual.offset.y = randf_range(-1.5, 1.5)
+
+	if charge_timer <= 0.0:
+		visual.offset = Vector2.ZERO
+		if _charge_tween and _charge_tween.is_valid():
+			_charge_tween.kill()
+		modulate = Color.WHITE
+		state = State.RUSHING
+		rush_timer = RUSH_DURATION
+
+func _start_charge() -> void:
+	state = State.CHARGING
+	charge_timer = CHARGE_UP_DURATION
 	direction = sign(target_mole.global_position.x - global_position.x)
+	velocity.x = 0.0
+
+	# Red flashing tween
+	if _charge_tween and _charge_tween.is_valid():
+		_charge_tween.kill()
+	_charge_tween = create_tween()
+	_charge_tween.set_loops(0)
+	_charge_tween.tween_property(self, "modulate", Color(1.8, 0.3, 0.3, 1), 0.08)
+	_charge_tween.tween_property(self, "modulate", Color(1.0, 0.6, 0.6, 1), 0.08)
 
 func _break_tiles_on_collision() -> void:
 	for i in get_slide_collision_count():
@@ -151,6 +185,9 @@ func _draw() -> void:
 	draw_rect(Rect2(offset, Vector2(bar_w * ratio, bar_h)), fill)
 
 func die() -> void:
+	if _charge_tween and _charge_tween.is_valid():
+		_charge_tween.kill()
+	visual.offset = Vector2.ZERO
 	SFX.play("enemy_death", global_position)
 	ComboManager.increment()
 	set_physics_process(false)
