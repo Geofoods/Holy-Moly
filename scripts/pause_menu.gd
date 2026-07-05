@@ -64,6 +64,7 @@ func _set_input_enabled(enabled: bool) -> void:
 
 	var button_container = $CenterContainer/PausePanel/VBoxContainer/ButtonContainer
 	button_container.get_node("ResumeButton").disabled = not enabled
+	button_container.get_node("RestartButton").disabled = not enabled
 	button_container.get_node("FieldGuideButton").disabled = not enabled
 	button_container.get_node("MainMenuButton").disabled = not enabled
 	button_container.get_node("CancelButton").disabled = not enabled
@@ -84,6 +85,15 @@ func _sync_pause_heart() -> void:
 
 func _on_resume_pressed() -> void:
 	toggle_pause()
+
+func _on_restart_pressed() -> void:
+	get_tree().paused = false
+	if SFX.has_method("play_ui"):
+		SFX.play_ui("ui_click")
+	Inventory.reset()
+	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
+	get_tree().root.add_child(transition)
+	transition.change_to(Inventory.current_level_path)
 
 func _on_field_guide_pressed() -> void:
 	var info_popup = get_parent().get_node_or_null("InfoPopup")

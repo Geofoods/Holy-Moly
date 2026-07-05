@@ -79,6 +79,9 @@ func _ready() -> void:
 	await get_tree().process_frame
 	self.health = health
 	add_to_group("mole")
+	var camera := get_node_or_null("Camera2D") as Camera2D
+	if camera:
+		camera.zoom = Vector2(1.5, 1.5)
 	tilemap = get_parent().get_node_or_null("TileMap")
 	var ev_w = InputEventKey.new()
 	ev_w.keycode = KEY_W

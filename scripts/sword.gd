@@ -122,6 +122,7 @@ func _start_parry() -> void:
 	hitbox_col.position = Vector2(180, 0)
 	hitbox_col.shape = parry_shape
 	hitbox.area_entered.connect(_on_parry_area_entered)
+	hitbox.body_entered.connect(_on_parry_body_entered)
 	sprite.modulate = Color(0.6, 0.85, 1.0, 1.0)
 
 func _end_parry() -> void:
@@ -133,13 +134,20 @@ func _end_parry() -> void:
 	hitbox_col.shape = original_shape
 	if hitbox.area_entered.is_connected(_on_parry_area_entered):
 		hitbox.area_entered.disconnect(_on_parry_area_entered)
+	if hitbox.body_entered.is_connected(_on_parry_body_entered):
+		hitbox.body_entered.disconnect(_on_parry_body_entered)
 	sprite.modulate = Color.WHITE
 	sprite.flip_h = false
 
 func _on_parry_area_entered(area: Area2D) -> void:
 	if area.is_in_group("bullet") and is_parrying:
-		if not area.deflected:
+		if "deflected" in area and not area.deflected:
 			_deflect_bullet(area)
+
+func _on_parry_body_entered(body: Node) -> void:
+	if body.is_in_group("bullet") and is_parrying:
+		if "deflected" in body and not body.deflected:
+			_deflect_bullet(body)
 
 func swing() -> void:
 	SFX.play("swing", global_position)
