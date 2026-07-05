@@ -7,7 +7,6 @@ const FADE_OUT_TIME := 0.4
 @onready var vbox: VBoxContainer = $VBoxContainer
 @onready var level_num_label: Label = $VBoxContainer/LevelNumLabel
 @onready var title_label: Label = $VBoxContainer/TitleLabel
-@onready var tip_label: Label = $VBoxContainer/TipLabel
 
 var _tween: Tween = null
 var _dismissing := false
@@ -24,7 +23,6 @@ func _ready() -> void:
 
 	level_num_label.text = "LEVEL %d" % info["number"]
 	title_label.text = info["name"]
-	tip_label.text = "TIP  •  " + str(info["tip"])
 
 	_play()
 

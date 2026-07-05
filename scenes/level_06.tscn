@@ -11,9 +11,11 @@
 [ext_resource type="PackedScene" uid="uid://k06dbe7sq1ph" path="res://scenes/goblinenemy.tscn" id="11_k7nmt"]
 [ext_resource type="PackedScene" uid="uid://bcd57whed7bys" path="res://chest.tscn" id="12_40wum"]
 [ext_resource type="PackedScene" uid="uid://brmtyiqcy1wkv" path="res://scenes/inventory_ui.tscn" id="12_invui"]
-[ext_resource type="PackedScene" uid="uid://wjt35doljo8p" path="res://scenes/parallax_background2.tscn" id="12_ph8se"]
+[ext_resource type="PackedScene" path="res://scenes/parallax_background2.tscn" id="12_ph8se"]
 [ext_resource type="PackedScene" uid="uid://u77s8ew4xenh" path="res://scenes/beetleenemy.tscn" id="13_40wum"]
 [ext_resource type="PackedScene" uid="uid://cdxu1kg5or16d" path="res://candle.tscn" id="15_21f2n"]
+[ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="19_x0hry"]
+[ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="20_mtlme"]
 [ext_resource type="Script" uid="uid://dpsujuff7o60j" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
 [ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
 [ext_resource type="PackedScene" path="res://scenes/info_popup.tscn" id="info_popup_res"]
@@ -48,6 +50,9 @@ shader = ExtResource("7_vignette")
 shader_parameter/inner_radius = 0.25
 shader_parameter/outer_radius = 0.55
 shader_parameter/darkness = 0.55
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ou5rw"]
+size = Vector2(4079.5, 933)
 
 [node name="Node2D3" type="Node2D" unique_id=1979316305]
 
@@ -228,6 +233,29 @@ position = Vector2(4352, -2524)
 
 [node name="candle9" parent="." unique_id=1445162701 instance=ExtResource("15_21f2n")]
 position = Vector2(1723, -1893)
+
+[node name="Costume5" type="Sprite2D" parent="." unique_id=793505896]
+position = Vector2(7280.0005, 2228)
+scale = Vector2(13.883869, 1.7175142)
+texture = ExtResource("19_x0hry")
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=759803853]
+offset_left = 4032.0
+offset_top = 2438.9998
+offset_right = 10515.0
+offset_bottom = 4160.0
+color = Color(0, 0, 0, 1)
+
+[node name="nextlevel" type="Area2D" parent="." unique_id=1624434323]
+script = ExtResource("20_mtlme")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="nextlevel" unique_id=394909788]
+position = Vector2(7238.75, 2730.9998)
+shape = SubResource("RectangleShape2D_ou5rw")
+
+[node name="candle12" parent="." unique_id=1081875245 instance=ExtResource("15_21f2n")]
+position = Vector2(2677, 766)
+scale = Vector2(0.5, 0.5)
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]
