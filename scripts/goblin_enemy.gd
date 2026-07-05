@@ -70,6 +70,8 @@ func _update_facing() -> void:
 	if not target_mole or not is_instance_valid(target_mole):
 		return
 	var diff := target_mole.global_position.x - global_position.x
+	if abs(diff) < 30.0:
+		return
 	visual.scale.x = -_base_scale_x if diff >= 0 else _base_scale_x
 
 func _throw_mushroom() -> void:

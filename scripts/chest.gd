@@ -39,20 +39,39 @@ func _open_chest() -> void:
 		spr.stop()
 		spr.frame = 1
 	_play_open_animation()
+	var mole := get_tree().get_first_node_in_group("mole")
+	if mole and mole.has_method("screen_shake"):
+		mole.screen_shake(6.0, 0.15)
 	opened.emit()
 	_grant_item()
 
-func _grant_item() -> void:
+func _get_loot_item() -> ItemData:
 	if item != null:
-		Inventory.add_item(item)
-		return
-
+		return item
 	var bomb := preload("res://resources/bomb.tres")
 	var drill := preload("res://resources/drill.tres")
 	var holy_water := preload("res://resources/holy_water.tres")
 	var roll := randf()
-	var loot := bomb if roll < 0.4 else drill if roll < 0.8 else holy_water
+	return bomb if roll < 0.4 else drill if roll < 0.8 else holy_water
+
+func _grant_item() -> void:
+	var loot := _get_loot_item()
 	Inventory.add_item(loot)
+	_show_item_rise(loot)
+
+func _show_item_rise(loot: ItemData) -> void:
+	if not loot.icon_texture:
+		return
+	var sprite := Sprite2D.new()
+	sprite.texture = loot.icon_texture
+	sprite.global_position = global_position + Vector2(0, -40)
+	sprite.z_index = 20
+	add_child(sprite)
+	var tween := create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(sprite, "global_position:y", sprite.global_position.y - 80.0, 0.8).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(sprite, "modulate:a", 0.0, 0.8)
+	tween.tween_callback(sprite.queue_free)
 
 func _play_open_animation() -> void:
 	var lid = $Lid

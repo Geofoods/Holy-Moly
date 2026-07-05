@@ -3,7 +3,7 @@ extends CharacterBody2D
 const MAX_HEALTH := 40.0
 const PAN_DURATION := 1.5
 const HOLD_DURATION := 1.5
-const DESCENT_SPEED := 50.0
+const DESCENT_SPEED := 10.0
 const SPIT_INTERVAL := 3.0
 const PROJECTILE_SPEED := 400.0
 
@@ -341,6 +341,12 @@ func die() -> void:
 	tw.tween_callback(queue_free)
 	_destroy_health_bar()
 	_play_death_effect()
+	get_tree().create_timer(1.0).timeout.connect(_go_to_win_screen)
+
+func _go_to_win_screen() -> void:
+	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
+	get_tree().root.add_child(transition)
+	transition.change_to("res://scenes/win_screen.tscn")
 
 func _play_death_effect() -> void:
 	var sprite := $AnimatedSprite2D

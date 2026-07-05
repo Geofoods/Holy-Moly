@@ -28,7 +28,9 @@ func _physics_process(delta: float) -> void:
 	_find_target()
 
 	if target_mole:
-		direction = sign(target_mole.global_position.x - global_position.x)
+		var diff := target_mole.global_position.x - global_position.x
+		if abs(diff) >= 10.0:
+			direction = sign(diff)
 
 	if is_climbing:
 		climb_timer -= delta
