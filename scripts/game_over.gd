@@ -6,6 +6,8 @@ const FALL_START_RATIO := 0.22
 const FALL_X_RATIO := 0.78
 
 func _ready():
+	var viewport_size: Vector2 = get_viewport_rect().size
+	$AnimatedSprite2D.position = viewport_size / 2.0
 	var vbox = $CenterContainer/VBoxContainer
 	vbox.modulate.a = 0.0
 	vbox.scale = Vector2(0.85, 0.85)

@@ -27,7 +27,11 @@ var parry_shape: CircleShape2D = null
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var trail: Line2D = $Trail
 
+var tile_highlight: Sprite2D
+
 func _ready() -> void:
+	_tilemap_refresh()
+	_setup_tile_highlight()
 	trail.width = 12.0
 	trail.default_color = Color(1.0, 1.0, 1.0, 0.6)
 	trail.gradient = Gradient.new()
@@ -43,9 +47,52 @@ func _ready() -> void:
 	for i in range(1, 4):
 		deflect_sounds.append(load("res://sounds/deflect_%d.ogg" % i))
 
+func _tilemap_refresh() -> TileMap:
+	var tilemap := get_parent().get_parent().get_node_or_null("TileMap") as TileMap
+	return tilemap
+
+func _setup_tile_highlight() -> void:
+	if not _tilemap_refresh():
+		return
+	var image := Image.create(1, 1, false, Image.FORMAT_RGBA8)
+	image.set_pixel(0, 0, Color.WHITE)
+	var tex := ImageTexture.create_from_image(image)
+	tile_highlight = Sprite2D.new()
+	tile_highlight.name = "TileHighlight"
+	tile_highlight.texture = tex
+	tile_highlight.modulate = Color(1.0, 0.9, 0.5, 0.25)
+	tile_highlight.scale = Vector2(80, 80)
+	tile_highlight.centered = true
+	tile_highlight.z_index = 100
+	tile_highlight.z_as_relative = false
+	get_parent().get_parent().add_child(tile_highlight)
+	tile_highlight.hide()
+
+func _update_tile_highlight() -> void:
+	if not visible or is_swinging:
+		if tile_highlight:
+			tile_highlight.hide()
+		return
+	if not tile_highlight:
+		return
+	var tilemap := _tilemap_refresh()
+	if not tilemap:
+		tile_highlight.hide()
+		return
+	var mouse_global := get_global_mouse_position()
+	var tile_pos := tilemap.local_to_map(tilemap.to_local(mouse_global))
+	var source_id := tilemap.get_cell_source_id(0, tile_pos)
+	var has_decoration := tilemap.get_layers_count() >= 2 and tilemap.get_cell_source_id(1, tile_pos) != -1
+	if source_id == -1 and not has_decoration:
+		tile_highlight.hide()
+		return
+	tile_highlight.global_position = tilemap.to_global(tilemap.map_to_local(tile_pos))
+	tile_highlight.show()
+
 func _process(delta: float) -> void:
 	_update_trail()
 	_update_parry(delta)
+	_update_tile_highlight()
 
 	if is_swinging:
 		return
