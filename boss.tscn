@@ -1,0 +1,68 @@
+[gd_scene format=3 uid="uid://c08ih26v5m0t1"]
+
+[ext_resource type="Texture2D" uid="uid://cy65itxnylhih" path="res://boss_bite.webp" id="1_0bnu1"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6xxrv"]
+atlas = ExtResource("1_0bnu1")
+region = Rect2(0, 0, 310, 310)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_skx2t"]
+atlas = ExtResource("1_0bnu1")
+region = Rect2(310, 0, 310, 310)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_lnbgr"]
+atlas = ExtResource("1_0bnu1")
+region = Rect2(620, 0, 310, 310)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_o1i15"]
+atlas = ExtResource("1_0bnu1")
+region = Rect2(930, 0, 310, 310)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_we8h1"]
+atlas = ExtResource("1_0bnu1")
+region = Rect2(1240, 0, 310, 310)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_kvofc"]
+atlas = ExtResource("1_0bnu1")
+region = Rect2(1550, 0, 310, 310)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_ef0k6"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6xxrv")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_skx2t")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_lnbgr")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_o1i15")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_we8h1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_kvofc")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ry61v"]
+size = Vector2(1139, 371)
+
+[node name="boss" type="CharacterBody2D" unique_id=1642361016]
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=455057979]
+position = Vector2(581, 129.00002)
+scale = Vector2(4.2258067, 3.4451613)
+sprite_frames = SubResource("SpriteFrames_ef0k6")
+frame_progress = 0.2535885
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=979449485]
+position = Vector2(559.5, 9.5)
+shape = SubResource("RectangleShape2D_ry61v")
