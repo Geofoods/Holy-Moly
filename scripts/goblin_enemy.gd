@@ -27,7 +27,11 @@ func _ready() -> void:
 	hurtbox.body_entered.connect(_on_body_entered)
 	hurtbox.add_to_group("enemy_hurtbox")
 	visual.z_index = 1
-	visual.play()
+	# "default" is a non-looping idle→windup→throw animation. Rest on the idle
+	# frame; the throw is played on demand in _throw_mushroom().
+	visual.stop()
+	visual.animation = "default"
+	visual.frame = 0
 	_base_scale_x = abs(visual.scale.x)
 
 func _physics_process(delta: float) -> void:
@@ -51,6 +55,9 @@ func _physics_process(delta: float) -> void:
 		throw_anim_timer -= delta
 		if throw_anim_timer <= 0.0:
 			is_throwing = false
+			# Snap back to the idle frame and stop, so the goblin doesn't freeze
+			# on the throw-release frame.
+			visual.stop()
 			visual.frame = 0
 			throw_cooldown = THROW_INTERVAL
 		move_and_slide()
@@ -110,11 +117,14 @@ func _update_facing() -> void:
 func _throw_mushroom() -> void:
 	SFX.play("enemy_fire", global_position)
 	is_throwing = true
-	throw_anim_timer = 0.4
+	throw_anim_timer = 0.6
+	visual.frame = 0
 	visual.play("default")
 
 	if not target_mole or not is_instance_valid(target_mole):
 		is_throwing = false
+		visual.stop()
+		visual.frame = 0
 		throw_cooldown = THROW_INTERVAL
 		return
 
@@ -169,6 +179,7 @@ func die() -> void:
 	died.emit()
 	SFX.play("enemy_death", global_position)
 	ComboManager.increment()
+	ScoreManager.add_kill(2, global_position)
 	set_physics_process(false)
 	hurtbox.set_deferred("monitorable", false)
 
