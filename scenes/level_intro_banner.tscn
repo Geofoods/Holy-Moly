@@ -3,83 +3,56 @@
 [ext_resource type="Script" path="res://scripts/level_intro_banner.gd" id="1_banner"]
 [ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="2_font"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_crisp"]
-bg_color = Color(0.08, 0.1, 0.15, 0.95)
-border_width_left = 4
-border_width_top = 4
-border_width_right = 4
-border_width_bottom = 4
-border_color = Color(0.3, 0.8, 0.95, 0.9)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_left = 12
-corner_radius_bottom_right = 12
-shadow_size = 20
-shadow_offset = Vector2(0, 4)
-shadow_color = Color(0, 0, 0, 0.6)
-expand_margin_top = 4
-expand_margin_bottom = 4
-expand_margin_left = 4
-expand_margin_right = 4
-
 [node name="LevelIntroBanner" type="CanvasLayer"]
 layer = 15
 script = ExtResource("1_banner")
 
-[node name="Panel" type="PanelContainer" parent="."]
-mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_crisp")
-
-[node name="MarginContainer" type="MarginContainer" parent="Panel"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/margin_left = 40
-theme_override_constants/margin_top = 30
-theme_override_constants/margin_right = 40
-theme_override_constants/margin_bottom = 30
-
-[node name="VBoxContainer" type="VBoxContainer" parent="Panel/MarginContainer"]
-layout_mode = 2
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+anchors_preset = 10
+anchor_left = 0.5
+anchor_top = 0.0
+anchor_right = 0.5
+anchor_bottom = 0.0
+offset_left = -320.0
+offset_top = 24.0
+offset_right = 320.0
+offset_bottom = 170.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/separation = 12
 alignment = 1
 
-[node name="LevelNumLabel" type="Label" parent="Panel/MarginContainer/VBoxContainer"]
+[node name="LevelNumLabel" type="Label" parent="VBoxContainer"]
 layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(0.4, 0.95, 1.0, 1.0)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 22
-theme_override_constants/outline_size = 2
+theme_override_font_sizes/font_size = 28
+theme_override_constants/outline_size = 3
 theme_override_colors/font_outline_color = Color(0.0, 0.0, 0.0, 0.8)
 horizontal_alignment = 1
 text = "LEVEL 1"
 
-[node name="TitleLabel" type="Label" parent="Panel/MarginContainer/VBoxContainer"]
+[node name="TitleLabel" type="Label" parent="VBoxContainer"]
 layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(1.0, 1.0, 1.0, 1.0)
 theme_override_colors/font_outline_color = Color(0.0, 0.0, 0.0, 0.9)
 theme_override_constants/outline_size = 4
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 52
+theme_override_font_sizes/font_size = 56
 horizontal_alignment = 1
 text = "Level Name"
 
-[node name="Divider" type="ColorRect" parent="Panel/MarginContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 2)
-layout_mode = 2
-mouse_filter = 2
-color = Color(0.3, 0.8, 0.95, 0.5)
-
-[node name="TipLabel" type="Label" parent="Panel/MarginContainer/VBoxContainer"]
+[node name="TipLabel" type="Label" parent="VBoxContainer"]
 layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(0.85, 0.95, 1.0, 0.95)
 theme_override_colors/font_outline_color = Color(0.0, 0.0, 0.0, 0.7)
 theme_override_constants/outline_size = 2
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 24
 horizontal_alignment = 1
 autowrap_mode = 3
 text = "TIP  •  Placeholder"

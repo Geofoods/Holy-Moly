@@ -91,9 +91,14 @@ func _on_restart_pressed() -> void:
 	if SFX.has_method("play_ui"):
 		SFX.play_ui("ui_click")
 	Inventory.reset()
+	var current_scene := get_tree().current_scene
+	var current_level_path := "res://scenes/main.tscn"
+	if current_scene and current_scene.scene_file_path != "":
+		current_level_path = current_scene.scene_file_path
+		Inventory.current_level_path = current_level_path
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 	get_tree().root.add_child(transition)
-	transition.change_to(Inventory.current_level_path)
+	transition.change_to(current_level_path)
 
 func _on_field_guide_pressed() -> void:
 	var info_popup = get_parent().get_node_or_null("InfoPopup")
