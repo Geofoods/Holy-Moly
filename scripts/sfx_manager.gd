@@ -1,6 +1,9 @@
 extends Node
 
 var _sounds := {}
+var _pool := []
+var _pool_index := 0
+const POOL_SIZE := 12
 
 func _ready() -> void:
 	_load("swing", ["res://sounds/swing_1.wav", "res://sounds/swing_2.wav", "res://sounds/swing_3.wav"])
@@ -24,6 +27,8 @@ func _ready() -> void:
 	_load("drill", ["res://sounds/drill.wav"])
 	_load("bomb_tick", ["res://sounds/bomb_tick.wav"])
 
+	_build_pool()
+
 func _load(key: String, paths: Array) -> void:
 	var streams: Array[AudioStream] = []
 	for p in paths:
@@ -32,30 +37,40 @@ func _load(key: String, paths: Array) -> void:
 			streams.append(s)
 	_sounds[key] = streams
 
+func _build_pool() -> void:
+	for i in POOL_SIZE:
+		var p := AudioStreamPlayer2D.new()
+		p.max_distance = 2000.0
+		p.finished.connect(_return_to_pool.bind(p))
+		add_child(p)
+		_pool.append(p)
+
+func _return_to_pool(player: AudioStreamPlayer2D) -> void:
+	player.stop()
+
 func play(key: String, pos: Vector2 = Vector2.ZERO, volume_db: float = -6.0, pitch_variation: float = 0.1) -> void:
 	if not _sounds.has(key) or _sounds[key].size() == 0:
 		return
 	var streams: Array = _sounds[key]
 	var stream: AudioStream = streams[randi() % streams.size()]
-	var player := AudioStreamPlayer2D.new()
+
+	var player: AudioStreamPlayer2D = _pool[_pool_index]
+	_pool_index = (_pool_index + 1) % POOL_SIZE
 	player.stream = stream
 	player.volume_db = volume_db
 	player.pitch_scale = randf_range(1.0 - pitch_variation, 1.0 + pitch_variation)
-	player.max_distance = 2000.0
-	add_child(player)
 	player.global_position = pos
 	player.play()
-	player.finished.connect(player.queue_free)
 
 func play_ui(key: String, volume_db: float = -8.0, pitch: float = 1.0) -> void:
 	if not _sounds.has(key) or _sounds[key].size() == 0:
 		return
 	var streams: Array = _sounds[key]
 	var stream: AudioStream = streams[randi() % streams.size()]
-	var player := AudioStreamPlayer.new()
+	var player: AudioStreamPlayer2D = _pool[_pool_index]
+	_pool_index = (_pool_index + 1) % POOL_SIZE
 	player.stream = stream
 	player.volume_db = volume_db
 	player.pitch_scale = pitch
-	add_child(player)
+	player.global_position = Vector2.ZERO
 	player.play()
-	player.finished.connect(player.queue_free)

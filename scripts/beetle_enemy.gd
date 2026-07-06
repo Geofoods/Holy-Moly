@@ -11,6 +11,7 @@ const RUSH_DURATION := 0.6
 const COOLDOWN_DURATION := 1.25
 const MAX_HEALTH := 4.0
 const TURN_COOLDOWN := 0.35
+const TileBreakSfx = preload("res://scripts/tile_break_sfx.gd")
 
 var state := State.PATROL
 var direction := 1.0
@@ -158,11 +159,10 @@ func _break_tiles_on_collision() -> void:
 		if collider is TileMap:
 			var tilemap := collider as TileMap
 			var tile_pos := tilemap.local_to_map(tilemap.to_local(collision.get_position()))
-			var sfx = load("res://scripts/tile_break_sfx.gd")
 			if tilemap.get_cell_source_id(0, tile_pos) != -1:
-				sfx.break_tile(tilemap, tile_pos, get_parent())
+				TileBreakSfx.break_tile(tilemap, tile_pos, get_parent())
 			else:
-				sfx.break_decoration_tile(tilemap, tile_pos, get_parent())
+				TileBreakSfx.break_decoration_tile(tilemap, tile_pos, get_parent())
 
 func _play_move_sound(delta: float) -> void:
 	if health <= 0 or velocity.x == 0.0:

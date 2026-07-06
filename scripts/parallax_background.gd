@@ -49,7 +49,13 @@ func _build_layers() -> void:
 
 		layer_sprites.append([a, b])
 
+var _frame_skip := 0
+
 func _process(_delta: float) -> void:
+	_frame_skip += 1
+	if _frame_skip & 1:
+		return
+
 	var camera := get_viewport().get_camera_2d()
 	if not camera:
 		return

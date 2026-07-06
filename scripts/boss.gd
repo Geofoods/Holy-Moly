@@ -55,6 +55,7 @@ var _health_bar_tween: Tween = null
 var _displayed_health: float = 0.0
 
 const INDICATOR_SCREEN_MARGIN := 70.0
+const TileBreakSfx = preload("res://scripts/tile_break_sfx.gd")
 var _indicator_layer: CanvasLayer = null
 var _indicator_arrow: Polygon2D = null
 
@@ -67,7 +68,7 @@ func _ready() -> void:
 	bounce_zone.body_entered.connect(_on_bounce_zone_body_entered)
 	bounce_zone.body_exited.connect(_on_bounce_zone_body_exited)
 	_tilemap = get_parent().get_node_or_null("TileMap") as TileMap
-	_tile_break_script = load("res://scripts/tile_break_sfx.gd")
+	_tile_break_script = TileBreakSfx
 	_projectile_scene = preload("res://area_2d.tscn")
 	_chest_scene = preload("res://chest.tscn")
 

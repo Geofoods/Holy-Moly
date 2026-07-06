@@ -14,6 +14,8 @@ var tick_cooldown := 0.0
 var is_flashing := false
 var deflected := false
 
+const TileBreakSfx = preload("res://scripts/tile_break_sfx.gd")
+
 @onready var sprite: Sprite2D = $Sprite2D
 
 func _ready() -> void:
@@ -108,16 +110,15 @@ func _explode() -> void:
 	var tilemap: TileMap = get_parent().get_node_or_null("TileMap")
 	if tilemap:
 		var center_tile := tilemap.local_to_map(tilemap.to_local(global_position))
-		var sfx = load("res://scripts/tile_break_sfx.gd")
 		for dx in range(-tile_break_radius, tile_break_radius + 1):
 			for dy in range(-tile_break_radius, tile_break_radius + 1):
 				var tp := Vector2i(center_tile.x + dx, center_tile.y + dy)
 				var has_collision := tilemap.get_cell_source_id(0, tp) != -1
 				if has_collision:
-					sfx.break_tile(tilemap, tp, get_parent())
+					TileBreakSfx.break_tile(tilemap, tp, get_parent())
 				else:
-					sfx.break_decoration_tile(tilemap, tp, get_parent())
-		sfx.break_opened_chests_near(get_parent(), global_position, explosion_radius)
+					TileBreakSfx.break_decoration_tile(tilemap, tp, get_parent())
+		TileBreakSfx.break_opened_chests_near(get_parent(), global_position, explosion_radius)
 
 	for hurtbox in get_tree().get_nodes_in_group("enemy_hurtbox"):
 		if not is_instance_valid(hurtbox):

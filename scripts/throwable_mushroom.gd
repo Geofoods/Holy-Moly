@@ -2,6 +2,7 @@ extends Area2D
 
 const LIFETIME = 3.0
 const TILE_BREAK_RADIUS = 2
+const TileBreakSfx = preload("res://scripts/tile_break_sfx.gd")
 
 var velocity := Vector2.ZERO
 
@@ -37,12 +38,11 @@ func _explode() -> void:
 	var tilemap: TileMap = get_parent().get_node_or_null("TileMap")
 	if tilemap:
 		var center_tile := tilemap.local_to_map(tilemap.to_local(global_position))
-		var sfx = load("res://scripts/tile_break_sfx.gd")
 		for dx in range(-TILE_BREAK_RADIUS, TILE_BREAK_RADIUS + 1):
 			for dy in range(-TILE_BREAK_RADIUS, TILE_BREAK_RADIUS + 1):
 				var tp := Vector2i(center_tile.x + dx, center_tile.y + dy)
 				if tilemap.get_cell_source_id(0, tp) != -1:
-					sfx.break_tile(tilemap, tp, get_parent())
+					TileBreakSfx.break_tile(tilemap, tp, get_parent())
 				else:
-					sfx.break_decoration_tile(tilemap, tp, get_parent())
+					TileBreakSfx.break_decoration_tile(tilemap, tp, get_parent())
 	queue_free()
