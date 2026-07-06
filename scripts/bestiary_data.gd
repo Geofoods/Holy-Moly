@@ -104,8 +104,8 @@ const CONTROLS: Array[Dictionary] = [
 	{
 		"category": "Movement",
 		"rows": [
-			{"label": "A / D or ◄ ►", "detail": "Move left / right."},
-			{"label": "W / ▲ / SPACE", "detail": "Jump. Hold a direction while airborne to lock in a sideways jump arc."},
+			{"label": "A / D or LEFT / RIGHT", "detail": "Move left / right."},
+			{"label": "W / UP / SPACE", "detail": "Jump. Hold a direction while airborne to lock in a sideways jump arc."},
 		],
 	},
 	{

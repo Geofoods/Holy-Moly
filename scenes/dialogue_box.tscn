@@ -123,7 +123,7 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_prev")
 theme_override_styles/hover = SubResource("StyleBoxFlat_prev_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_prev_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_prev_hover")
-text = "◂ BACK"
+text = "< BACK"
 
 [node name="Spacer" type="Control" parent="Panel/MarginContainer/VBoxContainer/NextRow"]
 layout_mode = 2
@@ -140,4 +140,4 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_next")
 theme_override_styles/hover = SubResource("StyleBoxFlat_next_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_next_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_next_hover")
-text = "NEXT ▸"
+text = "NEXT >"
