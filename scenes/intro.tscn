@@ -5,6 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://buaps737jhmeo" path="res://sprites/molejumpbold.png" id="2_molejump"]
 [ext_resource type="Texture2D" uid="uid://cpabxkmqhhx5n" path="res://holymolylogo.png" id="4_0naf5"]
 [ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="6_es01l"]
+[ext_resource type="PackedScene" uid="uid://3wwhicdeo8hl" path="res://scenes/info_popup.tscn" id="7_infopopup"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_playbutton"]
 bg_color = Color(0.13, 0.85, 0.35, 1)
@@ -254,6 +255,20 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_tutorialbutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_tutorialbutton_hover")
 text = "TUTORIAL"
 
+[node name="FieldGuideButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer" unique_id=223072365]
+custom_minimum_size = Vector2(180, 70)
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_colors/font_color = Color(0.25, 0.15, 0.05, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("6_es01l")
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBoxFlat_infobutton")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_infobutton_hover")
+theme_override_styles/hover = SubResource("StyleBoxFlat_infobutton_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_infobutton_hover")
+text = "FIELD GUIDE"
+
 [node name="CreditsLabel" type="Label" parent="." unique_id=29629912]
 layout_mode = 0
 anchor_top = 1.0
@@ -271,5 +286,8 @@ theme_override_font_sizes/font_size = 18
 text = "Made by Bryan, George, Nimansh, Javis"
 horizontal_alignment = 1
 
+[node name="InfoPopup" parent="." instance=ExtResource("7_infopopup")]
+
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/PlayButton" to="." method="_on_play_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/TutorialButton" to="." method="_on_tutorial_pressed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/FieldGuideButton" to="." method="_on_field_guide_pressed"]
