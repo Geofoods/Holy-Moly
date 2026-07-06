@@ -6,12 +6,17 @@ const GRAVITY := 1960.0
 const THROW_INTERVAL := 2.5
 const THROW_VELOCITY := 1600.0
 const MAX_HEALTH := 4.0
+# How far into the throw animation the mushroom is actually released, so the
+# projectile leaves the goblin's hand as the throwing motion plays out.
+const THROW_RELEASE_DELAY := 0.28
 
 var health := MAX_HEALTH
 var throw_cooldown := THROW_INTERVAL
 var throw_anim_timer := 0.0
 var target_mole: Node2D = null
 var is_throwing := false
+var _release_timer := 0.0
+var _pending_release := false
 var _idle_sfx_timer := 2.0
 const IDLE_SFX_INTERVAL := 3.0
 var _stun_timer := 0.0
@@ -52,9 +57,15 @@ func _physics_process(delta: float) -> void:
 
 	if is_throwing:
 		velocity.x = 0.0
+		if _pending_release:
+			_release_timer -= delta
+			if _release_timer <= 0.0:
+				_pending_release = false
+				_release_mushroom()
 		throw_anim_timer -= delta
 		if throw_anim_timer <= 0.0:
 			is_throwing = false
+			_pending_release = false
 			# Snap back to the idle frame and stop, so the goblin doesn't freeze
 			# on the throw-release frame.
 			visual.stop()
@@ -126,6 +137,15 @@ func _throw_mushroom() -> void:
 		visual.stop()
 		visual.frame = 0
 		throw_cooldown = THROW_INTERVAL
+		return
+
+	# Start the windup now; the mushroom is actually released a moment later so
+	# it leaves the goblin's hand while the throwing motion is playing.
+	_pending_release = true
+	_release_timer = THROW_RELEASE_DELAY
+
+func _release_mushroom() -> void:
+	if not target_mole or not is_instance_valid(target_mole):
 		return
 
 	var dir := (target_mole.global_position - global_position).normalized()

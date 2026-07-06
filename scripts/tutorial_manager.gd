@@ -41,7 +41,7 @@ func _build_steps() -> void:
 			"node": "MoveTrigger",
 		},
 		{
-			"text": "JUMP: press W, ▲, or SPACE!\n**HOLD SPACE LONGER = JUMP HIGHER!** Tap for short hops.\n\nJump over the gap ahead!",
+			"text": "JUMP: press W, the up arrow, or SPACE!\n**HOLD SPACE LONGER = JUMP HIGHER!** Tap for short hops.\n\nJump over the gap ahead!",
 			"kind": "trigger",
 			"node": "JumpTrigger",
 		},
@@ -145,7 +145,7 @@ func _finish() -> void:
 		dialogue.next_pressed.disconnect(_advance)
 	var ending_text = "Perfect! You're ready, little mole.\nChain kills for COMBOS — good luck down there!"
 	dialogue.show_text(ending_text, 0, 0, true)
-	dialogue.next_button.text = "PLAY NOW ▸"
+	dialogue.next_button.text = "PLAY NOW >"
 	dialogue.next_pressed.connect(_on_play_now_pressed, CONNECT_ONE_SHOT)
 
 func _on_tutorial_death() -> void:

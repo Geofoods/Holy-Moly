@@ -90,7 +90,7 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_skipbutton")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_skipbutton_hover")
 theme_override_styles/hover = SubResource("StyleBoxFlat_skipbutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_skipbutton_hover")
-text = "SKIP TUTORIAL ▸"
+text = "SKIP TUTORIAL >"
 
 [node name="InfoButton" type="Button" parent="CanvasLayer" unique_id=866534843]
 anchors_preset = 3
