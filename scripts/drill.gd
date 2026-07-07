@@ -2,26 +2,16 @@ extends Area2D
 
 const DRILL_DURATION := 1.0
 const SPEED := 1000.0
-const BREAK_SCALE := 2.0
-const TileBreakSfx = preload("res://scripts/tile_break_sfx.gd")
 
 var velocity := Vector2.ZERO
 var elapsed := 0.0
 var prev_tile_pos := Vector2i(999999, 999999)
 
 var _drill_player: AudioStreamPlayer2D = null
-var _polygon: PackedVector2Array = []
 
 func _ready() -> void:
 	area_entered.connect(_on_area_entered)
 	_start_drill_sound()
-	for child in get_children():
-		if child is CollisionPolygon2D:
-			var scaled := PackedVector2Array()
-			for p in child.polygon:
-				scaled.append(p * BREAK_SCALE)
-			_polygon = scaled
-			break
 
 func _start_drill_sound() -> void:
 	if not SFX._sounds.has("drill") or SFX._sounds["drill"].size() == 0:
@@ -61,10 +51,22 @@ func _process(delta: float) -> void:
 			queue_free()
 		return
 
+	var sfx = load("res://scripts/tile_break_sfx.gd")
+
+	const BREAK_SCALE := 2.0
+
+	var polygons: Array[PackedVector2Array] = []
+	for child in get_children():
+		if child is CollisionPolygon2D:
+			var scaled := PackedVector2Array()
+			for p in child.polygon:
+				scaled.append(p * BREAK_SCALE)
+			polygons.append(scaled)
+
 	var tiles: Array[Vector2i] = []
-	if _polygon.size() > 0:
+	for polygon in polygons:
 		var global_poly := PackedVector2Array()
-		for p in _polygon:
+		for p in polygon:
 			global_poly.append(to_global(p))
 
 		var min_x := INF
@@ -92,9 +94,9 @@ func _process(delta: float) -> void:
 		if tile_pos != prev_tile_pos:
 			var has_collision := tilemap.get_cell_source_id(0, tile_pos) != -1
 			if has_collision:
-				TileBreakSfx.break_tile(tilemap, tile_pos, get_parent())
+				sfx.break_tile(tilemap, tile_pos, get_parent())
 			else:
-				TileBreakSfx.break_decoration_tile(tilemap, tile_pos, get_parent())
+				sfx.break_decoration_tile(tilemap, tile_pos, get_parent())
 			prev_tile_pos = tile_pos
 
 	if elapsed >= DRILL_DURATION:

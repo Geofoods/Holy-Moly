@@ -2,7 +2,6 @@ extends Area2D
 
 const LIFETIME := 2.0
 const EXPLOSION_TILE_RADIUS := 1
-const TileBreakSfx = preload("res://scripts/tile_break_sfx.gd")
 
 var velocity := Vector2.ZERO
 var deflected := false
@@ -103,8 +102,9 @@ func _break_tiles() -> void:
 	var tilemap: TileMap = get_parent().get_node_or_null("TileMap") as TileMap
 	if not tilemap:
 		return
+	var sfx := load("res://scripts/tile_break_sfx.gd") as GDScript
 	var center := tilemap.local_to_map(tilemap.to_local(global_position))
 	for dx in range(-EXPLOSION_TILE_RADIUS, EXPLOSION_TILE_RADIUS + 1):
 		for dy in range(-EXPLOSION_TILE_RADIUS, EXPLOSION_TILE_RADIUS + 1):
 			var tp := Vector2i(center.x + dx, center.y + dy)
-			TileBreakSfx.break_tile(tilemap, tp, get_parent(), true)
+			sfx.break_tile(tilemap, tp, get_parent(), true)

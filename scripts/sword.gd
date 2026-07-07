@@ -1,6 +1,5 @@
 extends Node2D
 
-const TileBreakSfx = preload("res://scripts/tile_break_sfx.gd")
 var is_swinging := false
 const SWING_ARC := 2.4
 const WINDUP_DURATION := 0.15
@@ -388,7 +387,8 @@ func dig_slash() -> void:
 func _break_tile_at_mouse() -> void:
 	var world := get_parent().get_parent()
 	var mouse_global = get_global_mouse_position()
-	if TileBreakSfx.break_opened_chest_at_point(world, mouse_global):
+	var sfx = load("res://scripts/tile_break_sfx.gd")
+	if sfx.break_opened_chest_at_point(world, mouse_global):
 		return
 	var tilemap := world.get_node_or_null("TileMap") as TileMap
 	if not tilemap:
@@ -397,10 +397,10 @@ func _break_tile_at_mouse() -> void:
 	var source_id := tilemap.get_cell_source_id(0, tile_pos)
 	var broke_tile := false
 	if source_id != -1:
-		TileBreakSfx.break_tile(tilemap, tile_pos, world)
+		sfx.break_tile(tilemap, tile_pos, world)
 		broke_tile = true
 	elif tilemap.get_layers_count() >= 2 and tilemap.get_cell_source_id(1, tile_pos) != -1:
-		TileBreakSfx.break_decoration_tile(tilemap, tile_pos, world)
+		sfx.break_decoration_tile(tilemap, tile_pos, world)
 		broke_tile = true
 	if broke_tile:
 		var mole = get_parent()

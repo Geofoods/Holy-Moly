@@ -17,7 +17,7 @@ const CAMERA_FOLLOW_SPEED = 10.0
 const CAMERA_MOUSE_INFLUENCE = 0.08
 const DIRT_PARTICLE_LIFETIME = 0.45
 const DIRT_PARTICLE_AMOUNT = 18
-const TileBreakSfx = preload("res://scripts/tile_break_sfx.gd")
+
 
 var mole_hole_scene := preload("res://scenes/molehole.tscn")
 var mole_hole_instance: Node2D = null
@@ -267,6 +267,7 @@ func _physics_process(delta: float) -> void:
 		velocity.x = tunnel_direction * TUNNEL_SPEED
 		move_and_slide()
 		if tilemap:
+			var sfx = load("res://scripts/tile_break_sfx.gd")
 			var broken_tiles: Array[Vector2i] = []
 			for i in get_slide_collision_count():
 				var collision = get_slide_collision(i)
@@ -279,16 +280,16 @@ func _physics_process(delta: float) -> void:
 					if tile_pos not in broken_tiles:
 						broken_tiles.append(tile_pos)
 						if tm.get_cell_source_id(0, tile_pos) != -1:
-							TileBreakSfx.break_tile(tm, tile_pos, get_parent())
+							sfx.break_tile(tm, tile_pos, get_parent())
 						else:
-							TileBreakSfx.break_decoration_tile(tm, tile_pos, get_parent())
+							sfx.break_decoration_tile(tm, tile_pos, get_parent())
 						spawn_dirt_particles(contact)
-				elif TileBreakSfx.break_opened_chest_from_node(collider):
+				elif sfx.break_opened_chest_from_node(collider):
 					spawn_dirt_particles(collision.get_position())
 			var front_pos: Vector2 = global_position + Vector2(tunnel_direction * 40.0, 0.0)
 			var front_tile: Vector2i = tilemap.local_to_map(tilemap.to_local(front_pos))
 			if front_tile not in broken_tiles and tilemap.get_cell_source_id(0, front_tile) != -1:
-				TileBreakSfx.break_tile(tilemap, front_tile, get_parent())
+				sfx.break_tile(tilemap, front_tile, get_parent())
 				spawn_dirt_particles(tilemap.to_global(tilemap.map_to_local(front_tile)))
 		was_on_floor = is_on_floor()
 		_update_camera_position(delta)
@@ -774,6 +775,7 @@ func _check_stuck(delta: float) -> void:
 		_break_surrounding_tiles()
 
 func _break_surrounding_tiles() -> void:
+	var sfx = load("res://scripts/tile_break_sfx.gd")
 	var mole_tile := tilemap.local_to_map(tilemap.to_local(global_position))
 	var offsets := [
 		Vector2i(-1, 0), Vector2i(1, 0), Vector2i(0, -1), Vector2i(0, 1),
@@ -783,7 +785,7 @@ func _break_surrounding_tiles() -> void:
 	for off in offsets:
 		var tile_pos: Vector2i = mole_tile + off
 		if tilemap.get_cell_source_id(0, tile_pos) != -1:
-			TileBreakSfx.break_tile(tilemap, tile_pos, get_parent())
+			sfx.break_tile(tilemap, tile_pos, get_parent())
 			broke_any = true
 	if broke_any:
 		spawn_dirt_particles(global_position)

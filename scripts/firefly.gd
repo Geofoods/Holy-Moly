@@ -6,7 +6,6 @@ const WANDER_RADIUS := 250.0
 var origin: Vector2
 var wander_target: Vector2
 var float_phase := 0.0
-var _wander_poll := 0.0
 
 @onready var light: PointLight2D = $Light
 @onready var body: ColorRect = $Body
@@ -20,15 +19,11 @@ func _process(delta: float) -> void:
 	float_phase += delta * 4.0
 	position += Vector2(0.0, sin(float_phase) * delta * 16.0)
 
-	_wander_poll += delta
-	if _wander_poll > 1.0:
-		_wander_poll = 0.0
-		if global_position.distance_squared_to(wander_target) < 200.0:
-			wander_target = origin + Vector2(randf_range(-WANDER_RADIUS, WANDER_RADIUS), randf_range(-WANDER_RADIUS, WANDER_RADIUS))
-		var dir := (wander_target - global_position).normalized()
-		position += dir * SPEED * delta
-	else:
-		position += (wander_target - global_position).normalized() * SPEED * delta
+	if global_position.distance_squared_to(wander_target) < 200.0:
+		wander_target = origin + Vector2(randf_range(-WANDER_RADIUS, WANDER_RADIUS), randf_range(-WANDER_RADIUS, WANDER_RADIUS))
+
+	var dir := (wander_target - global_position).normalized()
+	position += dir * SPEED * delta
 
 	var glow := 0.8 + sin(float_phase * 0.7) * 0.4
 	body.color.a = glow
