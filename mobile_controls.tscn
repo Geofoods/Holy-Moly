@@ -4,11 +4,10 @@
 [ext_resource type="Texture2D" uid="uid://dkstsrqgpno8k" path="res://Defaulticons/icon_arrow.png" id="2_ui5ya"]
 [ext_resource type="Texture2D" uid="uid://cilxc57meeep6" path="res://Defaulticons/icon_jump.png" id="3_s3714"]
 [ext_resource type="Texture2D" uid="uid://8t0p77056nts" path="res://Defaulticons/icon_burst.png" id="4_wlcjf"]
-[ext_resource type="Script" path="res://scripts/mobile_controls.gd" id="6_ypwdh"]
+[ext_resource type="Script" uid="uid://duy5uodihb86" path="res://scripts/mobile_controls.gd" id="6_ypwdh"]
 
 [node name="mobile controls" type="CanvasLayer" unique_id=183254107]
 layer = 100
-visible = false
 script = ExtResource("6_ypwdh")
 
 [node name="left" type="TouchScreenButton" parent="." unique_id=591990078]
