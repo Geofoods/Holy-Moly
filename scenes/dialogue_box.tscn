@@ -66,7 +66,7 @@ corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
 
 [node name="DialogueBox" type="CanvasLayer"]
-layer = 20
+layer = 100
 script = ExtResource("1_dialogue")
 
 [node name="Panel" type="PanelContainer" parent="."]

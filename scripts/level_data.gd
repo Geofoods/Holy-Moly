@@ -4,7 +4,7 @@ const LEVELS: Dictionary = {
 	"res://scenes/main.tscn": {
 		"number": 1,
 		"name": "The Surface Tunnels",
-		"tip": "Mushroom Casters lob exploding spores from a distance. Parry them back with Right-Click, or close the gap fast.",
+		"tip": "Mushroom Casters lob exploding spores from a distance. Dodge or break them with a shovel swing, or close the gap fast.",
 	},
 	"res://scenes/level_02.tscn": {
 		"number": 2,

@@ -22,6 +22,12 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.physical_keycode == KEY_E and event.pressed and not event.echo:
 		_open_chest()
 
+func _input_event(viewport: Viewport, event: InputEvent, shape_idx: int) -> void:
+	if not player_nearby or is_open:
+		return
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		_open_chest()
+
 func _process(_delta: float) -> void:
 	if is_open:
 		if chest_prompt:

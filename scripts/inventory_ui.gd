@@ -39,6 +39,14 @@ func _build_ui() -> void:
 		var panel := Panel.new()
 		panel.size = SLOT_SIZE
 		panel.position = Vector2(start_x + i * (SLOT_SIZE.x + SLOT_GAP), 8)
+		var slot_idx := i
+		panel.gui_input.connect(func(event: InputEvent):
+			if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+				if Inventory.selected_slot == slot_idx:
+					Inventory.selected_slot = -1
+				else:
+					Inventory.selected_slot = slot_idx
+		)
 		var style := StyleBoxFlat.new()
 		style.bg_color = Color("595959")
 		style.border_color = Color("f266b3")
@@ -81,17 +89,7 @@ func _build_ui() -> void:
 		icon_label.mouse_filter = Control.MOUSE_FILTER_PASS
 		panel.add_child(icon_label)
 
-		var num_label := Label.new()
-		num_label.name = "NumLabel"
-		num_label.size = Vector2(SLOT_SIZE.x, 18)
-		num_label.position = Vector2(0, SLOT_SIZE.y - 18)
-		num_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		num_label.add_theme_font_size_override("font_size", 14)
-		num_label.add_theme_font_override("font", HOTBAR_FONT)
-		num_label.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6, 1))
-		num_label.text = str(i + 1)
-		num_label.mouse_filter = Control.MOUSE_FILTER_PASS
-		panel.add_child(num_label)
+
 
 		container.add_child(panel)
 		slot_panels.append(panel)

@@ -112,7 +112,7 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_pausebutton")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_pausebutton_hover")
 theme_override_styles/hover = SubResource("StyleBoxFlat_pausebutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_pausebutton_hover")
-text = "II ESC"
+text = "II PAUSE"
 
 [node name="InfoButton" type="Button" parent="CanvasLayer" unique_id=255503078]
 anchors_preset = 3
@@ -151,10 +151,7 @@ material = SubResource("ShaderMaterial_vignette")
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -6.0
-offset_top = -3.0
-offset_right = -6.0
-offset_bottom = 11.0
+offset_bottom = 14.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2

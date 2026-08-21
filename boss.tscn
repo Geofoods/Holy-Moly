@@ -54,10 +54,10 @@ animations = [{
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ry61v"]
-size = Vector2(1139, 371)
+size = Vector2(1493, 371)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_trigger"]
-size = Vector2(288, 2258)
+size = Vector2(664, 2647)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hurtbox"]
 size = Vector2(1500, 900)
@@ -81,7 +81,7 @@ shape = SubResource("RectangleShape2D_ry61v")
 [node name="CutsceneTrigger" type="Area2D" parent="." unique_id=1142006741]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="CutsceneTrigger" unique_id=1983972853]
-position = Vector2(560, 130)
+position = Vector2(560, 324.5)
 shape = SubResource("RectangleShape2D_trigger")
 
 [node name="Hurtbox" type="Area2D" parent="." unique_id=1068131762]

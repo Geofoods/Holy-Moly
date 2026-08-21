@@ -110,6 +110,7 @@ func _ready() -> void:
 ## keyboard layouts (AZERTY, QWERTZ, ...) where the same physical key produces a
 ## different character.
 func _setup_input_actions() -> void:
+
 	if InputMap.has_action("dig_dash"):
 		return
 
@@ -189,6 +190,9 @@ func _setup_held_item_sprites() -> void:
 	drill_sprite.hide()
 	add_child(drill_sprite)
 
+func _aim_pos() -> Vector2:
+	return get_global_mouse_position()
+
 func _process(_delta: float) -> void:
 	var slot := Inventory.selected_slot
 	if slot < 0 or slot >= Inventory.slots.size():
@@ -206,7 +210,7 @@ func _process(_delta: float) -> void:
 	var sprite := get_node_or_null(sprite_name)
 	if not sprite or not sprite.visible:
 		return
-	var mouse_dir := (get_global_mouse_position() - global_position).normalized()
+	var mouse_dir := (_aim_pos() - global_position).normalized()
 	if mouse_dir == Vector2.ZERO:
 		mouse_dir = Vector2.RIGHT
 	sprite.position = mouse_dir * HOLD_ITEM_ORBIT_RADIUS
@@ -457,8 +461,7 @@ func _deploy_drill() -> void:
 	var drill = drill_scene.instantiate()
 	get_parent().add_child(drill)
 	drill.global_position = global_position + Vector2(0, -40)
-	var mouse_pos := get_global_mouse_position()
-	var dir := (mouse_pos - global_position).normalized()
+	var dir := (_aim_pos() - global_position).normalized()
 	drill.setup(dir)
 
 func _throw_bomb() -> void:
@@ -468,8 +471,7 @@ func _throw_bomb() -> void:
 	var bomb = bomb_scene.instantiate()
 	get_parent().add_child(bomb)
 	bomb.global_position = global_position + Vector2(0, -40)
-	var mouse_pos := get_global_mouse_position()
-	var dir := (mouse_pos - global_position).normalized()
+	var dir := (_aim_pos() - global_position).normalized()
 	bomb.linear_velocity = dir * 600.0
 	bomb.arm()
 
@@ -552,7 +554,7 @@ func _update_camera_position(delta: float) -> void:
 	var camera := get_node_or_null("Camera2D") as Camera2D
 	if camera == null:
 		return
-	var target_global := global_position.lerp(get_global_mouse_position(), CAMERA_MOUSE_INFLUENCE)
+	var target_global := global_position.lerp(_aim_pos(), CAMERA_MOUSE_INFLUENCE)
 	var target_local := to_local(target_global)
 	var follow_weight := clampf(CAMERA_FOLLOW_SPEED * delta, 0.0, 1.0)
 	camera.position = camera.position.lerp(target_local, follow_weight)
@@ -671,32 +673,6 @@ func screen_shake(intensity: float, duration: float) -> void:
 		intensity *= 0.8
 		tween.tween_property(camera, "offset", offset, step_time).set_trans(Tween.TRANS_SINE)
 	tween.tween_property(camera, "offset", Vector2.ZERO, step_time).set_trans(Tween.TRANS_SINE)
-
-func deflect_pause() -> void:
-	$AnimatedSprite2D.modulate = Color(3.0, 3.0, 3.5, 1.0)
-	var sprite_tween := create_tween()
-	sprite_tween.tween_property($AnimatedSprite2D, "modulate", Color(1.5, 1.5, 1.8, 1.0), 0.1).set_trans(Tween.TRANS_QUAD)
-	sprite_tween.tween_property($AnimatedSprite2D, "modulate", Color.WHITE, 0.3).set_ease(Tween.EASE_OUT)
-
-	var base_scale: Vector2 = $AnimatedSprite2D.scale
-	var punch_scale := base_scale * Vector2(1.2, 0.85)
-	var scale_tween := create_tween()
-	scale_tween.tween_property($AnimatedSprite2D, "scale", punch_scale, 0.05).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	scale_tween.tween_property($AnimatedSprite2D, "scale", base_scale, 0.15).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
-
-	Engine.time_scale = 0.05
-	await get_tree().create_timer(0.1 * 0.05).timeout
-	Engine.time_scale = 1.0
-
-	var camera := get_node_or_null("Camera2D") as Camera2D
-	if not camera:
-		return
-	var original_zoom := Vector2(0.5, 0.5)
-	var punch_zoom := Vector2(0.6, 0.6)
-	var zoom_tween := create_tween()
-	zoom_tween.tween_property(camera, "zoom", punch_zoom, 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	zoom_tween.tween_interval(0.15)
-	zoom_tween.tween_property(camera, "zoom", original_zoom, 0.35).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 func start_dig_dash() -> void:
 	SFX.play("dig_dash", global_position)

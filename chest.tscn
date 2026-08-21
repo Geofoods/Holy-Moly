@@ -56,7 +56,7 @@ theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 2
 theme_override_fonts/font = ExtResource("3_font")
 theme_override_font_sizes/font_size = 32
-text = "Press E"
+text = "Press"
 
 [node name="LightOccluder2D" type="LightOccluder2D" parent="." unique_id=143185970]
 occluder = SubResource("OccluderPolygon2D_trlyu")

@@ -1,0 +1,67 @@
+[gd_scene format=3 uid="uid://cscwxuv4b0aul"]
+
+[ext_resource type="Texture2D" uid="uid://500paylfurey" path="res://Default/button_circle.png" id="1_svdgb"]
+[ext_resource type="Texture2D" uid="uid://dkstsrqgpno8k" path="res://Defaulticons/icon_arrow.png" id="2_ui5ya"]
+[ext_resource type="Texture2D" uid="uid://cilxc57meeep6" path="res://Defaulticons/icon_jump.png" id="3_s3714"]
+[ext_resource type="Texture2D" uid="uid://8t0p77056nts" path="res://Defaulticons/icon_burst.png" id="4_wlcjf"]
+[ext_resource type="Script" path="res://scripts/mobile_controls.gd" id="6_ypwdh"]
+
+[node name="mobile controls" type="CanvasLayer" unique_id=183254107]
+layer = 100
+visible = false
+script = ExtResource("6_ypwdh")
+
+[node name="left" type="TouchScreenButton" parent="." unique_id=591990078]
+modulate = Color(1, 1, 1, 0.7294118)
+position = Vector2(48, 499)
+scale = Vector2(1.703125, 1.703125)
+texture_normal = ExtResource("1_svdgb")
+action = "ui_left"
+
+[node name="Sprite2D" type="Sprite2D" parent="left" unique_id=1118375389]
+modulate = Color(1, 1, 1, 0.7294118)
+position = Vector2(31.706425, 32.880737)
+scale = Vector2(0.587156, 0.587156)
+texture = ExtResource("2_ui5ya")
+flip_h = true
+
+[node name="right" type="TouchScreenButton" parent="." unique_id=1922181880]
+modulate = Color(1, 1, 1, 0.7294118)
+position = Vector2(280, 498.00003)
+scale = Vector2(1.703125, 1.703125)
+texture_normal = ExtResource("1_svdgb")
+action = "ui_right"
+
+[node name="Sprite2D" type="Sprite2D" parent="right" unique_id=2043244791]
+modulate = Color(1, 1, 1, 0.7294118)
+position = Vector2(31.706425, 32.880737)
+scale = Vector2(0.587156, 0.587156)
+texture = ExtResource("2_ui5ya")
+
+[node name="up" type="TouchScreenButton" parent="." unique_id=1852524190]
+modulate = Color(1, 1, 1, 0.7294118)
+position = Vector2(162, 400.00003)
+scale = Vector2(1.703125, 1.703125)
+texture_normal = ExtResource("1_svdgb")
+action = "ui_accept"
+
+[node name="Sprite2D" type="Sprite2D" parent="up" unique_id=2086075080]
+modulate = Color(1, 1, 1, 0.7294118)
+position = Vector2(31.706425, 32.880737)
+scale = Vector2(0.587156, 0.587156)
+texture = ExtResource("3_s3714")
+flip_h = true
+
+[node name="dig dash" type="TouchScreenButton" parent="." unique_id=1721232008]
+modulate = Color(1, 1, 1, 0.7294118)
+position = Vector2(972.00006, 499.00003)
+scale = Vector2(1.703125, 1.703125)
+texture_normal = ExtResource("1_svdgb")
+action = "dig_dash"
+
+[node name="Sprite2D" type="Sprite2D" parent="dig dash" unique_id=491427878]
+modulate = Color(1, 1, 1, 0.7294118)
+position = Vector2(31.706425, 32.880737)
+scale = Vector2(0.587156, 0.587156)
+texture = ExtResource("4_wlcjf")
+flip_h = true

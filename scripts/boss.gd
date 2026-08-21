@@ -473,6 +473,12 @@ func _end_cutscene() -> void:
 	_chest_spawn_timer = CHEST_SPAWN_INTERVAL
 	anim.play("default")
 
+	var wall := get_parent().get_node_or_null("StaticBody2D") as StaticBody2D
+	if wall:
+		var shape := wall.get_node_or_null("CollisionShape2D") as CollisionShape2D
+		if shape:
+			shape.set_deferred("disabled", false)
+
 	_cutscene_mole.process_mode = PROCESS_MODE_INHERIT
 	get_tree().paused = false
 

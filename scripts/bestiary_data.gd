@@ -24,7 +24,7 @@ const ENTRIES: Array[Dictionary] = [
 		"description": "A scrappy raider that's more aggressive and alert than the average tunnel pest.",
 		"behavior": "Detects you from further away than a Beetle and charges almost immediately, slowing to a stop afterward before resuming its patrol.",
 		"attack_pattern": "Fast 400 px/s charge dealing contact damage, with a short cooldown before it can charge again.",
-		"strategy": "Don't get caught flat-footed by its longer detection range. Swing early or dodge sideways as it closes in. It's recommended to parry (Right-click) the mushroom projectiles it throws - deflecting them back deals damage and keeps you safe. Takes 4 hits to defeat.",
+		"strategy": "Don't get caught flat-footed by its longer detection range. Swing early or dodge sideways as it closes in. Takes 4 hits to defeat.",
 	},
 	{
 		"id": "ant",
@@ -36,7 +36,7 @@ const ENTRIES: Array[Dictionary] = [
 		"description": "A light, fast scuttler that fires slowing projectiles and climbs walls to chase you.",
 		"behavior": "Patrols the tunnel and turns to face you once it notices you. When it hits a wall, it sometimes scales straight up it to chase you onto higher ground. Every 5 seconds it fires an orange bullet toward you.",
 		"attack_pattern": "Fires a slow-moving orange projectile every 5 seconds. If it hits you, you are slowed for 3 seconds. Also deals contact damage.",
-		"strategy": "Parry (Right-click) the orange bullets to deflect them back - a deflected bullet kills the ant instantly. Otherwise, 3 shovel hits takes it down.",
+		"strategy": "Dodge the orange bullets or break them with your shovel swing. A well-placed shovel hit can destroy the projectile before it hits you. Takes 3 shovel hits to take down.",
 	},
 	{
 		"id": "slime",
@@ -104,31 +104,30 @@ const CONTROLS: Array[Dictionary] = [
 	{
 		"category": "Movement",
 		"rows": [
-			{"label": "A / D or LEFT / RIGHT", "detail": "Move left / right."},
-			{"label": "W / UP / SPACE", "detail": "Jump. Hold a direction while airborne to lock in a sideways jump arc."},
+			{"label": "Left / Right buttons (bottom-left)", "detail": "Move left / right."},
+			{"label": "Up button (bottom-left)", "detail": "Jump."},
 		],
 	},
 	{
 		"category": "Digging",
 		"rows": [
-			{"label": "SHIFT", "detail": "Dig-dash. Tunnel straight through terrain in front of you."},
-			{"label": "Left-click (mid-dash)", "detail": "Cancel the dash into an attack, breaking out with a burst and a screen shake."},
+			{"label": "Burst button (bottom-right)", "detail": "Dig-dash. Tunnel straight through terrain in front of you."},
+			{"label": "Tap (mid-dash)", "detail": "Cancel the dash into an attack, breaking out with a burst and a screen shake."},
 		],
 	},
 	{
 		"category": "Combat",
 		"rows": [
-			{"label": "Left-click", "detail": "Swing your shovel. Breaks the tile under your cursor and damages any enemy it hits."},
-			{"label": "Right-click", "detail": "Parry. Raise your shovel as a guard for a couple of seconds, deflecting anything it blocks back toward your cursor. Has a short cooldown after use."},
+			{"label": "Tap on enemies / tiles", "detail": "Swing your shovel. Breaks the tile under your finger and damages any enemy it hits."},
 		],
 	},
 	{
 		"category": "Inventory",
 		"rows": [
-			{"label": "1 / 2 / 3", "detail": "Select an inventory slot. Press the same key again to deselect."},
-			{"label": "Bomb / Drill", "detail": "While selected, Left-click to throw toward your cursor. See the Bestiary tab for what each one does."},
-			{"label": "Health Potion", "detail": "Selecting it instantly drinks it, restoring 1 heart."},
-			{"label": "Speed Boots / Shield", "detail": "Selecting it instantly activates a temporary speed boost or invulnerability."},
+			{"label": "Tap a slot", "detail": "Select an inventory slot. Tap the same slot again to deselect."},
+			{"label": "Bomb / Drill", "detail": "While selected, tap to throw toward your finger. See the Bestiary tab for what each one does."},
+			{"label": "Health Potion", "detail": "Tapping it instantly drinks it, restoring 1 heart."},
+			{"label": "Speed Boots / Shield", "detail": "Tapping it instantly activates a temporary speed boost or invulnerability."},
 		],
 	},
 	{
@@ -143,7 +142,7 @@ const CONTROLS: Array[Dictionary] = [
 	{
 		"category": "Menus",
 		"rows": [
-			{"label": "P", "detail": "Pause the game. Resume, restart, or return to the main menu."},
+			{"label": "Pause button (top-right)", "detail": "Pause the game. Resume, restart, or return to the main menu."},
 			{"label": "Info button (bottom-right)", "detail": "Opens this screen any time, in a level or from the main menu."},
 		],
 	},

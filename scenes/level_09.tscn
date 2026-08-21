@@ -17,7 +17,7 @@
 [ext_resource type="PackedScene" uid="uid://u77s8ew4xenh" path="res://scenes/beetleenemy.tscn" id="16_1ohpt"]
 [ext_resource type="PackedScene" uid="uid://iuqjuk37ur0d" path="res://scenes/slimeenemy.tscn" id="17_dxywq"]
 [ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="20_bgqlf"]
-[ext_resource type="Script" uid="uid://dpsujuff7o60j" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
+[ext_resource type="Script" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
 [ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
 [ext_resource type="PackedScene" uid="uid://3wwhicdeo8hl" path="res://scenes/info_popup.tscn" id="info_popup_res"]
 
@@ -51,6 +51,9 @@ shader_parameter/inner_radius = 0.25
 shader_parameter/outer_radius = 0.55
 shader_parameter/darkness = 0.7
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bgqlf"]
+size = Vector2(242, 1169)
+
 [node name="Node2D" type="Node2D" unique_id=1979316305]
 
 [node name="ParallaxBackground" parent="." unique_id=1010942744 instance=ExtResource("1_dxywq")]
@@ -68,7 +71,7 @@ zoom = Vector2(0.5, 0.5)
 position_smoothing_enabled = true
 
 [node name="Boss" parent="." unique_id=1041295786 instance=ExtResource("5_boss")]
-position = Vector2(2292, 1718)
+position = Vector2(2287, 1517)
 scale = Vector2(0.75, 0.75)
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=71896557]
@@ -95,7 +98,7 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_pausebutton")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_pausebutton_hover")
 theme_override_styles/hover = SubResource("StyleBoxFlat_pausebutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_pausebutton_hover")
-text = "II ESC"
+text = "II PAUSE"
 
 [node name="InfoButton" type="Button" parent="CanvasLayer" unique_id=1871777935]
 anchors_preset = 3
@@ -262,6 +265,13 @@ position = Vector2(1062, 2226)
 
 [node name="chest18" parent="." unique_id=302478732 instance=ExtResource("15_wjc4k")]
 position = Vector2(1343, 2228)
+
+[node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=1262179149]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D" unique_id=164938328]
+position = Vector2(2087, 1928)
+shape = SubResource("RectangleShape2D_bgqlf")
+disabled = true
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]
