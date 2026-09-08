@@ -6,6 +6,8 @@ const GRAVITY := 1960.0
 const THROW_INTERVAL := 2.5
 const THROW_VELOCITY := 1600.0
 const MAX_HEALTH := 4.0
+
+const EnemyDamage := preload("res://scripts/enemy.gd")
 # How far into the throw animation the mushroom is actually released, so the
 # projectile leaves the goblin's hand as the throwing motion plays out.
 const THROW_RELEASE_DELAY := 0.28
@@ -173,6 +175,7 @@ func take_damage(amount: float) -> void:
 	if health <= 0:
 		return
 	health -= amount
+	EnemyDamage.spawn_damage_number(self, amount)
 	SFX.play("enemy_hit", global_position)
 	queue_redraw()
 

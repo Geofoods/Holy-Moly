@@ -57,6 +57,7 @@ layer_0/tile_data = PackedInt32Array(65535, 0, 0, 0, 0, 0, 1, 0, 0, 2, 0, 0, 655
 [node name="CharacterBody2D2" parent="." unique_id=501808252 instance=ExtResource("4_sq6bu")]
 position = Vector2(-28, -116)
 scale = Vector2(0.25, 0.25)
+can_break = false
 
 [node name="Camera2D" type="Camera2D" parent="CharacterBody2D2" unique_id=955812054]
 position = Vector2(92, -296)
@@ -165,6 +166,60 @@ offset_left = 208.0
 offset_top = -105.0
 offset_right = 269.0
 offset_bottom = -5.0
+
+[node name="door2" parent="." unique_id=347552712 instance=ExtResource("14_n1psn")]
+offset_left = 966.0
+offset_top = -341.0
+offset_right = 1027.0
+offset_bottom = -241.0
+
+[node name="door3" parent="." unique_id=198435595 instance=ExtResource("14_n1psn")]
+offset_left = 1446.0
+offset_top = -101.0
+offset_right = 1507.0
+offset_bottom = -1.0
+
+[node name="door4" parent="." unique_id=381756055 instance=ExtResource("14_n1psn")]
+offset_left = 1770.0
+offset_top = -497.0
+offset_right = 1831.0
+offset_bottom = -397.0
+
+[node name="door5" parent="." unique_id=1669705923 instance=ExtResource("14_n1psn")]
+offset_left = 2090.0
+offset_top = -99.0
+offset_right = 2151.0
+offset_bottom = 1.0
+
+[node name="door6" parent="." unique_id=802431700 instance=ExtResource("14_n1psn")]
+offset_left = 2570.0
+offset_top = -336.0
+offset_right = 2631.0
+offset_bottom = -236.0
+
+[node name="door7" parent="." unique_id=2082706975 instance=ExtResource("14_n1psn")]
+offset_left = 3045.0
+offset_top = -96.0
+offset_right = 3106.0
+offset_bottom = 4.0
+
+[node name="door8" parent="." unique_id=1348355246 instance=ExtResource("14_n1psn")]
+offset_left = 3894.0
+offset_top = -656.0
+offset_right = 3955.0
+offset_bottom = -556.0
+
+[node name="door9" parent="." unique_id=950929344 instance=ExtResource("14_n1psn")]
+offset_left = 4847.0
+offset_top = -1459.0
+offset_right = 4908.0
+offset_bottom = -1359.0
+
+[node name="door10" parent="." unique_id=1451511584 instance=ExtResource("14_n1psn")]
+offset_left = 5366.0
+offset_top = -1698.0
+offset_right = 5427.0
+offset_bottom = -1598.0
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]

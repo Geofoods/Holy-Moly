@@ -146,9 +146,12 @@ func _build_restart_button() -> void:
 	var btn := Button.new()
 	btn.custom_minimum_size = Vector2(64, 64)
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color("b33939")
-	style.border_width_bottom = 4
-	style.border_color = Color("702121")
+	style.bg_color = Color(0.95, 0.4, 0.7, 1)
+	style.border_color = Color(0.8, 0.3, 0.6, 1)
+	style.border_width_left = 3
+	style.border_width_top = 3
+	style.border_width_right = 3
+	style.border_width_bottom = 3
 	style.corner_radius_top_left = 8
 	style.corner_radius_top_right = 8
 	style.corner_radius_bottom_left = 8
@@ -156,10 +159,11 @@ func _build_restart_button() -> void:
 	btn.add_theme_stylebox_override("normal", style)
 	
 	var style_hover := style.duplicate()
-	style_hover.bg_color = Color("d14747")
+	style_hover.bg_color = Color(1, 0.5, 0.8, 1)
+	style_hover.border_color = Color(0.9, 0.4, 0.7, 1)
 	btn.add_theme_stylebox_override("hover", style_hover)
-	btn.add_theme_stylebox_override("pressed", style)
-	btn.add_theme_stylebox_override("focus", style)
+	btn.add_theme_stylebox_override("pressed", style_hover)
+	btn.add_theme_stylebox_override("focus", style_hover)
 
 	var icon := preload("res://scripts/reload_icon.gd").new()
 	icon.set_anchors_preset(Control.PRESET_FULL_RECT)

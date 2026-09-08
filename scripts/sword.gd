@@ -26,7 +26,17 @@ var _ghost_tweens: Dictionary = {}
 var _ghost_accum := 0.0
 var _ghost_index := 0
 
+const HIGHLIGHT_MINEABLE := Color(0.15, 1.0, 0.35, 1.0)
+const HIGHLIGHT_UNMINEABLE := Color(1.0, 0.15, 0.15, 1.0)
+const HIGHLIGHT_AIR := Color(1.0, 1.0, 1.0, 1.0)
+const HIGHLIGHT_WIDTH := 6.0
+const HIGHLIGHT_MIN_ALPHA := 0.35
+const HIGHLIGHT_FLASH_TIME := 0.35
+
+enum BlockState { AIR, MINEABLE, UNMINEABLE }
+
 var tile_highlight: Sprite2D
+var _highlight_tween: Tween = null
 
 func _ready() -> void:
 	_tilemap_refresh()
@@ -51,24 +61,36 @@ func _tilemap_refresh() -> TileMap:
 	return tilemap
 
 func _setup_tile_highlight() -> void:
-	if not _tilemap_refresh():
+	var tilemap := _tilemap_refresh()
+	if not tilemap:
 		return
-	var image := Image.create(1, 1, false, Image.FORMAT_RGBA8)
-	image.set_pixel(0, 0, Color.WHITE)
+	var world := get_parent().get_parent()
+	var tile_world := Vector2(tilemap.tile_set.tile_size) * tilemap.scale
+	var tex_size := Vector2i(maxi(1, roundi(tile_world.x)), maxi(1, roundi(tile_world.y)))
+	var border := maxi(2, roundi(HIGHLIGHT_WIDTH))
+	var image := Image.create(tex_size.x, tex_size.y, false, Image.FORMAT_RGBA8)
+	image.fill(Color(0, 0, 0, 0))
+	for y in tex_size.y:
+		for x in tex_size.x:
+			if x < border or x >= tex_size.x - border or y < border or y >= tex_size.y - border:
+				image.set_pixel(x, y, Color.WHITE)
 	var tex := ImageTexture.create_from_image(image)
 	tile_highlight = Sprite2D.new()
 	tile_highlight.name = "TileHighlight"
 	tile_highlight.texture = tex
-	tile_highlight.modulate = Color(1.0, 0.9, 0.5, 0.25)
-	tile_highlight.scale = Vector2(80, 80)
 	tile_highlight.centered = true
-	tile_highlight.z_index = 100
+	tile_highlight.z_index = 0
 	tile_highlight.z_as_relative = false
-	get_parent().get_parent().add_child(tile_highlight)
+	tile_highlight.modulate = Color.WHITE
+	world.add_child(tile_highlight)
 	tile_highlight.hide()
 
+	_highlight_tween = create_tween().set_loops()
+	_highlight_tween.tween_property(tile_highlight, "modulate:a", HIGHLIGHT_MIN_ALPHA, HIGHLIGHT_FLASH_TIME).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_highlight_tween.tween_property(tile_highlight, "modulate:a", 1.0, HIGHLIGHT_FLASH_TIME).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
 func _update_tile_highlight() -> void:
-	if is_swinging:
+	if not visible or is_swinging:
 		if tile_highlight:
 			tile_highlight.hide()
 		return
@@ -80,13 +102,32 @@ func _update_tile_highlight() -> void:
 		return
 	var mouse_global := _aim_pos()
 	var tile_pos := tilemap.local_to_map(tilemap.to_local(mouse_global))
+	var col := _highlight_color(tilemap, tile_pos)
+	tile_highlight.modulate.r = col.r
+	tile_highlight.modulate.g = col.g
+	tile_highlight.modulate.b = col.b
+	tile_highlight.global_position = tilemap.to_global(tilemap.map_to_local(tile_pos))
+	tile_highlight.show()
+
+func _highlight_color(tilemap: TileMap, tile_pos: Vector2i) -> Color:
+	match _block_state(tilemap, tile_pos):
+		BlockState.AIR:
+			return HIGHLIGHT_AIR
+		BlockState.UNMINEABLE:
+			return HIGHLIGHT_UNMINEABLE
+		_:
+			return HIGHLIGHT_MINEABLE
+
+func _block_state(tilemap: TileMap, tile_pos: Vector2i) -> int:
 	var source_id := tilemap.get_cell_source_id(0, tile_pos)
 	var has_decoration := tilemap.get_layers_count() >= 2 and tilemap.get_cell_source_id(1, tile_pos) != -1
 	if source_id == -1 and not has_decoration:
-		tile_highlight.hide()
-		return
-	tile_highlight.global_position = tilemap.to_global(tilemap.map_to_local(tile_pos))
-	tile_highlight.show()
+		return BlockState.AIR
+	if source_id != -1:
+		var tile_data := tilemap.get_cell_tile_data(0, tile_pos)
+		if tile_data and tile_data.get_custom_data("bedrock"):
+			return BlockState.UNMINEABLE
+	return BlockState.MINEABLE
 
 func _aim_pos() -> Vector2:
 	return get_global_mouse_position()
@@ -153,8 +194,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			_mouse_held = false
 
 func _do_attack() -> void:
+	if not visible:
+		return
 	_break_tile_at_mouse()
-	if visible and not is_swinging:
+	if not is_swinging:
 		swing()
 
 func swing() -> void:
@@ -165,8 +208,16 @@ func swing() -> void:
 
 	hitbox.area_entered.connect(_on_hitbox_area_entered)
 
-	var aim := rotation
+	if _is_aerial():
+		_swing_aerial(rotation)
+	else:
+		_swing_ground(rotation)
 
+func _is_aerial() -> bool:
+	var mole := get_parent() as CharacterBody2D
+	return mole != null and not mole.is_on_floor()
+
+func _swing_ground(aim: float) -> void:
 	var start_angle := aim - SWING_ARC / 2.0
 	var end_angle := aim + SWING_ARC / 2.0
 
@@ -180,6 +231,15 @@ func swing() -> void:
 	var tween := create_tween()
 	tween.tween_property(self, "rotation", windup_angle, WINDUP_DURATION).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_SINE)
 	tween.tween_property(self, "rotation", end_angle, SWING_DURATION).set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_CUBIC)
+	tween.tween_callback(_end_swing)
+
+func _swing_aerial(aim: float) -> void:
+	rotation = aim
+	var spin_to := aim + TAU
+	if cos(aim) < 0:
+		spin_to = aim - TAU
+	var tween := create_tween()
+	tween.tween_property(self, "rotation", spin_to, SWING_DURATION).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
 	tween.tween_callback(_end_swing)
 
 func _end_swing() -> void:

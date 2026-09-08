@@ -12,6 +12,8 @@ const COOLDOWN_DURATION := 1.25
 const MAX_HEALTH := 4.0
 const TURN_COOLDOWN := 0.35
 
+const EnemyDamage := preload("res://scripts/enemy.gd")
+
 var state := State.PATROL
 var direction := 1.0
 var target_mole: Node2D = null
@@ -223,6 +225,7 @@ func take_damage(amount: float) -> void:
 	if health <= 0:
 		return
 	health -= amount
+	EnemyDamage.spawn_damage_number(self, amount)
 	SFX.play("enemy_hit", global_position)
 	queue_redraw()
 

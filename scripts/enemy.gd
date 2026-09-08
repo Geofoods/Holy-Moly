@@ -142,6 +142,7 @@ func take_damage(amount: float) -> void:
 	if health <= 0:
 		return
 	health -= amount
+	spawn_damage_number(self, amount)
 	SFX.play("enemy_hit", global_position)
 	queue_redraw()
 
@@ -151,6 +152,49 @@ func take_damage(amount: float) -> void:
 
 	if health <= 0:
 		die()
+
+class FloatingDamageLabel:
+	extends Label
+
+	const GRAVITY := 700.0
+	const LIFETIME := 0.8
+
+	var velocity := Vector2.ZERO
+	var _time := 0.0
+
+	func _process(delta: float) -> void:
+		_time += delta
+		velocity.y += GRAVITY * delta
+		position += velocity * delta
+		modulate.a = clampf(1.0 - _time / LIFETIME, 0.0, 1.0)
+		if _time >= LIFETIME:
+			queue_free()
+
+static func spawn_damage_number(enemy: Node2D, amount: float) -> void:
+	if not is_instance_valid(enemy) or not enemy.is_inside_tree():
+		return
+	var current := enemy.get_tree().current_scene
+	if not current:
+		return
+
+	var label := FloatingDamageLabel.new()
+	label.text = str(int(round(amount)))
+	label.add_theme_font_size_override("font_size", 90)
+	label.add_theme_color_override("font_color", Color(1.0, 0.95, 0.5))
+	label.add_theme_constant_override("outline_size", 12)
+	label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	var font := load("res://Baby Doll.otf") as Font
+	if font:
+		label.add_theme_font_override("font", font)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.z_index = 50
+	label.velocity = Vector2.from_angle(randf_range(-PI * 0.78, -PI * 0.22)) * randf_range(880.0, 960.0)
+	label.scale = Vector2(0.6, 0.6)
+	current.add_child(label)
+	label.global_position = enemy.global_position + Vector2(randf_range(-16.0, 16.0), randf_range(-28.0, -6.0))
+
+	var pop := label.create_tween()
+	pop.tween_property(label, "scale", Vector2.ONE, 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 func _draw() -> void:
 	if health <= 0 or health >= MAX_HEALTH:

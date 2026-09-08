@@ -8,6 +8,7 @@ const FRICTION = 3600.0
 const AIR_FRICTION = 1600.0
 const TUNNEL_SPEED = 2400.0
 const FAST_FALL_SPEED = 1200.0
+const AIR_GRAVITY = 2450.0
 const TUNNEL_DURATION = 0.2
 const HURT_GROUND_DURATION = 0.25
 const HURT_AIR_DURATION = 0.35
@@ -18,6 +19,8 @@ const CAMERA_MOUSE_INFLUENCE = 0.08
 const DIRT_PARTICLE_LIFETIME = 0.45
 const DIRT_PARTICLE_AMOUNT = 18
 
+
+@export var can_break := true
 
 var mole_hole_scene := preload("res://scenes/molehole.tscn")
 var mole_hole_instance: Node2D = null
@@ -97,6 +100,8 @@ func _ready() -> void:
 	_reverb = AudioServer.get_bus_effect(0, 0) as AudioEffectReverb
 	_setup_level_reverb()
 	_setup_slow_ui()
+	if not can_break and has_node("Weapon"):
+		$Weapon.hide()
 
 ## Registers all keyboard/mouse bindings. Runs once per session (the InputMap is
 ## global and persists across level changes). Keys are bound by physical_keycode
@@ -205,7 +210,7 @@ func _update_held_item() -> void:
 	var slot := Inventory.selected_slot
 
 	if has_node("Weapon"):
-		$Weapon.visible = (slot == 0 and Inventory.slots[0] != null)
+		$Weapon.visible = (slot == 0 and Inventory.slots[0] != null) and can_break
 
 	var item: ItemData = Inventory.slots[slot] if slot >= 0 and slot < Inventory.slots.size() else null
 	if has_node("HeldBomb"):
@@ -234,7 +239,7 @@ func _setup_level_reverb() -> void:
 
 func _physics_process(delta: float) -> void:
 	if not is_on_floor():
-		velocity += get_gravity() * delta * 1.5
+		velocity.y += AIR_GRAVITY * delta
 		if Input.is_action_pressed("ui_down"):
 			velocity.y = minf(velocity.y, FAST_FALL_SPEED)
 
@@ -278,7 +283,7 @@ func _physics_process(delta: float) -> void:
 		_update_camera_position(delta)
 		return
 
-	if Input.is_action_just_pressed("dig_dash") and is_on_floor():
+	if Input.is_action_just_pressed("dig_dash") and is_on_floor() and can_break:
 		start_dig_dash()
 		_update_camera_position(delta)
 		return
@@ -377,6 +382,8 @@ func _input(event: InputEvent) -> void:
 		var slot := Inventory.selected_slot
 		var item: ItemData = Inventory.slots[slot] if slot >= 0 and slot < Inventory.slots.size() else null
 		if item == null:
+			return
+		if not can_break and (item.item_name == "Bomb" or item.item_name == "Drill"):
 			return
 		match item.item_name:
 			"Bomb":
@@ -575,8 +582,11 @@ func spawn_mole_hole() -> void:
 
 func remove_mole_hole() -> void:
 	if mole_hole_instance and is_instance_valid(mole_hole_instance):
-		mole_hole_instance.queue_free()
+		var hole := mole_hole_instance
 		mole_hole_instance = null
+		var tween := hole.create_tween()
+		tween.tween_property(hole, "modulate", Color(1, 1, 1, 0), 0.35)
+		tween.tween_callback(hole.queue_free)
 
 func take_damage(amount: float, source_position: Vector2 = Vector2.ZERO, has_source: bool = false, is_projectile: bool = false) -> void:
 	if invulnerable or health <= 0:

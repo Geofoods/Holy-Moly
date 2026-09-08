@@ -8,6 +8,8 @@ const PROJECTILE_SPEED := 800.0
 const CHEST_SPAWN_INTERVAL := 10.0
 const BOUNCE_FORCE := 700.0
 
+const EnemyDamage := preload("res://scripts/enemy.gd")
+
 const INTRO_LINES := [
 	"hello there little mole,",
 	"it seems like you've wandered your way into the darkest depths..",
@@ -506,6 +508,7 @@ func take_damage(amount: float) -> void:
 	if health <= 0:
 		return
 	health -= amount
+	EnemyDamage.spawn_damage_number(self, amount)
 	modulate = Color(2, 1.5, 1.5, 1)
 	var flash_tween := create_tween()
 	flash_tween.tween_property(self, "modulate", Color.WHITE, 0.15)

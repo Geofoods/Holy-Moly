@@ -6,6 +6,8 @@ const JUMP_VELOCITY := -900.0
 const JUMP_HORIZONTAL := 700.0
 const MAX_HEALTH := 1.0
 
+const EnemyDamage := preload("res://scripts/enemy.gd")
+
 
 var health := MAX_HEALTH
 var target_mole: Node2D = null
@@ -106,6 +108,7 @@ func take_damage(amount: float) -> void:
 	if health <= 0:
 		return
 	health -= amount
+	EnemyDamage.spawn_damage_number(self, amount)
 	queue_redraw()
 
 	var tween := create_tween()
