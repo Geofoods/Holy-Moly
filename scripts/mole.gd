@@ -37,11 +37,6 @@ var launched_from_jump := false
 var _dig_dash_weapon_was_visible := false
 var _coyote_timer := 0.0
 var _jump_held := false
-var _stuck_timer := 0.0
-var _last_position := Vector2.ZERO
-var _stuck_label: Label = null
-const STUCK_THRESHOLD := 4.0
-
 var slow_timer := 0.0
 var _slow_ui: Control = null
 var _slow_bar: ColorRect = null
@@ -101,7 +96,6 @@ func _ready() -> void:
 	_setup_held_item_sprites()
 	_reverb = AudioServer.get_bus_effect(0, 0) as AudioEffectReverb
 	_setup_level_reverb()
-	_setup_stuck_label()
 	_setup_slow_ui()
 
 ## Registers all keyboard/mouse bindings. Runs once per session (the InputMap is
@@ -142,21 +136,6 @@ func _setup_input_actions() -> void:
 		InputMap.action_add_event("dig_slash", ev_click)
 
 	_setup_inventory_actions()
-
-func _setup_stuck_label() -> void:
-	var canvas := CanvasLayer.new()
-	canvas.layer = 100
-	add_child(canvas)
-	_stuck_label = Label.new()
-	_stuck_label.anchor_right = 1.0
-	_stuck_label.offset_right = -130.0
-	_stuck_label.offset_top = 30.0
-	_stuck_label.offset_left = -380.0
-	_stuck_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_stuck_label.add_theme_font_size_override("font_size", 16)
-	_stuck_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.3, 0.9))
-	_stuck_label.visible = false
-	canvas.add_child(_stuck_label)
 
 func _setup_inventory_actions() -> void:
 	var keys := [KEY_1, KEY_2, KEY_3]
@@ -359,7 +338,6 @@ func _physics_process(delta: float) -> void:
 	if not is_on_floor() and not launched_from_jump:
 		air_time += delta
 
-	_check_stuck(delta)
 	_update_slow(delta)
 
 	update_depth_display()
@@ -577,6 +555,12 @@ func spawn_dirt_particles(world_position: Vector2) -> void:
 	material.scale_min = 4.0
 	material.scale_max = 8.0
 	material.color = Color(0.45, 0.30, 0.16, 1.0)
+	var fade_gradient := Gradient.new()
+	fade_gradient.set_color(0, Color(1.0, 1.0, 1.0, 1.0))
+	fade_gradient.set_color(1, Color(1.0, 1.0, 1.0, 0.0))
+	var color_ramp := GradientTexture1D.new()
+	color_ramp.gradient = fade_gradient
+	material.color_ramp = color_ramp
 	get_tree().current_scene.add_child(dirt)
 	dirt.emitting = true
 	get_tree().create_timer(DIRT_PARTICLE_LIFETIME + 0.2).timeout.connect(dirt.queue_free)
@@ -728,44 +712,6 @@ func _end_dig_dash() -> void:
 	if has_node("Weapon") and _dig_dash_weapon_was_visible:
 		$Weapon.show()
 	$AnimatedSprite2D.play("jumpbold")
-
-func _check_stuck(delta: float) -> void:
-	var has_input := Input.get_axis("ui_left", "ui_right") != 0 or Input.is_action_pressed("ui_accept")
-	var moved := global_position.distance_squared_to(_last_position) > 4.0
-	if has_input and not moved and not is_digging and not is_tunneling:
-		_stuck_timer += delta
-	else:
-		_stuck_timer = 0.0
-	_last_position = global_position
-
-	if _stuck_label:
-		if _stuck_timer >= 1.0:
-			var remaining := ceili(STUCK_THRESHOLD - _stuck_timer)
-			_stuck_label.text = "Stuck? Breaking free in %ds..." % remaining
-			_stuck_label.visible = true
-		else:
-			_stuck_label.visible = false
-
-	if _stuck_timer >= STUCK_THRESHOLD and tilemap:
-		_stuck_timer = 0.0
-		_break_surrounding_tiles()
-
-func _break_surrounding_tiles() -> void:
-	var sfx = load("res://scripts/tile_break_sfx.gd")
-	var mole_tile := tilemap.local_to_map(tilemap.to_local(global_position))
-	var offsets := [
-		Vector2i(-1, 0), Vector2i(1, 0), Vector2i(0, -1), Vector2i(0, 1),
-		Vector2i(-1, -1), Vector2i(1, -1), Vector2i(-1, 1), Vector2i(1, 1),
-	]
-	var broke_any := false
-	for off in offsets:
-		var tile_pos: Vector2i = mole_tile + off
-		if tilemap.get_cell_source_id(0, tile_pos) != -1:
-			sfx.break_tile(tilemap, tile_pos, get_parent())
-			broke_any = true
-	if broke_any:
-		spawn_dirt_particles(global_position)
-		screen_shake(6.0, 0.15)
 
 func apply_slow(duration: float) -> void:
 	slow_timer = maxf(slow_timer, duration)

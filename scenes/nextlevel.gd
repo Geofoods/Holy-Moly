@@ -16,7 +16,7 @@ func _get_next_scene() -> String:
 	if num_str.is_empty() or num <= 0:
 		return "res://scenes/level_02.tscn"
 	if num >= 9:
-		return "res://scenes/main.tscn"
+		return "res://scenes/level1.tscn"
 	num += 1
 	return "res://scenes/%s%02d.tscn" % [prefix, num]
 

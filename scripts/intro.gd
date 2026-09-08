@@ -186,11 +186,7 @@ func _on_play_pressed() -> void:
 	play_btn.disabled = true
 	Inventory.reset()
 	ScoreManager.start_new_run()
-	var picker = $CenterContainer/VBoxContainer/ButtonContainer/LevelPickerOption as OptionButton
-	var selected: int = picker.selected
-	var target := "res://scenes/main.tscn"
-	if selected > 0 and selected - 1 < _level_keys.size():
-		target = _level_keys[selected - 1]
+	var target := "res://scenes/map.tscn"
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 	get_tree().root.add_child(transition)
 	transition.change_to(target)

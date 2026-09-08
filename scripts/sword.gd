@@ -6,29 +6,45 @@ const WINDUP_DURATION := 0.15
 const SWING_DURATION := 0.3
 const WINDUP_PULLBACK := 0.2
 var hit_enemies := []
+var _mouse_held := false
 
-const TRAIL_LENGTH := 8
-var trail_points: Array[Vector2] = []
-var trail_widths: Array[float] = []
+const GHOST_COUNT := 16
+const GHOST_SPAWN_INTERVAL := 0.02
+const GHOST_HOLD_DURATION := 0.08
+const GHOST_FADE_DURATION := 0.55
+const GHOST_SCALE := 1.5
+const GHOST_ALPHA := 0.5
+const GHOST_TIP_DISTANCE := 200.0
+const GHOST_Z_INDEX := 6
 
 @onready var hitbox: Area2D = $Hitbox
 @onready var hitbox_col: CollisionShape2D = $Hitbox/CollisionShape2D
 @onready var sprite: Sprite2D = $Sprite2D
-@onready var trail: Line2D = $Trail
+
+var _ghosts: Array[Sprite2D] = []
+var _ghost_tweens: Dictionary = {}
+var _ghost_accum := 0.0
+var _ghost_index := 0
 
 var tile_highlight: Sprite2D
 
 func _ready() -> void:
 	_tilemap_refresh()
 	_setup_tile_highlight()
-	trail.width = 12.0
-	trail.default_color = Color(1.0, 1.0, 1.0, 0.6)
-	trail.gradient = Gradient.new()
-	trail.gradient.set_color(0, Color(1.0, 1.0, 0.8, 0.8))
-	trail.gradient.set_color(1, Color(1.0, 1.0, 1.0, 0.0))
-	trail.width_curve = Curve.new()
-	trail.width_curve.add_point(Vector2(0.0, 1.0))
-	trail.width_curve.add_point(Vector2(1.0, 0.0))
+	_setup_ghosts()
+
+func _setup_ghosts() -> void:
+	var world := get_parent().get_parent()
+	for i in GHOST_COUNT:
+		var ghost := Sprite2D.new()
+		ghost.name = "SwingGhost%d" % i
+		ghost.texture = sprite.texture
+		ghost.centered = true
+		ghost.modulate = Color(1.0, 1.0, 1.0, 0.0)
+		ghost.z_index = GHOST_Z_INDEX
+		ghost.z_as_relative = false
+		world.add_child(ghost)
+		_ghosts.append(ghost)
 
 func _tilemap_refresh() -> TileMap:
 	var tilemap := get_parent().get_parent().get_node_or_null("TileMap") as TileMap
@@ -76,10 +92,10 @@ func _aim_pos() -> Vector2:
 	return get_global_mouse_position()
 
 func _process(delta: float) -> void:
-	_update_trail()
 	_update_tile_highlight()
 
 	if is_swinging:
+		_capture_ghost(delta)
 		return
 
 	var dir := (_aim_pos() - global_position).normalized()
@@ -95,38 +111,57 @@ func _process(delta: float) -> void:
 		sprite.rotation_degrees = 45.0
 		hitbox.rotation_degrees = 45.0
 
-func _update_trail() -> void:
-	var tip_offset := 330.0
-	var dir := Vector2(cos(sprite.global_rotation), sin(sprite.global_rotation))
-	var tip_pos := sprite.global_position + dir * tip_offset
+	if _mouse_held:
+		_do_attack()
 
-	if is_swinging:
-		trail_points.push_front(tip_pos)
-		if trail_points.size() > TRAIL_LENGTH:
-			trail_points.resize(TRAIL_LENGTH)
-	else:
-		if trail_points.size() > 0:
-			trail_points.pop_back()
+func _capture_ghost(delta: float) -> void:
+	_ghost_accum += delta
+	if _ghost_accum < GHOST_SPAWN_INTERVAL:
+		return
+	_ghost_accum = 0.0
 
-	trail.global_rotation = 0.0
-	trail.global_position = Vector2.ZERO
-	trail.clear_points()
-	for point in trail_points:
-		trail.add_point(point)
+	var tip := sprite.global_position + Vector2(GHOST_TIP_DISTANCE, 0.0).rotated(sprite.global_rotation)
+	_spawn_one_ghost(sprite.global_position)
+	_spawn_one_ghost(tip)
+
+func _spawn_one_ghost(pos: Vector2) -> void:
+	var ghost := _ghosts[_ghost_index]
+	_ghost_index = (_ghost_index + 1) % _ghosts.size()
+
+	ghost.global_position = pos
+	ghost.global_rotation = sprite.global_rotation
+	ghost.scale = sprite.scale * GHOST_SCALE
+	ghost.flip_h = sprite.flip_h
+	ghost.flip_v = sprite.flip_v
+	ghost.offset = sprite.offset
+	ghost.modulate = Color(1.0, 1.0, 1.0, GHOST_ALPHA)
+
+	var prev = _ghost_tweens.get(ghost)
+	if prev is Tween and prev.is_valid():
+		prev.kill()
+	var tween := create_tween()
+	tween.tween_interval(GHOST_HOLD_DURATION)
+	tween.tween_property(ghost, "modulate:a", 0.0, GHOST_FADE_DURATION).set_ease(Tween.EASE_OUT)
+	_ghost_tweens[ghost] = tween
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed:
-		if event.button_index == MOUSE_BUTTON_LEFT:
-			_break_tile_at_mouse()
-			if visible and not is_swinging:
-				swing()
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			_mouse_held = true
+			_do_attack()
+		else:
+			_mouse_held = false
+
+func _do_attack() -> void:
+	_break_tile_at_mouse()
+	if visible and not is_swinging:
+		swing()
 
 func swing() -> void:
 	SFX.play("swing", global_position)
 	is_swinging = true
 	hitbox.monitoring = true
 	hit_enemies = []
-	trail_points.clear()
 
 	hitbox.area_entered.connect(_on_hitbox_area_entered)
 
@@ -177,7 +212,6 @@ func dig_slash() -> void:
 	visible = true
 	hitbox.monitoring = true
 	hit_enemies = []
-	trail_points.clear()
 
 	hitbox.area_entered.connect(_on_hitbox_area_entered)
 

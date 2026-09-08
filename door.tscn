@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://uukw6aqabygl"]
+
+[ext_resource type="Script" path="res://scripts/door.gd" id="1_door"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_hun61"]
+radius = 191.9427
+
+[node name="Sprite2D" type="ColorRect" unique_id=713534953]
+script = ExtResource("1_door")
+offset_right = 61.0
+offset_bottom = 100.0
+color = Color(0.8104292, 0.4387144, 0.23864526, 1)
+
+[node name="Area2D" type="Area2D" parent="." unique_id=1344121326]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=51608978]
+position = Vector2(31, 50)
+shape = SubResource("CircleShape2D_hun61")

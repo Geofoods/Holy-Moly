@@ -48,15 +48,17 @@ shape = SubResource("RectangleShape2D_8uwsg")
 
 [node name="PromptLabel" type="Label" parent="Area2D" unique_id=101916510]
 visible = false
-position = Vector2(-80, -100)
-size = Vector2(160, 40)
-horizontal_alignment = 1
+offset_left = -80.0
+offset_top = -100.0
+offset_right = 80.0
+offset_bottom = -60.0
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 2
 theme_override_fonts/font = ExtResource("3_font")
 theme_override_font_sizes/font_size = 32
 text = "Press"
+horizontal_alignment = 1
 
 [node name="LightOccluder2D" type="LightOccluder2D" parent="." unique_id=143185970]
 occluder = SubResource("OccluderPolygon2D_trlyu")

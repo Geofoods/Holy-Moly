@@ -8,7 +8,7 @@ const MAX_SLOTS := 3
 var slots: Array = [null, null, null]
 var slot_counts: Array = [0, 0, 0]
 
-var current_level_path: String = "res://scenes/main.tscn"
+var current_level_path: String = "res://scenes/level1.tscn"
 var selected_slot: int = -1:
 	set(value):
 		selected_slot = value

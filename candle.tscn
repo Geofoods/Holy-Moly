@@ -1,5 +1,6 @@
 [gd_scene format=3 uid="uid://cdxu1kg5or16d"]
 
+[ext_resource type="Script" uid="uid://bm6pi0vblyaca" path="res://scripts/candle.gd" id="1_candle"]
 [ext_resource type="Texture2D" uid="uid://chcmh5bq4tsqd" path="res://sprites/tileset.png" id="1_tcgl6"]
 [ext_resource type="Texture2D" uid="uid://dlc4hd7f6on2v" path="res://costume3 (1).svg" id="2_pqck8"]
 
@@ -23,13 +24,15 @@ size = Vector2(80, 29.5)
 
 [node name="candle" type="RigidBody2D" unique_id=815664404]
 position = Vector2(1, -4)
+collision_layer = 2
+script = ExtResource("1_candle")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=797099782]
 scale = Vector2(0.5, 0.5)
 sprite_frames = SubResource("SpriteFrames_wmlv8")
 
 [node name="PointLight2D" type="PointLight2D" parent="." unique_id=1979554668]
-position = Vector2(0, 13.000004)
+position = Vector2(-1, 13.000001)
 scale = Vector2(3.0509553, 2.598726)
 color = Color(1, 0.8039216, 0.101960786, 1)
 shadow_enabled = true

@@ -171,4 +171,4 @@ func _on_play_now_pressed() -> void:
 	ScoreManager.start_new_run()
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 	get_tree().root.add_child(transition)
-	transition.change_to("res://scenes/main.tscn")
+	transition.change_to("res://scenes/level1.tscn")

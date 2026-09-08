@@ -1,7 +1,7 @@
 extends Node
 
 const LEVELS: Dictionary = {
-	"res://scenes/main.tscn": {
+	"res://scenes/level1.tscn": {
 		"number": 1,
 		"name": "The Surface Tunnels",
 		"tip": "Mushroom Casters lob exploding spores from a distance. Dodge or break them with a shovel swing, or close the gap fast.",

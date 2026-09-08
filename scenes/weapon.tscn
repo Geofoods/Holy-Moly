@@ -22,8 +22,3 @@ monitoring = false
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox" unique_id=1614599316]
 position = Vector2(446, -195)
 shape = SubResource("CircleShape2D_uxn4k")
-
-[node name="Trail" type="Line2D" parent="."]
-z_index = -1
-width = 12.0
-default_color = Color(1, 1, 1, 0.6)
