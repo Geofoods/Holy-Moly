@@ -1,0 +1,37 @@
+[gd_scene format=3 uid="uid://c0pwtkklnyw5s"]
+
+[ext_resource type="Script" uid="uid://uj54gn360ua5" path="res://scripts/hornet_enemy.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://kxuxl3b4klyr" path="res://icon.svg" id="2_icon"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_body"]
+radius = 34.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_hurtbox"]
+radius = 38.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_hitbox"]
+radius = 44.0
+
+[node name="HornetEnemy" type="CharacterBody2D" unique_id=937617817]
+collision_layer = 4
+script = ExtResource("1_script")
+
+[node name="Visual" type="Sprite2D" parent="." unique_id=1037263960]
+modulate = Color(1, 0.75, 0.1, 1)
+scale = Vector2(0.45, 0.45)
+texture = ExtResource("2_icon")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1304491454]
+shape = SubResource("CircleShape2D_body")
+
+[node name="Hurtbox" type="Area2D" parent="." unique_id=152968170]
+monitoring = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox" unique_id=924233165]
+shape = SubResource("CircleShape2D_hurtbox")
+
+[node name="Hitbox" type="Area2D" parent="." unique_id=81287295]
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox" unique_id=1065085620]
+shape = SubResource("CircleShape2D_hitbox")

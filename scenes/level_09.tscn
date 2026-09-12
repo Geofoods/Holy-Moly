@@ -2,6 +2,9 @@
 
 [ext_resource type="PackedScene" uid="uid://c3fg4jh63xhyr" path="res://scenes/parallax_background3.tscn" id="1_dxywq"]
 [ext_resource type="PackedScene" uid="uid://p1of6ummc17j" path="res://scenes/mole.tscn" id="1_o5qli"]
+[ext_resource type="PackedScene" path="res://scenes/hornet_enemy.tscn" id="hornet_res"]
+[ext_resource type="PackedScene" path="res://scenes/snake_enemy.tscn" id="snake_res"]
+[ext_resource type="PackedScene" uid="uid://m0v1ngpl4tfrm8" path="res://scenes/moving_platform.tscn" id="plat_res"]
 [ext_resource type="PackedScene" uid="uid://dnp3icrndkjm8" path="res://scenes/antenemy.tscn" id="2_enemy"]
 [ext_resource type="PackedScene" uid="uid://c6xus6tuhcmfo" path="res://scenes/heart.tscn" id="3_sugp2"]
 [ext_resource type="PackedScene" uid="uid://d2i1x8x1y6qa" path="res://scenes/pause_menu.tscn" id="4_pause"]
@@ -16,7 +19,6 @@
 [ext_resource type="PackedScene" uid="uid://bcd57whed7bys" path="res://chest.tscn" id="15_wjc4k"]
 [ext_resource type="PackedScene" uid="uid://u77s8ew4xenh" path="res://scenes/beetleenemy.tscn" id="16_1ohpt"]
 [ext_resource type="PackedScene" uid="uid://iuqjuk37ur0d" path="res://scenes/slimeenemy.tscn" id="17_dxywq"]
-[ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="20_bgqlf"]
 [ext_resource type="Script" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
 [ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
 [ext_resource type="PackedScene" uid="uid://3wwhicdeo8hl" path="res://scenes/info_popup.tscn" id="info_popup_res"]
@@ -85,7 +87,7 @@ scale = Vector2(0.24147864, 0.24147864)
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -110.0
+offset_left = -65.0
 offset_top = 20.0
 offset_right = -20.0
 offset_bottom = 65.0
@@ -98,7 +100,7 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_pausebutton")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_pausebutton_hover")
 theme_override_styles/hover = SubResource("StyleBoxFlat_pausebutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_pausebutton_hover")
-text = "II PAUSE"
+text = "II"
 
 [node name="InfoButton" type="Button" parent="CanvasLayer" unique_id=1871777935]
 anchors_preset = 3
@@ -225,20 +227,6 @@ position = Vector2(2448, 9766)
 [node name="Enemy11" parent="." unique_id=732242054 instance=ExtResource("16_1ohpt")]
 position = Vector2(2798, 9291)
 
-[node name="Costume5" type="Sprite2D" parent="." unique_id=170950863]
-position = Vector2(2414, 1275.0001)
-rotation = 3.1415927
-scale = Vector2(14.9654665, 1.7175142)
-texture = ExtResource("20_bgqlf")
-
-[node name="ColorRect" type="ColorRect" parent="." unique_id=1343792668]
-offset_left = 6192.0
-offset_top = 1027.0
-offset_right = 13569.0
-offset_bottom = 2748.0
-rotation = 3.1415927
-color = Color(0, 0, 0, 1)
-
 [node name="Enemy12" parent="." unique_id=889682265 instance=ExtResource("17_dxywq")]
 position = Vector2(3017, 4523)
 
@@ -265,6 +253,48 @@ position = Vector2(1062, 2226)
 
 [node name="chest18" parent="." unique_id=302478732 instance=ExtResource("15_wjc4k")]
 position = Vector2(1343, 2228)
+
+[node name="Hornet1" parent="." instance=ExtResource("hornet_res")]
+position = Vector2(2600, 3200)
+
+[node name="Hornet2" parent="." instance=ExtResource("hornet_res")]
+position = Vector2(2450, 5700)
+
+[node name="Hornet3" parent="." instance=ExtResource("hornet_res")]
+position = Vector2(2900, 8600)
+
+[node name="Snake1" parent="." instance=ExtResource("snake_res")]
+position = Vector2(2350, 3500)
+
+[node name="Snake2" parent="." instance=ExtResource("snake_res")]
+position = Vector2(2750, 6000)
+
+[node name="Snake3" parent="." instance=ExtResource("snake_res")]
+position = Vector2(2600, 8900)
+
+[node name="MovingPlatform1" parent="." instance=ExtResource("plat_res")]
+position = Vector2(2450, 5620)
+motion_direction = Vector2(1, 0)
+travel_distance = 320.0
+speed = 150.0
+
+[node name="MovingPlatform2" parent="." instance=ExtResource("plat_res")]
+position = Vector2(2900, 8520)
+motion_direction = Vector2(1, 0)
+travel_distance = 280.0
+speed = 160.0
+
+[node name="MovingPlatform3" parent="." instance=ExtResource("plat_res")]
+position = Vector2(2600, 3120)
+motion_direction = Vector2(0, 1)
+travel_distance = 220.0
+speed = 130.0
+
+[node name="MovingPlatform4" parent="." instance=ExtResource("plat_res")]
+position = Vector2(3000, 5000)
+motion_direction = Vector2(1, 0)
+travel_distance = 360.0
+speed = 170.0
 
 [node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=1262179149]
 

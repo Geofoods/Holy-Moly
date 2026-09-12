@@ -1,73 +1,150 @@
 extends CharacterBody2D
 
+## A ground snake that slithers along the floor, rears up to telegraph, then strikes.
+
+signal died
+
+const PATROL_SPEED := 150.0
+const STRIKE_SPEED := 900.0
 const GRAVITY := 1960.0
-const DETECT_RANGE := 300.0
-const JUMP_VELOCITY := -900.0
-const JUMP_HORIZONTAL := 700.0
-const MAX_HEALTH := 10.0
+const DETECT_RANGE_X := 360.0
+const DETECT_RANGE_Y := 90.0
+const REAR_DURATION := 0.5
+const STRIKE_DURATION := 0.38
+const COOLDOWN_DURATION := 0.8
+const MAX_HEALTH := 14.0
+const MOVE_SFX_INTERVAL := 0.5
 
 const EnemyDamage := preload("res://scripts/enemy.gd")
 
+enum State { PATROL, REAR, STRIKE, COOLDOWN }
 
-var health := MAX_HEALTH
+var state := State.PATROL
+var direction := 1.0
+var state_timer := 0.0
 var target_mole: Node2D = null
-var was_on_floor := true
-var has_landed := false
+var health := MAX_HEALTH
 var _stun_timer := 0.0
+var _slither_time := 0.0
+var _move_sfx_timer := 0.0
 var _mole_in_contact := false
-
-@onready var hurtbox: Area2D = $Area2D
-@onready var visual: Sprite2D = $Visual
 var _health_bar: Node2D = null
+
+@onready var hurtbox: Area2D = $Hurtbox
+@onready var hitbox: Area2D = $Hitbox
+@onready var ray_right: RayCast2D = $RayRight
+@onready var ray_left: RayCast2D = $RayLeft
+@onready var visual: Sprite2D = $Visual
 
 func _ready() -> void:
 	hurtbox.area_entered.connect(_on_hurtbox_area_entered)
-	hurtbox.body_entered.connect(_on_body_entered)
-	hurtbox.body_exited.connect(_on_body_exited)
+	hitbox.body_entered.connect(_on_hitbox_body_entered)
+	hitbox.body_exited.connect(_on_hitbox_body_exited)
 	hurtbox.add_to_group("enemy_hurtbox")
 	visual.z_index = 1
 	_setup_health_bar()
 
 func _physics_process(delta: float) -> void:
 	_find_target()
-
-	if _stun_timer > 0.0:
-		_stun_timer -= delta
-		if not is_on_floor():
-			velocity.y += GRAVITY * delta
-		move_and_slide()
-		was_on_floor = is_on_floor()
-		return
+	_slither_time += delta
 
 	if not is_on_floor():
 		velocity.y += GRAVITY * delta
+	else:
+		velocity.y = 0.0
 
-	if is_on_floor() and not was_on_floor:
-		_land()
-
-	move_and_slide()
-	was_on_floor = is_on_floor()
-
-	if not is_on_floor():
+	if _stun_timer > 0.0:
+		_stun_timer -= delta
+		move_and_slide()
 		return
 
-	if target_mole:
-		var dist := global_position.distance_squared_to(target_mole.global_position)
-		if dist < DETECT_RANGE * DETECT_RANGE and _has_line_of_sight(target_mole):
-			_jump_toward_target()
+	match state:
+		State.PATROL:
+			_do_patrol()
+		State.REAR:
+			_do_rear(delta)
+		State.STRIKE:
+			_do_strike(delta)
+		State.COOLDOWN:
+			_do_cooldown(delta)
+
+	move_and_slide()
+	_play_move_sound(delta)
+
+func _do_patrol() -> void:
+	velocity.x = direction * PATROL_SPEED
+	_check_edges()
+	visual.flip_h = direction < 0.0
+	visual.rotation = sin(_slither_time * 16.0) * 0.12 * -direction
+	if target_mole == null:
+		return
+	var offset := target_mole.global_position - global_position
+	if absf(offset.x) < DETECT_RANGE_X and absf(offset.y) < DETECT_RANGE_Y and _has_line_of_sight(target_mole):
+		_enter_rear(offset.x)
+
+func _enter_rear(facing: float) -> void:
+	state = State.REAR
+	state_timer = REAR_DURATION
+	direction = signf(facing) if facing != 0.0 else direction
+	velocity.x = 0.0
+
+func _do_rear(delta: float) -> void:
+	velocity.x = 0.0
+	visual.flip_h = direction < 0.0
+	visual.rotation = lerp_angle(visual.rotation, -PI / 5.5 * direction, 0.3)
+	visual.offset.x = sin(_slither_time * 55.0) * 3.0
+	state_timer -= delta
+	if state_timer <= 0.0:
+		visual.offset.x = 0.0
+		_enter_strike()
+
+func _enter_strike() -> void:
+	state = State.STRIKE
+	state_timer = STRIKE_DURATION
+	visual.rotation = 0.0
+	velocity.x = direction * STRIKE_SPEED
+	SFX.play("enemy_fire", global_position, -8.0, 0.3)
+
+func _do_strike(delta: float) -> void:
+	velocity.x = direction * STRIKE_SPEED
+	visual.flip_h = direction < 0.0
+	state_timer -= delta
+	if state_timer <= 0.0 or is_on_wall():
+		_enter_cooldown()
+
+func _enter_cooldown() -> void:
+	state = State.COOLDOWN
+	state_timer = COOLDOWN_DURATION
+	velocity.x = 0.0
+
+func _do_cooldown(delta: float) -> void:
+	velocity.x = move_toward(velocity.x, 0.0, 600.0 * delta)
+	visual.flip_h = direction < 0.0
+	visual.rotation = lerp_angle(visual.rotation, 0.0, 0.2)
+	state_timer -= delta
+	if state_timer <= 0.0:
+		state = State.PATROL
+
+func _check_edges() -> void:
+	if is_on_wall():
+		direction *= -1.0
+	elif is_on_floor():
+		if direction > 0.0 and not ray_right.is_colliding():
+			direction *= -1.0
+		elif direction < 0.0 and not ray_left.is_colliding():
+			direction *= -1.0
 
 func _has_line_of_sight(target: Node2D) -> bool:
-	if abs(target.global_position.y - global_position.y) > 120.0:
+	if absf(target.global_position.y - global_position.y) > 80.0:
 		return false
+	var ray_end := Vector2(target.global_position.x, global_position.y)
 	var space_state := get_world_2d().direct_space_state
-	var query := PhysicsRayQueryParameters2D.create(global_position, target.global_position, 1)
+	var query := PhysicsRayQueryParameters2D.create(global_position, ray_end, 1)
 	query.exclude = [get_rid()]
 	var result := space_state.intersect_ray(query)
 	if result.is_empty():
 		return true
-	if result.position.distance_to(target.global_position) < 40.0:
-		return true
-	return false
+	return result.collider == target or result.collider == target.get_parent()
 
 func _find_target() -> void:
 	if target_mole == null or not is_instance_valid(target_mole):
@@ -75,29 +152,30 @@ func _find_target() -> void:
 		if target_mole:
 			add_collision_exception_with(target_mole)
 
-func _jump_toward_target() -> void:
-	var dir: float = sign(target_mole.global_position.x - global_position.x)
-	velocity.y = JUMP_VELOCITY
-	velocity.x = dir * JUMP_HORIZONTAL
-	has_landed = false
-	SFX.play("jump", global_position, -14.0, 0.3)
-
-func _land() -> void:
-	if has_landed:
+func _play_move_sound(delta: float) -> void:
+	if health <= 0 or velocity.x == 0.0:
 		return
-	has_landed = true
-	SFX.play("land", global_position, -10.0, 0.4)
+	_move_sfx_timer -= delta
+	if _move_sfx_timer <= 0.0:
+		if state == State.STRIKE:
+			_move_sfx_timer = 0.12
+			SFX.play("dig_dash", global_position, -20.0, 0.3)
+		else:
+			_move_sfx_timer = MOVE_SFX_INTERVAL
+			SFX.play("land", global_position, -22.0, 0.15)
 
-func _on_body_entered(body: Node) -> void:
+func _on_hitbox_body_entered(body: Node) -> void:
 	if body.is_in_group("mole") and not _mole_in_contact:
 		_mole_in_contact = true
 		body.take_damage(1, global_position, true)
 
-func _on_body_exited(body: Node) -> void:
+func _on_hitbox_body_exited(body: Node) -> void:
 	if body.is_in_group("mole"):
 		_mole_in_contact = false
 
 func _on_hurtbox_area_entered(area: Area2D) -> void:
+	if area == hitbox or not area.monitoring:
+		return
 	var parent = area.get_parent()
 	if "is_swinging" in parent and parent.is_swinging:
 		var mole = get_tree().get_first_node_in_group("mole")
@@ -112,6 +190,7 @@ func take_damage(amount: float) -> void:
 		return
 	health -= amount
 	EnemyDamage.spawn_damage_number(self, amount)
+	SFX.play("enemy_hit", global_position)
 	if _health_bar:
 		_health_bar.queue_redraw()
 
@@ -134,20 +213,22 @@ func _draw_health_bar() -> void:
 		return
 	if not is_instance_valid(_health_bar):
 		return
-	var bar_w := 48.0
-	var bar_h := 5.0
-	var offset := Vector2(-bar_w / 2, -100)
+	var bar_w := 64.0
+	var bar_h := 8.0
+	var offset := Vector2(-bar_w / 2, -104)
 	var ratio := health / MAX_HEALTH
 	_health_bar.draw_rect(Rect2(offset, Vector2(bar_w, bar_h)), Color(0.15, 0.15, 0.15, 0.9))
 	var fill := Color(0.3 + 0.7 * ratio, 0.8, 0.3, 0.95)
 	_health_bar.draw_rect(Rect2(offset, Vector2(bar_w * ratio, bar_h)), fill)
 
 func die() -> void:
+	died.emit()
 	SFX.play("enemy_death", global_position)
 	ComboManager.increment()
 	ScoreManager.add_kill(1, global_position)
-	Shop.drop_coins(global_position, randi_range(1, 2))
+	Shop.drop_coins(global_position, randi_range(1, 3))
 	set_physics_process(false)
+	hitbox.set_deferred("monitoring", false)
 	hurtbox.set_deferred("monitorable", false)
 
 	var tween := create_tween()

@@ -275,6 +275,7 @@ static func break_tile(tilemap: TileMap, tile_pos: Vector2i, parent: Node, force
 	var atlas_coords := tilemap.get_cell_atlas_coords(0, tile_pos)
 
 	_break_single_tile(tilemap, tile_pos, atlas_coords, parent, force)
+	_collapse_unsupported_sides(tilemap, tile_pos, parent)
 	_break_opened_chests_near(parent, world_pos)
 
 	var tree := parent.get_tree()
@@ -298,6 +299,8 @@ static func break_tile(tilemap: TileMap, tile_pos: Vector2i, parent: Node, force
 			below_tiles.append(below)
 		if below_tiles.size() > 0:
 			_cascade_break(tilemap, below_tiles, parent, 0)
+
+	_break_stuff_above(tilemap, tile_pos, parent)
 
 static func break_decoration_tile(tilemap: TileMap, tile_pos: Vector2i, parent: Node) -> void:
 	_break_decoration_tile(tilemap, tile_pos, parent)
@@ -376,6 +379,34 @@ static func _cascade_break(tilemap: TileMap, tiles: Array[Vector2i], parent: Nod
 		var a := tilemap.get_cell_atlas_coords(0, pos)
 		_break_single_tile(tilemap, pos, a, parent)
 	parent.get_tree().create_timer(0.06).timeout.connect(_cascade_break.bind(tilemap, tiles, parent, index + 1))
+
+static func _collapse_unsupported_sides(tilemap: TileMap, origin: Vector2i, parent: Node) -> void:
+	var pending: Array[Vector2i] = [origin]
+	while not pending.is_empty():
+		var pos: Vector2i = pending.pop_back()
+		for offset in [Vector2i.LEFT, Vector2i.RIGHT]:
+			var neighbor: Vector2i = pos + offset
+			if tilemap.get_cell_source_id(0, neighbor) == -1:
+				continue
+			var data := tilemap.get_cell_tile_data(0, neighbor)
+			if data == null or not (data.get_custom_data("sides") as bool):
+				continue
+			if tilemap.get_cell_source_id(0, neighbor + Vector2i.LEFT) != -1 or tilemap.get_cell_source_id(0, neighbor + Vector2i.RIGHT) != -1:
+				continue
+			var atlas := tilemap.get_cell_atlas_coords(0, neighbor)
+			_break_single_tile(tilemap, neighbor, atlas, parent)
+			pending.append(neighbor)
+
+static func _break_stuff_above(tilemap: TileMap, tile_pos: Vector2i, parent: Node) -> void:
+	var stuff_tiles: Array[Vector2i] = []
+	for dy in range(1, 20):
+		var above := Vector2i(tile_pos.x, tile_pos.y - dy)
+		var tile_data := tilemap.get_cell_tile_data(0, above)
+		if tile_data == null or not (tile_data.get_custom_data("stuff") as bool):
+			break
+		stuff_tiles.append(above)
+	if stuff_tiles.size() > 0:
+		_cascade_break(tilemap, stuff_tiles, parent, 0)
 
 static func _break_single_tile(tilemap: TileMap, tile_pos: Vector2i, atlas_coords: Vector2i, parent: Node, force: bool = false) -> void:
 	var source_id := tilemap.get_cell_source_id(0, tile_pos)

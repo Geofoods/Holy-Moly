@@ -25,7 +25,6 @@ func _make_colored_texture(color: Color) -> Texture2D:
 
 func _ready() -> void:
 	_build_ui()
-	_build_restart_button()
 	Inventory.slots_changed.connect(_on_slots_changed)
 	Inventory.selected_slot_changed.connect(_on_selected_slot_changed)
 	_update_all_slots()
@@ -137,62 +136,3 @@ func _update_slot(idx):
 		tex.hide()
 		lbl.text=""
 	panel.add_theme_stylebox_override("panel",style)
-
-func _build_restart_button() -> void:
-	var restart_container := VBoxContainer.new()
-	var s := get_viewport().get_visible_rect().size
-	restart_container.position = Vector2(24, s.y / 2.0 - 40)
-	
-	var btn := Button.new()
-	btn.custom_minimum_size = Vector2(64, 64)
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.95, 0.4, 0.7, 1)
-	style.border_color = Color(0.8, 0.3, 0.6, 1)
-	style.border_width_left = 3
-	style.border_width_top = 3
-	style.border_width_right = 3
-	style.border_width_bottom = 3
-	style.corner_radius_top_left = 8
-	style.corner_radius_top_right = 8
-	style.corner_radius_bottom_left = 8
-	style.corner_radius_bottom_right = 8
-	btn.add_theme_stylebox_override("normal", style)
-	
-	var style_hover := style.duplicate()
-	style_hover.bg_color = Color(1, 0.5, 0.8, 1)
-	style_hover.border_color = Color(0.9, 0.4, 0.7, 1)
-	btn.add_theme_stylebox_override("hover", style_hover)
-	btn.add_theme_stylebox_override("pressed", style_hover)
-	btn.add_theme_stylebox_override("focus", style_hover)
-
-	var icon := preload("res://scripts/reload_icon.gd").new()
-	icon.set_anchors_preset(Control.PRESET_FULL_RECT)
-	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	btn.add_child(icon)
-
-	var lbl := Label.new()
-	lbl.text = "R"
-	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl.add_theme_font_override("font", HOTBAR_FONT)
-	lbl.add_theme_font_size_override("font_size", 18)
-	lbl.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
-	
-	restart_container.add_child(btn)
-	restart_container.add_child(lbl)
-	add_child(restart_container)
-	
-	btn.pressed.connect(_on_restart_action)
-
-func _on_restart_action() -> void:
-	if get_tree().paused: return
-	if SFX.has_method("play_ui"): SFX.play_ui("ui_click")
-	Inventory.reset()
-	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
-	get_tree().root.add_child(transition)
-	transition.change_to(Inventory.current_level_path)
-
-func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_R:
-		if not get_tree().paused:
-			_on_restart_action()
-			get_viewport().set_input_as_handled()

@@ -26,11 +26,13 @@ Bestiary="*res://scripts/bestiary_data.gd"
 LevelData="*res://scripts/level_data.gd"
 ComboManager="*res://scripts/combo_manager.gd"
 ScoreManager="*res://scripts/score_manager.gd"
+Shop="*res://scripts/shop_manager.gd"
 LevelMusic="*res://scripts/level_music.gd"
 MobileControls="*uid://cscwxuv4b0aul"
 
 [display]
 
+window/size/mode=3
 window/stretch/mode="canvas_items"
 
 [editor_plugins]

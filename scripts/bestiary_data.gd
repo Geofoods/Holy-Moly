@@ -51,6 +51,30 @@ const ENTRIES: Array[Dictionary] = [
 		"strategy": "Keep your distance and hit it when it lands.",
 	},
 	{
+		"id": "snake",
+		"name": "Cave Snake",
+		"icon": "res://icon.svg",
+		"icon_region": Rect2(),
+		"category": "Enemy",
+		"danger_level": 3,
+		"description": "A hissing serpent that slithers through the cave floors, coiled and waiting for prey.",
+		"behavior": "Slithers back and forth along the ground. When it spots you, it stops, rears up and shakes for a moment, then strikes straight at you in a fast lunge before lying low to recover.",
+		"attack_pattern": "A fast 900 px/s strike lasting under half a second, dealing contact damage, telegraphed by a visible rear-and-shake, followed by a short cooldown before it resumes slithering.",
+		"strategy": "The rear-up is your cue: swing to knock it out of the telegraph, or hop out of the way as it lunges, then punish it while it recovers. Takes 2 shovel hits to defeat.",
+	},
+	{
+		"id": "hornet",
+		"name": "Hornet",
+		"icon": "res://icon.svg",
+		"icon_region": Rect2(),
+		"category": "Enemy",
+		"danger_level": 4,
+		"description": "A hostile buzzing insect that rules the open caverns with hit-and-run attacks.",
+		"behavior": "Hovers in the air and drifts toward you when it spots you. Every few seconds it locks on with a visible shake, then dashes straight at your last position.",
+		"attack_pattern": "A fast 900 px/s dash lasting about half a second, dealing contact damage, followed by a tired recovery drift and a roughly 2.5 second cooldown.",
+		"strategy": "Watch for the shake that precedes its dash and step aside at the last moment, then punish it while it recovers. It is fragile and takes only 2 shovel hits to defeat.",
+	},
+	{
 		"id": "drill",
 		"name": "Bomb Drill",
 		"icon": "res://drill.webp",
@@ -73,6 +97,18 @@ const ENTRIES: Array[Dictionary] = [
 		"behavior": "Select it from your inventory (number key) and Left-click to throw it toward your cursor. It arms on impact and counts down before detonating.",
 		"attack_pattern": "About a 2.5 second fuse, then a 200px-radius blast that destroys nearby tiles and instantly defeats any enemy caught inside it.",
 		"strategy": "Throw it from a safe distance. The blast damages you too if you're still standing in the radius when it goes off. Great for blasting through blocked tunnels.",
+	},
+	{
+		"id": "wall_jump",
+		"name": "Wall Jump Grip",
+		"icon": "res://icon.svg",
+		"icon_region": Rect2(),
+		"category": "Upgrade",
+		"danger_level": 1,
+		"description": "A pair of rough grip pads that let you cling to tunnel walls and kick off them.",
+		"behavior": "Once purchased, it is always active. Press Jump while touching a wall to launch off it in the opposite direction. Holding toward the wall while falling slows your descent.",
+		"attack_pattern": "Wall jumps launch you upward and away from the wall. Sliding reduces your fall speed to 420 px/s, letting you descend shafts safely.",
+		"strategy": "Chain wall jumps between two facing walls to climb vertical shafts, or ride a wall slide to reach treasures at the bottom of deep tunnels without taking fall damage.",
 	},
 	{
 		"id": "holywater",
@@ -106,6 +142,7 @@ const CONTROLS: Array[Dictionary] = [
 		"rows": [
 			{"label": "Left / Right buttons (bottom-left)", "detail": "Move left / right."},
 			{"label": "Up button (bottom-left)", "detail": "Jump."},
+			{"label": "Jump while against a wall", "detail": "With the Wall Jump Grip, kick off the wall you're holding toward."},
 		],
 	},
 	{
@@ -142,7 +179,7 @@ const CONTROLS: Array[Dictionary] = [
 	{
 		"category": "Menus",
 		"rows": [
-			{"label": "Pause button (top-right)", "detail": "Pause the game. Resume, restart, or return to the main menu."},
+			{"label": "Pause button (top-right)", "detail": "Pause the game. Resume from where you left off or return to the main menu."},
 			{"label": "Info button (bottom-right)", "detail": "Opens this screen any time, in a level or from the main menu."},
 		],
 	},

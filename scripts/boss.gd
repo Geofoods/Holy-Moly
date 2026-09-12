@@ -1,6 +1,6 @@
 extends CharacterBody2D
 
-const MAX_HEALTH := 70.0
+const MAX_HEALTH := 700.0
 const PAN_DURATION := 0.75
 const DESCENT_SPEED := 20.0
 const SPIT_INTERVAL := 3.0
@@ -500,9 +500,9 @@ func _spawn_chest() -> void:
 func _on_hurtbox_area_entered(area: Area2D) -> void:
 	if not _boss_active:
 		return
-	var parent := area.get_parent()
+	var parent = area.get_parent()
 	if "is_swinging" in parent and parent.is_swinging:
-		take_damage(1)
+		take_damage(parent.get_damage())
 
 func take_damage(amount: float) -> void:
 	if health <= 0:
@@ -522,6 +522,7 @@ func take_damage(amount: float) -> void:
 func die() -> void:
 	ComboManager.increment()
 	ScoreManager.add_kill(20, global_position)
+	Shop.drop_coins(global_position, 30, 5)
 	set_physics_process(false)
 	hurtbox.set_deferred("monitorable", false)
 	_destroy_health_bar()

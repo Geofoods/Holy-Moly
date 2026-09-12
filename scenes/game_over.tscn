@@ -309,21 +309,6 @@ layout_mode = 2
 theme_override_constants/separation = 34
 alignment = 1
 
-[node name="PlayAgainButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer" unique_id=1177331322]
-custom_minimum_size = Vector2(240, 78)
-layout_mode = 2
-focus_mode = 0
-theme_override_colors/font_color = Color(0.98, 1, 0.98, 1)
-theme_override_colors/font_outline_color = Color(0, 0.1, 0.04, 1)
-theme_override_constants/outline_size = 6
-theme_override_fonts/font = ExtResource("6_babydoll")
-theme_override_font_sizes/font_size = 28
-theme_override_styles/normal = SubResource("StyleBoxFlat_playbutton")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_playbutton_hover")
-theme_override_styles/hover = SubResource("StyleBoxFlat_playbutton_hover")
-theme_override_styles/focus = SubResource("StyleBoxFlat_playbutton")
-text = "PLAY AGAIN"
-
 [node name="CancelButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer" unique_id=879550337]
 custom_minimum_size = Vector2(240, 78)
 layout_mode = 2
@@ -351,5 +336,4 @@ frame_progress = 1.0
 libraries/ = SubResource("AnimationLibrary_r8nfu")
 autoplay = &"deathanimation"
 
-[connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/PlayAgainButton" to="." method="_on_play_again_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/CancelButton" to="." method="_on_cancel_pressed"]

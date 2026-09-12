@@ -22,21 +22,21 @@ func _ready() -> void:
 	_label.anchor_right = 1.0
 	_label.anchor_top = 0.0
 	_label.anchor_bottom = 0.0
-	_label.offset_left = -220
+	_label.offset_left = -270
 	_label.offset_right = -20
 	_label.offset_top = 75
-	_label.offset_bottom = 135
+	_label.offset_bottom = 275
 	_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 
 	var font := load("res://Baby Doll.otf") as Font
 	_label.add_theme_font_override("font", font)
-	_label.add_theme_font_size_override("font_size", 36)
+	_label.add_theme_font_size_override("font_size", 30)
 	_label.add_theme_color_override("font_color", Color.WHITE)
 	_label.add_theme_constant_override("outline_size", 4)
 	_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
 	_label.visible = false
-	_label.pivot_offset = Vector2(200, 30)
+	_label.pivot_offset = Vector2(220, 30)
 	add_child(_label)
 
 func _process(delta: float) -> void:
@@ -56,6 +56,7 @@ func increment() -> void:
 	_flash_label()
 	_update_label()
 	_combo_shake()
+	_kill_hit_stop()
 
 func get_speed_multiplier() -> float:
 	if combo <= 0:
@@ -67,6 +68,12 @@ func get_coyote_time() -> float:
 		return COYOTE_BASE
 	return minf(COYOTE_BASE + float(combo) * COYOTE_BONUS_PER_KILL, COYOTE_MAX)
 
+func get_damage_multiplier() -> float:
+	return float(maxi(1, combo))
+
+func get_coin_multiplier() -> float:
+	return float(maxi(1, combo))
+
 func _reset_combo() -> void:
 	combo = 0
 	combo_timer = 0.0
@@ -74,7 +81,8 @@ func _reset_combo() -> void:
 
 func _update_label() -> void:
 	var time_left := int(ceil(combo_timer))
-	_label.text = "COMBO x%d\nx%d SCORE  -  %ds" % [combo, maxi(1, combo), time_left]
+	var mult := maxi(1, combo)
+	_label.text = "COMBO x%d\nDMG x%d   COIN x%d\nSCORE x%d  -  %ds" % [combo, mult, mult, mult, time_left]
 
 func _get_combo_color() -> Color:
 	if combo >= 10:
@@ -102,6 +110,15 @@ func _flash_label() -> void:
 	_label.scale = Vector2(1.3, 1.3)
 	_scale_tween = create_tween()
 	_scale_tween.tween_property(_label, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+func _kill_hit_stop() -> void:
+	if combo <= 1:
+		return
+	var mole = get_tree().get_first_node_in_group("mole")
+	if not mole or not mole.has_method("hit_freeze"):
+		return
+	var freeze := 0.03 + 0.005 * minf(float(combo), 12.0)
+	mole.hit_freeze(freeze)
 
 func _combo_shake() -> void:
 	var mole = get_tree().get_first_node_in_group("mole")

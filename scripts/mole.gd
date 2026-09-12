@@ -18,7 +18,25 @@ const CAMERA_FOLLOW_SPEED = 10.0
 const CAMERA_MOUSE_INFLUENCE = 0.08
 const DIRT_PARTICLE_LIFETIME = 0.45
 const DIRT_PARTICLE_AMOUNT = 18
-
+const DASH_ABILITY_DAMAGE := 10.0
+const DASH_KNOCKBACK := 900.0
+const DASH_HIT_RADIUS := 95.0
+const GROUND_POUND_SPEED := 1800.0
+const GROUND_POUND_BOUNCE := -500.0
+const GROUND_POUND_MIN_FALL := 80.0
+const GROUND_POUND_MAX_FALL := 640.0
+const GROUND_POUND_BASE_RADIUS := 0
+const GROUND_POUND_MAX_RADIUS := 2
+const GROUND_POUND_BASE_HIT_RADIUS := 120.0
+const GROUND_POUND_MAX_HIT_RADIUS := 200.0
+const GROUND_POUND_BASE_DAMAGE := 8.0
+const GROUND_POUND_MAX_DAMAGE := 36.0
+const GROUND_POUND_KNOCKBACK := 800.0
+const WALL_JUMP_VELOCITY := -1250.0
+const WALL_JUMP_PUSHBACK := 620.0
+const WALL_JUMP_LOCK_TIME := 0.14
+const WALL_SLIDE_MAX_FALL := 420.0
+const WALL_COYOTE_TIME := 0.12
 
 @export var can_break := true
 
@@ -26,20 +44,30 @@ var mole_hole_scene := preload("res://scenes/molehole.tscn")
 var mole_hole_instance: Node2D = null
 var bomb_scene := preload("res://bomb.tscn")
 var drill_scene := preload("res://drill.tscn")
+const EnemyDamage := preload("res://scripts/enemy.gd")
 var was_on_floor := true
 var is_sideways_jump := false
 var is_digging := false
 var is_tunneling := false
+var is_ground_pounding := false
+var _ground_pound_start_y := 0.0
+var _ground_pound_power := 0.0
 var tunnel_direction := 1.0
+var _dash_hit_enemies: Dictionary = {}
 var invulnerable := false
+var _dash_invulnerable := false
 var speed_boost_active := false
 var shield_active := false
 var hurt_anim_time_left := 0.0
 var air_time := 0.0
 var launched_from_jump := false
 var _dig_dash_weapon_was_visible := false
+var using_ranged := false
 var _coyote_timer := 0.0
 var _jump_held := false
+var _wall_jump_lock_timer := 0.0
+var _wall_coyote_timer := 0.0
+var _wall_coyote_dir := 0.0
 var slow_timer := 0.0
 var _slow_ui: Control = null
 var _slow_bar: ColorRect = null
@@ -102,6 +130,9 @@ func _ready() -> void:
 	_setup_slow_ui()
 	if not can_break and has_node("Weapon"):
 		$Weapon.hide()
+	_setup_ranged_weapon()
+	_refresh_weapon_visibility()
+	Shop.loadout_changed.connect(_refresh_weapon_visibility)
 
 ## Registers all keyboard/mouse bindings. Runs once per session (the InputMap is
 ## global and persists across level changes). Keys are bound by physical_keycode
@@ -109,6 +140,12 @@ func _ready() -> void:
 ## keyboard layouts (AZERTY, QWERTZ, ...) where the same physical key produces a
 ## different character.
 func _setup_input_actions() -> void:
+
+	if not InputMap.has_action("swap_weapon"):
+		InputMap.add_action("swap_weapon")
+		var ev_q = InputEventKey.new()
+		ev_q.physical_keycode = KEY_Q
+		InputMap.action_add_event("swap_weapon", ev_q)
 
 	if InputMap.has_action("dig_dash"):
 		return
@@ -210,13 +247,50 @@ func _update_held_item() -> void:
 	var slot := Inventory.selected_slot
 
 	if has_node("Weapon"):
-		$Weapon.visible = (slot == 0 and Inventory.slots[0] != null) and can_break
+		$Weapon.visible = (slot == 0 and Inventory.slots[0] != null) and can_break and not using_ranged
+	if has_node("RangedWeapon"):
+		$RangedWeapon.visible = using_ranged and Shop.has_ranged_weapon()
 
 	var item: ItemData = Inventory.slots[slot] if slot >= 0 and slot < Inventory.slots.size() else null
 	if has_node("HeldBomb"):
 		$HeldBomb.visible = (item != null and item.item_name == "Bomb")
 	if has_node("HeldDrill"):
 		$HeldDrill.visible = (item != null and item.item_name == "Drill")
+
+func _setup_ranged_weapon() -> void:
+	if has_node("RangedWeapon"):
+		return
+	var ranged_script: Script = preload("res://scripts/ranged_weapon.gd")
+	var w := Shop.get_ranged()
+	if w and w.id == "wizard_staff":
+		ranged_script = preload("res://scripts/wizard_staff.gd")
+	var rw: Node2D = ranged_script.new()
+	rw.name = "RangedWeapon"
+	rw.position = Vector2(0, -40)
+	rw.z_index = 1
+	add_child(rw)
+	rw.visible = false
+
+func _refresh_weapon_visibility() -> void:
+	if is_digging or is_tunneling:
+		return
+	_ensure_ranged_weapon_script()
+	_update_held_item()
+
+func _ensure_ranged_weapon_script() -> void:
+	var w := Shop.get_ranged()
+	if w == null:
+		return
+	var desired: Script = preload("res://scripts/ranged_weapon.gd")
+	if w.id == "wizard_staff":
+		desired = preload("res://scripts/wizard_staff.gd")
+	var node := get_node_or_null("RangedWeapon")
+	if node and node.get_script() == desired:
+		return
+	if node:
+		node.name = "RangedWeapon_old"
+		node.queue_free()
+	_setup_ranged_weapon()
 
 const SURFACE_Y := 850.0
 var _reverb: AudioEffectReverb = null
@@ -254,6 +328,7 @@ func _physics_process(delta: float) -> void:
 	elif is_tunneling:
 		velocity.x = tunnel_direction * TUNNEL_SPEED
 		move_and_slide()
+		_dash_ability_strike()
 		if tilemap:
 			var sfx = load("res://scripts/tile_break_sfx.gd")
 			var broken_tiles: Array[Vector2i] = []
@@ -283,8 +358,21 @@ func _physics_process(delta: float) -> void:
 		_update_camera_position(delta)
 		return
 
-	if Input.is_action_just_pressed("dig_dash") and is_on_floor() and can_break:
-		start_dig_dash()
+	if is_ground_pounding:
+		velocity.x = move_toward(velocity.x, 0, FRICTION * delta)
+		velocity.y = minf(velocity.y + AIR_GRAVITY * delta * 1.5, GROUND_POUND_SPEED)
+		move_and_slide()
+		was_on_floor = is_on_floor()
+		if is_on_floor():
+			_complete_ground_pound()
+		_update_camera_position(delta)
+		return
+
+	if Input.is_action_just_pressed("dig_dash") and can_break:
+		if is_on_floor():
+			start_dig_dash()
+		else:
+			start_ground_pound()
 		_update_camera_position(delta)
 		return
 
@@ -293,8 +381,36 @@ func _physics_process(delta: float) -> void:
 	else:
 		_coyote_timer -= delta
 
+	var direction := Input.get_axis("ui_left", "ui_right")
+
+	if Shop.has_wall_jump():
+		_wall_jump_lock_timer = maxf(0.0, _wall_jump_lock_timer - delta)
+		if is_on_floor():
+			_wall_coyote_timer = 0.0
+		elif is_on_wall() and _wall_jump_lock_timer <= 0.0:
+			var toward_wall := -signf(get_wall_normal().x)
+			if signf(direction) == toward_wall:
+				_wall_coyote_timer = WALL_COYOTE_TIME
+				_wall_coyote_dir = toward_wall
+				if velocity.y > 0.0 and velocity.y > WALL_SLIDE_MAX_FALL:
+					velocity.y = WALL_SLIDE_MAX_FALL
+		else:
+			_wall_coyote_timer = maxf(0.0, _wall_coyote_timer - delta)
+
 	var can_jump := is_on_floor() or _coyote_timer > 0.0
-	if Input.is_action_just_pressed("ui_accept") and can_jump:
+	var can_wall_jump := Shop.has_wall_jump() and not can_jump \
+			and _wall_jump_lock_timer <= 0.0 and _wall_coyote_timer > 0.0
+	if Input.is_action_just_pressed("ui_accept") and can_wall_jump:
+		velocity.y = WALL_JUMP_VELOCITY
+		velocity.x = -_wall_coyote_dir * WALL_JUMP_PUSHBACK
+		_jump_held = true
+		_wall_jump_lock_timer = WALL_JUMP_LOCK_TIME
+		_wall_coyote_timer = 0.0
+		SFX.play("jump", global_position, -12.0, 0.25)
+		is_sideways_jump = true
+		air_time = 1.0
+		launched_from_jump = true
+	elif Input.is_action_just_pressed("ui_accept") and can_jump:
 		velocity.y = JUMP_VELOCITY
 		_jump_held = true
 		_coyote_timer = 0.0
@@ -321,7 +437,6 @@ func _physics_process(delta: float) -> void:
 
 	was_on_floor = is_on_floor()
 
-	var direction := Input.get_axis("ui_left", "ui_right")
 	var effective_speed := SPEED * ComboManager.get_speed_multiplier()
 	if speed_boost_active:
 		effective_speed *= 1.4
@@ -378,6 +493,13 @@ func _physics_process(delta: float) -> void:
 			$AnimatedSprite2D.play("idlebold")
 
 func _input(event: InputEvent) -> void:
+	if event.is_action_pressed("swap_weapon") and not event.echo:
+		if Shop.has_ranged_weapon():
+			using_ranged = not using_ranged
+			_refresh_weapon_visibility()
+			SFX.play_ui("ui_click", -12.0, 1.2)
+		get_viewport().set_input_as_handled()
+		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var slot := Inventory.selected_slot
 		var item: ItemData = Inventory.slots[slot] if slot >= 0 and slot < Inventory.slots.size() else null
@@ -589,7 +711,7 @@ func remove_mole_hole() -> void:
 		tween.tween_callback(hole.queue_free)
 
 func take_damage(amount: float, source_position: Vector2 = Vector2.ZERO, has_source: bool = false, is_projectile: bool = false) -> void:
-	if invulnerable or health <= 0:
+	if invulnerable or _dash_invulnerable or health <= 0:
 		return
 	health -= amount
 	if health <= 0:
@@ -668,9 +790,110 @@ func screen_shake(intensity: float, duration: float) -> void:
 		tween.tween_property(camera, "offset", offset, step_time).set_trans(Tween.TRANS_SINE)
 	tween.tween_property(camera, "offset", Vector2.ZERO, step_time).set_trans(Tween.TRANS_SINE)
 
+func _dash_ability_strike() -> void:
+	if not Shop.has_dash_ability():
+		return
+	var front := global_position + Vector2(tunnel_direction * DASH_HIT_RADIUS, 0.0)
+	for hurtbox in get_tree().get_nodes_in_group("enemy_hurtbox"):
+		if not is_instance_valid(hurtbox):
+			continue
+		var enemy := hurtbox.get_parent()
+		if enemy == null or not is_instance_valid(enemy):
+			continue
+		if _dash_hit_enemies.get(enemy, false):
+			continue
+		if front.distance_to(enemy.global_position) > DASH_HIT_RADIUS:
+			continue
+		_dash_hit_enemies[enemy] = true
+		var dmg := DASH_ABILITY_DAMAGE * ComboManager.get_damage_multiplier()
+		if enemy.has_method("take_damage"):
+			enemy.take_damage(dmg)
+			EnemyDamage.spawn_damage_number(enemy, dmg)
+			SFX.play("enemy_hit", enemy.global_position)
+			spawn_dirt_particles(enemy.global_position)
+		_apply_knockback(enemy, Vector2(tunnel_direction * DASH_KNOCKBACK, -300.0))
+
+func _apply_knockback(enemy: Node, knock_velocity: Vector2) -> void:
+	if enemy is CharacterBody2D:
+		(enemy as CharacterBody2D).velocity = knock_velocity
+	if "_stun_timer" in enemy:
+		enemy._stun_timer = maxf(enemy._stun_timer, 0.35)
+	else:
+		var push_dir := knock_velocity.normalized()
+		if push_dir == Vector2.ZERO:
+			push_dir = Vector2.RIGHT
+		var push := create_tween()
+		push.tween_property(enemy, "position", enemy.position + push_dir * 70.0, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+func start_ground_pound() -> void:
+	is_ground_pounding = true
+	_dash_invulnerable = Shop.has_dash_ability()
+	_ground_pound_start_y = global_position.y
+	velocity.y = GROUND_POUND_SPEED
+	velocity.x = 0.0
+	$AnimatedSprite2D.play("jumpbold")
+	$AnimatedSprite2D.flip_v = true
+	$AnimatedSprite2D.rotation = 0.0
+	SFX.play("dig_dash", global_position)
+	spawn_dirt_particles(global_position)
+
+func _complete_ground_pound() -> void:
+	is_ground_pounding = false
+	_dash_invulnerable = false
+	SFX.play("land", global_position)
+	var fall_px := global_position.y - _ground_pound_start_y
+	_ground_pound_power = clampf((fall_px - GROUND_POUND_MIN_FALL) / (GROUND_POUND_MAX_FALL - GROUND_POUND_MIN_FALL), 0.0, 1.0)
+	screen_shake(lerpf(12.0, 32.0, _ground_pound_power), 0.3)
+	spawn_dirt_particles(global_position)
+	_break_tiles_in_radius()
+	if Shop.has_dash_ability():
+		_ground_pound_strike()
+	velocity.y = GROUND_POUND_BOUNCE
+	$AnimatedSprite2D.flip_v = false
+
+func _break_tiles_in_radius() -> void:
+	if not tilemap:
+		return
+	var sfx = load("res://scripts/tile_break_sfx.gd")
+	var radius: int = roundi(lerpf(GROUND_POUND_BASE_RADIUS, GROUND_POUND_MAX_RADIUS, _ground_pound_power))
+	var center_tile := tilemap.local_to_map(tilemap.to_local(global_position))
+	for dx in range(-radius, radius + 1):
+		for dy in range(0, radius + 1):
+			var tp := Vector2i(center_tile.x + dx, center_tile.y + dy)
+			if tilemap.get_cell_source_id(0, tp) != -1:
+				sfx.break_tile(tilemap, tp, get_parent())
+			else:
+				sfx.break_decoration_tile(tilemap, tp, get_parent())
+	var chest_radius := lerpf(GROUND_POUND_BASE_HIT_RADIUS, GROUND_POUND_MAX_HIT_RADIUS, _ground_pound_power)
+	sfx.break_opened_chests_near(get_parent(), global_position, chest_radius)
+
+func _ground_pound_strike() -> void:
+	var hit_radius := lerpf(GROUND_POUND_BASE_HIT_RADIUS, GROUND_POUND_MAX_HIT_RADIUS, _ground_pound_power)
+	var strike_damage := lerpf(GROUND_POUND_BASE_DAMAGE, GROUND_POUND_MAX_DAMAGE, _ground_pound_power)
+	for hurtbox in get_tree().get_nodes_in_group("enemy_hurtbox"):
+		if not is_instance_valid(hurtbox):
+			continue
+		var enemy := hurtbox.get_parent()
+		if enemy == null or not is_instance_valid(enemy):
+			continue
+		if global_position.distance_to(enemy.global_position) > hit_radius:
+			continue
+		var dmg := strike_damage * ComboManager.get_damage_multiplier()
+		if enemy.has_method("take_damage"):
+			enemy.take_damage(dmg)
+			EnemyDamage.spawn_damage_number(enemy, dmg)
+			SFX.play("enemy_hit", enemy.global_position)
+			spawn_dirt_particles(enemy.global_position)
+		var dir: Vector2 = (enemy as Node2D).global_position - global_position
+		dir = dir.normalized()
+		if dir == Vector2.ZERO:
+			dir = Vector2(1.0, -0.5).normalized()
+		_apply_knockback(enemy, dir * GROUND_POUND_KNOCKBACK + Vector2(0, -350.0))
+
 func start_dig_dash() -> void:
 	SFX.play("dig_dash", global_position)
 	is_digging = true
+	_dash_invulnerable = Shop.has_dash_ability()
 	_dig_dash_weapon_was_visible = false
 	if has_node("Weapon"):
 		_dig_dash_weapon_was_visible = $Weapon.visible
@@ -705,8 +928,12 @@ func start_dig_dash() -> void:
 
 func _dash_cancel_into_attack() -> void:
 	is_tunneling = false
+	_dash_invulnerable = false
+	_dash_hit_enemies.clear()
 	velocity.x = tunnel_direction * SPEED * 0.5
 	velocity.y = -200.0
+	if using_ranged:
+		return
 	if has_node("Weapon"):
 		$Weapon.show()
 		if $Weapon.has_method("dig_slash"):
@@ -717,6 +944,8 @@ func _dash_cancel_into_attack() -> void:
 
 func _end_dig_dash() -> void:
 	is_tunneling = false
+	_dash_invulnerable = false
+	_dash_hit_enemies.clear()
 	velocity.x = 0
 	velocity.y = JUMP_VELOCITY
 	if has_node("Weapon") and _dig_dash_weapon_was_visible:

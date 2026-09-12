@@ -5,7 +5,7 @@ signal died
 const GRAVITY := 1960.0
 const THROW_INTERVAL := 2.5
 const THROW_VELOCITY := 1600.0
-const MAX_HEALTH := 4.0
+const MAX_HEALTH := 40.0
 
 const EnemyDamage := preload("res://scripts/enemy.gd")
 # How far into the throw animation the mushroom is actually released, so the
@@ -28,6 +28,7 @@ var mushroom_scene := preload("res://explodingmushroom.tscn")
 @onready var hurtbox: Area2D = $Area2D
 @onready var visual: AnimatedSprite2D = $Visual
 var _base_scale_x: float
+var _health_bar: Node2D = null
 
 func _ready() -> void:
 	hurtbox.area_entered.connect(_on_hurtbox_area_entered)
@@ -40,6 +41,7 @@ func _ready() -> void:
 	visual.animation = "default"
 	visual.frame = 0
 	_base_scale_x = abs(visual.scale.x)
+	_setup_health_bar()
 
 func _physics_process(delta: float) -> void:
 	_find_target()
@@ -169,7 +171,7 @@ func _on_hurtbox_area_entered(area: Area2D) -> void:
 			var dir = (global_position - mole.global_position).normalized()
 			velocity = dir * 600.0 + Vector2(0, -250)
 			_stun_timer = 0.25
-		take_damage(1)
+		take_damage(parent.get_damage())
 
 func take_damage(amount: float) -> void:
 	if health <= 0:
@@ -177,7 +179,8 @@ func take_damage(amount: float) -> void:
 	health -= amount
 	EnemyDamage.spawn_damage_number(self, amount)
 	SFX.play("enemy_hit", global_position)
-	queue_redraw()
+	if _health_bar:
+		_health_bar.queue_redraw()
 
 	var tween := create_tween()
 	tween.tween_property(self, "modulate", Color(2, 1, 1, 1), 0.05)
@@ -186,23 +189,33 @@ func take_damage(amount: float) -> void:
 	if health <= 0:
 		die()
 
-func _draw() -> void:
+func _setup_health_bar() -> void:
+	_health_bar = Node2D.new()
+	_health_bar.name = "HealthBar"
+	_health_bar.z_index = 10
+	_health_bar.draw.connect(_draw_health_bar)
+	add_child(_health_bar)
+
+func _draw_health_bar() -> void:
 	if health <= 0 or health >= MAX_HEALTH:
+		return
+	if not is_instance_valid(_health_bar):
 		return
 	var bar_w := 96.0
 	var bar_h := 10.0
-	var offset := Vector2(-bar_w / 2, -80)
+	var offset := Vector2(-bar_w / 2, -110)
 	var ratio := health / MAX_HEALTH
 
-	draw_rect(Rect2(offset, Vector2(bar_w, bar_h)), Color(0.15, 0.15, 0.15, 0.9))
+	_health_bar.draw_rect(Rect2(offset, Vector2(bar_w, bar_h)), Color(0.15, 0.15, 0.15, 0.9))
 	var fill := Color(1.0 * (1.0 - ratio) + 0.2 * ratio, 0.2 * (1.0 - ratio) + 0.8 * ratio, 0.2, 0.95)
-	draw_rect(Rect2(offset, Vector2(bar_w * ratio, bar_h)), fill)
+	_health_bar.draw_rect(Rect2(offset, Vector2(bar_w * ratio, bar_h)), fill)
 
 func die() -> void:
 	died.emit()
 	SFX.play("enemy_death", global_position)
 	ComboManager.increment()
 	ScoreManager.add_kill(2, global_position)
+	Shop.drop_coins(global_position, randi_range(4, 6))
 	set_physics_process(false)
 	hurtbox.set_deferred("monitorable", false)
 

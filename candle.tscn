@@ -22,9 +22,18 @@ animations = [{
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_pqck8"]
 size = Vector2(80, 29.5)
 
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_candle"]
+friction = 1.0
+bounce = 0.0
+
 [node name="candle" type="RigidBody2D" unique_id=815664404]
 position = Vector2(1, -4)
-collision_layer = 2
+collision_layer = 0
+collision_mask = 1
+continuous_cd = 2
+lock_rotation = true
+freeze = true
+physics_material_override = SubResource("PhysicsMaterial_candle")
 script = ExtResource("1_candle")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=797099782]

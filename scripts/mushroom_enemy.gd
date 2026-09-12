@@ -82,6 +82,7 @@ func die() -> void:
 	SFX.play("explosion", global_position)
 	ComboManager.increment()
 	ScoreManager.add_kill(1, global_position)
+	Shop.drop_coins(global_position, randi_range(2, 4))
 	_explode()
 	set_physics_process(false)
 	hurtbox.set_deferred("monitorable", false)

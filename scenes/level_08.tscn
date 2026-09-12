@@ -14,7 +14,6 @@
 [ext_resource type="PackedScene" uid="uid://iuqjuk37ur0d" path="res://scenes/slimeenemy.tscn" id="13_qihgo"]
 [ext_resource type="PackedScene" uid="uid://u77s8ew4xenh" path="res://scenes/beetleenemy.tscn" id="15_k8v36"]
 [ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="16_qihgo"]
-[ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="17_k8v36"]
 [ext_resource type="PackedScene" uid="uid://bcd57whed7bys" path="res://chest.tscn" id="19_sy85i"]
 [ext_resource type="PackedScene" uid="uid://cdxu1kg5or16d" path="res://candle.tscn" id="20_2exuq"]
 [ext_resource type="Script" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
@@ -84,7 +83,7 @@ scale = Vector2(0.24147864, 0.24147864)
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -110.0
+offset_left = -65.0
 offset_top = 20.0
 offset_right = -20.0
 offset_bottom = 65.0
@@ -97,7 +96,7 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_pausebutton")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_pausebutton_hover")
 theme_override_styles/hover = SubResource("StyleBoxFlat_pausebutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_pausebutton_hover")
-text = "II PAUSE"
+text = "II"
 
 [node name="InfoButton" type="Button" parent="CanvasLayer" unique_id=1321670513]
 anchors_preset = 3
@@ -272,18 +271,6 @@ position = Vector2(3799, 3926)
 
 [node name="Enemy38" parent="." unique_id=1695448850 instance=ExtResource("13_qihgo")]
 position = Vector2(5529, 4135)
-
-[node name="Costume5" type="Sprite2D" parent="." unique_id=2017890584]
-position = Vector2(3002.1191, 3156)
-scale = Vector2(14.7031, 3.5480235)
-texture = ExtResource("17_k8v36")
-
-[node name="ColorRect" type="ColorRect" parent="." unique_id=1107104587]
-offset_left = -598.0
-offset_top = 3691.0
-offset_right = 6428.0
-offset_bottom = 5412.0
-color = Color(0, 0, 0, 1)
 
 [node name="nextlevel2" type="Area2D" parent="." unique_id=1367382228]
 script = ExtResource("16_qihgo")

@@ -42,6 +42,18 @@ func _ready() -> void:
 	_tilemap_refresh()
 	_setup_tile_highlight()
 	_setup_ghosts()
+	Shop.loadout_changed.connect(_apply_weapon_visual)
+	_apply_weapon_visual()
+
+func get_damage() -> float:
+	var w := Shop.get_melee()
+	var base := randf_range(w.min_damage, w.max_damage) if w else randf_range(5.0, 10.0)
+	return base * ComboManager.get_damage_multiplier()
+
+func _apply_weapon_visual() -> void:
+	if sprite:
+		var w := Shop.get_melee()
+		sprite.self_modulate = w.icon_color if w else Color.WHITE
 
 func _setup_ghosts() -> void:
 	var world := get_parent().get_parent()
@@ -90,11 +102,16 @@ func _setup_tile_highlight() -> void:
 	_highlight_tween.tween_property(tile_highlight, "modulate:a", 1.0, HIGHLIGHT_FLASH_TIME).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 func _update_tile_highlight() -> void:
-	if not visible or is_swinging:
-		if tile_highlight:
-			tile_highlight.hide()
-		return
 	if not tile_highlight:
+		return
+	# Show the grid cursor whenever the mole can act on tiles, regardless of
+	# which aim-based item (shovel, staff, bomb, drill) is currently selected.
+	var mole := get_parent()
+	if not is_instance_valid(mole) or not mole.can_break or mole.is_digging or mole.is_tunneling:
+		tile_highlight.hide()
+		return
+	if is_swinging:
+		tile_highlight.hide()
 		return
 	var tilemap := _tilemap_refresh()
 	if not tilemap:
@@ -186,6 +203,8 @@ func _spawn_one_ghost(pos: Vector2) -> void:
 	_ghost_tweens[ghost] = tween
 
 func _unhandled_input(event: InputEvent) -> void:
+	if not visible:
+		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
 			_mouse_held = true
@@ -201,6 +220,9 @@ func _do_attack() -> void:
 		swing()
 
 func swing() -> void:
+	var w := Shop.get_melee()
+	var arc: float = w.swing_arc if w else SWING_ARC
+	var dur: float = w.swing_duration if w else SWING_DURATION
 	SFX.play("swing", global_position)
 	is_swinging = true
 	hitbox.monitoring = true
@@ -209,37 +231,37 @@ func swing() -> void:
 	hitbox.area_entered.connect(_on_hitbox_area_entered)
 
 	if _is_aerial():
-		_swing_aerial(rotation)
+		_swing_aerial(rotation, dur)
 	else:
-		_swing_ground(rotation)
+		_swing_ground(rotation, arc, dur)
 
 func _is_aerial() -> bool:
 	var mole := get_parent() as CharacterBody2D
 	return mole != null and not mole.is_on_floor()
 
-func _swing_ground(aim: float) -> void:
-	var start_angle := aim - SWING_ARC / 2.0
-	var end_angle := aim + SWING_ARC / 2.0
+func _swing_ground(aim: float, arc: float, dur: float) -> void:
+	var start_angle := aim - arc / 2.0
+	var end_angle := aim + arc / 2.0
 
 	if cos(aim) < 0:
-		start_angle = aim + SWING_ARC / 2.0
-		end_angle = aim - SWING_ARC / 2.0
+		start_angle = aim + arc / 2.0
+		end_angle = aim - arc / 2.0
 
 	var windup_angle := start_angle - (end_angle - start_angle) * WINDUP_PULLBACK
 	rotation = start_angle
 
 	var tween := create_tween()
 	tween.tween_property(self, "rotation", windup_angle, WINDUP_DURATION).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_SINE)
-	tween.tween_property(self, "rotation", end_angle, SWING_DURATION).set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_CUBIC)
+	tween.tween_property(self, "rotation", end_angle, dur).set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_CUBIC)
 	tween.tween_callback(_end_swing)
 
-func _swing_aerial(aim: float) -> void:
+func _swing_aerial(aim: float, dur: float) -> void:
 	rotation = aim
 	var spin_to := aim + TAU
 	if cos(aim) < 0:
 		spin_to = aim - TAU
 	var tween := create_tween()
-	tween.tween_property(self, "rotation", spin_to, SWING_DURATION).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+	tween.tween_property(self, "rotation", spin_to, dur).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
 	tween.tween_callback(_end_swing)
 
 func _end_swing() -> void:

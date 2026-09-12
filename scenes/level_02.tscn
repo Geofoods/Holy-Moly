@@ -89,7 +89,7 @@ scale = Vector2(0.24147864, 0.24147864)
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -110.0
+offset_left = -65.0
 offset_top = 20.0
 offset_right = -20.0
 offset_bottom = 65.0
@@ -102,7 +102,7 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_pausebutton")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_pausebutton_hover")
 theme_override_styles/hover = SubResource("StyleBoxFlat_pausebutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_pausebutton_hover")
-text = "II PAUSE"
+text = "II"
 metadata/_edit_use_anchors_ = true
 
 [node name="InfoButton" type="Button" parent="CanvasLayer" unique_id=718779092]
@@ -179,18 +179,6 @@ shape = SubResource("RectangleShape2D_vqvml")
 
 [node name="FireflySpawner" type="Node2D" parent="." unique_id=728425090]
 script = ExtResource("firefly_script")
-
-[node name="Costume5" type="Sprite2D" parent="." unique_id=1329603915]
-position = Vector2(2642, 1194)
-scale = Vector2(18.090199, 1.7175142)
-texture = ExtResource("15_xo5qq")
-
-[node name="ColorRect" type="ColorRect" parent="." unique_id=630450445]
-offset_left = -1579.0
-offset_top = 1411.0
-offset_right = 6709.0
-offset_bottom = 3132.0
-color = Color(0, 0, 0, 1)
 
 [node name="Costume6" type="Sprite2D" parent="." unique_id=669981536]
 z_index = 99

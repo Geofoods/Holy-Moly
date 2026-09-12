@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://1c6eenwkrqrl"]
+
+[ext_resource type="Script" uid="uid://m0v1ngpl4tfrm7" path="res://scripts/moving_platform.gd" id="1_script"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_platform"]
+size = Vector2(260, 36)
+
+[node name="MovingPlatform" type="AnimatableBody2D"]
+collision_layer = 1
+collision_mask = 0
+script = ExtResource("1_script")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_platform")

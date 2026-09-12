@@ -1,0 +1,52 @@
+[gd_scene format=3 uid="uid://chhdtofija7c4"]
+
+[ext_resource type="Script" uid="uid://c53n4k3enemie2" path="res://scripts/snake_enemy.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://kxuxl3b4klyr" path="res://icon.svg" id="2_icon"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(84, 34)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hurtbox"]
+size = Vector2(96, 44)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hitbox"]
+size = Vector2(110, 54)
+
+[node name="SnakeEnemy" type="CharacterBody2D"]
+collision_layer = 4
+collision_mask = 1
+script = ExtResource("1_script")
+
+[node name="Visual" type="Sprite2D" parent="."]
+position = Vector2(0, -15)
+scale = Vector2(0.45, 0.16)
+modulate = Color(0.25, 0.8, 0.35, 1)
+texture = ExtResource("2_icon")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -15)
+shape = SubResource("RectangleShape2D_body")
+
+[node name="Hurtbox" type="Area2D" parent="."]
+monitorable = true
+monitoring = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+position = Vector2(0, -15)
+shape = SubResource("RectangleShape2D_hurtbox")
+
+[node name="Hitbox" type="Area2D" parent="."]
+monitoring = true
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
+position = Vector2(0, -15)
+shape = SubResource("RectangleShape2D_hitbox")
+
+[node name="RayRight" type="RayCast2D" parent="."]
+position = Vector2(50, 0)
+target_position = Vector2(0, 30)
+
+[node name="RayLeft" type="RayCast2D" parent="."]
+position = Vector2(-50, 0)
+target_position = Vector2(0, 30)

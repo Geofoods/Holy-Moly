@@ -8,7 +8,7 @@ const GRAVITY = 1960.0
 const CLIMB_DURATION = 0.6
 const DETECT_RANGE := 300.0
 const CLIMB_CHANCE = 0.4
-const MAX_HEALTH := 3.0
+const MAX_HEALTH := 30.0
 const SHOOT_INTERVAL := 5.0
 
 var direction := 1.0
@@ -25,6 +25,7 @@ var _mole_in_contact := false
 @onready var hurtbox: Area2D = $Hurtbox
 @onready var hitbox: Area2D = $Hitbox
 @onready var visual: AnimatedSprite2D = $Visual
+var _health_bar: Node2D = null
 
 func _ready() -> void:
 	hurtbox.area_entered.connect(_on_hurtbox_area_entered)
@@ -33,6 +34,7 @@ func _ready() -> void:
 	hurtbox.add_to_group("enemy_hurtbox")
 	visual.z_index = 1
 	visual.play()
+	_setup_health_bar()
 
 func _physics_process(delta: float) -> void:
 	_find_target()
@@ -136,7 +138,7 @@ func _on_hurtbox_area_entered(area: Area2D) -> void:
 			var dir = (global_position - mole.global_position).normalized()
 			velocity = dir * 600.0 + Vector2(0, -250)
 			_stun_timer = 0.25
-		take_damage(1)
+		take_damage(parent.get_damage())
 
 func take_damage(amount: float) -> void:
 	if health <= 0:
@@ -144,7 +146,8 @@ func take_damage(amount: float) -> void:
 	health -= amount
 	spawn_damage_number(self, amount)
 	SFX.play("enemy_hit", global_position)
-	queue_redraw()
+	if _health_bar:
+		_health_bar.queue_redraw()
 
 	var tween := create_tween()
 	tween.tween_property(self, "modulate", Color(2, 1, 1, 1), 0.05)
@@ -196,23 +199,33 @@ static func spawn_damage_number(enemy: Node2D, amount: float) -> void:
 	var pop := label.create_tween()
 	pop.tween_property(label, "scale", Vector2.ONE, 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
-func _draw() -> void:
+func _setup_health_bar() -> void:
+	_health_bar = Node2D.new()
+	_health_bar.name = "HealthBar"
+	_health_bar.z_index = 10
+	_health_bar.draw.connect(_draw_health_bar)
+	add_child(_health_bar)
+
+func _draw_health_bar() -> void:
 	if health <= 0 or health >= MAX_HEALTH:
+		return
+	if not is_instance_valid(_health_bar):
 		return
 	var bar_w := 96.0
 	var bar_h := 12.0
-	var offset := Vector2(-bar_w / 2, -70)
+	var offset := Vector2(-bar_w / 2, -100)
 	var ratio := health / MAX_HEALTH
 
-	draw_rect(Rect2(offset, Vector2(bar_w, bar_h)), Color(0.15, 0.15, 0.15, 0.9))
+	_health_bar.draw_rect(Rect2(offset, Vector2(bar_w, bar_h)), Color(0.15, 0.15, 0.15, 0.9))
 	var fill := Color(1.0 * (1.0 - ratio) + 0.2 * ratio, 0.2 * (1.0 - ratio) + 0.8 * ratio, 0.2, 0.95)
-	draw_rect(Rect2(offset, Vector2(bar_w * ratio, bar_h)), fill)
+	_health_bar.draw_rect(Rect2(offset, Vector2(bar_w * ratio, bar_h)), fill)
 
 func die() -> void:
 	died.emit()
 	SFX.play("enemy_death", global_position)
 	ComboManager.increment()
 	ScoreManager.add_kill(1, global_position)
+	Shop.drop_coins(global_position, randi_range(2, 4))
 	set_physics_process(false)
 	hitbox.set_deferred("monitoring", false)
 	hurtbox.set_deferred("monitorable", false)

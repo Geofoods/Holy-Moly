@@ -13,6 +13,7 @@
 [ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="16_yfm5w"]
 [ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="17_081xv"]
 [ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="18_12q1p"]
+[ext_resource type="Script" path="res://scripts/shop_gate.gd" id="19_shopgate"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.1, 0.1, 0.12, 0.85)
@@ -41,6 +42,9 @@ corner_radius_bottom_left = 8
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_trceg"]
 size = Vector2(12788, 933)
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_shopgate"]
+size = Vector2(150, 120)
+
 [node name="Node2D" type="Node2D" unique_id=1979316305]
 
 [node name="FireflySpawner" type="Node2D" parent="." unique_id=522481684]
@@ -58,6 +62,23 @@ layer_0/tile_data = PackedInt32Array(65535, 0, 0, 0, 0, 0, 1, 0, 0, 2, 0, 0, 655
 position = Vector2(-28, -116)
 scale = Vector2(0.25, 0.25)
 can_break = false
+
+[node name="ShopGate" type="Area2D" parent="."]
+position = Vector2(-28, -116)
+collision_layer = 0
+collision_mask = 1
+script = ExtResource("19_shopgate")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ShopGate"]
+shape = SubResource("RectangleShape2D_shopgate")
+
+[node name="Prompt" type="Label" parent="ShopGate"]
+offset_left = -80.0
+offset_top = -85.0
+offset_right = 80.0
+offset_bottom = -55.0
+text = "Press E to shop!"
+horizontal_alignment = 1
 
 [node name="Camera2D" type="Camera2D" parent="CharacterBody2D2" unique_id=955812054]
 position = Vector2(92, -296)
@@ -84,7 +105,7 @@ layer = 2
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -110.0
+offset_left = -65.0
 offset_top = 20.0
 offset_right = -20.0
 offset_bottom = 65.0
@@ -97,7 +118,7 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_pausebutton")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_pausebutton_hover")
 theme_override_styles/hover = SubResource("StyleBoxFlat_pausebutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_pausebutton_hover")
-text = "II PAUSE"
+text = "II"
 
 [node name="InfoButton" type="Button" parent="CanvasLayer" unique_id=778241010]
 anchors_preset = 3

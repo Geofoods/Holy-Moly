@@ -9,6 +9,8 @@
 [ext_resource type="PackedScene" path="res://scenes/death_plane.tscn" id="10_deathplane"]
 [ext_resource type="PackedScene" uid="uid://wjt35doljo8p" path="res://scenes/parallax_background2.tscn" id="11_nmhu5"]
 [ext_resource type="PackedScene" uid="uid://brmtyiqcy1wkv" path="res://scenes/inventory_ui.tscn" id="12_invui"]
+[ext_resource type="PackedScene" path="res://scenes/snake_enemy.tscn" id="15_gqlbh"]
+[ext_resource type="PackedScene" uid="uid://c0pwtkklnyw5s" path="res://scenes/hornet_enemy.tscn" id="16_7fv2j"]
 [ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="16_r75pg"]
 [ext_resource type="Script" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
 [ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
@@ -82,7 +84,7 @@ scale = Vector2(0.24147864, 0.24147864)
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -110.0
+offset_left = -65.0
 offset_top = 20.0
 offset_right = -20.0
 offset_bottom = 65.0
@@ -95,7 +97,7 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_pausebutton")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_pausebutton_hover")
 theme_override_styles/hover = SubResource("StyleBoxFlat_pausebutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_pausebutton_hover")
-text = "II PAUSE"
+text = "II"
 metadata/_edit_use_anchors_ = true
 
 [node name="InfoButton" type="Button" parent="CanvasLayer" unique_id=2033064320]
@@ -150,6 +152,12 @@ script = ExtResource("16_r75pg")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="nextlevel" unique_id=1779936014]
 position = Vector2(959.75, 4637)
 shape = SubResource("RectangleShape2D_8i68l")
+
+[node name="SnakeEnemy" parent="." unique_id=631311253 instance=ExtResource("15_gqlbh")]
+position = Vector2(625, -258)
+
+[node name="HornetEnemy" parent="." unique_id=937617817 instance=ExtResource("16_7fv2j")]
+position = Vector2(-493, -281)
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]
