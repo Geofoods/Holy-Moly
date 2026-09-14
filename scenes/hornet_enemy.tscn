@@ -25,7 +25,6 @@ texture = ExtResource("2_icon")
 shape = SubResource("CircleShape2D_body")
 
 [node name="Hurtbox" type="Area2D" parent="." unique_id=152968170]
-monitoring = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox" unique_id=924233165]
 shape = SubResource("CircleShape2D_hurtbox")

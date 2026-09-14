@@ -3,10 +3,10 @@ extends Node
 signal slots_changed(slot_indices: Array)
 signal selected_slot_changed(slot: int)
 
-const MAX_SLOTS := 3
+const MAX_SLOTS := 4
 
-var slots: Array = [null, null, null]
-var slot_counts: Array = [0, 0, 0]
+var slots: Array = [null, null, null, null]
+var slot_counts: Array = [0, 0, 0, 0]
 
 var current_level_path: String = "res://scenes/level1.tscn"
 var selected_slot: int = -1:
@@ -48,6 +48,23 @@ func add_item(item: ItemData) -> bool:
 func add_n_items(item: ItemData, count: int) -> void:
 	for _j in count:
 		add_item(item)
+
+func add_item_at(item: ItemData, idx: int) -> bool:
+	if idx < 0 or idx >= MAX_SLOTS:
+		return false
+	if slots[idx] != null and item.stackable and slots[idx].item_name == item.item_name:
+		slot_counts[idx] += 1
+		slots_changed.emit([idx])
+		SFX.play_ui("item_pickup")
+		return true
+	for i in range(MAX_SLOTS - 1, idx, -1):
+		slots[i] = slots[i - 1]
+		slot_counts[i] = slot_counts[i - 1]
+	slots[idx] = item
+	slot_counts[idx] = 1
+	slots_changed.emit([idx])
+	SFX.play_ui("item_pickup")
+	return true
 
 func remove_item(slot: int) -> void:
 	if slot >= 0 and slot < MAX_SLOTS:

@@ -29,6 +29,7 @@ func _ready():
 	var tutorial_btn = $CenterContainer/VBoxContainer/ButtonContainer/TutorialButton
 	var level_picker = $CenterContainer/VBoxContainer/ButtonContainer/LevelPickerOption as OptionButton
 	var field_guide_btn = $CenterContainer/VBoxContainer/ButtonContainer/FieldGuideButton
+	var minigame_btn = $CenterContainer/VBoxContainer/ButtonContainer/MinigameButton
 	play_btn.mouse_entered.connect(_on_button_hover.bind(play_btn))
 	play_btn.mouse_exited.connect(_on_button_unhover.bind(play_btn))
 	tutorial_btn.mouse_entered.connect(_on_button_hover.bind(tutorial_btn))
@@ -37,6 +38,8 @@ func _ready():
 	level_picker.mouse_exited.connect(_on_button_unhover.bind(level_picker))
 	field_guide_btn.mouse_entered.connect(_on_button_hover.bind(field_guide_btn))
 	field_guide_btn.mouse_exited.connect(_on_button_unhover.bind(field_guide_btn))
+	minigame_btn.mouse_entered.connect(_on_button_hover.bind(minigame_btn))
+	minigame_btn.mouse_exited.connect(_on_button_unhover.bind(minigame_btn))
 	
 	_setup_level_picker(level_picker)
 	_add_high_score_label()
@@ -149,15 +152,18 @@ func _set_buttons_enabled(enabled: bool) -> void:
 	var tutorial_btn = $CenterContainer/VBoxContainer/ButtonContainer/TutorialButton
 	var level_picker = $CenterContainer/VBoxContainer/ButtonContainer/LevelPickerOption as OptionButton
 	var field_guide_btn = $CenterContainer/VBoxContainer/ButtonContainer/FieldGuideButton
+	var minigame_btn = $CenterContainer/VBoxContainer/ButtonContainer/MinigameButton
 	play_btn.disabled = not enabled
 	tutorial_btn.disabled = not enabled
 	level_picker.disabled = not enabled
 	field_guide_btn.disabled = not enabled
+	minigame_btn.disabled = not enabled
 	if enabled:
 		play_btn.pivot_offset = play_btn.size / 2.0
 		tutorial_btn.pivot_offset = tutorial_btn.size / 2.0
 		level_picker.pivot_offset = level_picker.size / 2.0
 		field_guide_btn.pivot_offset = field_guide_btn.size / 2.0
+		minigame_btn.pivot_offset = minigame_btn.size / 2.0
 
 func _on_button_hover(button: Button) -> void:
 	if button.disabled:
@@ -201,6 +207,15 @@ func _on_tutorial_pressed() -> void:
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 	get_tree().root.add_child(transition)
 	transition.change_to("res://scenes/tutorial.tscn")
+
+func _on_minigame_pressed() -> void:
+	SFX.play_ui("ui_click", -6.0, 1.2)
+	_fade_out_menu_music()
+	var minigame_btn = $CenterContainer/VBoxContainer/ButtonContainer/MinigameButton
+	minigame_btn.disabled = true
+	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
+	get_tree().root.add_child(transition)
+	transition.change_to("res://scenes/whack_a_mole.tscn")
 
 func _setup_level_picker(picker: OptionButton) -> void:
 	picker.clear()

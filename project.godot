@@ -32,7 +32,6 @@ MobileControls="*uid://cscwxuv4b0aul"
 
 [display]
 
-window/size/mode=3
 window/stretch/mode="canvas_items"
 
 [editor_plugins]

@@ -147,6 +147,34 @@ corner_radius_bottom_left = 24
 shadow_color = Color(0.6, 0.5, 0.2, 0.5)
 shadow_size = 12
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_minigamebutton"]
+bg_color = Color(0.6, 0.35, 0.75, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.8, 0.5, 1, 0.4)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0.5, 0.2, 0.7, 0.35)
+shadow_size = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_minigamebutton_hover"]
+bg_color = Color(0.7, 0.45, 0.9, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.9, 0.6, 1.1, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0.6, 0.3, 0.85, 0.5)
+shadow_size = 12
+
 [node name="IntroScreen" type="Control" unique_id=1091680018]
 layout_mode = 3
 anchors_preset = 0
@@ -269,6 +297,20 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_infobutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_infobutton_hover")
 text = "FIELD GUIDE"
 
+[node name="MinigameButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer" unique_id=223072372]
+custom_minimum_size = Vector2(180, 70)
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_colors/font_color = Color(0.95, 0.95, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("6_es01l")
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBoxFlat_minigamebutton")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_minigamebutton_hover")
+theme_override_styles/hover = SubResource("StyleBoxFlat_minigamebutton_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_minigamebutton_hover")
+text = "MINIGAME"
+
 [node name="CreditsLabel" type="Label" parent="." unique_id=29629912]
 layout_mode = 0
 anchor_top = 1.0
@@ -291,3 +333,4 @@ horizontal_alignment = 1
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/PlayButton" to="." method="_on_play_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/TutorialButton" to="." method="_on_tutorial_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/FieldGuideButton" to="." method="_on_field_guide_pressed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/MinigameButton" to="." method="_on_minigame_pressed"]

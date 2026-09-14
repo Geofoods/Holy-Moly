@@ -14,8 +14,11 @@ const HURT_GROUND_DURATION = 0.25
 const HURT_AIR_DURATION = 0.35
 const KNOCKBACK_X = 260.0
 const MIDAIR_SPRITE_DELAY = 0.15
-const CAMERA_FOLLOW_SPEED = 10.0
-const CAMERA_MOUSE_INFLUENCE = 0.08
+const CAMERA_FOLLOW_SPEED = 8.0
+const CAMERA_FOLLOW_SPEED_FAST = 14.0
+const CAMERA_MOUSE_INFLUENCE = 0.16
+const CAMERA_LOOKAHEAD = 0.18
+const CAMERA_LOOKAHEAD_MAX = 240.0
 const DIRT_PARTICLE_LIFETIME = 0.45
 const DIRT_PARTICLE_AMOUNT = 18
 const DASH_ABILITY_DAMAGE := 10.0
@@ -37,12 +40,21 @@ const WALL_JUMP_PUSHBACK := 620.0
 const WALL_JUMP_LOCK_TIME := 0.14
 const WALL_SLIDE_MAX_FALL := 420.0
 const WALL_COYOTE_TIME := 0.12
+const GRAPPLE_MAX_RANGE := 540.0
+const GRAPPLE_PULL_SPEED := 1500.0
+const GRAPPLE_ACCEL := 4200.0
+const GRAPPLE_LATCH_DIST := 42.0
+const GRAPPLE_ROPE_COLOR := Color(0.85, 0.65, 0.3, 1.0)
+const GRAPPLE_ROPE_WIDTH := 6.0
+const GRAPPLE_ITEM := preload("res://resources/grappling_hook.tres")
+const DEBRIS_LAYER_BIT := 2
 
 @export var can_break := true
 
 var mole_hole_scene := preload("res://scenes/molehole.tscn")
 var mole_hole_instance: Node2D = null
 var bomb_scene := preload("res://bomb.tscn")
+var ice_bomb_scene := preload("res://ice_bomb.tscn")
 var drill_scene := preload("res://drill.tscn")
 const EnemyDamage := preload("res://scripts/enemy.gd")
 var was_on_floor := true
@@ -72,6 +84,12 @@ var slow_timer := 0.0
 var _slow_ui: Control = null
 var _slow_bar: ColorRect = null
 var _slow_label: Label = null
+var _normal_collision_mask := 0
+
+var grapple_active := false
+var grapple_anchor := Vector2.ZERO
+var _grapple_rope: Line2D = null
+var _grapple_anchor_sprite: Sprite2D = null
 
 var death_override: Callable = Callable()
 
@@ -113,6 +131,7 @@ func _ready() -> void:
 	# Register key bindings up front so input works from the very first frame
 	# (before the awaited frame below), rather than being dead for a frame.
 	_setup_input_actions()
+	_normal_collision_mask = collision_mask
 	await get_tree().process_frame
 	self.health = health
 	add_to_group("mole")
@@ -122,9 +141,11 @@ func _ready() -> void:
 	tilemap = get_parent().get_node_or_null("TileMap")
 	LevelMusic.start()
 	Inventory.initialize()
+	_grant_grapple_hook()
 	Inventory.selected_slot_changed.connect(_on_selected_slot_changed)
 	Inventory.selected_slot = 0
 	_setup_held_item_sprites()
+	_setup_grapple_visuals()
 	_reverb = AudioServer.get_bus_effect(0, 0) as AudioEffectReverb
 	_setup_level_reverb()
 	_setup_slow_ui()
@@ -180,9 +201,9 @@ func _setup_input_actions() -> void:
 	_setup_inventory_actions()
 
 func _setup_inventory_actions() -> void:
-	var keys := [KEY_1, KEY_2, KEY_3]
-	var actions := ["inventory_1", "inventory_2", "inventory_3"]
-	for i in 3:
+	var keys := [KEY_1, KEY_2, KEY_3, KEY_4]
+	var actions := ["inventory_1", "inventory_2", "inventory_3", "inventory_4"]
+	for i in 4:
 		if not InputMap.has_action(actions[i]):
 			InputMap.add_action(actions[i])
 			var ev = InputEventKey.new()
@@ -211,6 +232,15 @@ func _setup_held_item_sprites() -> void:
 	drill_sprite.hide()
 	add_child(drill_sprite)
 
+	var ice_sprite := Sprite2D.new()
+	ice_sprite.name = "HeldIceBomb"
+	ice_sprite.texture = bomb_tex
+	ice_sprite.scale = Vector2(HOLD_ITEM_SCALE, HOLD_ITEM_SCALE)
+	ice_sprite.modulate = Color(0.65, 0.85, 1.15, 1.0)
+	ice_sprite.z_index = 2
+	ice_sprite.hide()
+	add_child(ice_sprite)
+
 func _aim_pos() -> Vector2:
 	return get_global_mouse_position()
 
@@ -224,6 +254,8 @@ func _process(_delta: float) -> void:
 	var sprite_name := ""
 	if item.item_name == "Bomb":
 		sprite_name = "HeldBomb"
+	elif item.item_name == "Ice Bomb":
+		sprite_name = "HeldIceBomb"
 	elif item.item_name == "Drill":
 		sprite_name = "HeldDrill"
 	if sprite_name == "":
@@ -254,6 +286,8 @@ func _update_held_item() -> void:
 	var item: ItemData = Inventory.slots[slot] if slot >= 0 and slot < Inventory.slots.size() else null
 	if has_node("HeldBomb"):
 		$HeldBomb.visible = (item != null and item.item_name == "Bomb")
+	if has_node("HeldIceBomb"):
+		$HeldIceBomb.visible = (item != null and item.item_name == "Ice Bomb")
 	if has_node("HeldDrill"):
 		$HeldDrill.visible = (item != null and item.item_name == "Drill")
 
@@ -312,12 +346,25 @@ func _setup_level_reverb() -> void:
 	_reverb.room_size = 0.1 + t * 0.7
 
 func _physics_process(delta: float) -> void:
-	if not is_on_floor():
+	collision_mask = _normal_collision_mask
+	if is_digging or is_tunneling or is_ground_pounding:
+		collision_mask &= ~DEBRIS_LAYER_BIT
+
+	if not grapple_active and not is_on_floor():
 		velocity.y += AIR_GRAVITY * delta
 		if Input.is_action_pressed("ui_down"):
 			velocity.y = minf(velocity.y, FAST_FALL_SPEED)
 
 	_handle_inventory_input()
+
+	_handle_grapple(delta)
+	if grapple_active:
+		$AnimatedSprite2D.play("jumpbold")
+		$AnimatedSprite2D.flip_v = velocity.y > 0
+		$AnimatedSprite2D.rotation = lerp_angle($AnimatedSprite2D.rotation, 0.0, 0.15)
+		update_depth_display()
+		_update_camera_position(delta)
+		return
 
 	if is_digging:
 		velocity.x = move_toward(velocity.x, 0, FRICTION * delta)
@@ -505,14 +552,19 @@ func _input(event: InputEvent) -> void:
 		var item: ItemData = Inventory.slots[slot] if slot >= 0 and slot < Inventory.slots.size() else null
 		if item == null:
 			return
-		if not can_break and (item.item_name == "Bomb" or item.item_name == "Drill"):
+		if not can_break and (item.item_name == "Bomb" or item.item_name == "Ice Bomb" or item.item_name == "Drill"):
 			return
 		match item.item_name:
 			"Bomb":
 				_throw_bomb()
 				get_viewport().set_input_as_handled()
+			"Ice Bomb":
+				_throw_ice_bomb()
+				get_viewport().set_input_as_handled()
 			"Drill":
 				_deploy_drill()
+				get_viewport().set_input_as_handled()
+			"Grappling Hook":
 				get_viewport().set_input_as_handled()
 			"Holy Water", "Health Potion":
 				if health < 6:
@@ -528,6 +580,8 @@ func _handle_inventory_input() -> void:
 		_toggle_slot(1)
 	elif Input.is_action_just_pressed("inventory_3"):
 		_toggle_slot(2)
+	elif Input.is_action_just_pressed("inventory_4"):
+		_toggle_slot(3)
 
 func _toggle_slot(slot: int) -> void:
 	var item: ItemData = Inventory.slots[slot] if slot < Inventory.slots.size() else null
@@ -576,6 +630,17 @@ func _throw_bomb() -> void:
 		return
 	Inventory.selected_slot = -1
 	var bomb = bomb_scene.instantiate()
+	get_parent().add_child(bomb)
+	bomb.global_position = global_position + Vector2(0, -40)
+	var dir := (_aim_pos() - global_position).normalized()
+	bomb.linear_velocity = dir * 600.0
+	bomb.arm()
+
+func _throw_ice_bomb() -> void:
+	if not Inventory.use_item(Inventory.selected_slot):
+		return
+	Inventory.selected_slot = -1
+	var bomb = ice_bomb_scene.instantiate()
 	get_parent().add_child(bomb)
 	bomb.global_position = global_position + Vector2(0, -40)
 	var dir := (_aim_pos() - global_position).normalized()
@@ -661,9 +726,19 @@ func _update_camera_position(delta: float) -> void:
 	var camera := get_node_or_null("Camera2D") as Camera2D
 	if camera == null:
 		return
-	var target_global := global_position.lerp(_aim_pos(), CAMERA_MOUSE_INFLUENCE)
+	var target_global := global_position + (_aim_pos() - global_position) * CAMERA_MOUSE_INFLUENCE
+
+	var lookahead := velocity * CAMERA_LOOKAHEAD
+	if is_digging or is_tunneling or is_ground_pounding:
+		lookahead *= 0.35
+	if lookahead.length() > CAMERA_LOOKAHEAD_MAX:
+		lookahead = lookahead.normalized() * CAMERA_LOOKAHEAD_MAX
+	target_global += lookahead
+
 	var target_local := to_local(target_global)
-	var follow_weight := clampf(CAMERA_FOLLOW_SPEED * delta, 0.0, 1.0)
+	var speed_ratio := minf(velocity.length() / 1500.0, 1.0)
+	var follow_speed := lerpf(CAMERA_FOLLOW_SPEED, CAMERA_FOLLOW_SPEED_FAST, speed_ratio)
+	var follow_weight := clampf(follow_speed * delta, 0.0, 1.0)
 	camera.position = camera.position.lerp(target_local, follow_weight)
 
 func spawn_dirt_particles(world_position: Vector2) -> void:
@@ -824,6 +899,114 @@ func _apply_knockback(enemy: Node, knock_velocity: Vector2) -> void:
 			push_dir = Vector2.RIGHT
 		var push := create_tween()
 		push.tween_property(enemy, "position", enemy.position + push_dir * 70.0, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+func _grant_grapple_hook() -> void:
+	if not Shop.has_grappling_hook():
+		return
+	for slot in Inventory.slots:
+		if slot != null and slot.item_name == "Grappling Hook":
+			return
+	Inventory.add_item_at(GRAPPLE_ITEM, 1)
+
+func _setup_grapple_visuals() -> void:
+	_grapple_rope = Line2D.new()
+	_grapple_rope.name = "GrappleRope"
+	_grapple_rope.width = GRAPPLE_ROPE_WIDTH
+	_grapple_rope.default_color = GRAPPLE_ROPE_COLOR
+	_grapple_rope.z_index = 5
+	_grapple_rope.visible = false
+	add_child(_grapple_rope)
+
+	_grapple_anchor_sprite = Sprite2D.new()
+	_grapple_anchor_sprite.name = "GrappleAnchor"
+	_grapple_anchor_sprite.z_index = 5
+	_grapple_anchor_sprite.visible = false
+	var img := Image.create(20, 20, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	var c := 9.5
+	for y in 20:
+		for x in 20:
+			var dx := float(x) - c
+			var dy := float(y) - c
+			if dx * dx + dy * dy <= c * c:
+				img.set_pixel(x, y, Color(1.0, 0.8, 0.35, 0.95))
+	_grapple_anchor_sprite.texture = ImageTexture.create_from_image(img)
+	add_child(_grapple_anchor_sprite)
+
+func _handle_grapple(delta: float) -> void:
+	var slot := Inventory.selected_slot
+	var tool_ready: bool = slot >= 0 and slot < Inventory.slots.size() \
+			and Inventory.slots[slot] != null and Inventory.slots[slot].item_name == "Grappling Hook"
+	if not tool_ready:
+		if grapple_active:
+			_end_grapple()
+		return
+	if Input.is_action_just_pressed("dig_slash"):
+		if is_digging or is_tunneling or is_ground_pounding:
+			return
+		if not grapple_active:
+			_try_start_grapple()
+		return
+	if grapple_active and Input.is_action_just_released("dig_slash"):
+		_end_grapple()
+	if not grapple_active:
+		return
+
+	var to_anchor := grapple_anchor - global_position
+	if to_anchor.length() <= GRAPPLE_LATCH_DIST:
+		_end_grapple()
+		velocity *= 0.3
+		return
+
+	if not _grapple_rope_clear():
+		_end_grapple()
+		return
+
+	var desired := to_anchor.normalized() * GRAPPLE_PULL_SPEED
+	velocity = velocity.move_toward(desired, GRAPPLE_ACCEL * delta)
+	move_and_slide()
+	was_on_floor = is_on_floor()
+	_update_grapple_visuals()
+
+func _try_start_grapple() -> void:
+	var space_state := get_world_2d().direct_space_state
+	var from := global_position
+	var aim_dir := _aim_pos() - from
+	if aim_dir.length_squared() < 16.0:
+		return
+	aim_dir = aim_dir.normalized()
+	var to := from + aim_dir * GRAPPLE_MAX_RANGE
+	var query := PhysicsRayQueryParameters2D.create(from, to, _normal_collision_mask)
+	query.exclude = [get_rid()]
+	var result := space_state.intersect_ray(query)
+	if result.is_empty():
+		return
+	grapple_anchor = result.position
+	grapple_active = true
+	_update_grapple_visuals()
+	SFX.play("swing", global_position, -6.0, 0.4)
+
+func _grapple_rope_clear() -> bool:
+	var space_state := get_world_2d().direct_space_state
+	var query := PhysicsRayQueryParameters2D.create(global_position, grapple_anchor, _normal_collision_mask)
+	query.exclude = [get_rid()]
+	var result := space_state.intersect_ray(query)
+	return not result.is_empty() and result.position.distance_to(grapple_anchor) <= 8.0
+
+func _update_grapple_visuals() -> void:
+	if _grapple_rope == null or _grapple_anchor_sprite == null:
+		return
+	_grapple_rope.points = PackedVector2Array([to_local(grapple_anchor), Vector2.ZERO])
+	_grapple_rope.visible = grapple_active
+	_grapple_anchor_sprite.global_position = grapple_anchor
+	_grapple_anchor_sprite.visible = grapple_active
+
+func _end_grapple() -> void:
+	if not grapple_active:
+		return
+	grapple_active = false
+	_grapple_rope.visible = false
+	_grapple_anchor_sprite.visible = false
 
 func start_ground_pound() -> void:
 	is_ground_pounding = true

@@ -1,5 +1,6 @@
 [gd_scene format=3 uid="uid://c6xus6tuhcmfo"]
 
+[ext_resource type="Script" uid="uid://h34rthud0010a" path="res://scripts/heart_hud.gd" id="1_hud"]
 [ext_resource type="Texture2D" uid="uid://hyuxn14kwo7s" path="res://sprites/molehp.png" id="1_v30as"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_ycbwg"]
@@ -120,6 +121,7 @@ animations = [{
 }]
 
 [node name="heart" type="Node2D" unique_id=1207891791]
+script = ExtResource("1_hud")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=694995907]
 sprite_frames = SubResource("SpriteFrames_kwk4n")

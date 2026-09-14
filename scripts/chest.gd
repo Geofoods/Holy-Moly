@@ -92,8 +92,9 @@ func _get_loot_item() -> ItemData:
 	if _is_final_stage():
 		return drill if randf() < 0.7 else holy_water
 	var bomb := preload("res://resources/bomb.tres")
+	var ice_bomb := preload("res://resources/ice_bomb.tres")
 	var roll := randf()
-	return bomb if roll < 0.4 else drill if roll < 0.8 else holy_water
+	return bomb if roll < 0.3 else ice_bomb if roll < 0.55 else drill if roll < 0.85 else holy_water
 
 func _is_final_stage() -> bool:
 	var current_scene := get_tree().current_scene

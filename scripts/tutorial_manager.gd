@@ -73,7 +73,7 @@ func _build_steps() -> void:
 			"checkpoint": Vector2(2900, -116),
 		},
 		{
-			"text": "You got a BOMB! Press 1-3 to select, then LEFT-CLICK toward a wall. Massive damage and destruction!",
+			"text": "You got a BOMB! Press a number key (1-4) to select it, then LEFT-CLICK toward a wall. Massive damage and destruction!",
 			"kind": "trigger",
 			"node": "BombWallTrigger",
 			"checkpoint": Vector2(3300, -116),

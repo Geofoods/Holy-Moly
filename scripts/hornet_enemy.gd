@@ -11,12 +11,15 @@ const DASH_SPEED := 900.0
 const DASH_DURATION := 0.45
 const AIM_DURATION := 0.6
 const RECOVER_DURATION := 0.7
+const RECOVER_LIFT_SPEED := 320.0
 const DASH_COOLDOWN := 2.5
 const HOVER_DISTANCE := 220.0
 const DETECT_RANGE := 520.0
 const MAX_HEALTH := 20.0
 const GRAVITY := 1400.0
 const BUZZ_SFX_INTERVAL := 0.45
+
+const EnemyDamage := preload("res://scripts/enemy.gd")
 
 var state := State.HOVER
 var direction := 1.0
@@ -125,6 +128,8 @@ func _do_recover(delta: float) -> void:
 	if dash_timer <= 0.0:
 		state = State.HOVER
 		cooldown_timer = DASH_COOLDOWN
+		if is_on_floor():
+			velocity.y = -RECOVER_LIFT_SPEED
 
 func _update_visual_direction() -> void:
 	if state == State.AIM and target_mole != null:
@@ -155,17 +160,17 @@ func _on_hurtbox_area_entered(area: Area2D) -> void:
 	var parent = area.get_parent()
 	if "is_swinging" in parent and parent.is_swinging:
 		# Knock the hornet out of the air mid-behavior when shovelled.
-		velocity = (global_position - parent.global_position).normalized() * 500.0 + Vector2(0, -200)
 		if state == State.DASH or state == State.AIM:
 			_enter_recover()
 			cooldown_timer = DASH_COOLDOWN
+		velocity = (global_position - parent.global_position).normalized() * 500.0 + Vector2(0, -200)
 		take_damage(parent.get_damage())
 
 func take_damage(amount: float) -> void:
 	if health <= 0:
 		return
 	health -= amount
-	spawn_damage_number(self, amount)
+	EnemyDamage.spawn_damage_number(self, amount)
 	SFX.play("enemy_hit", global_position)
 	if _health_bar:
 		_health_bar.queue_redraw()
@@ -185,13 +190,13 @@ func _setup_health_bar() -> void:
 	add_child(_health_bar)
 
 func _draw_health_bar() -> void:
-	if health <= 0:
+	if health <= 0 or health >= MAX_HEALTH:
 		return
 	if not is_instance_valid(_health_bar):
 		return
-	var bar_w := 72.0
-	var bar_h := 10.0
-	var offset := Vector2(-bar_w / 2, -80)
+	var bar_w := 96.0
+	var bar_h := 12.0
+	var offset := Vector2(-bar_w / 2, -100)
 	var ratio := health / MAX_HEALTH
 
 	_health_bar.draw_rect(Rect2(offset, Vector2(bar_w, bar_h)), Color(0.15, 0.15, 0.15, 0.9))
@@ -219,47 +224,3 @@ func _play_buzz(delta: float) -> void:
 	if _buzz_timer <= 0.0:
 		_buzz_timer = BUZZ_SFX_INTERVAL
 		SFX.play("swing", global_position, -24.0, 0.5 if state == State.DASH else 0.15)
-
-
-class FloatingDamageLabel:
-	extends Label
-
-	const GRAVITY := 700.0
-	const LIFETIME := 0.8
-
-	var velocity := Vector2.ZERO
-	var _time := 0.0
-
-	func _process(delta: float) -> void:
-		_time += delta
-		velocity.y += GRAVITY * delta
-		position += velocity * delta
-		modulate.a = clampf(1.0 - _time / LIFETIME, 0.0, 1.0)
-		if _time >= LIFETIME:
-			queue_free()
-
-static func spawn_damage_number(enemy: Node2D, amount: float) -> void:
-	if not is_instance_valid(enemy) or not enemy.is_inside_tree():
-		return
-	var current := enemy.get_tree().current_scene
-	if not current:
-		return
-
-	var label := FloatingDamageLabel.new()
-	label.text = str(int(round(amount)))
-	label.add_theme_font_size_override("font_size", 90)
-	label.add_theme_color_override("font_color", Color(1.0, 0.95, 0.5))
-	label.add_theme_constant_override("outline_size", 12)
-	label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
-	var font := load("res://Baby Doll.otf") as Font
-	if font:
-		label.add_theme_font_override("font", font)
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.z_index = 50
-	label.velocity = Vector2.from_angle(randf_range(-PI * 0.78, -PI * 0.22)) * randf_range(880.0, 960.0)
-	label.scale = Vector2(0.6, 0.6)
-	current.add_child(label)
-	label.global_position = enemy.global_position + Vector2(randf_range(-16.0, 16.0), randf_range(-28.0, -6.0))
-
-	var pop := label.create_tween()
-	pop.tween_property(label, "scale", Vector2.ONE, 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)

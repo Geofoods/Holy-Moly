@@ -2,9 +2,6 @@
 
 [ext_resource type="PackedScene" uid="uid://c3fg4jh63xhyr" path="res://scenes/parallax_background3.tscn" id="1_dxywq"]
 [ext_resource type="PackedScene" uid="uid://p1of6ummc17j" path="res://scenes/mole.tscn" id="1_o5qli"]
-[ext_resource type="PackedScene" path="res://scenes/hornet_enemy.tscn" id="hornet_res"]
-[ext_resource type="PackedScene" path="res://scenes/snake_enemy.tscn" id="snake_res"]
-[ext_resource type="PackedScene" uid="uid://m0v1ngpl4tfrm8" path="res://scenes/moving_platform.tscn" id="plat_res"]
 [ext_resource type="PackedScene" uid="uid://dnp3icrndkjm8" path="res://scenes/antenemy.tscn" id="2_enemy"]
 [ext_resource type="PackedScene" uid="uid://c6xus6tuhcmfo" path="res://scenes/heart.tscn" id="3_sugp2"]
 [ext_resource type="PackedScene" uid="uid://d2i1x8x1y6qa" path="res://scenes/pause_menu.tscn" id="4_pause"]
@@ -21,7 +18,9 @@
 [ext_resource type="PackedScene" uid="uid://iuqjuk37ur0d" path="res://scenes/slimeenemy.tscn" id="17_dxywq"]
 [ext_resource type="Script" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
 [ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
+[ext_resource type="PackedScene" uid="uid://c0pwtkklnyw5s" path="res://scenes/hornet_enemy.tscn" id="hornet_res"]
 [ext_resource type="PackedScene" uid="uid://3wwhicdeo8hl" path="res://scenes/info_popup.tscn" id="info_popup_res"]
+[ext_resource type="PackedScene" uid="uid://chhdtofija7c4" path="res://scenes/snake_enemy.tscn" id="snake_res"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.1, 0.1, 0.12, 0.85)
@@ -254,47 +253,23 @@ position = Vector2(1062, 2226)
 [node name="chest18" parent="." unique_id=302478732 instance=ExtResource("15_wjc4k")]
 position = Vector2(1343, 2228)
 
-[node name="Hornet1" parent="." instance=ExtResource("hornet_res")]
+[node name="Hornet1" parent="." unique_id=869812293 instance=ExtResource("hornet_res")]
 position = Vector2(2600, 3200)
 
-[node name="Hornet2" parent="." instance=ExtResource("hornet_res")]
+[node name="Hornet2" parent="." unique_id=893463735 instance=ExtResource("hornet_res")]
 position = Vector2(2450, 5700)
 
-[node name="Hornet3" parent="." instance=ExtResource("hornet_res")]
+[node name="Hornet3" parent="." unique_id=553967047 instance=ExtResource("hornet_res")]
 position = Vector2(2900, 8600)
 
-[node name="Snake1" parent="." instance=ExtResource("snake_res")]
+[node name="Snake1" parent="." unique_id=1680188367 instance=ExtResource("snake_res")]
 position = Vector2(2350, 3500)
 
-[node name="Snake2" parent="." instance=ExtResource("snake_res")]
+[node name="Snake2" parent="." unique_id=1245373160 instance=ExtResource("snake_res")]
 position = Vector2(2750, 6000)
 
-[node name="Snake3" parent="." instance=ExtResource("snake_res")]
+[node name="Snake3" parent="." unique_id=112721341 instance=ExtResource("snake_res")]
 position = Vector2(2600, 8900)
-
-[node name="MovingPlatform1" parent="." instance=ExtResource("plat_res")]
-position = Vector2(2450, 5620)
-motion_direction = Vector2(1, 0)
-travel_distance = 320.0
-speed = 150.0
-
-[node name="MovingPlatform2" parent="." instance=ExtResource("plat_res")]
-position = Vector2(2900, 8520)
-motion_direction = Vector2(1, 0)
-travel_distance = 280.0
-speed = 160.0
-
-[node name="MovingPlatform3" parent="." instance=ExtResource("plat_res")]
-position = Vector2(2600, 3120)
-motion_direction = Vector2(0, 1)
-travel_distance = 220.0
-speed = 130.0
-
-[node name="MovingPlatform4" parent="." instance=ExtResource("plat_res")]
-position = Vector2(3000, 5000)
-motion_direction = Vector2(1, 0)
-travel_distance = 360.0
-speed = 170.0
 
 [node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=1262179149]
 

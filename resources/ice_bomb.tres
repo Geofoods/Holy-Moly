@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://c3oxp1d0nbo1j"]
+
+[ext_resource type="Script" uid="uid://cdp5qkqnggyt8" path="res://scripts/item_data.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://cx3o05cg372vl" path="res://scenes/bomb.webp" id="2_tex"]
+
+[resource]
+script = ExtResource("1")
+item_name = "Ice Bomb"
+description = "Throw to freeze enemies"
+icon_color = Color(0.5, 0.7, 1.0, 1)
+icon_text = "IB"
+icon_texture = ExtResource("2_tex")
+stackable = true

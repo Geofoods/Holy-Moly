@@ -438,39 +438,63 @@ static func spawn_break_particles(tilemap: TileMap, tile_pos: Vector2i, atlas_co
 	var colors := get_tile_colors(atlas_coords)
 	var world_pos := tilemap.to_global(tilemap.map_to_local(tile_pos))
 
-	var particles := CPUParticles2D.new()
-	particles.emitting = true
-	particles.one_shot = true
-	particles.explosiveness = 1.0
-	particles.amount = 12
-	particles.lifetime = 0.6
-	parent.add_child(particles)
-	particles.global_position = world_pos
+	var piece_tex: Texture2D = null
+	var basis := Vector2.ZERO
+	var src := tilemap.tile_set.get_source(0) as TileSetAtlasSource
+	if src != null and src.texture != null:
+		piece_tex = src.texture
+		basis = Vector2(src.texture_region_size)
 
-	particles.direction = Vector2(0, -1)
-	particles.spread = 180.0
-	particles.initial_velocity_min = 150.0
-	particles.initial_velocity_max = 350.0
-	particles.gravity = Vector2(0, 800)
+	const DEBRIS_COUNT := 12
+	for i in range(DEBRIS_COUNT):
+		var chunk := RigidBody2D.new()
+		chunk.collision_layer = 2
+		chunk.gravity_scale = 3.2
+		chunk.linear_damp = 3.5
+		chunk.angular_damp = 2.0
+		chunk.z_index = 3
+		parent.add_child(chunk)
+		chunk.global_position = world_pos
+		chunk.rotation = randf_range(0.0, TAU)
 
-	particles.angular_velocity_min = -400.0
-	particles.angular_velocity_max = 400.0
+		var piece_size := Vector2(randf_range(18.0, 34.0), randf_range(18.0, 34.0))
+		if piece_tex != null and basis.x > 0.0 and basis.y > 0.0:
+			var piece := AtlasTexture.new()
+			piece.atlas = piece_tex
+			var origin := Vector2(atlas_coords) * basis
+			var piece_offset := Vector2(
+				randf_range(0.0, basis.x - piece_size.x),
+				randf_range(0.0, basis.y - piece_size.y))
+			piece.region = Rect2(origin + piece_offset, piece_size)
+			var sprite := Sprite2D.new()
+			sprite.texture = piece
+			chunk.add_child(sprite)
+		else:
+			var dust := Polygon2D.new()
+			dust.polygon = PackedVector2Array([
+				Vector2(-piece_size.x / 2.0, -piece_size.y / 2.0),
+				Vector2(piece_size.x / 2.0, -piece_size.y / 2.0),
+				Vector2(piece_size.x / 2.0, piece_size.y / 2.0),
+				Vector2(-piece_size.x / 2.0, piece_size.y / 2.0),
+			])
+			dust.color = colors[0] if colors.size() > 0 else Color.WHITE
+			chunk.add_child(dust)
 
-	particles.scale_amount_min = 3.0
-	particles.scale_amount_max = 6.0
+		var shape := RectangleShape2D.new()
+		shape.size = piece_size * 0.75
+		var collision := CollisionShape2D.new()
+		collision.shape = shape
+		chunk.add_child(collision)
 
-	particles.damping_min = 20.0
-	particles.damping_max = 40.0
+		var angle := -PI / 2.0 + randf_range(-PI / 2.0, PI / 2.0)
+		var speed := randf_range(150.0, 350.0)
+		chunk.linear_velocity = Vector2.from_angle(angle) * speed
+		chunk.angular_velocity = randf_range(-8.0, 8.0)
 
-	var fade_color: Color = colors[1]
-	fade_color.a = 0.0
-
-	var gradient := Gradient.new()
-	gradient.set_color(0, colors[0])
-	gradient.set_color(1, fade_color)
-	particles.color_ramp = gradient
-
-	particles.get_tree().create_timer(1.5).timeout.connect(particles.queue_free)
+		var tween := chunk.create_tween()
+		tween.tween_interval(1.0)
+		tween.tween_property(chunk, "modulate:a", 0.0, 0.5)
+		tween.tween_callback(chunk.queue_free)
 
 static func _break_opened_chests_near(parent: Node, world_pos: Vector2, radius: float = 120.0) -> void:
 	if not is_instance_valid(parent):

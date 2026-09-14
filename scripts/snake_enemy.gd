@@ -14,8 +14,13 @@ const STRIKE_DURATION := 0.38
 const COOLDOWN_DURATION := 0.8
 const MAX_HEALTH := 14.0
 const MOVE_SFX_INTERVAL := 0.5
+const SPRAY_CHANCE := 0.35
+const FORCE_SPRAY_DISTANCE := 230.0
+const VENOM_COUNT := 3
+const VENOM_SPREAD_DEGREES := 16.0
 
 const EnemyDamage := preload("res://scripts/enemy.gd")
+const VENOM_SCENE := preload("res://scenes/snake_venom.tscn")
 
 enum State { PATROL, REAR, STRIKE, COOLDOWN }
 
@@ -96,7 +101,11 @@ func _do_rear(delta: float) -> void:
 	state_timer -= delta
 	if state_timer <= 0.0:
 		visual.offset.x = 0.0
-		_enter_strike()
+		if _should_spray():
+			_fire_venom()
+			_enter_cooldown()
+		else:
+			_enter_strike()
 
 func _enter_strike() -> void:
 	state = State.STRIKE
@@ -276,3 +285,28 @@ func _break_apart() -> void:
 			pt.parallel().tween_property(piece, "rotation", randf_range(-4.0, 4.0), 0.5).set_ease(Tween.EASE_OUT)
 			pt.parallel().tween_property(piece, "modulate", Color(1, 1, 1, 0), 0.5).set_ease(Tween.EASE_IN)
 			pt.tween_callback(piece.queue_free)
+
+func _should_spray() -> bool:
+	if target_mole == null or not is_instance_valid(target_mole):
+		return false
+	var dist := global_position.distance_to(target_mole.global_position)
+	var chance := SPRAY_CHANCE
+	if dist >= FORCE_SPRAY_DISTANCE:
+		chance = 1.0
+	elif dist >= 130.0:
+		chance = 0.6
+	return randf() < chance
+
+func _fire_venom() -> void:
+	SFX.play("enemy_fire", global_position, -4.0, 0.2)
+	var aim := Vector2(direction, 0.0)
+	if target_mole and is_instance_valid(target_mole):
+		aim = (target_mole.global_position - global_position).normalized()
+	var base_angle := aim.angle()
+	for i in VENOM_COUNT:
+		var a := base_angle + deg_to_rad(VENOM_SPREAD_DEGREES) * (i - (VENOM_COUNT - 1) / 2.0)
+		var proj = VENOM_SCENE.instantiate()
+		get_parent().add_child(proj)
+		proj.global_position = global_position + aim * 16.0 + Vector2(0, -18)
+		proj.direction = Vector2.from_angle(a)
+		proj.source_snake = self
