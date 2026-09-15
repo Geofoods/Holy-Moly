@@ -1,0 +1,206 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" uid="uid://wjt35doljo8p" path="res://scenes/parallax_background2.tscn" id="1_pb"]
+[ext_resource type="PackedScene" uid="uid://p1of6ummc17j" path="res://scenes/mole.tscn" id="2_mole"]
+[ext_resource type="PackedScene" path="res://scenes/death_plane.tscn" id="3_dp"]
+[ext_resource type="PackedScene" uid="uid://c6xus6tuhcmfo" path="res://scenes/heart.tscn" id="4_heart"]
+[ext_resource type="PackedScene" uid="uid://d2i1x8x1y6qa" path="res://scenes/pause_menu.tscn" id="5_pause"]
+[ext_resource type="PackedScene" uid="uid://brmtyiqcy1wkv" path="res://scenes/inventory_ui.tscn" id="6_inv"]
+[ext_resource type="PackedScene" uid="uid://3wwhicdeo8hl" path="res://scenes/info_popup.tscn" id="7_popup"]
+[ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="8_font"]
+[ext_resource type="PackedScene" path="res://queen_bee.tscn" id="9_queen"]
+[ext_resource type="PackedScene" uid="uid://cdxu1kg5or16d" path="res://candle.tscn" id="10_candle"]
+[ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="11_firefly"]
+[ext_resource type="PackedScene" path="res://scenes/level_intro_banner.tscn" id="13_banner"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
+bg_color = Color(0.1, 0.1, 0.12, 0.85)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.95, 0.75, 0.1, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton_hover"]
+bg_color = Color(0.2, 0.2, 0.22, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.85, 0.3, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ground"]
+size = Vector2(2400, 90)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall"]
+size = Vector2(40, 1200)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ceiling"]
+size = Vector2(2400, 40)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_platform"]
+size = Vector2(330, 44)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_lock"]
+size = Vector2(60, 900)
+
+[node name="LevelHive" type="Node2D" unique_id=1979316001]
+
+[node name="ParallaxBackground" parent="." unique_id=1010942745 instance=ExtResource("1_pb")]
+
+[node name="FireflySpawner" type="Node2D" parent="." unique_id=1326414273]
+script = ExtResource("11_firefly")
+
+[node name="DeathPlane" parent="." unique_id=1828936323 instance=ExtResource("3_dp")]
+
+[node name="Ground" type="StaticBody2D" parent="." unique_id=1262179150]
+position = Vector2(1250, 1345)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ground" unique_id=164938329]
+shape = SubResource("RectangleShape2D_ground")
+
+[node name="LeftWall" type="StaticBody2D" parent="." unique_id=1262179151]
+position = Vector2(170, 700)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="LeftWall" unique_id=164938330]
+shape = SubResource("RectangleShape2D_wall")
+
+[node name="RightWall" type="StaticBody2D" parent="." unique_id=1262179152]
+position = Vector2(2330, 700)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="RightWall" unique_id=164938331]
+shape = SubResource("RectangleShape2D_wall")
+
+[node name="Ceiling" type="StaticBody2D" parent="." unique_id=1262179153]
+position = Vector2(1250, 100)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ceiling" unique_id=164938332]
+shape = SubResource("RectangleShape2D_ceiling")
+
+[node name="Platform1" type="StaticBody2D" parent="." unique_id=1262179154]
+position = Vector2(700, 1200)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platform1" unique_id=164938333]
+shape = SubResource("RectangleShape2D_platform")
+
+[node name="Platform2" type="StaticBody2D" parent="." unique_id=1262179155]
+position = Vector2(1250, 1100)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platform2" unique_id=164938334]
+shape = SubResource("RectangleShape2D_platform")
+
+[node name="Platform3" type="StaticBody2D" parent="." unique_id=1262179156]
+position = Vector2(1850, 1200)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platform3" unique_id=164938335]
+shape = SubResource("RectangleShape2D_platform")
+
+[node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=1262179157]
+position = Vector2(380, 850)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D" unique_id=164938336]
+shape = SubResource("RectangleShape2D_lock")
+disabled = true
+
+[node name="CharacterBody2D2" parent="." unique_id=501808253 instance=ExtResource("2_mole")]
+position = Vector2(520, 1180)
+scale = Vector2(0.25, 0.25)
+
+[node name="Camera2D" type="Camera2D" parent="CharacterBody2D2" unique_id=955812055]
+position = Vector2(92, -296)
+scale = Vector2(4, 4)
+zoom = Vector2(0.5, 0.5)
+position_smoothing_enabled = true
+
+[node name="QueenBee" parent="." unique_id=1041295788 instance=ExtResource("9_queen")]
+position = Vector2(1500, 800)
+scale = Vector2(0.5, 0.5)
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=71896558]
+layer = 99
+
+[node name="heart" parent="CanvasLayer" unique_id=1207891792 instance=ExtResource("4_heart")]
+position = Vector2(117.99999, 113.99999)
+scale = Vector2(0.24147864, 0.24147864)
+
+[node name="PauseButton" type="Button" parent="CanvasLayer" unique_id=2042132587]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -65.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 65.0
+grow_horizontal = 0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("8_font")
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_pausebutton")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_pausebutton_hover")
+theme_override_styles/hover = SubResource("StyleBoxFlat_pausebutton_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_pausebutton_hover")
+text = "II"
+
+[node name="InfoButton" type="Button" parent="CanvasLayer" unique_id=1871777936]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -66.0
+offset_top = -66.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("8_font")
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StyleBoxFlat_pausebutton")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_pausebutton_hover")
+theme_override_styles/hover = SubResource("StyleBoxFlat_pausebutton_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_pausebutton_hover")
+text = "?"
+
+[node name="InventoryUI" parent="." unique_id=584044006 instance=ExtResource("6_inv")]
+
+[node name="PauseMenu" parent="." unique_id=1779626466 instance=ExtResource("5_pause")]
+
+[node name="InfoPopup" parent="." unique_id=662586735 instance=ExtResource("7_popup")]
+
+[node name="LevelIntroBanner" parent="." unique_id=676259999 instance=ExtResource("13_banner")]
+
+[node name="candle" parent="." unique_id=158104048 instance=ExtResource("10_candle")]
+position = Vector2(700, 1280)
+
+[node name="candle2" parent="." unique_id=1311477703 instance=ExtResource("10_candle")]
+position = Vector2(2100, 1280)
+
+[connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
+[connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]

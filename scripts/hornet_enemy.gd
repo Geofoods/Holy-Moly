@@ -28,6 +28,7 @@ var dash_timer := 0.0
 var cooldown_timer := 0.0
 var health := MAX_HEALTH
 var target_mole: Node2D = null
+var detect_range := DETECT_RANGE
 var _buzz_timer := 0.0
 var _mole_in_contact := false
 var _health_bar: Node2D = null
@@ -79,7 +80,7 @@ func _do_hover(delta: float) -> void:
 	if is_on_wall():
 		direction *= -1.0
 
-	if target_mole != null and cooldown_timer <= 0.0 and global_position.distance_to(target_mole.global_position) < DETECT_RANGE:
+	if target_mole != null and cooldown_timer <= 0.0 and global_position.distance_to(target_mole.global_position) < detect_range:
 		_enter_aim()
 
 func _enter_aim() -> void:
@@ -142,7 +143,7 @@ func _find_target() -> void:
 		target_mole = get_tree().get_first_node_in_group("mole")
 		if target_mole:
 			add_collision_exception_with(target_mole)
-	elif global_position.distance_squared_to(target_mole.global_position) > DETECT_RANGE * DETECT_RANGE:
+	elif global_position.distance_squared_to(target_mole.global_position) > detect_range * detect_range:
 		target_mole = null
 
 func _on_hitbox_body_entered(body: Node) -> void:

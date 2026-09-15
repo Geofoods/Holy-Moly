@@ -1,0 +1,44 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/queen_bee.gd" id="1_script"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_body"]
+radius = 70.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_hurtbox"]
+radius = 160.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_hitbox"]
+radius = 70.0
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_trigger"]
+size = Vector2(800, 900)
+
+[node name="QueenBee" type="CharacterBody2D" unique_id=1041295787]
+collision_layer = 4
+script = ExtResource("1_script")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=455057980]
+position = Vector2(0, -12)
+scale = Vector2(2.2, 2.2)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=979449485]
+shape = SubResource("CircleShape2D_body")
+
+[node name="CutsceneTrigger" type="Area2D" parent="." unique_id=1142006742]
+collision_mask = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CutsceneTrigger" unique_id=1983972854]
+shape = SubResource("RectangleShape2D_trigger")
+
+[node name="Hurtbox" type="Area2D" parent="." unique_id=1068131763]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox" unique_id=1948385763]
+shape = SubResource("CircleShape2D_hurtbox")
+
+[node name="Hitbox" type="Area2D" parent="." unique_id=1068131764]
+monitorable = false
+collision_mask = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox" unique_id=1948385764]
+shape = SubResource("CircleShape2D_hitbox")

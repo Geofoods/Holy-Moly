@@ -41,6 +41,11 @@ const LEVELS: Dictionary = {
 		"name": "Goblin Stronghold",
 		"tip": "Poison puddles and charging Goblins both hit hard here. Keep moving and don't get cornered.",
 	},
+	"res://scenes/level_hive.tscn": {
+		"number": 9,
+		"name": "The Queen's Hive",
+		"tip": "The Queen Bee summons her hornet children to fight alongside her. Dodge her sting dives and break the hornets before they box you in.",
+	},
 	"res://scenes/level_09.tscn": {
 		"number": 9,
 		"name": "The Corrupted Core",
