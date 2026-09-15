@@ -19,6 +19,8 @@ var health := MAX_HEALTH
 var _move_sfx_timer := 0.0
 var _shoot_timer := SHOOT_INTERVAL
 var _stun_timer := 0.0
+var _slow_timer := 0.0
+var _slow_factor := 1.0
 const MOVE_SFX_INTERVAL := 0.4
 var ant_bullet_scene := preload("res://scenes/ant_bullet.tscn")
 var _mole_in_contact := false
@@ -47,10 +49,18 @@ func _physics_process(delta: float) -> void:
 		_update_visual_direction()
 		return
 
+	if _slow_timer > 0.0:
+		_slow_timer -= delta
+		if _slow_timer <= 0.0:
+			_slow_timer = 0.0
+			_slow_factor = 1.0
+			if not has_meta("frozen"):
+				modulate = Color.WHITE
+
 	if is_climbing:
 		climb_timer -= delta
 		velocity.y = -CLIMB_SPEED
-		velocity.x = direction * SPEED * 0.3
+		velocity.x = direction * SPEED * 0.3 * _slow_factor
 		if climb_timer <= 0.0 or is_on_ceiling():
 			is_climbing = false
 		move_and_slide()
@@ -62,7 +72,7 @@ func _physics_process(delta: float) -> void:
 	else:
 		velocity.y = 0.0
 
-	velocity.x = direction * SPEED
+	velocity.x = direction * SPEED * _slow_factor
 
 	if is_on_wall():
 		if randf() < CLIMB_CHANCE:
@@ -112,12 +122,36 @@ func _update_visual_direction() -> void:
 	visual.scale.x = -abs(visual.scale.x) * sign(dir)
 
 func _find_target() -> void:
+	var lure := _find_lure()
+	if lure:
+		target_mole = lure
+		return
 	if target_mole == null or not is_instance_valid(target_mole):
 		target_mole = get_tree().get_first_node_in_group("mole")
 		if target_mole:
 			add_collision_exception_with(target_mole)
 	elif global_position.distance_squared_to(target_mole.global_position) > DETECT_RANGE * DETECT_RANGE:
 		target_mole = null
+
+func _find_lure() -> Node2D:
+	var best: Node2D = null
+	var best_dist := INF
+	for lure in get_tree().get_nodes_in_group("lure"):
+		if not is_instance_valid(lure):
+			continue
+		var d := global_position.distance_squared_to(lure.global_position)
+		if d < DETECT_RANGE * DETECT_RANGE and d < best_dist:
+			best = lure
+			best_dist = d
+	return best
+
+func apply_slow(duration: float, factor: float) -> void:
+	if health <= 0:
+		return
+	_slow_timer = maxf(_slow_timer, duration)
+	_slow_factor = minf(_slow_factor, clampf(factor, 0.05, 1.0))
+	if not has_meta("frozen"):
+		modulate = Color(0.6, 0.9, 0.55, 1.0)
 
 func _on_hitbox_body_entered(body: Node) -> void:
 	if body.is_in_group("mole") and not _mole_in_contact:
@@ -224,7 +258,6 @@ func die() -> void:
 	died.emit()
 	SFX.play("enemy_death", global_position)
 	ComboManager.increment()
-	ScoreManager.add_kill(1, global_position)
 	Shop.drop_coins(global_position, randi_range(2, 4))
 	set_physics_process(false)
 	hitbox.set_deferred("monitoring", false)

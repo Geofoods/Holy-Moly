@@ -10,6 +10,7 @@ const COLLECT_DISTANCE := 46.0
 var _time := 0.0
 
 func _ready() -> void:
+	add_to_group("coin")
 	contact_monitor = true
 	max_contacts_reported = 8
 	linear_velocity = Vector2(randf_range(-180.0, 180.0), randf_range(-460.0, -320.0))

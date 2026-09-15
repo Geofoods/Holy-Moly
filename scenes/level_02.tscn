@@ -47,7 +47,7 @@ corner_radius_bottom_left = 8
 shader = ExtResource("7_vignette")
 shader_parameter/inner_radius = 0.25
 shader_parameter/outer_radius = 0.55
-shader_parameter/darkness = 0.35
+shader_parameter/darkness = 0.55
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_vqvml"]
 size = Vector2(4079.5, 933)

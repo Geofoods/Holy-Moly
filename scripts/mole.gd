@@ -56,6 +56,16 @@ var mole_hole_instance: Node2D = null
 var bomb_scene := preload("res://bomb.tscn")
 var ice_bomb_scene := preload("res://ice_bomb.tscn")
 var drill_scene := preload("res://drill.tscn")
+const GoldenBomb := preload("res://scripts/golden_bomb.gd")
+const SparkBomb := preload("res://scripts/spark_bomb.gd")
+const Mine := preload("res://scripts/mine.gd")
+const StinkBomb := preload("res://scripts/stink_bomb.gd")
+const Flare := preload("res://scripts/flare.gd")
+const CoalLump := preload("res://scripts/coal_lump.gd")
+const VacuumJelly := preload("res://scripts/vacuum_jelly.gd")
+const BounceMushroom := preload("res://scripts/bounce_mushroom.gd")
+const ShinyLure := preload("res://scripts/shiny_lure.gd")
+const CompassCharm := preload("res://scripts/compass_charm.gd")
 const EnemyDamage := preload("res://scripts/enemy.gd")
 var was_on_floor := true
 var is_sideways_jump := false
@@ -66,6 +76,18 @@ var _ground_pound_start_y := 0.0
 var _ground_pound_power := 0.0
 var tunnel_direction := 1.0
 var _dash_hit_enemies: Dictionary = {}
+var tunnel_gloves_active := false
+var shelled_backpack_active := false
+var climbing_talons_active := false
+var lantern_charm_active := false
+var rebound_hook_active := false
+var wax_cache_active := false
+var earthquake_boots_active := false
+var mol_dozer_active := false
+var _mole_light: PointLight2D = null
+var _mole_light_base_energy := 1.0
+var _mole_light_base_scale := 1.0
+var _mol_dozer_hit: Dictionary = {}
 var invulnerable := false
 var _dash_invulnerable := false
 var speed_boost_active := false
@@ -139,6 +161,10 @@ func _ready() -> void:
 	if camera:
 		camera.zoom = Vector2(0.5, 0.5)
 	tilemap = get_parent().get_node_or_null("TileMap")
+	_mole_light = get_node_or_null("MoleLight")
+	if _mole_light:
+		_mole_light_base_energy = _mole_light.energy
+		_mole_light_base_scale = _mole_light.texture_scale
 	LevelMusic.start()
 	Inventory.initialize()
 	_grant_grapple_hook()
@@ -256,6 +282,9 @@ func _process(_delta: float) -> void:
 		sprite_name = "HeldBomb"
 	elif item.item_name == "Ice Bomb":
 		sprite_name = "HeldIceBomb"
+	elif item.item_name == "Golden Bomb" or item.item_name == "Mine" or item.item_name == "Coal Lump" \
+			or item.item_name == "Stink Bomb" or item.item_name == "Flare" or item.item_name == "Spark Bomb":
+		sprite_name = "HeldBomb"
 	elif item.item_name == "Drill":
 		sprite_name = "HeldDrill"
 	if sprite_name == "":
@@ -263,6 +292,21 @@ func _process(_delta: float) -> void:
 	var sprite := get_node_or_null(sprite_name)
 	if not sprite or not sprite.visible:
 		return
+	match item.item_name:
+		"Golden Bomb":
+			sprite.modulate = Color(1.0, 0.82, 0.25, 1.0)
+		"Mine":
+			sprite.modulate = Color(0.62, 0.62, 0.68, 1.0)
+		"Coal Lump":
+			sprite.modulate = Color(0.3, 0.27, 0.24, 1.0)
+		"Stink Bomb":
+			sprite.modulate = Color(0.45, 0.85, 0.35, 1.0)
+		"Flare":
+			sprite.modulate = Color(1.0, 0.55, 0.2, 1.0)
+		"Spark Bomb":
+			sprite.modulate = Color(0.65, 0.85, 1.15, 1.0)
+		_:
+			sprite.modulate = Color.WHITE
 	var mouse_dir := (_aim_pos() - global_position).normalized()
 	if mouse_dir == Vector2.ZERO:
 		mouse_dir = Vector2.RIGHT
@@ -285,7 +329,7 @@ func _update_held_item() -> void:
 
 	var item: ItemData = Inventory.slots[slot] if slot >= 0 and slot < Inventory.slots.size() else null
 	if has_node("HeldBomb"):
-		$HeldBomb.visible = (item != null and item.item_name == "Bomb")
+		$HeldBomb.visible = (item != null and item.item_name in ["Bomb", "Golden Bomb", "Mine", "Coal Lump", "Stink Bomb", "Flare", "Spark Bomb"])
 	if has_node("HeldIceBomb"):
 		$HeldIceBomb.visible = (item != null and item.item_name == "Ice Bomb")
 	if has_node("HeldDrill"):
@@ -401,6 +445,12 @@ func _physics_process(delta: float) -> void:
 			if front_tile not in broken_tiles and tilemap.get_cell_source_id(0, front_tile) != -1:
 				sfx.break_tile(tilemap, front_tile, get_parent())
 				spawn_dirt_particles(tilemap.to_global(tilemap.map_to_local(front_tile)))
+			if tunnel_gloves_active:
+				for extra_dy in [-1, 1]:
+					var side := Vector2i(front_tile.x, front_tile.y + extra_dy)
+					if side not in broken_tiles and tilemap.get_cell_source_id(0, side) != -1:
+						sfx.break_tile(tilemap, side, get_parent())
+						spawn_dirt_particles(tilemap.to_global(tilemap.map_to_local(side)))
 		was_on_floor = is_on_floor()
 		_update_camera_position(delta)
 		return
@@ -447,6 +497,9 @@ func _physics_process(delta: float) -> void:
 	var can_jump := is_on_floor() or _coyote_timer > 0.0
 	var can_wall_jump := Shop.has_wall_jump() and not can_jump \
 			and _wall_jump_lock_timer <= 0.0 and _wall_coyote_timer > 0.0
+	if climbing_talons_active and is_on_wall() and direction != 0 \
+			and signf(direction) == -signf(get_wall_normal().x) and velocity.y > 0.0:
+		velocity.y = 0.0
 	if Input.is_action_just_pressed("ui_accept") and can_wall_jump:
 		velocity.y = WALL_JUMP_VELOCITY
 		velocity.x = -_wall_coyote_dir * WALL_JUMP_PUSHBACK
@@ -502,6 +555,9 @@ func _physics_process(delta: float) -> void:
 		is_sideways_jump = true
 
 	move_and_slide()
+	_push_rocks()
+	if mol_dozer_active:
+		_dozer_ram()
 	if not is_on_floor() and not launched_from_jump:
 		air_time += delta
 
@@ -552,7 +608,8 @@ func _input(event: InputEvent) -> void:
 		var item: ItemData = Inventory.slots[slot] if slot >= 0 and slot < Inventory.slots.size() else null
 		if item == null:
 			return
-		if not can_break and (item.item_name == "Bomb" or item.item_name == "Ice Bomb" or item.item_name == "Drill"):
+		if not can_break and (item.item_name == "Bomb" or item.item_name == "Ice Bomb" or item.item_name == "Drill" \
+				or item.item_name == "Golden Bomb" or item.item_name == "Mine"):
 			return
 		match item.item_name:
 			"Bomb":
@@ -564,12 +621,60 @@ func _input(event: InputEvent) -> void:
 			"Drill":
 				_deploy_drill()
 				get_viewport().set_input_as_handled()
+			"Golden Bomb":
+				_launch_custom(GoldenBomb)
+				get_viewport().set_input_as_handled()
+			"Spark Bomb":
+				_launch_custom(SparkBomb)
+				get_viewport().set_input_as_handled()
+			"Mine":
+				_launch_custom(Mine)
+				get_viewport().set_input_as_handled()
+			"Stink Bomb":
+				_launch_custom(StinkBomb)
+				get_viewport().set_input_as_handled()
+			"Flare":
+				_launch_custom(Flare)
+				get_viewport().set_input_as_handled()
+			"Coal Lump":
+				_launch_custom(CoalLump)
+				get_viewport().set_input_as_handled()
+			"Vacuum Jelly":
+				Inventory.use_item(slot)
+				_use_vacuum()
+				get_viewport().set_input_as_handled()
+			"Shop Token":
+				Inventory.use_item(slot)
+				_use_shop_token()
+				get_viewport().set_input_as_handled()
+			"Bounce Mushroom":
+				Inventory.use_item(slot)
+				_deploy_mushroom()
+				get_viewport().set_input_as_handled()
+			"Shiny Lure":
+				Inventory.use_item(slot)
+				_deploy_lure()
+				get_viewport().set_input_as_handled()
+			"Compass Charm":
+				Inventory.use_item(slot)
+				_deploy_compass()
+				get_viewport().set_input_as_handled()
+			"Grub Stick":
+				Inventory.use_item(slot)
+				_swing_grub_stick()
+				get_viewport().set_input_as_handled()
 			"Grappling Hook":
 				get_viewport().set_input_as_handled()
-			"Holy Water", "Health Potion":
+			"Holy Water", "Health Potion", "Miner's Rations":
 				if health < 6:
 					Inventory.use_item(slot)
 					heal(1)
+				Inventory.selected_slot = -1
+				get_viewport().set_input_as_handled()
+			"Potted Honeycomb":
+				if health < 6:
+					Inventory.use_item(slot)
+					heal(2)
 				Inventory.selected_slot = -1
 				get_viewport().set_input_as_handled()
 
@@ -588,7 +693,7 @@ func _toggle_slot(slot: int) -> void:
 	if item == null:
 		return
 
-	if item.item_name == "Health Potion" or item.item_name == "Holy Water":
+	if item.item_name == "Health Potion" or item.item_name == "Holy Water" or item.item_name == "Miner's Rations":
 		if health < 6:
 			Inventory.use_item(slot)
 			heal(1)
@@ -599,6 +704,41 @@ func _toggle_slot(slot: int) -> void:
 			else:
 				Inventory.selected_slot = slot
 			return
+	elif item.item_name == "Potted Honeycomb":
+		if health < 6:
+			Inventory.use_item(slot)
+			heal(2)
+			return
+		else:
+			if Inventory.selected_slot == slot:
+				Inventory.selected_slot = -1
+			else:
+				Inventory.selected_slot = slot
+			return
+	elif item.item_name == "Vacuum Jelly":
+		Inventory.use_item(slot)
+		_use_vacuum()
+		return
+	elif item.item_name == "Shop Token":
+		Inventory.use_item(slot)
+		_use_shop_token()
+		return
+	elif item.item_name == "Bounce Mushroom":
+		Inventory.use_item(slot)
+		_deploy_mushroom()
+		return
+	elif item.item_name == "Shiny Lure":
+		Inventory.use_item(slot)
+		_deploy_lure()
+		return
+	elif item.item_name == "Compass Charm":
+		Inventory.use_item(slot)
+		_deploy_compass()
+		return
+	elif item.item_name == "Grub Stick":
+		Inventory.use_item(slot)
+		_swing_grub_stick()
+		return
 	elif item.item_name == "Speed Boots":
 		if not speed_boost_active:
 			Inventory.use_item(slot)
@@ -608,6 +748,17 @@ func _toggle_slot(slot: int) -> void:
 		if not shield_active:
 			Inventory.use_item(slot)
 			_activate_shield()
+		return
+	elif item.item_name == "Lantern Charm":
+		_activate_lantern(slot)
+		return
+	elif item.item_name == "Wax Cache":
+		_activate_wax(slot)
+		return
+	elif _is_buff_item(item):
+		if not get(_buff_flag(item.item_name)):
+			Inventory.use_item(slot)
+			_start_buff(_buff_flag(item.item_name), _buff_duration(item.item_name), item.item_name)
 		return
 
 	if Inventory.selected_slot == slot:
@@ -788,6 +939,10 @@ func remove_mole_hole() -> void:
 func take_damage(amount: float, source_position: Vector2 = Vector2.ZERO, has_source: bool = false, is_projectile: bool = false) -> void:
 	if invulnerable or _dash_invulnerable or health <= 0:
 		return
+	if health - amount <= 0.0 and _consume_honeycombs():
+		Shop.drop_coins(global_position + Vector2(0, -40), 3, 2)
+		_spawn_buff_label("HONEYCOMB SAVES YOU!")
+		amount = health - 1.0
 	health -= amount
 	if health <= 0:
 		SFX.play("death", global_position)
@@ -801,7 +956,8 @@ func take_damage(amount: float, source_position: Vector2 = Vector2.ZERO, has_sou
 		knockback_direction = sign(global_position.x - source_position.x)
 		if knockback_direction == 0.0:
 			knockback_direction = -1.0 if $AnimatedSprite2D.flip_h else 1.0
-	velocity.x = knockback_direction * KNOCKBACK_X
+	if not shelled_backpack_active:
+		velocity.x = knockback_direction * KNOCKBACK_X
 	if is_projectile:
 		screen_shake(22.0, 0.4)
 		hit_freeze(0.06)
@@ -980,6 +1136,8 @@ func _try_start_grapple() -> void:
 	query.exclude = [get_rid()]
 	var result := space_state.intersect_ray(query)
 	if result.is_empty():
+		if rebound_hook_active:
+			_rebound_pull_coin(aim_dir, from)
 		return
 	grapple_anchor = result.position
 	grapple_active = true
@@ -1039,6 +1197,8 @@ func _break_tiles_in_radius() -> void:
 		return
 	var sfx = load("res://scripts/tile_break_sfx.gd")
 	var radius: int = roundi(lerpf(GROUND_POUND_BASE_RADIUS, GROUND_POUND_MAX_RADIUS, _ground_pound_power))
+	if shelled_backpack_active or earthquake_boots_active:
+		radius += 1
 	var center_tile := tilemap.local_to_map(tilemap.to_local(global_position))
 	for dx in range(-radius, radius + 1):
 		for dy in range(0, radius + 1):
@@ -1051,8 +1211,12 @@ func _break_tiles_in_radius() -> void:
 	sfx.break_opened_chests_near(get_parent(), global_position, chest_radius)
 
 func _ground_pound_strike() -> void:
+	var boosted := shelled_backpack_active or earthquake_boots_active
 	var hit_radius := lerpf(GROUND_POUND_BASE_HIT_RADIUS, GROUND_POUND_MAX_HIT_RADIUS, _ground_pound_power)
 	var strike_damage := lerpf(GROUND_POUND_BASE_DAMAGE, GROUND_POUND_MAX_DAMAGE, _ground_pound_power)
+	if boosted:
+		hit_radius *= 1.35
+		strike_damage *= 1.5
 	for hurtbox in get_tree().get_nodes_in_group("enemy_hurtbox"):
 		if not is_instance_valid(hurtbox):
 			continue
@@ -1072,6 +1236,8 @@ func _ground_pound_strike() -> void:
 		if dir == Vector2.ZERO:
 			dir = Vector2(1.0, -0.5).normalized()
 		_apply_knockback(enemy, dir * GROUND_POUND_KNOCKBACK + Vector2(0, -350.0))
+		if earthquake_boots_active and "_stun_timer" in enemy:
+			enemy._stun_timer = maxf(enemy._stun_timer, 0.9)
 
 func start_dig_dash() -> void:
 	SFX.play("dig_dash", global_position)
@@ -1095,7 +1261,8 @@ func start_dig_dash() -> void:
 	$AnimatedSprite2D.play("tunnel")
 
 	var tunnel_elapsed := 0.0
-	while tunnel_elapsed < TUNNEL_DURATION:
+	var tunnel_total := TUNNEL_DURATION * (1.5 if tunnel_gloves_active else 1.0)
+	while tunnel_elapsed < tunnel_total:
 		await get_tree().process_frame
 		if not is_tunneling:
 			return
@@ -1254,3 +1421,262 @@ func show_inventory_full_message() -> void:
 	tween.tween_interval(1.0)
 	tween.tween_property(label, "modulate:a", 0.0, 0.5)
 	tween.tween_callback(label.queue_free)
+
+func _launch_custom(script: Script) -> void:
+	if not Inventory.use_item(Inventory.selected_slot):
+		return
+	Inventory.selected_slot = -1
+	var obj: RigidBody2D = script.new()
+	get_parent().add_child(obj)
+	obj.global_position = global_position + Vector2(0, -40)
+	var dir := (_aim_pos() - global_position).normalized()
+	obj.linear_velocity = dir * 600.0
+	obj.arm()
+
+func _use_vacuum() -> void:
+	var slot := Inventory.selected_slot
+	Inventory.selected_slot = -1
+	var vac: Node2D = VacuumJelly.new()
+	get_parent().add_child(vac)
+	vac.global_position = global_position
+
+func _use_shop_token() -> void:
+	var slot := Inventory.selected_slot
+	Inventory.selected_slot = -1
+	Shop.open_shop()
+
+func _deploy_mushroom() -> void:
+	var slot := Inventory.selected_slot
+	Inventory.selected_slot = -1
+	var shroom: CharacterBody2D = BounceMushroom.new()
+	get_parent().add_child(shroom)
+	var dir := (_aim_pos() - global_position).normalized()
+	if dir == Vector2.ZERO:
+		dir = Vector2.RIGHT
+	shroom.global_position = global_position + dir * 90.0 + Vector2(0, -140)
+	shroom.velocity = dir * 420.0
+
+func _deploy_lure() -> void:
+	var slot := Inventory.selected_slot
+	Inventory.selected_slot = -1
+	var lure: Node2D = ShinyLure.new()
+	get_parent().add_child(lure)
+	lure.global_position = global_position + Vector2(0, -30)
+
+func _deploy_compass() -> void:
+	var slot := Inventory.selected_slot
+	Inventory.selected_slot = -1
+	var compass: Node2D = CompassCharm.new()
+	get_parent().add_child(compass)
+	compass.global_position = global_position + Vector2(0, -90)
+
+func _swing_grub_stick() -> void:
+	Inventory.selected_slot = -1
+	_spawn_buff_label("GRUB WHACK!")
+	SFX.play("enemy_hit", global_position, -8.0, 1.4)
+	var face := -1.0 if $AnimatedSprite2D.flip_h else 1.0
+	var origin := global_position + Vector2(0, -35)
+	var hit := false
+	for hurtbox in get_tree().get_nodes_in_group("enemy_hurtbox"):
+		if not is_instance_valid(hurtbox):
+			continue
+		var enemy := hurtbox.get_parent()
+		if enemy == null or not is_instance_valid(enemy):
+			continue
+		var rel: Vector2 = enemy.global_position - origin
+		if rel.length() > 125.0:
+			continue
+		if rel.x != 0.0 and signf(rel.x) != face:
+			continue
+		hit = true
+		if enemy.has_method("take_damage"):
+			enemy.take_damage(8.0)
+		var dir := Vector2(face, -0.35).normalized()
+		if enemy is CharacterBody2D:
+			(enemy as CharacterBody2D).velocity = dir * 700.0
+		if "_stun_timer" in enemy:
+			enemy._stun_timer = maxf(enemy._stun_timer, 0.35)
+		SFX.play("enemy_hit", enemy.global_position)
+	_spawn_grub_swish(face, hit)
+	if not hit:
+		heal(1)
+
+func _spawn_grub_swish(face: float, hit: bool) -> void:
+	var arc := Line2D.new()
+	arc.width = 10.0
+	arc.default_color = Color(0.6, 0.75, 0.35, 0.9) if hit else Color(0.85, 0.8, 0.6, 0.8)
+	arc.z_index = 6
+	arc.antialiased = true
+	var pts := PackedVector2Array()
+	for i in 7:
+		var ang := lerpf(-1.5, 1.5, float(i) / 6.0)
+		var dirv := Vector2(cos(ang), sin(ang) * 0.7)
+		if face < 0.0:
+			dirv.x = -dirv.x
+		pts.append(dirv * 85.0 + Vector2(0, -35))
+	arc.points = pts
+	var scene := get_tree().current_scene
+	scene.add_child(arc)
+	arc.global_position = global_position
+	var tw := arc.create_tween()
+	tw.tween_property(arc, "modulate:a", 0.0, 0.22)
+	tw.tween_callback(arc.queue_free)
+
+func _is_buff_item(item: ItemData) -> bool:
+	match item.item_name:
+		"Tunnel Gloves", "Shelled Backpack", "Climbing Talons", "Rebound Hook", "Earthquake Boots", "Mol-dozer Ram":
+			return true
+	return false
+
+func _buff_flag(item_name: String) -> String:
+	match item_name:
+		"Tunnel Gloves":
+			return "tunnel_gloves_active"
+		"Shelled Backpack":
+			return "shelled_backpack_active"
+		"Climbing Talons":
+			return "climbing_talons_active"
+		"Rebound Hook":
+			return "rebound_hook_active"
+		"Earthquake Boots":
+			return "earthquake_boots_active"
+		"Mol-dozer Ram":
+			return "mol_dozer_active"
+	return ""
+
+func _buff_duration(item_name: String) -> float:
+	match item_name:
+		"Tunnel Gloves":
+			return 60.0
+		"Shelled Backpack", "Earthquake Boots":
+			return 30.0
+		"Climbing Talons":
+			return 10.0
+		"Rebound Hook":
+			return 60.0
+		"Mol-dozer Ram":
+			return 15.0
+	return 20.0
+
+func _start_buff(flag: String, duration: float, label_text: String) -> void:
+	if get(flag):
+		return
+	set(flag, true)
+	if flag == "mol_dozer_active":
+		_mol_dozer_hit.clear()
+	_spawn_buff_label("%s +%.0fs" % [label_text, duration])
+	await get_tree().create_timer(duration).timeout
+	if is_instance_valid(self):
+		set(flag, false)
+
+func _activate_lantern(slot: int) -> void:
+	if lantern_charm_active:
+		return
+	if not Inventory.use_item(slot):
+		return
+	Inventory.selected_slot = -1
+	lantern_charm_active = true
+	_spawn_buff_label("LANTERN CHARM +60s")
+	if _mole_light:
+		_mole_light.energy = maxf(_mole_light_base_energy * 1.8, _mole_light.energy + 0.8)
+		_mole_light.texture_scale = _mole_light_base_scale + 2.0
+	await get_tree().create_timer(60.0).timeout
+	if is_instance_valid(self):
+		lantern_charm_active = false
+		if _mole_light:
+			_mole_light.energy = _mole_light_base_energy
+			_mole_light.texture_scale = _mole_light_base_scale
+
+func _activate_wax(slot: int) -> void:
+	if wax_cache_active:
+		return
+	if not Inventory.use_item(slot):
+		return
+	Inventory.selected_slot = -1
+	wax_cache_active = true
+	Inventory.refund_chance = 0.25
+	_spawn_buff_label("WAX CACHE +60s")
+	await get_tree().create_timer(60.0).timeout
+	if is_instance_valid(self):
+		wax_cache_active = false
+		Inventory.refund_chance = 0.0
+
+func _spawn_buff_label(text: String) -> void:
+	var scene := get_tree().current_scene
+	if not scene:
+		return
+	var label := Label.new()
+	label.text = text
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.z_index = 55
+	label.add_theme_font_size_override("font_size", 24)
+	label.add_theme_color_override("font_color", Color(1.0, 0.95, 0.6, 1.0))
+	label.add_theme_constant_override("outline_size", 4)
+	label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+	scene.add_child(label)
+	label.global_position = global_position + Vector2(-110, -170)
+	var tw := label.create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(label, "position:y", label.position.y - 34.0, 1.0).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(label, "modulate:a", 0.0, 0.5).set_delay(0.8)
+	tw.chain().tween_callback(label.queue_free)
+
+func _dozer_ram() -> void:
+	var face := -1.0 if $AnimatedSprite2D.flip_h else 1.0
+	for i in get_slide_collision_count():
+		var collision := get_slide_collision(i)
+		var collider := collision.get_collider()
+		if collider == null or collider.is_in_group("mole") or collider.is_in_group("pushable"):
+			continue
+		if not collider.has_method("take_damage") and not collider.has_method("die"):
+			continue
+		if _mol_dozer_hit.get(collider, false):
+			continue
+		_mol_dozer_hit[collider] = true
+		if collider.has_method("take_damage"):
+			collider.take_damage(12.0)
+		if collider is CharacterBody2D:
+			(collider as CharacterBody2D).velocity = Vector2(face * 850.0, -300.0)
+		if "_stun_timer" in collider:
+			collider._stun_timer = maxf(collider._stun_timer, 0.4)
+		SFX.play("enemy_hit", collider.global_position)
+		spawn_dirt_particles(collider.global_position)
+
+func _rebound_pull_coin(aim_dir: Vector2, from: Vector2) -> void:
+	var best: Node = null
+	var best_dist := INF
+	for c in get_tree().get_nodes_in_group("coin"):
+		if not is_instance_valid(c):
+			continue
+		var coin_pos: Vector2 = (c as Node2D).global_position
+		var to_c := coin_pos - from
+		var lenv := to_c.length()
+		if lenv > 360.0 or lenv <= 0.0:
+			continue
+		if to_c.normalized().dot(aim_dir) < 0.7:
+			continue
+		if lenv < best_dist:
+			best_dist = lenv
+			best = c
+	if best:
+		var b := best as RigidBody2D
+		b.sleeping = false
+		b.linear_velocity = (global_position - best.global_position).normalized() * 1800.0
+		SFX.play("coin", best.global_position, -12.0, 1.5)
+
+func _consume_honeycombs() -> bool:
+	for i in Inventory.MAX_SLOTS:
+		if Inventory.slots[i] != null and Inventory.slots[i].item_name == "Potted Honeycomb":
+			if Inventory.use_item(i):
+				return true
+			break
+	return false
+
+func _push_rocks() -> void:
+	for i in get_slide_collision_count():
+		var collision := get_slide_collision(i)
+		var collider := collision.get_collider()
+		if collider != null and collider.is_in_group("pushable") and collider.has_method("push"):
+			var dir_x := -signf(collision.get_normal().x)
+			if dir_x != 0.0:
+				collider.push(Vector2(dir_x, 0.0))

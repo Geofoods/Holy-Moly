@@ -4,6 +4,31 @@
 [ext_resource type="Texture2D" uid="uid://dunjyru5enym6" path="res://craftpix-net-576316-pixel-cave-game-parallax-backgrounds/background 3/2.png" id="2_mk8nb"]
 [ext_resource type="Texture2D" uid="uid://sx170tmk2xu4" path="res://craftpix-net-576316-pixel-cave-game-parallax-backgrounds/background 3/3.png" id="3_ruc0d"]
 [ext_resource type="Texture2D" uid="uid://hh4qh5xsv7wn" path="res://craftpix-net-576316-pixel-cave-game-parallax-backgrounds/background 3/4.png" id="4_86jx2"]
+[ext_resource type="Shader" path="res://shaders/parallax_blur.gdshader" id="5_blur_2"]
+
+[sub_resource type="ShaderMaterial" id="sm2_0"]
+shader = ExtResource("5_blur_2")
+shader_parameter/blur_radius = 4.0
+shader_parameter/alpha = 0.4
+shader_parameter/brightness = 0.6
+
+[sub_resource type="ShaderMaterial" id="sm2_1"]
+shader = ExtResource("5_blur_2")
+shader_parameter/blur_radius = 2.0
+shader_parameter/alpha = 0.55
+shader_parameter/brightness = 0.7
+
+[sub_resource type="ShaderMaterial" id="sm2_2"]
+shader = ExtResource("5_blur_2")
+shader_parameter/blur_radius = 0.0
+shader_parameter/alpha = 0.75
+shader_parameter/brightness = 0.82
+
+[sub_resource type="ShaderMaterial" id="sm2_3"]
+shader = ExtResource("5_blur_2")
+shader_parameter/blur_radius = 0.0
+shader_parameter/alpha = 1.0
+shader_parameter/brightness = 0.9
 
 [node name="ParallaxBackgroun2" type="Node2D" unique_id=1654768929]
 modulate = Color(0.9369252, 0.5776125, 0.95337397, 1)
@@ -11,40 +36,44 @@ z_index = -10
 
 [node name="Layer0" type="Parallax2D" parent="." unique_id=219831622]
 scroll_scale = Vector2(0.006, 0.0025)
-repeat_size = Vector2(2304, 1296)
+repeat_size = Vector2(4608, 2592)
 repeat_times = 2
 
 [node name="Sprite" type="Sprite2D" parent="Layer0" unique_id=2028494087]
-scale = Vector2(4, 4)
+scale = Vector2(8, 8)
 texture = ExtResource("1_r1vwf")
+material = SubResource("sm2_0")
 centered = false
 
 [node name="Layer1" type="Parallax2D" parent="." unique_id=1340325726]
 scroll_scale = Vector2(0.018, 0.0075)
-repeat_size = Vector2(2304, 1296)
+repeat_size = Vector2(4608, 2592)
 repeat_times = 2
 
 [node name="Sprite" type="Sprite2D" parent="Layer1" unique_id=450919603]
-scale = Vector2(4, 4)
+scale = Vector2(8, 8)
 texture = ExtResource("2_mk8nb")
+material = SubResource("sm2_1")
 centered = false
 
 [node name="Layer2" type="Parallax2D" parent="." unique_id=1722863201]
 scroll_scale = Vector2(0.05, 0.02)
-repeat_size = Vector2(2304, 1296)
+repeat_size = Vector2(4608, 2592)
 repeat_times = 2
 
 [node name="Sprite" type="Sprite2D" parent="Layer2" unique_id=24721702]
-scale = Vector2(4, 4)
+scale = Vector2(8, 8)
 texture = ExtResource("3_ruc0d")
+material = SubResource("sm2_2")
 centered = false
 
 [node name="Layer3" type="Parallax2D" parent="." unique_id=867110154]
 scroll_scale = Vector2(0.1, 0.04)
-repeat_size = Vector2(2304, 1296)
+repeat_size = Vector2(4608, 2592)
 repeat_times = 2
 
 [node name="Sprite" type="Sprite2D" parent="Layer3" unique_id=1088071746]
-scale = Vector2(4, 4)
+scale = Vector2(8, 8)
 texture = ExtResource("4_86jx2")
+material = SubResource("sm2_3")
 centered = false

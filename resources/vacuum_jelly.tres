@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/item_data.gd" id="1_rxrym"]
+
+[resource]
+script = ExtResource("1_rxrym")
+item_name = "Vacuum Jelly"
+description = "Sucks every nearby coin straight to you."
+icon_color = Color(0.5, 0.6, 1, 1)
+icon_text = "V"
+consumable = true
+stackable = true

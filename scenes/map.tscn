@@ -68,6 +68,7 @@ position = Vector2(-28, -116)
 collision_layer = 0
 collision_mask = 1
 script = ExtResource("19_shopgate")
+shop_type = "weapons"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="ShopGate"]
 shape = SubResource("RectangleShape2D_shopgate")
@@ -77,7 +78,43 @@ offset_left = -80.0
 offset_top = -85.0
 offset_right = 80.0
 offset_bottom = -55.0
-text = "Press E to shop!"
+text = "Press E: Weapon Shop"
+horizontal_alignment = 1
+
+[node name="AbilityGate" type="Area2D" parent="."]
+position = Vector2(-330, -116)
+collision_layer = 0
+collision_mask = 1
+script = ExtResource("19_shopgate")
+shop_type = "abilities"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="AbilityGate"]
+shape = SubResource("RectangleShape2D_shopgate")
+
+[node name="Prompt" type="Label" parent="AbilityGate"]
+offset_left = -80.0
+offset_top = -85.0
+offset_right = 80.0
+offset_bottom = -55.0
+text = "Press E: Ability Shop"
+horizontal_alignment = 1
+
+[node name="ItemGate" type="Area2D" parent="."]
+position = Vector2(150, -116)
+collision_layer = 0
+collision_mask = 1
+script = ExtResource("19_shopgate")
+shop_type = "items"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ItemGate"]
+shape = SubResource("RectangleShape2D_shopgate")
+
+[node name="Prompt" type="Label" parent="ItemGate"]
+offset_left = -80.0
+offset_top = -85.0
+offset_right = 80.0
+offset_bottom = -55.0
+text = "Press E: Item Shop"
 horizontal_alignment = 1
 
 [node name="Camera2D" type="Camera2D" parent="CharacterBody2D2" unique_id=955812054]

@@ -103,11 +103,8 @@ func take_damage(amount: float) -> void:
 	modulate = Color(2.0, 0.9, 1.2)
 	if health <= 0.0:
 		die()
-	else:
-		ScoreManager.add_kill(6, global_position)
 
 func die() -> void:
-	ScoreManager.add_kill(80, global_position)
 	Shop.drop_coins(global_position, 4, 1)
 	Shop.drop_coins(global_position, 1, 3)
 	set_physics_process(false)

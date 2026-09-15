@@ -17,7 +17,6 @@ const COL_BTN_HOT := Color(0.97, 0.91, 0.78, 1)
 var _level_path := ""
 var _start_ticks := 0
 var _coins_before := 0
-var _score_before := 0
 var _next_path := ""
 var _retry_target := ""
 var _last_level_name := ""
@@ -38,7 +37,6 @@ func begin_level() -> void:
 	_level_path = path
 	_start_ticks = Time.get_ticks_msec()
 	_coins_before = Shop.coins
-	_score_before = ScoreManager.current_score
 	ComboManager.begin_level()
 
 func finish_level(next_path: String, opts: Dictionary = {}) -> void:
@@ -66,17 +64,16 @@ func _show_overlay(next_path: String, opts: Dictionary) -> void:
 
 	var elapsed := maxi(int((Time.get_ticks_msec() - _start_ticks) / 1000), 0)
 	var coins_gained := maxi(Shop.coins - _coins_before, 0)
-	var score_gained := maxi(ScoreManager.current_score - _score_before, 0)
 	var best_combo := ComboManager.get_level_best()
 	var acorn_found := Progress.has_acorn(path)
 
 	Progress.mark_level_complete(path)
 	Progress.update_best_combo(best_combo)
 
-	_build_ui(elapsed, coins_gained, score_gained, best_combo, acorn_found)
+	_build_ui(elapsed, coins_gained, best_combo, acorn_found)
 	_play_open_anim()
 
-func _build_ui(elapsed: int, coins_gained: int, score_gained: int, best_combo: int, acorn_found: bool) -> void:
+func _build_ui(elapsed: int, coins_gained: int, best_combo: int, acorn_found: bool) -> void:
 	var root := Control.new()
 	root.name = "ResultsRoot"
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -146,7 +143,6 @@ func _build_ui(elapsed: int, coins_gained: int, score_gained: int, best_combo: i
 
 	_add_stat(rows, "Time", "%d:%02d" % [elapsed / 60, elapsed % 60])
 	_add_stat(rows, "Coins collected", "+%d" % coins_gained, COL_GOLD)
-	_add_stat(rows, "Score gained", "+%d" % score_gained)
 	_add_stat(rows, "Best combo", "x%d" % best_combo)
 	_add_stat(rows, _header("Golden Acorn"), "FOUND!" if acorn_found else "MISSED", COL_GREEN if acorn_found else COL_RED)
 	_add_stat(rows, _header("Acorn total"), "%d / %d" % [Progress.acorn_count(), Progress.acorn_total])

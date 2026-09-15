@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://chhdtofija7c4"]
 
-[ext_resource type="Script" uid="uid://c53n4k3enemie2" path="res://scripts/snake_enemy.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://chhdtofdakmgx" path="res://scripts/snake_enemy.gd" id="1_script"]
 [ext_resource type="Texture2D" uid="uid://kxuxl3b4klyr" path="res://icon.svg" id="2_icon"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
@@ -12,40 +12,37 @@ size = Vector2(96, 44)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hitbox"]
 size = Vector2(110, 54)
 
-[node name="SnakeEnemy" type="CharacterBody2D"]
+[node name="SnakeEnemy" type="CharacterBody2D" unique_id=144162840]
 collision_layer = 4
-collision_mask = 1
 script = ExtResource("1_script")
 
-[node name="Visual" type="Sprite2D" parent="."]
+[node name="Visual" type="Sprite2D" parent="." unique_id=1053497170]
+modulate = Color(0.25, 0.8, 0.35, 1)
 position = Vector2(0, -15)
 scale = Vector2(0.45, 0.16)
-modulate = Color(0.25, 0.8, 0.35, 1)
 texture = ExtResource("2_icon")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1388242906]
 position = Vector2(0, -15)
 shape = SubResource("RectangleShape2D_body")
 
-[node name="Hurtbox" type="Area2D" parent="."]
-monitorable = true
+[node name="Hurtbox" type="Area2D" parent="." unique_id=1654963573]
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox" unique_id=757781929]
 position = Vector2(0, -15)
 shape = SubResource("RectangleShape2D_hurtbox")
 
-[node name="Hitbox" type="Area2D" parent="."]
-monitoring = true
+[node name="Hitbox" type="Area2D" parent="." unique_id=32631149]
 monitorable = false
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox" unique_id=1432543162]
 position = Vector2(0, -15)
 shape = SubResource("RectangleShape2D_hitbox")
 
-[node name="RayRight" type="RayCast2D" parent="."]
+[node name="RayRight" type="RayCast2D" parent="." unique_id=1394656357]
 position = Vector2(50, 0)
 target_position = Vector2(0, 30)
 
-[node name="RayLeft" type="RayCast2D" parent="."]
+[node name="RayLeft" type="RayCast2D" parent="." unique_id=902009433]
 position = Vector2(-50, 0)
 target_position = Vector2(0, 30)

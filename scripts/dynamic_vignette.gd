@@ -1,10 +1,10 @@
 extends ColorRect
 
 const SURFACE_Y := 850.0
-const ABOVE_INNER := 0.45
-const ABOVE_OUTER := 0.75
-const BELOW_INNER := 0.30
-const BELOW_OUTER := 0.58
+const ABOVE_INNER := 0.50
+const ABOVE_OUTER := 0.85
+const BELOW_INNER := 0.42
+const BELOW_OUTER := 0.72
 const TRANSITION_SPEED := 2.0
 
 var target_inner := ABOVE_INNER

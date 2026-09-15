@@ -58,21 +58,35 @@ func _explode() -> void:
 
 	var tilemap: TileMap = get_parent().get_node_or_null("TileMap")
 	if tilemap:
-		var center_tile := tilemap.local_to_map(tilemap.to_local(global_position))
-		var sfx = load("res://scripts/tile_break_sfx.gd")
-		for dx in range(-tile_break_radius, tile_break_radius + 1):
-			for dy in range(-tile_break_radius, tile_break_radius + 1):
-				var tp := Vector2i(center_tile.x + dx, center_tile.y + dy)
-				var has_collision := tilemap.get_cell_source_id(0, tp) != -1
-				if has_collision:
-					sfx.break_tile(tilemap, tp, get_parent())
-				else:
-					sfx.break_decoration_tile(tilemap, tp, get_parent())
-		sfx.break_opened_chests_near(get_parent(), global_position, explosion_radius)
+		_freeze_tiles(tilemap)
 
 	var tween := create_tween()
 	tween.tween_property(self, "scale", Vector2.ZERO, 0.2).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_BACK)
 	tween.tween_callback(queue_free)
+
+## Covers the tiles in the blast radius in ice instead of destroying them.
+func _freeze_tiles(tilemap: TileMap) -> void:
+	var center_tile := tilemap.local_to_map(tilemap.to_local(global_position))
+	var tile_world_size := Vector2(tilemap.tile_set.tile_size) * tilemap.scale
+	var half := tile_world_size * 0.5
+
+	var frost_layer := Node2D.new()
+	frost_layer.name = "FrostOverlay"
+	frost_layer.z_index = 0
+	frost_layer.global_position = Vector2.ZERO
+	get_parent().add_child(frost_layer)
+
+	for dx in range(-tile_break_radius, tile_break_radius + 1):
+		for dy in range(-tile_break_radius, tile_break_radius + 1):
+			var tp := Vector2i(center_tile.x + dx, center_tile.y + dy)
+			if tilemap.get_cell_source_id(0, tp) == -1:
+				continue
+			var rect := ColorRect.new()
+			rect.position = tilemap.to_global(tilemap.map_to_local(tp)) - half
+			rect.size = tile_world_size
+			rect.modulate = Color(0.55, 0.83, 1.15, randf_range(0.28, 0.42))
+			rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			frost_layer.add_child(rect)
 
 func _spawn_ice_burst() -> void:
 	var burst := CPUParticles2D.new()

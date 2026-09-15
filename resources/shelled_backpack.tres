@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/item_data.gd" id="1_rxrym"]
+
+[resource]
+script = ExtResource("1_rxrym")
+item_name = "Shelled Backpack"
+description = "30s buff: bigger, harder ground pound; no knockback."
+icon_color = Color(0.35, 0.75, 0.45, 1)
+icon_text = "SaB"
+consumable = true
+stackable = true

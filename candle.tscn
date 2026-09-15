@@ -42,10 +42,14 @@ sprite_frames = SubResource("SpriteFrames_wmlv8")
 
 [node name="PointLight2D" type="PointLight2D" parent="." unique_id=1979554668]
 position = Vector2(-1, 13.000001)
-scale = Vector2(3.0509553, 2.598726)
+scale = Vector2(6, 5.1)
 color = Color(1, 0.8039216, 0.101960786, 1)
 shadow_enabled = true
-shadow_color = Color(0.14584813, 0.0062749647, 3.008172e-09, 1)
+shadow_color = Color(0, 0, 0, 1)
+shadow_filter = 2
+shadow_filter_smooth = 4.0
+energy = 0.9
+range_item_cull_mask = 3
 texture = ExtResource("2_pqck8")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1389234606]

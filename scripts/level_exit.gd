@@ -4,6 +4,7 @@ extends Area2D
 var _exit_sound := preload("res://seaeagle_music-sound-effect-in-the-cave-b-175810.mp3")
 
 func _ready() -> void:
+	add_to_group("level_exit")
 	body_entered.connect(_on_body_entered)
 
 func _on_body_entered(body: Node) -> void:

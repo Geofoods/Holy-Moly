@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/item_data.gd" id="1_rxrym"]
+
+[resource]
+script = ExtResource("1_rxrym")
+item_name = "Grub Stick"
+description = "Swing to knock foes back. Eats itself for +1 HP if it misses."
+icon_color = Color(0.55, 0.35, 0.25, 1)
+icon_text = "GS"
+consumable = true
+stackable = true

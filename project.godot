@@ -25,10 +25,12 @@ SFX="*res://scripts/sfx_manager.gd"
 Bestiary="*res://scripts/bestiary_data.gd"
 LevelData="*res://scripts/level_data.gd"
 ComboManager="*res://scripts/combo_manager.gd"
-ScoreManager="*res://scripts/score_manager.gd"
 Shop="*res://scripts/shop_manager.gd"
 LevelMusic="*res://scripts/level_music.gd"
 MobileControls="*uid://cscwxuv4b0aul"
+MapOverlay="*res://scripts/map_overlay.gd"
+TileDepth="*res://scripts/tilemap_depth_controller.gd"
+Lighting="*res://scripts/scene_lighting.gd"
 
 [display]
 

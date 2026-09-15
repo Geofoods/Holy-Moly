@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/item_data.gd" id="1_rxrym"]
+
+[resource]
+script = ExtResource("1_rxrym")
+item_name = "Earthquake Boots"
+description = "30s buff: your ground pound rumbles wider and buries enemies."
+icon_color = Color(0.6, 0.4, 0.25, 1)
+icon_text = "EQ"
+consumable = true
+stackable = true

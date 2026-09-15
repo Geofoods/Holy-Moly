@@ -1,5 +1,8 @@
 extends Area2D
 
+@export var shop_type := "weapons"
+@export var prompt_text := ""
+
 var _mole_overlapping := false
 var _label: Label = null
 
@@ -8,6 +11,8 @@ func _ready() -> void:
 	body_exited.connect(_on_body_exited)
 	_label = get_node_or_null("Prompt") as Label
 	if _label:
+		if prompt_text != "":
+			_label.text = prompt_text
 		_label.visible = false
 		_label.z_index = 50
 		_label.z_as_relative = false
@@ -19,7 +24,7 @@ func _process(_delta: float) -> void:
 
 func _input(event: InputEvent) -> void:
 	if _mole_overlapping and event.is_action_pressed("interact"):
-		Shop.open_shop()
+		Shop.open_shop(shop_type)
 		get_viewport().set_input_as_handled()
 
 func _on_body_entered(body: Node) -> void:
@@ -33,6 +38,13 @@ func _on_body_exited(body: Node) -> void:
 func _draw() -> void:
 	var post := Color(0.42, 0.28, 0.16)
 	var board := Color(0.55, 0.38, 0.2)
+	match shop_type:
+		"abilities":
+			board = Color(0.5, 0.32, 0.58)
+		"items":
+			board = Color(0.68, 0.55, 0.2)
+		_:
+			board = Color(0.42, 0.5, 0.66)
 	var outline := Color(0.3, 0.2, 0.11)
 	draw_rect(Rect2(Vector2(-10, 0), Vector2(18, 80)), post)
 	draw_circle(Vector2(0, 80), 9.0, post)

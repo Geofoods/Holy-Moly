@@ -145,7 +145,6 @@ func _draw_health_bar() -> void:
 func die() -> void:
 	SFX.play("enemy_death", global_position)
 	ComboManager.increment()
-	ScoreManager.add_kill(1, global_position)
 	Shop.drop_coins(global_position, randi_range(1, 2))
 	set_physics_process(false)
 	hurtbox.set_deferred("monitorable", false)

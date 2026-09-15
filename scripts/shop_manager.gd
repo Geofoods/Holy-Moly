@@ -10,6 +10,10 @@ const HUD_SHOW_TIME := 1.8
 var coins := 0
 
 var catalog: Array[WeaponData] = []
+var weapon_catalog: Array[WeaponData] = []
+var ability_catalog: Array[WeaponData] = []
+var item_catalog: Array[ItemData] = []
+var item_prices: Dictionary = {}
 var owned: Array[String] = []
 var equipped_melee_id := "shovel"
 var equipped_ranged_id := ""
@@ -23,6 +27,7 @@ var _panel: CanvasLayer = null
 func _ready() -> void:
 	layer = 85
 	_build_catalog()
+	_build_item_catalog()
 	_load_data()
 	_grant_all_weapons_for_testing() # TODO: remove before release
 	_setup_coin_hud()
@@ -57,6 +62,81 @@ func _build_catalog() -> void:
 		_make_ability("wall_jump", "Wall Jump Grip", "Grip the tunnels like a true mole: press Jump while pressed against a wall to kick off it. Holding toward the wall slows your fall while sliding.", 150, Color(0.55, 0.85, 0.45)),
 		_make_ability("grappling_hook", "Grappling Hook", "A selectable tool that fills the SECOND hotbar slot: select it, then LEFT-CLICK toward your cursor to fire a cable and reel yourself over gaps and up to high ledges. Hold to pull, release to let go.", 130, Color(0.85, 0.65, 0.3)),
 	]
+	weapon_catalog.clear()
+	ability_catalog.clear()
+	for w in catalog:
+		if w.weapon_type == WeaponData.Type.ABILITY:
+			ability_catalog.append(w)
+		else:
+			weapon_catalog.append(w)
+
+## Items the shop sells. These are consumables/gear (the inventory ItemData
+## resources) rather than weapons.
+func _build_item_catalog() -> void:
+	var defs := [
+		{"name": "Miner's Rations", "price": 40},
+		{"name": "Potted Honeycomb", "price": 60},
+		{"name": "Bomb", "price": 80},
+		{"name": "Ice Bomb", "price": 90},
+		{"name": "Golden Bomb", "price": 140},
+		{"name": "Mine", "price": 100},
+		{"name": "Stink Bomb", "price": 90},
+		{"name": "Spark Bomb", "price": 110},
+		{"name": "Flare", "price": 60},
+		{"name": "Coal Lump", "price": 70},
+		{"name": "Vacuum Jelly", "price": 80},
+		{"name": "Bounce Mushroom", "price": 60},
+		{"name": "Shiny Lure", "price": 90},
+		{"name": "Compass Charm", "price": 70},
+		{"name": "Shop Token", "price": 50},
+		{"name": "Grub Stick", "price": 75},
+		{"name": "Tunnel Gloves", "price": 130},
+		{"name": "Shelled Backpack", "price": 140},
+		{"name": "Climbing Talons", "price": 90},
+		{"name": "Lantern Charm", "price": 100},
+		{"name": "Rebound Hook", "price": 80},
+		{"name": "Wax Cache", "price": 120},
+		{"name": "Earthquake Boots", "price": 160},
+		{"name": "Mol-dozer Ram", "price": 150},
+	]
+	for def in defs:
+		var item := _find_item(def["name"])
+		if item == null:
+			continue
+		item_catalog.append(item)
+		item_prices[def["name"]] = def["price"]
+
+func _find_item(item_name: String) -> ItemData:
+	var paths := {
+		"Miner's Rations": "res://resources/miners_rations.tres",
+		"Potted Honeycomb": "res://resources/potted_honeycomb.tres",
+		"Bomb": "res://resources/bomb.tres",
+		"Ice Bomb": "res://resources/ice_bomb.tres",
+		"Golden Bomb": "res://resources/golden_bomb.tres",
+		"Mine": "res://resources/mine.tres",
+		"Stink Bomb": "res://resources/stink_bomb.tres",
+		"Spark Bomb": "res://resources/spark_bomb.tres",
+		"Flare": "res://resources/flare.tres",
+		"Coal Lump": "res://resources/coal_lump.tres",
+		"Vacuum Jelly": "res://resources/vacuum_jelly.tres",
+		"Bounce Mushroom": "res://resources/bounce_mushroom.tres",
+		"Shiny Lure": "res://resources/shiny_lure.tres",
+		"Compass Charm": "res://resources/compass_charm.tres",
+		"Shop Token": "res://resources/shop_token.tres",
+		"Grub Stick": "res://resources/grub_stick.tres",
+		"Tunnel Gloves": "res://resources/tunnel_gloves.tres",
+		"Shelled Backpack": "res://resources/shelled_backpack.tres",
+		"Climbing Talons": "res://resources/climbing_talons.tres",
+		"Lantern Charm": "res://resources/lantern_charm.tres",
+		"Rebound Hook": "res://resources/rebound_hook.tres",
+		"Wax Cache": "res://resources/wax_cache.tres",
+		"Earthquake Boots": "res://resources/earthquake_boots.tres",
+		"Mol-dozer Ram": "res://resources/mol_dozer_ram.tres",
+	}
+	var path: String = paths.get(item_name, "")
+	if path == "":
+		return null
+	return load(path) as ItemData
 
 func _make_ability(id: String, name: String, desc: String, price: int, color: Color) -> WeaponData:
 	var w := WeaponData.new()
@@ -150,6 +230,20 @@ func buy(w: WeaponData) -> bool:
 	SFX.play_ui("item_pickup", -4.0, 1.1)
 	return true
 
+func buy_item(item: ItemData) -> bool:
+	if item == null:
+		return false
+	var price: int = item_prices.get(item.item_name, 0)
+	if price <= 0 or coins < price:
+		return false
+	if not Inventory.add_item(item):
+		return false
+	coins -= price
+	coins_changed.emit(coins)
+	_save_data()
+	SFX.play_ui("item_pickup", -4.0, 1.2)
+	return true
+
 func equip(id: String) -> bool:
 	var w := get_weapon(id)
 	if w == null or not owns(id) or w.weapon_type == WeaponData.Type.ABILITY:
@@ -188,15 +282,21 @@ func drop_coins(world_pos: Vector2, count: int, value_per_coin: int = 1) -> void
 
 # --- Shop UI --------------------------------------------------------------
 
-func open_shop() -> void:
+func open_shop(shop_type: String = "weapons") -> void:
+	if shop_type not in ["weapons", "abilities", "items"]:
+		shop_type = "weapons"
 	if _panel != null and is_instance_valid(_panel):
-		return
+		if String(_panel.get("shop_type")) == shop_type:
+			return
+		_panel.queue_free()
 	var scene := get_tree().current_scene
 	if scene == null:
 		return
-	var panel := preload("res://scripts/shop_ui.gd").new()
+	var panel: CanvasLayer = preload("res://scripts/shop_ui.gd").new()
+	panel.set("shop_type", shop_type)
 	panel.tree_exited.connect(func() -> void:
-		_panel = null
+		if _panel == panel:
+			_panel = null
 	)
 	scene.add_child(panel)
 	_panel = panel

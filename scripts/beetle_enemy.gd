@@ -266,7 +266,6 @@ func die() -> void:
 	visual.offset = Vector2.ZERO
 	SFX.play("enemy_death", global_position)
 	ComboManager.increment()
-	ScoreManager.add_kill(2, global_position)
 	Shop.drop_coins(global_position, randi_range(4, 6))
 	set_physics_process(false)
 	hurtbox.set_deferred("monitorable", false)

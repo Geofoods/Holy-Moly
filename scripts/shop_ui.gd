@@ -27,6 +27,7 @@ var _panel: PanelContainer = null
 var _dim: ColorRect = null
 var _closing := false
 var _page := 0
+var shop_type := "weapons"
 var _page_label: Label = null
 var _prev_btn: Button = null
 var _next_btn: Button = null
@@ -84,7 +85,12 @@ func _build_ui() -> void:
 	vbox.add_child(header)
 
 	var title := Label.new()
-	title.text = "THE MOLE & GROUNDSHOP"
+	var title_text := "WEAPON SHOP"
+	if shop_type == "abilities":
+		title_text = "ABILITY SHOP"
+	elif shop_type == "items":
+		title_text = "ITEM SHOP"
+	title.text = title_text
 	title.add_theme_color_override("font_color", COL_TEXT)
 	title.add_theme_font_size_override("font_size", 36)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -183,20 +189,33 @@ func _make_plain_btn(text: String) -> Button:
 	btn.add_theme_stylebox_override("disabled", _make_style_box(COL_BTN_DISABLED, Color(0.42, 0.28, 0.14, 0.6), 8, 2))
 	return btn
 
+func _list() -> Array:
+	match shop_type:
+		"abilities":
+			return Shop.ability_catalog
+		"items":
+			return Shop.item_catalog
+		_:
+			return Shop.weapon_catalog
+
 func _refresh() -> void:
 	if _coin_label:
 		_coin_label.text = "Coins: %d" % Shop.coins
 	if not _rows:
 		return
-	var pages := _total_pages()
+	var list := _list()
+	var pages := _page_count(list.size())
 	_page = clampi(_page, 0, pages - 1)
 	for c in _rows.get_children():
 		_rows.remove_child(c)
 		c.queue_free()
 	var start := _page * ITEMS_PER_PAGE
-	var end := mini(start + ITEMS_PER_PAGE, Shop.catalog.size())
+	var end := mini(start + ITEMS_PER_PAGE, list.size())
 	for i in range(start, end):
-		_rows.add_child(_make_row(Shop.catalog[i]))
+		if shop_type == "items":
+			_rows.add_child(_make_item_row(list[i]))
+		else:
+			_rows.add_child(_make_row(list[i]))
 	if _page_label:
 		_page_label.text = "Page %d / %d" % [_page + 1, pages]
 	if _prev_btn:
@@ -206,8 +225,11 @@ func _refresh() -> void:
 	if _pager:
 		_pager.visible = pages > 1
 
+func _page_count(size: int) -> int:
+	return maxi(ceili(float(size) / float(ITEMS_PER_PAGE)), 1)
+
 func _total_pages() -> int:
-	return maxi(ceili(float(Shop.catalog.size()) / float(ITEMS_PER_PAGE)), 1)
+	return _page_count(_list().size())
 
 func _make_row(w: WeaponData) -> HBoxContainer:
 	var row := HBoxContainer.new()
@@ -266,6 +288,47 @@ func _make_row(w: WeaponData) -> HBoxContainer:
 			if Shop.buy(w):
 				_refresh()
 		)
+	row.add_child(btn)
+	return row
+
+func _make_item_row(item: ItemData) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 14)
+	row.custom_minimum_size.y = 56
+
+	var name := Label.new()
+	name.text = item.item_name
+	name.custom_minimum_size.x = 200
+	name.add_theme_font_size_override("font_size", 22)
+	name.add_theme_color_override("font_color", COL_TEXT)
+	name.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(name)
+
+	var desc := Label.new()
+	desc.text = item.description
+	desc.custom_minimum_size.x = 360
+	desc.autowrap_mode = TextServer.AUTOWRAP_ARBITRARY
+	desc.add_theme_color_override("font_color", COL_BODY)
+	desc.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(desc)
+
+	var price: int = int(Shop.item_prices.get(item.item_name, 0))
+	var price_label := Label.new()
+	price_label.custom_minimum_size.x = 96
+	price_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	price_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	price_label.add_theme_font_size_override("font_size", 20)
+	price_label.text = "$%d" % price
+	price_label.add_theme_color_override("font_color", COL_GOLD if Shop.coins >= price else COL_RED)
+	row.add_child(price_label)
+
+	var btn := _make_plain_btn("BUY")
+	btn.custom_minimum_size = Vector2(140, 40)
+	btn.disabled = Shop.coins < price
+	btn.pressed.connect(func() -> void:
+		if Shop.buy_item(item):
+			_refresh()
+	)
 	row.add_child(btn)
 	return row
 

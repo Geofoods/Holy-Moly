@@ -5,8 +5,8 @@ const HOP_COUNT := 4
 const HOP_HEIGHT := 90.0
 const HOP_DURATION := 1.7
 const GROUND_RATIO := 0.72
+const VERSION := "v0.2beta"
 
-var _level_keys: Array = []
 var _last_hop_index := -1
 var _intro_music: AudioStreamPlayer = null
 
@@ -26,40 +26,33 @@ func _ready():
 	$MoleShadow.hide()
 
 	var play_btn = $CenterContainer/VBoxContainer/ButtonContainer/PlayButton
-	var tutorial_btn = $CenterContainer/VBoxContainer/ButtonContainer/TutorialButton
-	var level_picker = $CenterContainer/VBoxContainer/ButtonContainer/LevelPickerOption as OptionButton
 	var field_guide_btn = $CenterContainer/VBoxContainer/ButtonContainer/FieldGuideButton
-	var minigame_btn = $CenterContainer/VBoxContainer/ButtonContainer/MinigameButton
 	play_btn.mouse_entered.connect(_on_button_hover.bind(play_btn))
 	play_btn.mouse_exited.connect(_on_button_unhover.bind(play_btn))
-	tutorial_btn.mouse_entered.connect(_on_button_hover.bind(tutorial_btn))
-	tutorial_btn.mouse_exited.connect(_on_button_unhover.bind(tutorial_btn))
-	level_picker.mouse_entered.connect(_on_button_hover.bind(level_picker))
-	level_picker.mouse_exited.connect(_on_button_unhover.bind(level_picker))
 	field_guide_btn.mouse_entered.connect(_on_button_hover.bind(field_guide_btn))
 	field_guide_btn.mouse_exited.connect(_on_button_unhover.bind(field_guide_btn))
-	minigame_btn.mouse_entered.connect(_on_button_hover.bind(minigame_btn))
-	minigame_btn.mouse_exited.connect(_on_button_unhover.bind(minigame_btn))
 	
-	_setup_level_picker(level_picker)
-	_add_high_score_label()
+	_add_version_label()
 
 	animate_intro()
 
-func _add_high_score_label() -> void:
-	var vbox = $CenterContainer/VBoxContainer
+func _add_version_label() -> void:
 	var font := load("res://Baby Doll.otf") as Font
 	var label := Label.new()
-	label.name = "HighScoreLabel"
-	label.text = "HIGH SCORE  •  %d" % ScoreManager.high_score
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.name = "VersionLabel"
+	label.text = VERSION
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	label.add_theme_font_override("font", font)
-	label.add_theme_font_size_override("font_size", 30)
-	label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4, 1))
-	label.add_theme_constant_override("outline_size", 5)
-	label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
-	vbox.add_child(label)
-	vbox.move_child(label, 1)
+	label.add_theme_font_size_override("font_size", 18)
+	label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8, 0.6))
+	label.add_theme_constant_override("outline_size", 3)
+	label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.6))
+	label.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	label.offset_left = -160.0
+	label.offset_top = -44.0
+	label.offset_right = -16.0
+	label.offset_bottom = -16.0
+	add_child(label)
 
 func animate_intro():
 	_intro_music = AudioStreamPlayer.new()
@@ -149,21 +142,12 @@ func animate_menu_reveal() -> void:
 
 func _set_buttons_enabled(enabled: bool) -> void:
 	var play_btn = $CenterContainer/VBoxContainer/ButtonContainer/PlayButton
-	var tutorial_btn = $CenterContainer/VBoxContainer/ButtonContainer/TutorialButton
-	var level_picker = $CenterContainer/VBoxContainer/ButtonContainer/LevelPickerOption as OptionButton
 	var field_guide_btn = $CenterContainer/VBoxContainer/ButtonContainer/FieldGuideButton
-	var minigame_btn = $CenterContainer/VBoxContainer/ButtonContainer/MinigameButton
 	play_btn.disabled = not enabled
-	tutorial_btn.disabled = not enabled
-	level_picker.disabled = not enabled
 	field_guide_btn.disabled = not enabled
-	minigame_btn.disabled = not enabled
 	if enabled:
 		play_btn.pivot_offset = play_btn.size / 2.0
-		tutorial_btn.pivot_offset = tutorial_btn.size / 2.0
-		level_picker.pivot_offset = level_picker.size / 2.0
 		field_guide_btn.pivot_offset = field_guide_btn.size / 2.0
-		minigame_btn.pivot_offset = minigame_btn.size / 2.0
 
 func _on_button_hover(button: Button) -> void:
 	if button.disabled:
@@ -191,63 +175,10 @@ func _on_play_pressed() -> void:
 	var play_btn = $CenterContainer/VBoxContainer/ButtonContainer/PlayButton
 	play_btn.disabled = true
 	Inventory.reset()
-	ScoreManager.start_new_run()
 	var target := "res://scenes/map.tscn"
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 	get_tree().root.add_child(transition)
 	transition.change_to(target)
-
-func _on_tutorial_pressed() -> void:
-	SFX.play_ui("ui_click", -6.0, 1.2)
-	_fade_out_menu_music()
-	var tutorial_btn = $CenterContainer/VBoxContainer/ButtonContainer/TutorialButton
-	tutorial_btn.disabled = true
-	Inventory.reset()
-	ScoreManager.start_new_run()
-	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
-	get_tree().root.add_child(transition)
-	transition.change_to("res://scenes/tutorial.tscn")
-
-func _on_minigame_pressed() -> void:
-	SFX.play_ui("ui_click", -6.0, 1.2)
-	_fade_out_menu_music()
-	var minigame_btn = $CenterContainer/VBoxContainer/ButtonContainer/MinigameButton
-	minigame_btn.disabled = true
-	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
-	get_tree().root.add_child(transition)
-	transition.change_to("res://scenes/whack_a_mole.tscn")
-
-func _setup_level_picker(picker: OptionButton) -> void:
-	picker.clear()
-	picker.add_item("LEVELS")
-	picker.set_item_disabled(0, true)
-
-	_level_keys = LevelData.LEVELS.keys()
-	_level_keys.sort_custom(func(a, b): return LevelData.LEVELS[a]["number"] < LevelData.LEVELS[b]["number"])
-
-	for key in _level_keys:
-		var info: Dictionary = LevelData.LEVELS[key]
-		picker.add_item("Level %d - %s" % [info["number"], info["name"]])
-
-	picker.item_selected.connect(_on_level_picked)
-
-	var arrow_size := 24
-	var img := Image.create(arrow_size, arrow_size, false, Image.FORMAT_RGBA8)
-	img.fill(Color(0, 0, 0, 0))
-	var black := Color(0.05, 0.05, 0.05, 1.0)
-	for y in arrow_size:
-		var progress := float(y) / float(arrow_size - 1)
-		var half_w := int((1.0 - progress) * float(arrow_size) * 0.5)
-		var cx: int = arrow_size / 2
-		for x in range(cx - half_w, cx + half_w + 1):
-			if x >= 0 and x < arrow_size:
-				img.set_pixel(x, y, black)
-	var arrow_tex := ImageTexture.create_from_image(img)
-	picker.add_theme_icon_override("arrow", arrow_tex)
-	picker.add_theme_constant_override("arrow_margin", 12)
-
-func _on_level_picked(_index: int) -> void:
-	SFX.play_ui("ui_click", -6.0, 1.2)
 
 func _on_field_guide_pressed() -> void:
 	SFX.play_ui("ui_click", -6.0, 1.2)

@@ -82,7 +82,7 @@ func _reset_combo() -> void:
 func _update_label() -> void:
 	var time_left := int(ceil(combo_timer))
 	var mult := maxi(1, combo)
-	_label.text = "COMBO x%d\nDMG x%d   COIN x%d\nSCORE x%d  -  %ds" % [combo, mult, mult, mult, time_left]
+	_label.text = "COMBO x%d\nDMG x%d   COIN x%d  -  %ds" % [combo, mult, mult, time_left]
 
 func _get_combo_color() -> Color:
 	if combo >= 10:

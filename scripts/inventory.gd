@@ -15,6 +15,10 @@ var selected_slot: int = -1:
 		selected_slot_changed.emit(value)
 		SFX.play_ui("ui_click", -12.0, 1.5)
 
+## Chance (0..1) that any consumable is refunded back into the inventory when
+## used. Used by the Wax Cache item; 0 by default.
+var refund_chance := 0.0
+
 var _initialized := false
 
 func initialize() -> void:
@@ -83,6 +87,8 @@ func use_item(slot: int) -> bool:
 		remove_item(slot)
 	else:
 		slots_changed.emit([slot])
+	if refund_chance > 0.0 and item.stackable and randf() < refund_chance:
+		add_item(item)
 	return true
 
 func clear() -> void:

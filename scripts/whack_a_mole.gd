@@ -403,13 +403,10 @@ func _win() -> void:
 	_over = true
 	_hide_all_whackers()
 	var reward_coins := 50 + 15 * _lives
-	var reward_score := 150 * _lives
 	Shop.add_coins(reward_coins)
-	ScoreManager.current_score += reward_score
-	ScoreManager.finalize()
 	SFX.play_ui("chest_open", -6.0, 1.0)
 	SFX.play_ui("coin", -4.0, 1.2)
-	_show_overlay(true, "SURVIVED!", "+%d coins   •   +%d score" % [reward_coins, reward_score])
+	_show_overlay(true, "SURVIVED!", "+%d coins" % reward_coins)
 
 func _lose() -> void:
 	_over = true

@@ -16,10 +16,15 @@ var _notification_cooldown := 0.0
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var area: Area2D = $Area2D
 
+const PLACEHOLDER_SIZE := 48
+
 func _ready() -> void:
 	if item_data:
-		sprite.texture = item_data.icon_texture
-	
+		if item_data.icon_texture:
+			sprite.texture = item_data.icon_texture
+		else:
+			_make_placeholder()
+
 	# Avoid physics collisions with the player
 	var player = get_tree().get_first_node_in_group("mole")
 	if player:
@@ -33,6 +38,34 @@ func _ready() -> void:
 	get_tree().create_timer(0.4).timeout.connect(func():
 		_can_pickup = true
 	)
+
+func _make_placeholder() -> void:
+	var img := Image.create(PLACEHOLDER_SIZE, PLACEHOLDER_SIZE, false, Image.FORMAT_RGBA8)
+	img.fill(item_data.icon_color)
+	for i in PLACEHOLDER_SIZE:
+		for j in 3:
+			img.set_pixel(i, j, Color(1, 1, 1, 0.35))
+			img.set_pixel(i, PLACEHOLDER_SIZE - 1 - j, Color(0, 0, 0, 0.35))
+			img.set_pixel(j, i, Color(1, 1, 1, 0.35))
+			img.set_pixel(PLACEHOLDER_SIZE - 1 - j, i, Color(0, 0, 0, 0.35))
+	sprite.texture = ImageTexture.create_from_image(img)
+	sprite.scale = Vector2.ONE
+	sprite.self_modulate = Color.WHITE
+	if item_data.icon_text != "":
+		var lbl := Label.new()
+		lbl.text = item_data.icon_text
+		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		lbl.position = Vector2(-PLACEHOLDER_SIZE, -PLACEHOLDER_SIZE) * 0.5
+		lbl.size = Vector2(PLACEHOLDER_SIZE, PLACEHOLDER_SIZE)
+		lbl.z_index = 3
+		lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		lbl.add_theme_font_size_override("font_size", 22)
+		lbl.add_theme_color_override("font_color", Color.WHITE)
+		lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
+		lbl.add_theme_constant_override("shadow_offset_x", 2)
+		lbl.add_theme_constant_override("shadow_offset_y", 2)
+		add_child(lbl)
 
 func _physics_process(delta: float) -> void:
 	if _notification_cooldown > 0.0:

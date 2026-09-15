@@ -17,7 +17,7 @@
 [ext_resource type="PackedScene" uid="uid://iuqjuk37ur0d" path="res://scenes/slimeenemy.tscn" id="20_n2bam"]
 [ext_resource type="PackedScene" uid="uid://k06dbe7sq1ph" path="res://scenes/goblinenemy.tscn" id="21_lglef"]
 [ext_resource type="PackedScene" uid="uid://uukw6aqabygl" path="res://door.tscn" id="21_n2bam"]
-[ext_resource type="Script" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
+[ext_resource type="Script" uid="uid://dpsujuff7o60j" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
 [ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
 [ext_resource type="PackedScene" uid="uid://3wwhicdeo8hl" path="res://scenes/info_popup.tscn" id="info_popup_res"]
 [ext_resource type="PackedScene" path="res://scenes/level_intro_banner.tscn" id="level_banner_res"]
@@ -50,7 +50,7 @@ corner_radius_bottom_left = 8
 shader = ExtResource("7_vignette")
 shader_parameter/inner_radius = 0.25
 shader_parameter/outer_radius = 0.55
-shader_parameter/darkness = 0.5
+shader_parameter/darkness = 0.7
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_lepkc"]
 size = Vector2(4079.5, 933)

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/item_data.gd" id="1_rxrym"]
+
+[resource]
+script = ExtResource("1_rxrym")
+item_name = "Stink Bomb"
+description = "A stinking cloud that slows down enemies."
+icon_color = Color(0.55, 0.85, 0.4, 1)
+icon_text = "ST"
+consumable = true
+stackable = true

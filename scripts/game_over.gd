@@ -17,8 +17,6 @@ func _ready():
 	vbox.scale = Vector2(0.85, 0.85)
 	vbox.call_deferred("set", "pivot_offset", vbox.size / 2.0)
 	_set_buttons_enabled(false)
-	ScoreManager.finalize()
-	_add_score_display(vbox)
 	for btn in [$CenterContainer/VBoxContainer/ButtonContainer/CancelButton]:
 		_setup_button_hover(btn)
 
@@ -36,35 +34,6 @@ func _setup_button_hover(btn: Button) -> void:
 		var t := create_tween()
 		t.tween_property(btn, "scale", Vector2.ONE, 0.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	)
-
-func _add_score_display(vbox: VBoxContainer) -> void:
-	var font := load("res://Baby Doll.otf") as Font
-	var box := VBoxContainer.new()
-	box.alignment = BoxContainer.ALIGNMENT_CENTER
-	box.add_theme_constant_override("separation", 4)
-
-	var final_label := Label.new()
-	final_label.text = "FINAL SCORE:  %d" % ScoreManager.current_score
-	final_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	final_label.add_theme_font_override("font", font)
-	final_label.add_theme_font_size_override("font_size", 46)
-	final_label.add_theme_color_override("font_color", Color(1.0, 0.95, 0.5, 1))
-	final_label.add_theme_constant_override("outline_size", 6)
-	final_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
-	box.add_child(final_label)
-
-	var best_label := Label.new()
-	best_label.text = "BEST:  %d" % ScoreManager.high_score
-	best_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	best_label.add_theme_font_override("font", font)
-	best_label.add_theme_font_size_override("font_size", 28)
-	best_label.add_theme_color_override("font_color", Color(0.95, 0.55, 0.75, 1))
-	best_label.add_theme_constant_override("outline_size", 4)
-	best_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
-	box.add_child(best_label)
-
-	vbox.add_child(box)
-	vbox.move_child(box, 1)
 
 func animate_game_over() -> void:
 	await animate_mole_death()

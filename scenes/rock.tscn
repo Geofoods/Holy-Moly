@@ -1,0 +1,20 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/rock.gd" id="1_rock"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_rock"]
+radius = 36.0
+
+[sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_rock"]
+polygon = PackedVector2Array(-36, 0, -25, -25, 0, -36, 25, -25, 36, 0, 25, 25, 0, 36, -25, 25)
+
+[node name="Rock" type="CharacterBody2D"]
+collision_layer = 1
+collision_mask = 1
+script = ExtResource("1_rock")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_rock")
+
+[node name="LightOccluder2D" type="LightOccluder2D" parent="."]
+occluder = SubResource("OccluderPolygon2D_rock")

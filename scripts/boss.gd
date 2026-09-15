@@ -521,7 +521,6 @@ func take_damage(amount: float) -> void:
 
 func die() -> void:
 	ComboManager.increment()
-	ScoreManager.add_kill(20, global_position)
 	Shop.drop_coins(global_position, 30, 5)
 	set_physics_process(false)
 	hurtbox.set_deferred("monitorable", false)
@@ -536,21 +535,21 @@ func die() -> void:
 	var half_h := 310.0 * 3.4451 * 0.5 * 0.8
 
 	for i in 15:
-		var delay: float = (i / 14.0) * 0.85 + randf_range(0.0, 0.1)
+		var delay: float = (i / 14.0) * 1.5 + randf_range(0.0, 0.15)
 		var offset := Vector2(randf_range(-half_w, half_w), randf_range(-half_h, half_h))
 		get_tree().create_timer(delay).timeout.connect(_small_explosion.bind(center + offset))
 
 	var big_tw := create_tween()
-	big_tw.tween_interval(0.95)
+	big_tw.tween_interval(1.5)
 	big_tw.tween_callback(_big_explosion.bind(center))
-	big_tw.tween_interval(0.12)
+	big_tw.tween_interval(0.2)
 	big_tw.tween_callback(_break_apart)
 	big_tw.tween_callback(_play_death_effect)
 
 	var tw := create_tween().set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_SINE)
-	tw.tween_interval(0.35)
-	tw.tween_property(self, "modulate:a", 0.0, 1.5)
-	tw.tween_interval(0.3)
+	tw.tween_interval(0.5)
+	tw.tween_property(self, "modulate:a", 0.0, 2.5)
+	tw.tween_interval(0.4)
 	tw.tween_callback(_finish_death_cutscene)
 
 func _small_explosion(local_pos: Vector2) -> void:
@@ -621,7 +620,7 @@ func _start_death_cutscene() -> void:
 	_cutscene_cam.make_current()
 
 	var zoom_tw := create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	zoom_tw.tween_property(_cutscene_cam, "zoom", Vector2(0.4, 0.4), 2.2)
+	zoom_tw.tween_property(_cutscene_cam, "zoom", Vector2(0.4, 0.4), 2.8)
 
 func _finish_death_cutscene() -> void:
 	if _cutscene_cam and is_instance_valid(_cutscene_cam):
@@ -680,13 +679,13 @@ func _break_apart() -> void:
 			add_child(piece)
 
 			var angle := randf_range(0.0, TAU)
-			var speed := randf_range(150.0, 350.0)
+			var speed := randf_range(250.0, 500.0)
 			var vel := Vector2.RIGHT.rotated(angle) * speed
 
 			var pt := create_tween()
-			pt.tween_property(piece, "position", piece.position + vel, 0.5).set_ease(Tween.EASE_OUT)
-			pt.parallel().tween_property(piece, "rotation", randf_range(-4.0, 4.0), 0.5).set_ease(Tween.EASE_OUT)
-			pt.parallel().tween_property(piece, "modulate", Color(1, 1, 1, 0), 0.5).set_ease(Tween.EASE_IN)
+			pt.tween_property(piece, "position", piece.position + vel, 1.0).set_ease(Tween.EASE_OUT)
+			pt.parallel().tween_property(piece, "rotation", randf_range(-4.0, 4.0), 1.0).set_ease(Tween.EASE_OUT)
+			pt.parallel().tween_property(piece, "modulate", Color(1, 1, 1, 0), 0.9).set_ease(Tween.EASE_IN)
 			pt.tween_callback(piece.queue_free)
 
 func _play_death_effect() -> void:
@@ -695,7 +694,7 @@ func _play_death_effect() -> void:
 	death_particles.emitting = true
 	death_particles.one_shot = true
 	death_particles.amount = 60
-	death_particles.lifetime = 1.0
+	death_particles.lifetime = 1.4
 	death_particles.explosiveness = 1.0
 	death_particles.direction = Vector2.ZERO
 	death_particles.spread = 180.0
@@ -711,4 +710,4 @@ func _play_death_effect() -> void:
 	death_particles.color_ramp = fade
 	add_child(death_particles)
 	death_particles.global_position = sprite.global_position
-	get_tree().create_timer(1.5).timeout.connect(death_particles.queue_free)
+	get_tree().create_timer(2.0).timeout.connect(death_particles.queue_free)
