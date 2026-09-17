@@ -14,7 +14,6 @@ var _y_start_float := 0.0
 var _notification_cooldown := 0.0
 
 @onready var sprite: Sprite2D = $Sprite2D
-@onready var area: Area2D = $Area2D
 
 const PLACEHOLDER_SIZE := 48
 
@@ -86,12 +85,6 @@ func _physics_process(delta: float) -> void:
 		# Floating bobbing animation
 		_float_time += delta
 		global_position.y = _y_start_float + sin(_float_time * 4.0) * 6.0
-
-	if _can_pickup:
-		for body in area.get_overlapping_bodies():
-			if body.is_in_group("mole"):
-				_try_pickup(body)
-				break
 
 var _is_picked_up := false
 

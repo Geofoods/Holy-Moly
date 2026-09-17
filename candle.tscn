@@ -42,13 +42,13 @@ sprite_frames = SubResource("SpriteFrames_wmlv8")
 
 [node name="PointLight2D" type="PointLight2D" parent="." unique_id=1979554668]
 position = Vector2(-1, 13.000001)
-scale = Vector2(6, 5.1)
+scale = Vector2(7.5, 6.4)
 color = Color(1, 0.8039216, 0.101960786, 1)
 shadow_enabled = true
 shadow_color = Color(0, 0, 0, 1)
-shadow_filter = 2
-shadow_filter_smooth = 4.0
-energy = 0.9
+shadow_filter = 1
+shadow_filter_smooth = 0.0
+energy = 0.6
 range_item_cull_mask = 3
 texture = ExtResource("2_pqck8")
 

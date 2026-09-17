@@ -49,7 +49,7 @@ func _fire() -> void:
 		bolt.global_position = to_global(Vector2(120, 0).rotated(a))
 		bolt.setup(w, Vector2.RIGHT.rotated(rotation + a))
 
-	SFX.play("swing", global_position, -8.0, 2.0)
+	SFX.play("swing", global_position, -8.0, 0.1, 2.0)
 	queue_redraw()
 
 func _draw() -> void:

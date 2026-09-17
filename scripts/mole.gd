@@ -48,6 +48,7 @@ const GRAPPLE_ROPE_COLOR := Color(0.85, 0.65, 0.3, 1.0)
 const GRAPPLE_ROPE_WIDTH := 6.0
 const GRAPPLE_ITEM := preload("res://resources/grappling_hook.tres")
 const DEBRIS_LAYER_BIT := 2
+const TileBreakSFX := preload("res://scripts/tile_break_sfx.gd")
 
 @export var can_break := true
 
@@ -139,6 +140,7 @@ var health: float = 6.0:
 				transition.change_to("res://scenes/game_over.tscn")
 
 var tilemap: TileMap = null
+@onready var _sprite: AnimatedSprite2D = $AnimatedSprite2D
 var _heart_base_scale := Vector2.ONE
 
 func _animate_heart_damage(heart_node: Node2D) -> void:
@@ -154,12 +156,15 @@ func _ready() -> void:
 	# (before the awaited frame below), rather than being dead for a frame.
 	_setup_input_actions()
 	_normal_collision_mask = collision_mask
+	_restore_level_position()
 	await get_tree().process_frame
 	self.health = health
 	add_to_group("mole")
 	var camera := get_node_or_null("Camera2D") as Camera2D
 	if camera:
-		camera.zoom = Vector2(0.5, 0.5)
+		camera.zoom = Vector2(0.65, 0.65)
+	_camera = camera
+	_depth_label = get_parent().get_node_or_null("CanvasLayer/DepthLabel") as Label
 	tilemap = get_parent().get_node_or_null("TileMap")
 	_mole_light = get_node_or_null("MoleLight")
 	if _mole_light:
@@ -172,6 +177,8 @@ func _ready() -> void:
 	Inventory.selected_slot = 0
 	_setup_held_item_sprites()
 	_setup_grapple_visuals()
+	if AudioServer.get_bus_effect_count(0) == 0:
+		AudioServer.add_bus_effect(0, AudioEffectReverb.new())
 	_reverb = AudioServer.get_bus_effect(0, 0) as AudioEffectReverb
 	_setup_level_reverb()
 	_setup_slow_ui()
@@ -180,6 +187,19 @@ func _ready() -> void:
 	_setup_ranged_weapon()
 	_refresh_weapon_visibility()
 	Shop.loadout_changed.connect(_refresh_weapon_visibility)
+
+## Restores the position the mole had when it last left this level, if any, so
+## re-entering a level drops the player back where they exited.
+func _restore_level_position() -> void:
+	var cs := get_tree().current_scene
+	if cs == null:
+		return
+	var saved = Inventory.get_level_return_position(cs.scene_file_path)
+	if saved is Vector2:
+		global_position = saved as Vector2
+		var cam := get_node_or_null("Camera2D") as Camera2D
+		if cam:
+			cam.reset_smoothing()
 
 ## Registers all keyboard/mouse bindings. Runs once per session (the InputMap is
 ## global and persists across level changes). Keys are bound by physical_keycode
@@ -248,6 +268,7 @@ func _setup_held_item_sprites() -> void:
 	bomb_sprite.z_index = 2
 	bomb_sprite.hide()
 	add_child(bomb_sprite)
+	_held_sprites["HeldBomb"] = bomb_sprite
 
 	var drill_tex := preload("res://drill.webp")
 	var drill_sprite := Sprite2D.new()
@@ -257,6 +278,7 @@ func _setup_held_item_sprites() -> void:
 	drill_sprite.z_index = 2
 	drill_sprite.hide()
 	add_child(drill_sprite)
+	_held_sprites["HeldDrill"] = drill_sprite
 
 	var ice_sprite := Sprite2D.new()
 	ice_sprite.name = "HeldIceBomb"
@@ -266,6 +288,7 @@ func _setup_held_item_sprites() -> void:
 	ice_sprite.z_index = 2
 	ice_sprite.hide()
 	add_child(ice_sprite)
+	_held_sprites["HeldIceBomb"] = ice_sprite
 
 func _aim_pos() -> Vector2:
 	return get_global_mouse_position()
@@ -289,7 +312,7 @@ func _process(_delta: float) -> void:
 		sprite_name = "HeldDrill"
 	if sprite_name == "":
 		return
-	var sprite := get_node_or_null(sprite_name)
+	var sprite: Sprite2D = _held_sprites.get(sprite_name)
 	if not sprite or not sprite.visible:
 		return
 	match item.item_name:
@@ -372,12 +395,19 @@ func _ensure_ranged_weapon_script() -> void:
 
 const SURFACE_Y := 850.0
 var _reverb: AudioEffectReverb = null
+var _camera: Camera2D = null
+var _depth_label: Label = null
+var _last_depth := -1
+var _held_sprites: Dictionary = {}
+var _tunnel_broken_tiles: Array[Vector2i] = []
+var _dirt_ramp: GradientTexture1D = null
+var _dash_strike_scan_cooldown := 0.0
 
 func update_depth_display() -> void:
-	var depth := maxf(0.0, global_position.y - SURFACE_Y)
-	var label = get_parent().get_node_or_null("CanvasLayer/DepthLabel")
-	if label:
-		label.text = "Depth: %dm" % int(depth)
+	var depth := maxi(0, int(maxf(0.0, global_position.y - SURFACE_Y)))
+	if _depth_label and depth != _last_depth:
+		_last_depth = depth
+		_depth_label.text = "Depth: %dm" % depth
 
 func _setup_level_reverb() -> void:
 	if not _reverb:
@@ -403,9 +433,9 @@ func _physics_process(delta: float) -> void:
 
 	_handle_grapple(delta)
 	if grapple_active:
-		$AnimatedSprite2D.play("jumpbold")
-		$AnimatedSprite2D.flip_v = velocity.y > 0
-		$AnimatedSprite2D.rotation = lerp_angle($AnimatedSprite2D.rotation, 0.0, 0.15)
+		_sprite.play("jumpbold")
+		_sprite.flip_v = velocity.y > 0
+		_sprite.rotation = lerp_angle(_sprite.rotation, 0.0, 0.15)
 		update_depth_display()
 		_update_camera_position(delta)
 		return
@@ -421,8 +451,8 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 		_dash_ability_strike()
 		if tilemap:
-			var sfx = load("res://scripts/tile_break_sfx.gd")
-			var broken_tiles: Array[Vector2i] = []
+			var broken_tiles := _tunnel_broken_tiles
+			broken_tiles.clear()
 			for i in get_slide_collision_count():
 				var collision = get_slide_collision(i)
 				var collider = collision.get_collider()
@@ -434,22 +464,22 @@ func _physics_process(delta: float) -> void:
 					if tile_pos not in broken_tiles:
 						broken_tiles.append(tile_pos)
 						if tm.get_cell_source_id(0, tile_pos) != -1:
-							sfx.break_tile(tm, tile_pos, get_parent())
+							TileBreakSFX.break_tile(tm, tile_pos, get_parent())
 						else:
-							sfx.break_decoration_tile(tm, tile_pos, get_parent())
+							TileBreakSFX.break_decoration_tile(tm, tile_pos, get_parent())
 						spawn_dirt_particles(contact)
-				elif sfx.break_opened_chest_from_node(collider):
+				elif TileBreakSFX.break_opened_chest_from_node(collider):
 					spawn_dirt_particles(collision.get_position())
 			var front_pos: Vector2 = global_position + Vector2(tunnel_direction * 40.0, 0.0)
 			var front_tile: Vector2i = tilemap.local_to_map(tilemap.to_local(front_pos))
 			if front_tile not in broken_tiles and tilemap.get_cell_source_id(0, front_tile) != -1:
-				sfx.break_tile(tilemap, front_tile, get_parent())
+				TileBreakSFX.break_tile(tilemap, front_tile, get_parent())
 				spawn_dirt_particles(tilemap.to_global(tilemap.map_to_local(front_tile)))
 			if tunnel_gloves_active:
 				for extra_dy in [-1, 1]:
 					var side := Vector2i(front_tile.x, front_tile.y + extra_dy)
 					if side not in broken_tiles and tilemap.get_cell_source_id(0, side) != -1:
-						sfx.break_tile(tilemap, side, get_parent())
+						TileBreakSFX.break_tile(tilemap, side, get_parent())
 						spawn_dirt_particles(tilemap.to_global(tilemap.map_to_local(side)))
 		was_on_floor = is_on_floor()
 		_update_camera_position(delta)
@@ -546,7 +576,7 @@ func _physics_process(delta: float) -> void:
 	if direction:
 		var accel = ACCELERATION if is_on_floor() else ACCELERATION * 0.6
 		velocity.x = move_toward(velocity.x, direction * effective_speed, accel * delta)
-		$AnimatedSprite2D.flip_h = direction < 0
+		_sprite.flip_h = direction < 0
 	else:
 		var friction = FRICTION if is_on_floor() else AIR_FRICTION
 		velocity.x = move_toward(velocity.x, 0, friction * delta)
@@ -568,32 +598,32 @@ func _physics_process(delta: float) -> void:
 
 	if hurt_anim_time_left > 0.0:
 		hurt_anim_time_left = maxf(0.0, hurt_anim_time_left - delta)
-		$AnimatedSprite2D.flip_v = false
-		$AnimatedSprite2D.rotation = lerp_angle($AnimatedSprite2D.rotation, 0.0, 0.25)
+		_sprite.flip_v = false
+		_sprite.rotation = lerp_angle(_sprite.rotation, 0.0, 0.25)
 		if is_on_floor() or (not launched_from_jump and air_time <= MIDAIR_SPRITE_DELAY):
-			$AnimatedSprite2D.play("hurtground")
+			_sprite.play("hurtground")
 		else:
-			$AnimatedSprite2D.play("hurt")
+			_sprite.play("hurt")
 	elif not is_on_floor() and (launched_from_jump or air_time > MIDAIR_SPRITE_DELAY):
 		if is_sideways_jump:
-			$AnimatedSprite2D.play("sidewaysjumpbold")
-			$AnimatedSprite2D.flip_v = false
+			_sprite.play("sidewaysjumpbold")
+			_sprite.flip_v = false
 			var target_angle = atan2(velocity.y, abs(velocity.x))
 			target_angle = clamp(target_angle, -PI / 4, PI / 4)
-			if $AnimatedSprite2D.flip_h:
+			if _sprite.flip_h:
 				target_angle = -target_angle
-			$AnimatedSprite2D.rotation = lerp_angle($AnimatedSprite2D.rotation, target_angle, 0.15)
+			_sprite.rotation = lerp_angle(_sprite.rotation, target_angle, 0.15)
 		else:
-			$AnimatedSprite2D.play("jumpbold")
-			$AnimatedSprite2D.flip_v = velocity.y > 0
-			$AnimatedSprite2D.rotation = lerp_angle($AnimatedSprite2D.rotation, 0.0, 0.15)
+			_sprite.play("jumpbold")
+			_sprite.flip_v = velocity.y > 0
+			_sprite.rotation = lerp_angle(_sprite.rotation, 0.0, 0.15)
 	else:
-		$AnimatedSprite2D.flip_v = false
-		$AnimatedSprite2D.rotation = lerp_angle($AnimatedSprite2D.rotation, 0.0, 0.3)
+		_sprite.flip_v = false
+		_sprite.rotation = lerp_angle(_sprite.rotation, 0.0, 0.3)
 		if direction != 0:
-			$AnimatedSprite2D.play("walkbold")
+			_sprite.play("walkbold")
 		else:
-			$AnimatedSprite2D.play("idlebold")
+			_sprite.play("idlebold")
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("swap_weapon") and not event.echo:
@@ -861,10 +891,10 @@ func _spawn_potion_mist() -> void:
 
 func _activate_speed_boost() -> void:
 	speed_boost_active = true
-	$AnimatedSprite2D.modulate = Color(0.6, 0.8, 1, 1)
+	_sprite.modulate = Color(0.6, 0.8, 1, 1)
 	await get_tree().create_timer(5.0).timeout
 	speed_boost_active = false
-	$AnimatedSprite2D.modulate = Color.WHITE
+	_sprite.modulate = Color.WHITE
 
 func _activate_shield() -> void:
 	shield_active = true
@@ -874,7 +904,7 @@ func _activate_shield() -> void:
 	modulate = Color.WHITE
 
 func _update_camera_position(delta: float) -> void:
-	var camera := get_node_or_null("Camera2D") as Camera2D
+	var camera := _camera
 	if camera == null:
 		return
 	var target_global := global_position + (_aim_pos() - global_position) * CAMERA_MOUSE_INFLUENCE
@@ -892,30 +922,36 @@ func _update_camera_position(delta: float) -> void:
 	var follow_weight := clampf(follow_speed * delta, 0.0, 1.0)
 	camera.position = camera.position.lerp(target_local, follow_weight)
 
+## Shared particle material: tunneling spawns dirt every tile, so avoid
+## rebuilding the ParticleProcessMaterial (and its ramp) on each burst.
+static var _dirt_material: ParticleProcessMaterial = null
+
 func spawn_dirt_particles(world_position: Vector2) -> void:
+	if _dirt_ramp == null:
+		var fade_gradient := Gradient.new()
+		fade_gradient.set_color(0, Color(1.0, 1.0, 1.0, 1.0))
+		fade_gradient.set_color(1, Color(1.0, 1.0, 1.0, 0.0))
+		_dirt_ramp = GradientTexture1D.new()
+		_dirt_ramp.gradient = fade_gradient
+	if _dirt_material == null:
+		_dirt_material = ParticleProcessMaterial.new()
+		_dirt_material.direction = Vector3(0.0, -1.0, 0.0)
+		_dirt_material.spread = 70.0
+		_dirt_material.gravity = Vector3(0.0, 980.0, 0.0)
+		_dirt_material.initial_velocity_min = 140.0
+		_dirt_material.initial_velocity_max = 260.0
+		_dirt_material.scale_min = 4.0
+		_dirt_material.scale_max = 8.0
+		_dirt_material.color = Color(0.45, 0.30, 0.16, 1.0)
+		_dirt_material.color_ramp = _dirt_ramp
 	var dirt := GPUParticles2D.new()
-	var material := ParticleProcessMaterial.new()
 	dirt.global_position = world_position
 	dirt.one_shot = true
 	dirt.explosiveness = 1.0
 	dirt.amount = DIRT_PARTICLE_AMOUNT
 	dirt.lifetime = DIRT_PARTICLE_LIFETIME
-	dirt.process_material = material
+	dirt.process_material = _dirt_material
 	dirt.z_index = 5
-	material.direction = Vector3(0.0, -1.0, 0.0)
-	material.spread = 70.0
-	material.gravity = Vector3(0.0, 980.0, 0.0)
-	material.initial_velocity_min = 140.0
-	material.initial_velocity_max = 260.0
-	material.scale_min = 4.0
-	material.scale_max = 8.0
-	material.color = Color(0.45, 0.30, 0.16, 1.0)
-	var fade_gradient := Gradient.new()
-	fade_gradient.set_color(0, Color(1.0, 1.0, 1.0, 1.0))
-	fade_gradient.set_color(1, Color(1.0, 1.0, 1.0, 0.0))
-	var color_ramp := GradientTexture1D.new()
-	color_ramp.gradient = fade_gradient
-	material.color_ramp = color_ramp
 	get_tree().current_scene.add_child(dirt)
 	dirt.emitting = true
 	get_tree().create_timer(DIRT_PARTICLE_LIFETIME + 0.2).timeout.connect(dirt.queue_free)
@@ -951,11 +987,11 @@ func take_damage(amount: float, source_position: Vector2 = Vector2.ZERO, has_sou
 	invulnerable = true
 	_damage_flash()
 	hurt_anim_time_left = HURT_GROUND_DURATION if is_on_floor() else HURT_AIR_DURATION
-	var knockback_direction := -1.0 if $AnimatedSprite2D.flip_h else 1.0
+	var knockback_direction := -1.0 if _sprite.flip_h else 1.0
 	if has_source:
 		knockback_direction = sign(global_position.x - source_position.x)
 		if knockback_direction == 0.0:
-			knockback_direction = -1.0 if $AnimatedSprite2D.flip_h else 1.0
+			knockback_direction = -1.0 if _sprite.flip_h else 1.0
 	if not shelled_backpack_active:
 		velocity.x = knockback_direction * KNOCKBACK_X
 	if is_projectile:
@@ -1009,7 +1045,7 @@ func hit_freeze(duration: float) -> void:
 	Engine.time_scale = 1.0
 
 func screen_shake(intensity: float, duration: float) -> void:
-	var camera := get_node_or_null("Camera2D")
+	var camera := _camera
 	if not camera:
 		return
 	var tween := create_tween()
@@ -1024,6 +1060,10 @@ func screen_shake(intensity: float, duration: float) -> void:
 func _dash_ability_strike() -> void:
 	if not Shop.has_dash_ability():
 		return
+	_dash_strike_scan_cooldown -= get_physics_process_delta_time()
+	if _dash_strike_scan_cooldown > 0.0:
+		return
+	_dash_strike_scan_cooldown = 0.2
 	var front := global_position + Vector2(tunnel_direction * DASH_HIT_RADIUS, 0.0)
 	for hurtbox in get_tree().get_nodes_in_group("enemy_hurtbox"):
 		if not is_instance_valid(hurtbox):
@@ -1172,9 +1212,9 @@ func start_ground_pound() -> void:
 	_ground_pound_start_y = global_position.y
 	velocity.y = GROUND_POUND_SPEED
 	velocity.x = 0.0
-	$AnimatedSprite2D.play("jumpbold")
-	$AnimatedSprite2D.flip_v = true
-	$AnimatedSprite2D.rotation = 0.0
+	_sprite.play("jumpbold")
+	_sprite.flip_v = true
+	_sprite.rotation = 0.0
 	SFX.play("dig_dash", global_position)
 	spawn_dirt_particles(global_position)
 
@@ -1190,12 +1230,11 @@ func _complete_ground_pound() -> void:
 	if Shop.has_dash_ability():
 		_ground_pound_strike()
 	velocity.y = GROUND_POUND_BOUNCE
-	$AnimatedSprite2D.flip_v = false
+	_sprite.flip_v = false
 
 func _break_tiles_in_radius() -> void:
 	if not tilemap:
 		return
-	var sfx = load("res://scripts/tile_break_sfx.gd")
 	var radius: int = roundi(lerpf(GROUND_POUND_BASE_RADIUS, GROUND_POUND_MAX_RADIUS, _ground_pound_power))
 	if shelled_backpack_active or earthquake_boots_active:
 		radius += 1
@@ -1204,11 +1243,11 @@ func _break_tiles_in_radius() -> void:
 		for dy in range(0, radius + 1):
 			var tp := Vector2i(center_tile.x + dx, center_tile.y + dy)
 			if tilemap.get_cell_source_id(0, tp) != -1:
-				sfx.break_tile(tilemap, tp, get_parent())
-			else:
-				sfx.break_decoration_tile(tilemap, tp, get_parent())
+				TileBreakSFX.break_tile(tilemap, tp, get_parent())
+			elif tilemap.get_cell_source_id(1, tp) != -1:
+				TileBreakSFX.break_decoration_tile(tilemap, tp, get_parent())
 	var chest_radius := lerpf(GROUND_POUND_BASE_HIT_RADIUS, GROUND_POUND_MAX_HIT_RADIUS, _ground_pound_power)
-	sfx.break_opened_chests_near(get_parent(), global_position, chest_radius)
+	TileBreakSFX.break_opened_chests_near(get_parent(), global_position, chest_radius)
 
 func _ground_pound_strike() -> void:
 	var boosted := shelled_backpack_active or earthquake_boots_active
@@ -1247,18 +1286,18 @@ func start_dig_dash() -> void:
 	if has_node("Weapon"):
 		_dig_dash_weapon_was_visible = $Weapon.visible
 		$Weapon.hide()
-	$AnimatedSprite2D.play("dig")
+	_sprite.play("dig")
 
-	tunnel_direction = -1.0 if $AnimatedSprite2D.flip_h else 1.0
+	tunnel_direction = -1.0 if _sprite.flip_h else 1.0
 
-	await $AnimatedSprite2D.animation_finished
+	await _sprite.animation_finished
 
 	if not is_digging:
 		return
 
 	is_digging = false
 	is_tunneling = true
-	$AnimatedSprite2D.play("tunnel")
+	_sprite.play("tunnel")
 
 	var tunnel_elapsed := 0.0
 	var tunnel_total := TUNNEL_DURATION * (1.5 if tunnel_gloves_active else 1.0)
@@ -1290,7 +1329,7 @@ func _dash_cancel_into_attack() -> void:
 			$Weapon.dig_slash()
 	screen_shake(18.0, 0.3)
 	spawn_dirt_particles(global_position)
-	$AnimatedSprite2D.play("jumpbold")
+	_sprite.play("jumpbold")
 
 func _end_dig_dash() -> void:
 	is_tunneling = false
@@ -1300,7 +1339,7 @@ func _end_dig_dash() -> void:
 	velocity.y = JUMP_VELOCITY
 	if has_node("Weapon") and _dig_dash_weapon_was_visible:
 		$Weapon.show()
-	$AnimatedSprite2D.play("jumpbold")
+	_sprite.play("jumpbold")
 
 func apply_slow(duration: float) -> void:
 	slow_timer = maxf(slow_timer, duration)
@@ -1434,19 +1473,16 @@ func _launch_custom(script: Script) -> void:
 	obj.arm()
 
 func _use_vacuum() -> void:
-	var slot := Inventory.selected_slot
 	Inventory.selected_slot = -1
 	var vac: Node2D = VacuumJelly.new()
 	get_parent().add_child(vac)
 	vac.global_position = global_position
 
 func _use_shop_token() -> void:
-	var slot := Inventory.selected_slot
 	Inventory.selected_slot = -1
 	Shop.open_shop()
 
 func _deploy_mushroom() -> void:
-	var slot := Inventory.selected_slot
 	Inventory.selected_slot = -1
 	var shroom: CharacterBody2D = BounceMushroom.new()
 	get_parent().add_child(shroom)
@@ -1457,14 +1493,12 @@ func _deploy_mushroom() -> void:
 	shroom.velocity = dir * 420.0
 
 func _deploy_lure() -> void:
-	var slot := Inventory.selected_slot
 	Inventory.selected_slot = -1
 	var lure: Node2D = ShinyLure.new()
 	get_parent().add_child(lure)
 	lure.global_position = global_position + Vector2(0, -30)
 
 func _deploy_compass() -> void:
-	var slot := Inventory.selected_slot
 	Inventory.selected_slot = -1
 	var compass: Node2D = CompassCharm.new()
 	get_parent().add_child(compass)
@@ -1473,8 +1507,8 @@ func _deploy_compass() -> void:
 func _swing_grub_stick() -> void:
 	Inventory.selected_slot = -1
 	_spawn_buff_label("GRUB WHACK!")
-	SFX.play("enemy_hit", global_position, -8.0, 1.4)
-	var face := -1.0 if $AnimatedSprite2D.flip_h else 1.0
+	SFX.play("enemy_hit", global_position, -8.0, 0.1, 1.4)
+	var face := -1.0 if _sprite.flip_h else 1.0
 	var origin := global_position + Vector2(0, -35)
 	var hit := false
 	for hurtbox in get_tree().get_nodes_in_group("enemy_hurtbox"):
@@ -1622,7 +1656,7 @@ func _spawn_buff_label(text: String) -> void:
 	tw.chain().tween_callback(label.queue_free)
 
 func _dozer_ram() -> void:
-	var face := -1.0 if $AnimatedSprite2D.flip_h else 1.0
+	var face := -1.0 if _sprite.flip_h else 1.0
 	for i in get_slide_collision_count():
 		var collision := get_slide_collision(i)
 		var collider := collision.get_collider()
@@ -1662,7 +1696,7 @@ func _rebound_pull_coin(aim_dir: Vector2, from: Vector2) -> void:
 		var b := best as RigidBody2D
 		b.sleeping = false
 		b.linear_velocity = (global_position - best.global_position).normalized() * 1800.0
-		SFX.play("coin", best.global_position, -12.0, 1.5)
+		SFX.play("coin", best.global_position, -12.0, 0.1, 1.5)
 
 func _consume_honeycombs() -> bool:
 	for i in Inventory.MAX_SLOTS:

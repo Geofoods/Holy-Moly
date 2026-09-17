@@ -64,7 +64,9 @@ func _explode() -> void:
 	tween.tween_property(self, "scale", Vector2.ZERO, 0.2).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_BACK)
 	tween.tween_callback(queue_free)
 
-## Covers the tiles in the blast radius in ice instead of destroying them.
+## Breaks the stuff tiles in the blast radius (decorations and tiles flagged
+## as stuff) and coats the remaining normal tiles in ice instead of destroying
+## them.
 func _freeze_tiles(tilemap: TileMap) -> void:
 	var center_tile := tilemap.local_to_map(tilemap.to_local(global_position))
 	var tile_world_size := Vector2(tilemap.tile_set.tile_size) * tilemap.scale
@@ -79,6 +81,17 @@ func _freeze_tiles(tilemap: TileMap) -> void:
 	for dx in range(-tile_break_radius, tile_break_radius + 1):
 		for dy in range(-tile_break_radius, tile_break_radius + 1):
 			var tp := Vector2i(center_tile.x + dx, center_tile.y + dy)
+			var cell_data := tilemap.get_cell_tile_data(0, tp)
+			var has_decoration := tilemap.get_cell_source_id(1, tp) != -1
+			var is_stuff := cell_data != null and (cell_data.get_custom_data("stuff") as bool)
+
+			if is_stuff:
+				TileBreakSFX.break_tile(tilemap, tp, get_parent())
+				continue
+
+			if has_decoration:
+				TileBreakSFX.break_decoration_tile(tilemap, tp, get_parent())
+
 			if tilemap.get_cell_source_id(0, tp) == -1:
 				continue
 			var rect := ColorRect.new()
@@ -87,6 +100,10 @@ func _freeze_tiles(tilemap: TileMap) -> void:
 			rect.modulate = Color(0.55, 0.83, 1.15, randf_range(0.28, 0.42))
 			rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			frost_layer.add_child(rect)
+	if frost_layer.get_child_count() > 0:
+		get_tree().create_timer(6.0).timeout.connect(frost_layer.queue_free)
+	else:
+		frost_layer.queue_free()
 
 func _spawn_ice_burst() -> void:
 	var burst := CPUParticles2D.new()

@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://5yvhb0s8snt2"]
 
 [ext_resource type="PackedScene" uid="uid://p1of6ummc17j" path="res://scenes/mole.tscn" id="1_o5qli"]
-[ext_resource type="PackedScene" path="res://scenes/hornet_enemy.tscn" id="hornet_res"]
 [ext_resource type="PackedScene" uid="uid://dnp3icrndkjm8" path="res://scenes/antenemy.tscn" id="2_enemy"]
 [ext_resource type="PackedScene" uid="uid://c6xus6tuhcmfo" path="res://scenes/heart.tscn" id="3_sugp2"]
 [ext_resource type="PackedScene" uid="uid://d2i1x8x1y6qa" path="res://scenes/pause_menu.tscn" id="4_pause"]
@@ -18,8 +17,10 @@
 [ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="20_mtlme"]
 [ext_resource type="PackedScene" uid="uid://iuqjuk37ur0d" path="res://scenes/slimeenemy.tscn" id="21_mtlme"]
 [ext_resource type="PackedScene" uid="uid://uukw6aqabygl" path="res://door.tscn" id="21_ou5rw"]
-[ext_resource type="Script" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
+[ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="23_0ru5y"]
+[ext_resource type="Script" uid="uid://dpsujuff7o60j" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
 [ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
+[ext_resource type="PackedScene" uid="uid://c0pwtkklnyw5s" path="res://scenes/hornet_enemy.tscn" id="hornet_res"]
 [ext_resource type="PackedScene" uid="uid://3wwhicdeo8hl" path="res://scenes/info_popup.tscn" id="info_popup_res"]
 [ext_resource type="PackedScene" path="res://scenes/level_intro_banner.tscn" id="level_banner_res"]
 
@@ -56,7 +57,7 @@ shader_parameter/darkness = 0.75
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ou5rw"]
 size = Vector2(4079.5, 933)
 
-[node name="Node2D3" type="Node2D" unique_id=1979316305]
+[node name="Node2D4" type="Node2D" unique_id=1979316305]
 
 [node name="DeathPlane" parent="." unique_id=1942262957 instance=ExtResource("10_deathplane")]
 
@@ -135,7 +136,7 @@ scale = Vector2(0.25, 0.25)
 [node name="Camera2D" type="Camera2D" parent="CharacterBody2D2" unique_id=1117004402]
 position = Vector2(92, -296)
 scale = Vector2(4, 4)
-zoom = Vector2(0.5, 0.5)
+zoom = Vector2(0.65, 0.65)
 position_smoothing_enabled = true
 
 [node name="TileMap" type="TileMap" parent="." unique_id=965183279]
@@ -242,7 +243,7 @@ position = Vector2(1723, -1893)
 script = ExtResource("20_mtlme")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="nextlevel" unique_id=394909788]
-position = Vector2(7238.75, 2730.9998)
+position = Vector2(9284, 1151)
 shape = SubResource("RectangleShape2D_ou5rw")
 
 [node name="candle12" parent="." unique_id=1081875245 instance=ExtResource("15_21f2n")]
@@ -270,13 +271,13 @@ position = Vector2(3496, -1319)
 [node name="Enemy17" parent="." unique_id=112817802 instance=ExtResource("21_mtlme")]
 position = Vector2(4352, -2795)
 
-[node name="Hornet1" parent="." instance=ExtResource("hornet_res")]
+[node name="Hornet1" parent="." unique_id=1074121788 instance=ExtResource("hornet_res")]
 position = Vector2(4352, -3195)
 
-[node name="Hornet2" parent="." instance=ExtResource("hornet_res")]
+[node name="Hornet2" parent="." unique_id=121560609 instance=ExtResource("hornet_res")]
 position = Vector2(2700, -1790)
 
-[node name="Hornet3" parent="." instance=ExtResource("hornet_res")]
+[node name="Hornet3" parent="." unique_id=1548197924 instance=ExtResource("hornet_res")]
 position = Vector2(5236, 1008)
 
 [node name="Sprite2D" parent="." unique_id=713534953 instance=ExtResource("21_ou5rw")]
@@ -284,6 +285,22 @@ offset_left = 7336.0
 offset_top = 1340.0
 offset_right = 7397.0
 offset_bottom = 1440.0
+
+[node name="Costume8" type="Sprite2D" parent="." unique_id=275684890]
+z_index = 99
+position = Vector2(6883, 403.00003)
+rotation = 4.6892195
+scale = Vector2(18.090199, 1.717514)
+texture = ExtResource("23_0ru5y")
+
+[node name="ColorRect3" type="ColorRect" parent="Costume8" unique_id=2132569961]
+z_index = 99
+offset_left = 222.9914
+offset_top = 1565.6759
+offset_right = 676.3921
+offset_bottom = 2982.19
+rotation = 3.1415927
+color = Color(0, 0, 0, 1)
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]

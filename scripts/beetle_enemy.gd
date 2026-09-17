@@ -21,7 +21,6 @@ var charge_timer := 0.0
 var rush_timer := 0.0
 var cooldown_timer := 0.0
 var health := MAX_HEALTH
-var was_on_floor := true
 var _charge_tween: Tween = null
 var _move_sfx_timer := 0.0
 const MOVE_SFX_INTERVAL := 0.35
@@ -70,8 +69,6 @@ func _physics_process(delta: float) -> void:
 
 	if state == State.RUSHING:
 		_break_tiles_on_collision()
-
-	was_on_floor = is_on_floor()
 
 func _patrol(delta: float) -> void:
 	if not is_on_floor():

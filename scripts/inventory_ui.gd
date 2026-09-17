@@ -147,7 +147,11 @@ func _build_ui() -> void:
 	var s = get_viewport().get_visible_rect().size
 	container.position = Vector2(s.x/2,s.y-SLOT_SIZE.y-16)
 
-func reposition(p): if container: container.position=p
+signal repositioned
+func reposition(p):
+	if container:
+		container.position = p
+		repositioned.emit()
 func hotbar_left_top() -> Vector2:
 	if container == null:
 		return Vector2.ZERO

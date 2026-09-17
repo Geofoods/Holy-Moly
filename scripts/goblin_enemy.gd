@@ -32,7 +32,6 @@ var _health_bar: Node2D = null
 
 func _ready() -> void:
 	hurtbox.area_entered.connect(_on_hurtbox_area_entered)
-	hurtbox.body_entered.connect(_on_body_entered)
 	hurtbox.add_to_group("enemy_hurtbox")
 	visual.z_index = 1
 	# "default" is a non-looping idle→windup→throw animation. Rest on the idle
@@ -159,9 +158,6 @@ func _release_mushroom() -> void:
 	mushroom.global_position = global_position + Vector2(sign(dir.x) * 30, -40)
 	mushroom.linear_velocity = dir * THROW_VELOCITY
 	mushroom.arm()
-
-func _on_body_entered(_body: Node) -> void:
-	pass
 
 func _on_hurtbox_area_entered(area: Area2D) -> void:
 	var parent = area.get_parent()

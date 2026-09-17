@@ -293,13 +293,13 @@ script = ExtResource("1_kln4g")
 
 [node name="MoleLight" type="PointLight2D" parent="." unique_id=1185757517]
 position = Vector2(-6.0000305, 13.999985)
-scale = Vector2(14, 11.9)
+scale = Vector2(22, 18.5)
 range_item_cull_mask = 1023
 shadow_enabled = true
 shadow_color = Color(0, 0, 0, 1)
-shadow_filter = 2
-shadow_filter_smooth = 4.0
-energy = 0.9
+shadow_filter = 1
+shadow_filter_smooth = 0.0
+energy = 0.6
 shadow_item_cull_mask = 1
 texture = ExtResource("15_obc8e")
 

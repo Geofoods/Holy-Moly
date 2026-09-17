@@ -14,7 +14,6 @@ func _init() -> void:
 	enemy_damage = 6.0
 	self_damage = 0.0
 	hits_mole = false
-	breaks_tiles = false
 
 func _blast() -> void:
 	var pool: Array = []

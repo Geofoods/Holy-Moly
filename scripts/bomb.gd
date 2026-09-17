@@ -2,6 +2,7 @@ extends RigidBody2D
 
 const FUSE_TIME := 2.5
 const FLASH_TIME := 0.4
+const TileBreakSFX := preload("res://scripts/tile_break_sfx.gd")
 
 @export var explosion_radius := 200.0
 @export var explosion_damage := 2.0
@@ -12,7 +13,6 @@ var fuse_active := false
 var fuse_elapsed := 0.0
 var tick_cooldown := 0.0
 var is_flashing := false
-var deflected := false
 
 @onready var sprite: Sprite2D = $Sprite2D
 
@@ -54,15 +54,6 @@ func _start_flash() -> void:
 	tween.parallel().tween_property(self, "scale", Vector2(1.5, 1.5), FLASH_TIME * 0.8).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	tween.tween_callback(_explode)
 
-func deflect(target_pos: Vector2) -> void:
-	if deflected:
-		return
-	deflected = true
-	var dir := (target_pos - global_position).normalized()
-	linear_velocity = dir * maxf(linear_velocity.length() * 1.5, 500.0)
-	if sprite:
-		sprite.modulate = Color(0.6, 0.9, 1.0, 1.0)
-
 func _explode() -> void:
 	if dead:
 		return
@@ -77,7 +68,7 @@ func _explode() -> void:
 	var mole := get_tree().get_first_node_in_group("mole")
 	if mole and mole.has_method("screen_shake"):
 		mole.screen_shake(20.0, 0.35)
-	if mole and is_instance_valid(mole) and not deflected:
+	if mole and is_instance_valid(mole):
 		var dist := global_position.distance_to(mole.global_position)
 		if dist <= explosion_radius and mole.has_method("take_damage"):
 			mole.take_damage(explosion_damage, global_position, true)
@@ -108,16 +99,14 @@ func _explode() -> void:
 	var tilemap: TileMap = get_parent().get_node_or_null("TileMap")
 	if tilemap:
 		var center_tile := tilemap.local_to_map(tilemap.to_local(global_position))
-		var sfx = load("res://scripts/tile_break_sfx.gd")
 		for dx in range(-tile_break_radius, tile_break_radius + 1):
 			for dy in range(-tile_break_radius, tile_break_radius + 1):
 				var tp := Vector2i(center_tile.x + dx, center_tile.y + dy)
-				var has_collision := tilemap.get_cell_source_id(0, tp) != -1
-				if has_collision:
-					sfx.break_tile(tilemap, tp, get_parent())
-				else:
-					sfx.break_decoration_tile(tilemap, tp, get_parent())
-		sfx.break_opened_chests_near(get_parent(), global_position, explosion_radius)
+				if tilemap.get_cell_source_id(0, tp) != -1:
+					TileBreakSFX.break_tile(tilemap, tp, get_parent())
+				elif tilemap.get_cell_source_id(1, tp) != -1:
+					TileBreakSFX.break_decoration_tile(tilemap, tp, get_parent())
+		TileBreakSFX.break_opened_chests_near(get_parent(), global_position, explosion_radius)
 
 	for hurtbox in get_tree().get_nodes_in_group("enemy_hurtbox"):
 		if not is_instance_valid(hurtbox):

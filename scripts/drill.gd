@@ -2,12 +2,11 @@ extends Area2D
 
 const DRILL_DURATION := 1.0
 const SPEED := 1000.0
+const TileBreakSFX := preload("res://scripts/tile_break_sfx.gd")
 
 var velocity := Vector2.ZERO
 var elapsed := 0.0
 var prev_tile_pos := Vector2i(999999, 999999)
-
-var _drill_player: AudioStreamPlayer2D = null
 
 func _ready() -> void:
 	area_entered.connect(_on_area_entered)
@@ -16,12 +15,12 @@ func _ready() -> void:
 func _start_drill_sound() -> void:
 	if not SFX._sounds.has("drill") or SFX._sounds["drill"].size() == 0:
 		return
-	_drill_player = AudioStreamPlayer2D.new()
-	_drill_player.stream = SFX._sounds["drill"][0]
-	_drill_player.volume_db = -8.0
-	_drill_player.max_distance = 2000.0
-	add_child(_drill_player)
-	_drill_player.play()
+	var drill_player := AudioStreamPlayer2D.new()
+	drill_player.stream = SFX._sounds["drill"][0]
+	drill_player.volume_db = -8.0
+	drill_player.max_distance = 2000.0
+	add_child(drill_player)
+	drill_player.play()
 
 func setup(dir: Vector2) -> void:
 	velocity = dir * SPEED
@@ -50,8 +49,6 @@ func _process(delta: float) -> void:
 		if elapsed >= DRILL_DURATION:
 			queue_free()
 		return
-
-	var sfx = load("res://scripts/tile_break_sfx.gd")
 
 	const BREAK_SCALE := 2.0
 
@@ -92,11 +89,10 @@ func _process(delta: float) -> void:
 
 	for tile_pos in tiles:
 		if tile_pos != prev_tile_pos:
-			var has_collision := tilemap.get_cell_source_id(0, tile_pos) != -1
-			if has_collision:
-				sfx.break_tile(tilemap, tile_pos, get_parent())
-			else:
-				sfx.break_decoration_tile(tilemap, tile_pos, get_parent())
+			if tilemap.get_cell_source_id(0, tile_pos) != -1:
+				TileBreakSFX.break_tile(tilemap, tile_pos, get_parent())
+			elif tilemap.get_cell_source_id(1, tile_pos) != -1:
+				TileBreakSFX.break_decoration_tile(tilemap, tile_pos, get_parent())
 			prev_tile_pos = tile_pos
 
 	if elapsed >= DRILL_DURATION:

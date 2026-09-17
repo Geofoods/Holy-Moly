@@ -133,7 +133,7 @@ scale = Vector2(0.25, 0.25)
 [node name="Camera2D" type="Camera2D" parent="CharacterBody2D2" unique_id=955812055]
 position = Vector2(92, -296)
 scale = Vector2(4, 4)
-zoom = Vector2(0.5, 0.5)
+zoom = Vector2(0.65, 0.65)
 position_smoothing_enabled = true
 
 [node name="QueenBee" parent="." unique_id=1041295788 instance=ExtResource("9_queen")]

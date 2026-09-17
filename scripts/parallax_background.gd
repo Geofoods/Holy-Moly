@@ -56,6 +56,8 @@ func _process(_delta: float) -> void:
 
 	var cam_x: float = camera.global_position.x
 	var cam_y: float = camera.global_position.y
+
+	var zoom_scale: float = 1.0 / max(camera.zoom.x, 0.01)
 	var vp_size: Vector2 = get_viewport_rect().size
 
 	for i in layer_sprites.size():
@@ -64,7 +66,6 @@ func _process(_delta: float) -> void:
 		var a: Sprite2D = pair[0]
 		var b: Sprite2D = pair[1]
 		var tex_size: Vector2 = a.texture.get_size()
-		var zoom_scale: float = 1.0 / max(camera.zoom.x, 0.01)
 		var scale_factor: Vector2 = vp_size / tex_size * parallax_scale * zoom_scale
 		a.scale = scale_factor
 		b.scale = scale_factor

@@ -97,7 +97,7 @@ func _on_body_entered(body: Node) -> void:
 				body.take_damage(VENOM_DAMAGE, global_position, true, true)
 			if body.has_method("apply_slow"):
 				body.apply_slow(VENOM_SLOW_DURATION)
-			SFX.play("hurt", global_position, -6.0, 0.9)
+			SFX.play("hurt", global_position, -6.0, 0.1, 0.9)
 			queue_free()
 			return
 		if body is TileMap:

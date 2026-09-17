@@ -36,10 +36,13 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	if _coin_hud == null:
 		return
-	var scene := get_tree().current_scene
-	var in_menu := scene != null and scene.scene_file_path.ends_with("intro.tscn")
-	if in_menu:
-		_coin_hud.visible = false
+	# Cheap no-op while the HUD is hidden (its normal state); only scan the
+	# scene when the HUD is visible and may need hiding on entering the menu.
+	if _coin_hud.visible:
+		var scene := get_tree().current_scene
+		var in_menu := scene != null and str(scene.scene_file_path).ends_with("intro.tscn")
+		if in_menu:
+			_coin_hud.visible = false
 
 func _grant_all_weapons_for_testing() -> void:
 	for w in catalog:
@@ -210,9 +213,6 @@ func has_wall_jump() -> bool:
 func has_grappling_hook() -> bool:
 	return owns("grappling_hook")
 
-func can_afford(w: WeaponData) -> bool:
-	return not owns(w.id) and coins >= w.price
-
 # --- Purchasing / equipping ----------------------------------------------
 
 func buy(w: WeaponData) -> bool:
@@ -277,8 +277,8 @@ func drop_coins(world_pos: Vector2, count: int, value_per_coin: int = 1) -> void
 	for i in count:
 		var coin = coin_scene.instantiate()
 		coin.value = value_per_coin
-		scene.add_child(coin)
 		coin.global_position = world_pos + Vector2(randf_range(-30.0, 30.0), randf_range(-50.0, 0.0))
+		scene.call_deferred("add_child", coin)
 
 # --- Shop UI --------------------------------------------------------------
 

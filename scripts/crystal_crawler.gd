@@ -16,7 +16,6 @@ var _dir := -1
 var _state_time := 0.0
 var _mole_contact := false
 var _flash := 0.0
-var _flash_color := Color(1, 1, 1, 1)
 
 @onready var visual: AnimatedSprite2D = $Visual
 @onready var hurtbox: Area2D = $Hurtbox

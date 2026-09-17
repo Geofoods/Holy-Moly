@@ -11,7 +11,6 @@ func _init() -> void:
 	enemy_damage = 3.0
 	self_damage = 0.0
 	hits_mole = false
-	breaks_tiles = false
 
 func _process(delta: float) -> void:
 	if not fuse_active or is_flashing:

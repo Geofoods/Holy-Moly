@@ -1,6 +1,10 @@
 extends Node
 
 var _sounds := {}
+var _pool_2d: Array[AudioStreamPlayer2D] = []
+var _pool_ui: Array[AudioStreamPlayer] = []
+
+const POOL_SIZE := 16
 
 func _ready() -> void:
 	_load("swing", ["res://sounds/swing_1.wav", "res://sounds/swing_2.wav", "res://sounds/swing_3.wav"])
@@ -32,30 +36,73 @@ func _load(key: String, paths: Array) -> void:
 			streams.append(s)
 	_sounds[key] = streams
 
-func play(key: String, pos: Vector2 = Vector2.ZERO, volume_db: float = -6.0, pitch_variation: float = 0.1) -> void:
+## `pitch_variation` is a +/- ratio applied around `pitch` (0.1 = +/-10%).
+## `pitch` is an absolute multiplier (2.0 = one octave up).
+func play(key: String, pos: Vector2 = Vector2.ZERO, volume_db: float = -6.0, pitch_variation: float = 0.1, pitch: float = 1.0) -> void:
 	if not _sounds.has(key) or _sounds[key].size() == 0:
 		return
 	var streams: Array = _sounds[key]
 	var stream: AudioStream = streams[randi() % streams.size()]
-	var player := AudioStreamPlayer2D.new()
+	var player := _acquire_2d()
 	player.stream = stream
 	player.volume_db = volume_db
-	player.pitch_scale = randf_range(1.0 - pitch_variation, 1.0 + pitch_variation)
+	# Godot rejects pitch_scale <= 0, so keep the variation below 1.0: that
+	# guarantees the lowest reachable pitch stays above zero.
+	var variation := clampf(absf(pitch_variation), 0.0, 0.9)
+	player.pitch_scale = maxf(0.01, pitch) * randf_range(1.0 - variation, 1.0 + variation)
 	player.max_distance = 2000.0
 	add_child(player)
 	player.global_position = pos
 	player.play()
-	player.finished.connect(player.queue_free)
+
+func _acquire_2d() -> AudioStreamPlayer2D:
+	var p: AudioStreamPlayer2D
+	if _pool_2d.is_empty():
+		p = AudioStreamPlayer2D.new()
+		p.finished.connect(_release_2d.bind(p))
+	else:
+		p = _pool_2d.pop_back()
+	return p
+
+func _release_2d(p: AudioStreamPlayer2D) -> void:
+	if not is_instance_valid(p):
+		return
+	p.stop()
+	p.stream = null
+	if p.get_parent() == self and _pool_2d.size() < POOL_SIZE:
+		remove_child(p)
+		_pool_2d.append(p)
+	else:
+		p.queue_free()
 
 func play_ui(key: String, volume_db: float = -8.0, pitch: float = 1.0) -> void:
 	if not _sounds.has(key) or _sounds[key].size() == 0:
 		return
 	var streams: Array = _sounds[key]
 	var stream: AudioStream = streams[randi() % streams.size()]
-	var player := AudioStreamPlayer.new()
+	var player := _acquire_ui()
 	player.stream = stream
 	player.volume_db = volume_db
-	player.pitch_scale = pitch
+	player.pitch_scale = maxf(0.01, pitch)
 	add_child(player)
 	player.play()
-	player.finished.connect(player.queue_free)
+
+func _acquire_ui() -> AudioStreamPlayer:
+	var p: AudioStreamPlayer
+	if _pool_ui.is_empty():
+		p = AudioStreamPlayer.new()
+		p.finished.connect(_release_ui.bind(p))
+	else:
+		p = _pool_ui.pop_back()
+	return p
+
+func _release_ui(p: AudioStreamPlayer) -> void:
+	if not is_instance_valid(p):
+		return
+	p.stop()
+	p.stream = null
+	if p.get_parent() == self and _pool_ui.size() < POOL_SIZE:
+		remove_child(p)
+		_pool_ui.append(p)
+	else:
+		p.queue_free()

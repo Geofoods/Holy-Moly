@@ -5,7 +5,6 @@ const EXPLOSION_TILE_RADIUS := 1
 
 var velocity := Vector2.ZERO
 var deflected := false
-var _rotation_speed := randf_range(2.0, 5.0) * (1 if randi() % 2 == 0 else -1)
 var _pulse_phase := randf() * TAU
 
 func setup(vel: Vector2) -> void:

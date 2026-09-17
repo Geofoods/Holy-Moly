@@ -11,9 +11,19 @@ var _base_scale := Vector2.ONE
 func _ready() -> void:
 	_base_scale = scale
 	get_viewport().size_changed.connect(_reposition)
+	# Position once after the inventory UI has laid itself out.
+	_reposition.call_deferred()
+	_follow_inventory.call_deferred()
 
-func _process(_delta: float) -> void:
-	_reposition()
+## The tutorial can move the hotbar at runtime; follow it via signal
+## instead of re-anchoring every frame.
+func _follow_inventory() -> void:
+	var scene := get_tree().current_scene
+	if scene == null:
+		return
+	var inv := scene.get_node_or_null("InventoryUI")
+	if inv != null and inv.has_signal("repositioned") and not inv.repositioned.is_connected(_reposition):
+		inv.repositioned.connect(_reposition)
 
 func _reposition() -> void:
 	var scene := get_tree().current_scene

@@ -7,14 +7,18 @@ var is_breaking := false
 var player_nearby := false
 @export var item: ItemData = null
 
-@onready var chest_base: Control = $Interaction/Base
-@onready var chest_band: Control = $Interaction/Band
-@onready var chest_lock: Control = $Interaction/Lock
-@onready var chest_lid: Node2D = $Interaction/Lid
+@onready var chest_base: Control = _first(["Interaction/Base", "Base"]) as Control
+@onready var chest_band: Control = _first(["Interaction/Band", "Band"]) as Control
+@onready var chest_lock: Control = _first(["Interaction/Lock", "Lock"]) as Control
+@onready var chest_lid: Node2D = _first(["Interaction/Lid", "Lid"]) as Node2D
 @onready var chest_prompt: Label = $PromptLabel
 
-func _ready() -> void:
-	pass
+func _first(candidates: Array[String]) -> Node:
+	for path in candidates:
+		var node := get_node_or_null(path)
+		if node:
+			return node
+	return null
 
 func _input(event: InputEvent) -> void:
 	if not player_nearby or is_open:
@@ -28,11 +32,18 @@ func _input_event(viewport: Viewport, event: InputEvent, shape_idx: int) -> void
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		_open_chest()
 
-func _process(_delta: float) -> void:
+const QUERY_INTERVAL := 0.1
+var _query_timer := 0.0
+
+func _process(delta: float) -> void:
 	if is_open:
 		if chest_prompt:
 			chest_prompt.visible = false
 		return
+	_query_timer -= delta
+	if _query_timer > 0.0:
+		return
+	_query_timer = QUERY_INTERVAL
 	var bodies := get_overlapping_bodies()
 	player_nearby = false
 	for b in bodies:
@@ -72,12 +83,12 @@ func break_as_block() -> void:
 		return
 	is_breaking = true
 	remove_from_group("opened_chest")
-	monitoring = false
-	monitorable = false
+	set_deferred("monitoring", false)
+	set_deferred("monitorable", false)
 	var chest_body := get_parent()
 	if chest_body is CollisionObject2D:
-		chest_body.collision_layer = 0
-		chest_body.collision_mask = 0
+		chest_body.set_deferred("collision_layer", 0)
+		chest_body.set_deferred("collision_mask", 0)
 	if chest_prompt:
 		chest_prompt.visible = false
 	SFX.play("break_wood", global_position, -4.0, 0.08)
@@ -175,8 +186,8 @@ func _play_break_shatter() -> void:
 
 
 func _play_open_animation() -> void:
-	var lid = $Lid
-	var glow = $Glow
+	var lid := chest_lid
+	var glow := _first(["Interaction/Glow", "Glow"])
 
 	if lid:
 		var tween := create_tween()

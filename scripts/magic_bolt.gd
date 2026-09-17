@@ -60,7 +60,7 @@ func _break_tile(tilemap: TileMap) -> void:
 	sfx.break_opened_chests_near(parent, global_position)
 
 func _explode() -> void:
-	SFX.play("swing", global_position, -10.0, 2.2)
+	SFX.play("swing", global_position, -10.0, 0.1, 2.2)
 	var burst := CPUParticles2D.new()
 	burst.emitting = true
 	burst.one_shot = true

@@ -42,7 +42,7 @@ func _fire() -> void:
 		bullet.global_position = to_global(Vector2(62, 0).rotated(a))
 		bullet.setup(w, Vector2.RIGHT.rotated(rotation + a))
 
-	SFX.play("swing", global_position, -8.0, 1.5)
+	SFX.play("swing", global_position, -8.0, 0.1, 1.5)
 	queue_redraw()
 
 func _draw() -> void:

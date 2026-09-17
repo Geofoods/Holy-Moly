@@ -16,7 +16,6 @@ func _init() -> void:
 	enemy_damage = 8.0
 	self_damage = 1.0
 	hits_mole = false
-	breaks_tiles = true
 	tile_break_radius = 2
 
 func _ready() -> void:

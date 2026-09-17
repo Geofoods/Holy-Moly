@@ -9,6 +9,18 @@ var slots: Array = [null, null, null, null]
 var slot_counts: Array = [0, 0, 0, 0]
 
 var current_level_path: String = "res://scenes/level1.tscn"
+
+## Remembers where the mole left each level so re-entering that level restores
+## the same position instead of the scene's default spawn point.
+var level_return_positions: Dictionary = {}
+
+func set_level_return_position(path: String, pos: Vector2) -> void:
+	if not path.is_empty():
+		level_return_positions[path] = pos
+
+func get_level_return_position(path: String) -> Variant:
+	return level_return_positions.get(path, null)
+
 var selected_slot: int = -1:
 	set(value):
 		selected_slot = value
@@ -30,6 +42,7 @@ func initialize() -> void:
 
 func reset() -> void:
 	clear()
+	level_return_positions.clear()
 	_initialized = false
 
 func add_item(item: ItemData) -> bool:

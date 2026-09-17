@@ -7,13 +7,13 @@ extends RigidBody2D
 
 const FUSE_TIME := 2.2
 const FLASH_TIME := 0.35
+const TileBreakSFX := preload("res://scripts/tile_break_sfx.gd")
 
 var accent := Color(1.0, 1.0, 1.0, 1.0)
 var blast_radius := 160.0
 var enemy_damage := 4.0
 var self_damage := 2.0
 var hits_mole := true
-var breaks_tiles := false
 var tile_break_radius := 1
 
 var dead := false
@@ -21,7 +21,6 @@ var fuse_active := false
 var fuse_elapsed := 0.0
 var tick_cooldown := 0.0
 var is_flashing := false
-var deflected := false
 
 var _sprite: Sprite2D
 
@@ -65,15 +64,6 @@ func _process(delta: float) -> void:
 func arm() -> void:
 	fuse_active = true
 
-func deflect(target_pos: Vector2) -> void:
-	if deflected:
-		return
-	deflected = true
-	var dir := (target_pos - global_position).normalized()
-	linear_velocity = dir * maxf(linear_velocity.length() * 1.5, 500.0)
-	if _sprite:
-		_sprite.modulate = Color(0.6, 0.9, 1.0, 1.0)
-
 func _start_flash() -> void:
 	is_flashing = true
 	var tween := create_tween()
@@ -94,7 +84,7 @@ func _explode() -> void:
 	var mole := get_tree().get_first_node_in_group("mole")
 	if mole and mole.has_method("screen_shake"):
 		mole.screen_shake(16.0, 0.3)
-	if hits_mole and mole and is_instance_valid(mole) and not deflected:
+	if hits_mole and mole and is_instance_valid(mole):
 		var dist := global_position.distance_to(mole.global_position)
 		if dist <= blast_radius and mole.has_method("take_damage"):
 			mole.take_damage(self_damage, global_position, true)
@@ -120,16 +110,15 @@ func _break_tiles_in_radius() -> void:
 	var tilemap: TileMap = get_parent().get_node_or_null("TileMap")
 	if not tilemap:
 		return
-	var sfx = load("res://scripts/tile_break_sfx.gd")
 	var center_tile := tilemap.local_to_map(tilemap.to_local(global_position))
 	for dx in range(-tile_break_radius, tile_break_radius + 1):
 		for dy in range(-tile_break_radius, tile_break_radius + 1):
 			var tp := Vector2i(center_tile.x + dx, center_tile.y + dy)
 			if tilemap.get_cell_source_id(0, tp) != -1:
-				sfx.break_tile(tilemap, tp, get_parent())
-			else:
-				sfx.break_decoration_tile(tilemap, tp, get_parent())
-	sfx.break_opened_chests_near(get_parent(), global_position, blast_radius)
+				TileBreakSFX.break_tile(tilemap, tp, get_parent())
+			elif tilemap.get_cell_source_id(1, tp) != -1:
+				TileBreakSFX.break_decoration_tile(tilemap, tp, get_parent())
+	TileBreakSFX.break_opened_chests_near(get_parent(), global_position, blast_radius)
 
 func _blast_particles() -> void:
 	var smoke := CPUParticles2D.new()

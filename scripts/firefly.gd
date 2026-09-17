@@ -2,12 +2,21 @@ extends Node2D
 
 const SPEED := 30.0
 const WANDER_RADIUS := 250.0
+## Fireflies are tiny decorations: once the mole is more than this far away
+## (e.g. digging deep or far away), stop simulating them every frame. They
+## resume when the mole comes back.
+const SIM_PAUSE_DIST := 1400.0
+## Seconds between mole distance checks (cheap: one distance_squared call).
+const MOLE_CHECK_INTERVAL := 0.5
 
 var origin: Vector2
 var wander_target: Vector2
 var float_phase := 0.0
 
-@onready var light: PointLight2D = $Light
+var _mole: Node2D = null
+var _mole_check_timer := 0.0
+var _last_glow := -1.0
+
 @onready var body: ColorRect = $Body
 
 func _ready() -> void:
@@ -16,6 +25,17 @@ func _ready() -> void:
 	float_phase = randf_range(0.0, TAU)
 
 func _process(delta: float) -> void:
+	_mole_check_timer -= delta
+	if _mole_check_timer <= 0.0:
+		_mole_check_timer = MOLE_CHECK_INTERVAL
+		_mole = get_tree().get_first_node_in_group("mole")
+	if _mole != null and not is_instance_valid(_mole):
+		_mole = null
+	if _mole != null:
+		# Squared distance against a generous threshold; far fireflies idle.
+		if global_position.distance_squared_to(_mole.global_position) > SIM_PAUSE_DIST * SIM_PAUSE_DIST:
+			return
+
 	float_phase += delta * 4.0
 	position += Vector2(0.0, sin(float_phase) * delta * 16.0)
 
@@ -26,5 +46,6 @@ func _process(delta: float) -> void:
 	position += dir * SPEED * delta
 
 	var glow := 0.8 + sin(float_phase * 0.7) * 0.4
-	body.color.a = glow
-	light.energy = glow * 2.0
+	if not is_equal_approx(glow, _last_glow):
+		_last_glow = glow
+		body.color.a = glow

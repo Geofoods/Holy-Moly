@@ -3,15 +3,12 @@ extends "res://scripts/custom_bomb.gd"
 ## Stink Bomb: detonates a lingering stink cloud that slows enemies caught
 ## inside it. Doesn't break anything or hurt anyone.
 
-const CLOUD_DURATION := 6.0
-
 func _init() -> void:
 	accent = Color(0.45, 0.85, 0.35, 1.0)
 	blast_radius = 170.0
 	enemy_damage = 0.0
 	self_damage = 0.0
 	hits_mole = false
-	breaks_tiles = false
 
 func _process(delta: float) -> void:
 	if not fuse_active or is_flashing:

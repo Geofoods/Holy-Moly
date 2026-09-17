@@ -55,7 +55,7 @@ func _break_tile(tilemap: TileMap) -> void:
 	sfx.break_opened_chests_near(parent, global_position)
 
 func _hit_impact() -> void:
-	SFX.play("swing", global_position, -10.0, 1.6)
+	SFX.play("swing", global_position, -10.0, 0.1, 1.6)
 	var flash := ColorRect.new()
 	flash.size = Vector2(6, 6)
 	flash.rotation = randf_range(0.0, TAU)

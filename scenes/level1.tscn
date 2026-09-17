@@ -11,6 +11,7 @@
 [ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="11_eb6dy"]
 [ext_resource type="PackedScene" uid="uid://brmtyiqcy1wkv" path="res://scenes/inventory_ui.tscn" id="12_invui"]
 [ext_resource type="PackedScene" uid="uid://cdxu1kg5or16d" path="res://candle.tscn" id="15_jkv2x"]
+[ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="16_dxn3v"]
 [ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
 [ext_resource type="PackedScene" uid="uid://3wwhicdeo8hl" path="res://scenes/info_popup.tscn" id="info_popup_res"]
 [ext_resource type="PackedScene" path="res://scenes/level_intro_banner.tscn" id="level_banner_res"]
@@ -63,7 +64,7 @@ scale = Vector2(0.25, 0.25)
 [node name="Camera2D" type="Camera2D" parent="CharacterBody2D2" unique_id=955812054]
 position = Vector2(92, -296)
 scale = Vector2(4, 4)
-zoom = Vector2(0.5, 0.5)
+zoom = Vector2(0.65, 0.65)
 position_smoothing_enabled = true
 
 [node name="Enemy" parent="." unique_id=1155690396 instance=ExtResource("2_enemy")]
@@ -134,7 +135,6 @@ script = ExtResource("11_eb6dy")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="nextlevel" unique_id=1570220951]
 position = Vector2(2048, 1577)
 shape = SubResource("RectangleShape2D_trceg")
-color = Color(0, 0, 0, 1)
 
 [node name="candle" parent="." unique_id=815664404 instance=ExtResource("15_jkv2x")]
 position = Vector2(-200, -42)
@@ -148,11 +148,27 @@ position = Vector2(2587, -45)
 [node name="candle4" parent="." unique_id=2074176246 instance=ExtResource("15_jkv2x")]
 position = Vector2(3682, -126)
 
-[node name="rock" parent="." instance=ExtResource("rock_res")]
+[node name="rock" parent="." unique_id=630847138 instance=ExtResource("rock_res")]
 position = Vector2(450, -80)
 
-[node name="rock2" parent="." instance=ExtResource("rock_res")]
+[node name="rock2" parent="." unique_id=1028924772 instance=ExtResource("rock_res")]
 position = Vector2(1600, -80)
+
+[node name="Costume7" type="Sprite2D" parent="." unique_id=632085231]
+z_index = 99
+position = Vector2(1736.0002, 557)
+rotation = -0.0016440153
+scale = Vector2(18.090199, 1.717514)
+texture = ExtResource("16_dxn3v")
+
+[node name="ColorRect3" type="ColorRect" parent="Costume7" unique_id=401983242]
+z_index = 99
+offset_left = 222.99133
+offset_top = 2183.6511
+offset_right = 676.392
+offset_bottom = 4218.14
+rotation = 3.1415927
+color = Color(0, 0, 0, 1)
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]

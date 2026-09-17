@@ -8,6 +8,7 @@ const MAGNET_DELAY := 0.5
 const COLLECT_DISTANCE := 46.0
 
 var _time := 0.0
+var _mole: Node2D = null
 
 func _ready() -> void:
 	add_to_group("coin")
@@ -16,20 +17,25 @@ func _ready() -> void:
 	linear_velocity = Vector2(randf_range(-180.0, 180.0), randf_range(-460.0, -320.0))
 	angular_velocity = randf_range(-8.0, 8.0)
 	body_entered.connect(_on_body_entered)
+	_mole = get_tree().get_first_node_in_group("mole")
 
 func _physics_process(delta: float) -> void:
 	_time += delta
 	if _time < MAGNET_DELAY:
 		return
-	var mole := get_tree().get_first_node_in_group("mole")
-	if not mole or not is_instance_valid(mole):
+	var mole := _mole
+	if mole == null or not is_instance_valid(mole):
+		mole = get_tree().get_first_node_in_group("mole")
+		_mole = mole
+	if not mole:
 		return
 	var to_mole: Vector2 = (mole as Node2D).global_position - global_position
-	if to_mole.length() > MAGNET_RANGE:
+	var dist_sq := to_mole.length_squared()
+	if dist_sq > MAGNET_RANGE * MAGNET_RANGE:
 		return
 	sleeping = false
 	linear_velocity = linear_velocity.lerp(to_mole.normalized() * MAGNET_SPEED, minf(delta * 8.0, 1.0))
-	if to_mole.length() < COLLECT_DISTANCE:
+	if dist_sq < COLLECT_DISTANCE * COLLECT_DISTANCE:
 		_collect()
 
 func _on_body_entered(body: Node) -> void:
@@ -39,7 +45,7 @@ func _on_body_entered(body: Node) -> void:
 func _collect() -> void:
 	var gained := value * roundi(ComboManager.get_coin_multiplier())
 	Shop.add_coins(gained)
-	SFX.play("coin", global_position, -8.0, randf_range(0.9, 1.2))
+	SFX.play("coin", global_position, -8.0, 0.15)
 	_spawn_collect_burst()
 	var scene := get_tree().current_scene
 	if scene:

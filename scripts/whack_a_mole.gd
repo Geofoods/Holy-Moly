@@ -411,7 +411,7 @@ func _win() -> void:
 func _lose() -> void:
 	_over = true
 	_hide_all_whackers()
-	SFX.play("death", _mole.position, -6.0, 1.0)
+	SFX.play("death", _mole.position, -6.0)
 	_show_overlay(false, "WHACKED!", "You got shoveled. Try again!")
 
 func _show_overlay(win: bool, head: String, body: String) -> void:

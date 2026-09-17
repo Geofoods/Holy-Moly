@@ -22,8 +22,21 @@ var _stun_timer := 0.0
 var _slow_timer := 0.0
 var _slow_factor := 1.0
 const MOVE_SFX_INTERVAL := 0.4
+
+## Level-of-detail throttling: enemies far from the mole don't need 60Hz AI.
+const FAR_UPDATE_INTERVAL := 0.1
+## Past this distance enemies only tick at FAR_UPDATE_INTERVAL.
+const FAR_UPDATE_DIST := 1200.0
+const FAR_UPDATE_DIST_SQ := FAR_UPDATE_DIST * FAR_UPDATE_DIST
+## Beyond this distance the enemy fully sleeps (it can't see or reach the mole).
+const SLEEP_DIST := 2600.0
 var ant_bullet_scene := preload("res://scenes/ant_bullet.tscn")
 var _mole_in_contact := false
+var _mole: Node2D = null
+var _target_scan_timer := 0.0
+var _lod_timer := 0.0
+var _far_mode := false
+var _asleep := false
 @onready var hurtbox: Area2D = $Hurtbox
 @onready var hitbox: Area2D = $Hitbox
 @onready var visual: AnimatedSprite2D = $Visual
@@ -39,7 +52,29 @@ func _ready() -> void:
 	_setup_health_bar()
 
 func _physics_process(delta: float) -> void:
-	_find_target()
+	# --- Distance LOD: far enemies tick at 10Hz, very far ones sleep ---
+	var lod_tick := false
+	_lod_timer -= delta
+	if _lod_timer <= 0.0:
+		_lod_timer = FAR_UPDATE_INTERVAL
+		lod_tick = true
+		var mole := _get_mole()
+		if mole != null:
+			var dist_sq := global_position.distance_squared_to(mole.global_position)
+			_far_mode = dist_sq > FAR_UPDATE_DIST_SQ
+			_asleep = dist_sq > SLEEP_DIST * SLEEP_DIST
+		else:
+			_far_mode = false
+			_asleep = false
+	if _asleep:
+		return
+	if _far_mode and not lod_tick:
+		return
+
+	_target_scan_timer -= delta
+	if _target_scan_timer <= 0.0:
+		_target_scan_timer = 0.2
+		_find_target()
 
 	if _stun_timer > 0.0:
 		_stun_timer -= delta
@@ -86,11 +121,18 @@ func _physics_process(delta: float) -> void:
 	_play_move_sound(delta)
 	_update_shooting(delta)
 
+func _get_mole() -> Node2D:
+	if _mole != null and not is_instance_valid(_mole):
+		_mole = null
+	if _mole == null:
+		_mole = get_tree().get_first_node_in_group("mole")
+	return _mole
+
 func _update_shooting(delta: float) -> void:
 	if health <= 0:
 		return
-	var mole = get_tree().get_first_node_in_group("mole")
-	if not mole or not is_instance_valid(mole):
+	var mole := _get_mole()
+	if not mole:
 		return
 	var dist := global_position.distance_to(mole.global_position)
 	if dist > 1000.0 or dist < 120.0:
@@ -127,7 +169,7 @@ func _find_target() -> void:
 		target_mole = lure
 		return
 	if target_mole == null or not is_instance_valid(target_mole):
-		target_mole = get_tree().get_first_node_in_group("mole")
+		target_mole = _get_mole()
 		if target_mole:
 			add_collision_exception_with(target_mole)
 	elif global_position.distance_squared_to(target_mole.global_position) > DETECT_RANGE * DETECT_RANGE:
@@ -207,6 +249,8 @@ class FloatingDamageLabel:
 		if _time >= LIFETIME:
 			queue_free()
 
+static var _damage_font: Font = null
+
 static func spawn_damage_number(enemy: Node2D, amount: float) -> void:
 	if not is_instance_valid(enemy) or not enemy.is_inside_tree():
 		return
@@ -220,9 +264,10 @@ static func spawn_damage_number(enemy: Node2D, amount: float) -> void:
 	label.add_theme_color_override("font_color", Color(1.0, 0.95, 0.5))
 	label.add_theme_constant_override("outline_size", 12)
 	label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
-	var font := load("res://Baby Doll.otf") as Font
-	if font:
-		label.add_theme_font_override("font", font)
+	if _damage_font == null:
+		_damage_font = load("res://Baby Doll.otf") as Font
+	if _damage_font:
+		label.add_theme_font_override("font", _damage_font)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.z_index = 50
 	label.velocity = Vector2.from_angle(randf_range(-PI * 0.78, -PI * 0.22)) * randf_range(880.0, 960.0)

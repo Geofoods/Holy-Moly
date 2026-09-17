@@ -11,14 +11,12 @@ var _mouse_held := false
 const GHOST_COUNT := 16
 const GHOST_SPAWN_INTERVAL := 0.02
 const GHOST_HOLD_DURATION := 0.08
-const GHOST_FADE_DURATION := 0.55
-const GHOST_SCALE := 1.5
-const GHOST_ALPHA := 0.5
-const GHOST_TIP_DISTANCE := 200.0
-const GHOST_Z_INDEX := 6
+const GHOST_FADE_DURATION := 0.8
+const GHOST_SCALE := 0.3
+const GHOST_ALPHA := 0.25
+const GHOST_Z_INDEX := 0
 
 @onready var hitbox: Area2D = $Hitbox
-@onready var hitbox_col: CollisionShape2D = $Hitbox/CollisionShape2D
 @onready var sprite: Sprite2D = $Sprite2D
 
 var _ghosts: Array[Sprite2D] = []
@@ -65,7 +63,7 @@ func _setup_ghosts() -> void:
 		ghost.modulate = Color(1.0, 1.0, 1.0, 0.0)
 		ghost.z_index = GHOST_Z_INDEX
 		ghost.z_as_relative = false
-		world.add_child(ghost)
+		world.add_child.call_deferred(ghost)
 		_ghosts.append(ghost)
 
 func _tilemap_refresh() -> TileMap:
@@ -94,7 +92,7 @@ func _setup_tile_highlight() -> void:
 	tile_highlight.z_index = 0
 	tile_highlight.z_as_relative = false
 	tile_highlight.modulate = Color.WHITE
-	world.add_child(tile_highlight)
+	world.add_child.call_deferred(tile_highlight)
 	tile_highlight.hide()
 
 	_highlight_tween = create_tween().set_loops()
@@ -178,9 +176,7 @@ func _capture_ghost(delta: float) -> void:
 		return
 	_ghost_accum = 0.0
 
-	var tip := sprite.global_position + Vector2(GHOST_TIP_DISTANCE, 0.0).rotated(sprite.global_rotation)
 	_spawn_one_ghost(sprite.global_position)
-	_spawn_one_ghost(tip)
 
 func _spawn_one_ghost(pos: Vector2) -> void:
 	var ghost := _ghosts[_ghost_index]
@@ -192,7 +188,9 @@ func _spawn_one_ghost(pos: Vector2) -> void:
 	ghost.flip_h = sprite.flip_h
 	ghost.flip_v = sprite.flip_v
 	ghost.offset = sprite.offset
-	ghost.modulate = Color(1.0, 1.0, 1.0, GHOST_ALPHA)
+	var ghost_color := sprite.self_modulate
+	ghost_color.a = GHOST_ALPHA
+	ghost.modulate = ghost_color
 
 	var prev = _ghost_tweens.get(ghost)
 	if prev is Tween and prev.is_valid():

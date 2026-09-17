@@ -66,7 +66,7 @@ func _on_area_body_entered(body: Node) -> void:
 		if b.velocity.y > 40.0 or _was_falling(b):
 			b.velocity = Vector2(b.velocity.x * 0.3, BOUNCE_VELOCITY)
 			_squish_anim(Color(1.0, 0.85, 0.8, 1.0))
-			SFX.play("jump", global_position, -4.0, 1.3)
+			SFX.play("jump", global_position, -4.0, 0.1, 1.3)
 	elif "_stun_timer" in body:
 		if body.velocity.y > 40.0:
 			body.velocity = Vector2(body.velocity.x * 0.3, ENEMY_BOUNCE_VELOCITY)

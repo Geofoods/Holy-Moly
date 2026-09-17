@@ -462,7 +462,7 @@ func _end_cutscene() -> void:
 
 	var mole_cam := _cutscene_mole.get_node("Camera2D") as Camera2D
 	mole_cam.enabled = true
-	mole_cam.zoom = Vector2(0.5, 0.5)
+	mole_cam.zoom = Vector2(0.65, 0.65)
 	mole_cam.position.y = -500
 
 	process_mode = PROCESS_MODE_INHERIT
@@ -631,7 +631,7 @@ func _finish_death_cutscene() -> void:
 		var mole_cam := _cutscene_mole.get_node("Camera2D") as Camera2D
 		if mole_cam:
 			mole_cam.enabled = true
-			mole_cam.zoom = Vector2(0.5, 0.5)
+			mole_cam.zoom = Vector2(0.65, 0.65)
 			mole_cam.position.y = -500
 		_cutscene_mole.process_mode = PROCESS_MODE_INHERIT
 	_cutscene_mole = null

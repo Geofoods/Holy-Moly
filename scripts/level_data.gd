@@ -51,6 +51,21 @@ const LEVELS: Dictionary = {
 		"name": "The Corrupted Core",
 		"tip": "Every enemy from your journey can appear here. Stay sharp and don't get surrounded.",
 	},
+	"res://scenes/level_10.tscn": {
+		"number": 10,
+		"name": "Crystal Switchback",
+		"tip": "The ledges are safe, but the gaps are not. Keep your momentum and watch for ambushes above.",
+	},
+	"res://scenes/level_11.tscn": {
+		"number": 11,
+		"name": "Beetle Gauntlet",
+		"tip": "Beetles need room to charge. Bait them across the arena, then punish them while they recover.",
+	},
+	"res://scenes/level_12.tscn": {
+		"number": 12,
+		"name": "Lantern Maze",
+		"tip": "Small ledges reward careful jumps. The warm lights mark the safest route through the dark.",
+	},
 }
 
 func get_info(scene_path: String) -> Dictionary:

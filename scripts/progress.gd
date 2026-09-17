@@ -15,6 +15,9 @@ const ACORN_LEVELS: Array[String] = [
 	"res://scenes/level_08.tscn",
 	"res://scenes/level_hive.tscn",
 	"res://scenes/level_09.tscn",
+	"res://scenes/level_10.tscn",
+	"res://scenes/level_11.tscn",
+	"res://scenes/level_12.tscn",
 ]
 
 var acorns := {}

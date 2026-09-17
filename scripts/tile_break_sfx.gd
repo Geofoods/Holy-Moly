@@ -356,14 +356,12 @@ static func _break_single_decoration_tile(tilemap: TileMap, tile_pos: Vector2i, 
 
 	var world_pos := tilemap.to_global(tilemap.map_to_local(tile_pos))
 
-	var player := AudioStreamPlayer2D.new()
+	var player := _acquire_player(parent)
 	player.stream = sound
 	player.pitch_scale = randf_range(0.9, 1.1)
 	player.volume_db = -8.0
-	parent.add_child(player)
 	player.global_position = world_pos
 	player.play()
-	player.finished.connect(player.queue_free)
 
 	spawn_break_particles(tilemap, tile_pos, atlas_coords, parent)
 	tilemap.erase_cell(1, tile_pos)
@@ -374,11 +372,15 @@ static func _cascade_break(tilemap: TileMap, tiles: Array[Vector2i], parent: Nod
 	if not is_instance_valid(parent) or parent.get_tree() == null:
 		return
 	var pos := tiles[index]
+	_break_cascade_cell(tilemap, pos, parent)
+	parent.get_tree().create_timer(0.06).timeout.connect(_cascade_break.bind(tilemap, tiles, parent, index + 1))
+
+static func _break_cascade_cell(tilemap: TileMap, pos: Vector2i, parent: Node) -> void:
 	var s := tilemap.get_cell_source_id(0, pos)
 	if s != -1:
 		var a := tilemap.get_cell_atlas_coords(0, pos)
 		_break_single_tile(tilemap, pos, a, parent)
-	parent.get_tree().create_timer(0.06).timeout.connect(_cascade_break.bind(tilemap, tiles, parent, index + 1))
+	_break_decoration_tile(tilemap, pos, parent)
 
 static func _collapse_unsupported_sides(tilemap: TileMap, origin: Vector2i, parent: Node) -> void:
 	var pending: Array[Vector2i] = [origin]
@@ -401,12 +403,21 @@ static func _break_stuff_above(tilemap: TileMap, tile_pos: Vector2i, parent: Nod
 	var stuff_tiles: Array[Vector2i] = []
 	for dy in range(1, 20):
 		var above := Vector2i(tile_pos.x, tile_pos.y - dy)
-		var tile_data := tilemap.get_cell_tile_data(0, above)
-		if tile_data == null or not (tile_data.get_custom_data("stuff") as bool):
+		if not _cell_has_stuff(tilemap, above):
 			break
 		stuff_tiles.append(above)
 	if stuff_tiles.size() > 0:
 		_cascade_break(tilemap, stuff_tiles, parent, 0)
+
+static func _cell_has_stuff(tilemap: TileMap, cell: Vector2i) -> bool:
+	var td := tilemap.get_cell_tile_data(0, cell)
+	if td != null:
+		return (td.get_custom_data("stuff") as bool)
+	for layer in range(1, tilemap.get_layers_count()):
+		var d := tilemap.get_cell_tile_data(layer, cell)
+		if d != null and (d.get_custom_data("stuff") as bool):
+			return true
+	return false
 
 static func _break_single_tile(tilemap: TileMap, tile_pos: Vector2i, atlas_coords: Vector2i, parent: Node, force: bool = false) -> void:
 	var source_id := tilemap.get_cell_source_id(0, tile_pos)
@@ -422,17 +433,49 @@ static func _break_single_tile(tilemap: TileMap, tile_pos: Vector2i, atlas_coord
 
 	var world_pos := tilemap.to_global(tilemap.map_to_local(tile_pos))
 
-	var player := AudioStreamPlayer2D.new()
+	# Pooled player: tunneling breaks many tiles per second, so a fresh
+	# AudioStreamPlayer2D allocation per tile causes noticeable alloc churn.
+	var player := _acquire_player(parent)
 	player.stream = sound
 	player.pitch_scale = randf_range(0.9, 1.1)
 	player.volume_db = -6.0
-	parent.add_child(player)
 	player.global_position = world_pos
 	player.play()
-	player.finished.connect(player.queue_free)
 
 	spawn_break_particles(tilemap, tile_pos, atlas_coords, parent)
 	tilemap.erase_cell(0, tile_pos)
+
+const MAX_ACTIVE_DEBRIS := 32
+static var _active_debris := 0
+
+const MAX_POOLED := 12
+static var _pool: Array[AudioStreamPlayer2D] = []
+
+static func _acquire_player(parent: Node) -> AudioStreamPlayer2D:
+	var p: AudioStreamPlayer2D
+	if _pool.is_empty():
+		p = AudioStreamPlayer2D.new()
+		p.finished.connect(_release_player.bind(p))
+	else:
+		p = _pool.pop_back()
+	parent.add_child(p)
+	return p
+
+static func _release_player(p: AudioStreamPlayer2D) -> void:
+	if not is_instance_valid(p):
+		return
+	p.stop()
+	p.stream = null
+	var tree := p.get_tree()
+	if tree != null and tree.current_scene != null and _pool.size() < MAX_POOLED:
+		if p.get_parent():
+			p.get_parent().remove_child(p)
+		_pool.append(p)
+	else:
+		p.queue_free()
+
+static func _on_debris_freed() -> void:
+	_active_debris -= 1
 
 static func spawn_break_particles(tilemap: TileMap, tile_pos: Vector2i, atlas_coords: Vector2i, parent: Node) -> void:
 	var colors := get_tile_colors(atlas_coords)
@@ -445,8 +488,11 @@ static func spawn_break_particles(tilemap: TileMap, tile_pos: Vector2i, atlas_co
 		piece_tex = src.texture
 		basis = Vector2(src.texture_region_size)
 
-	const DEBRIS_COUNT := 12
+	const DEBRIS_COUNT := 4
 	for i in range(DEBRIS_COUNT):
+		if _active_debris >= MAX_ACTIVE_DEBRIS:
+			return
+		_active_debris += 1
 		var chunk := RigidBody2D.new()
 		chunk.collision_layer = 2
 		chunk.gravity_scale = 3.2
@@ -495,6 +541,7 @@ static func spawn_break_particles(tilemap: TileMap, tile_pos: Vector2i, atlas_co
 		tween.tween_interval(1.0)
 		tween.tween_property(chunk, "modulate:a", 0.0, 0.5)
 		tween.tween_callback(chunk.queue_free)
+		chunk.tree_exited.connect(_on_debris_freed)
 
 static func _break_opened_chests_near(parent: Node, world_pos: Vector2, radius: float = 120.0) -> void:
 	if not is_instance_valid(parent):

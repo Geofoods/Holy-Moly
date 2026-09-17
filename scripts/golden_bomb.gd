@@ -9,7 +9,6 @@ func _init() -> void:
 	enemy_damage = 9.0
 	self_damage = 3.0
 	hits_mole = true
-	breaks_tiles = true
 	tile_break_radius = 3
 
 func _blast() -> void:
