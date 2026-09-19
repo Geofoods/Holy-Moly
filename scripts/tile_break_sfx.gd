@@ -445,9 +445,6 @@ static func _break_single_tile(tilemap: TileMap, tile_pos: Vector2i, atlas_coord
 	spawn_break_particles(tilemap, tile_pos, atlas_coords, parent)
 	tilemap.erase_cell(0, tile_pos)
 
-const MAX_ACTIVE_DEBRIS := 32
-static var _active_debris := 0
-
 const MAX_POOLED := 12
 static var _pool: Array[AudioStreamPlayer2D] = []
 
@@ -474,9 +471,6 @@ static func _release_player(p: AudioStreamPlayer2D) -> void:
 	else:
 		p.queue_free()
 
-static func _on_debris_freed() -> void:
-	_active_debris -= 1
-
 static func spawn_break_particles(tilemap: TileMap, tile_pos: Vector2i, atlas_coords: Vector2i, parent: Node) -> void:
 	var colors := get_tile_colors(atlas_coords)
 	var world_pos := tilemap.to_global(tilemap.map_to_local(tile_pos))
@@ -490,9 +484,6 @@ static func spawn_break_particles(tilemap: TileMap, tile_pos: Vector2i, atlas_co
 
 	const DEBRIS_COUNT := 4
 	for i in range(DEBRIS_COUNT):
-		if _active_debris >= MAX_ACTIVE_DEBRIS:
-			return
-		_active_debris += 1
 		var chunk := RigidBody2D.new()
 		chunk.collision_layer = 2
 		chunk.gravity_scale = 3.2
@@ -541,7 +532,6 @@ static func spawn_break_particles(tilemap: TileMap, tile_pos: Vector2i, atlas_co
 		tween.tween_interval(1.0)
 		tween.tween_property(chunk, "modulate:a", 0.0, 0.5)
 		tween.tween_callback(chunk.queue_free)
-		chunk.tree_exited.connect(_on_debris_freed)
 
 static func _break_opened_chests_near(parent: Node, world_pos: Vector2, radius: float = 120.0) -> void:
 	if not is_instance_valid(parent):

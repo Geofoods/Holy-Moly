@@ -170,6 +170,20 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_resumebutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_resumebutton_hover")
 text = " RESUME "
 
+[node name="RestartButton" type="Button" parent="CenterContainer/PausePanel/VBoxContainer/ButtonContainer" unique_id=1696080541]
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.32, 0.2, 0.08, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("2_myx47")
+theme_override_font_sizes/font_size = 32
+theme_override_styles/normal = SubResource("StyleBoxFlat_resumebutton")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_resumebutton_hover")
+theme_override_styles/hover = SubResource("StyleBoxFlat_resumebutton_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_resumebutton_hover")
+text = " RESTART "
+
 [node name="FieldGuideButton" type="Button" parent="CenterContainer/PausePanel/VBoxContainer/ButtonContainer"]
 custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
@@ -199,5 +213,6 @@ theme_override_styles/focus = SubResource("StyleBoxFlat_exitbutton_hover")
 text = "  MENU   "
 
 [connection signal="pressed" from="CenterContainer/PausePanel/VBoxContainer/ButtonContainer/ResumeButton" to="." method="_on_resume_pressed"]
+[connection signal="pressed" from="CenterContainer/PausePanel/VBoxContainer/ButtonContainer/RestartButton" to="." method="_on_restart_pressed"]
 [connection signal="pressed" from="CenterContainer/PausePanel/VBoxContainer/ButtonContainer/FieldGuideButton" to="." method="_on_field_guide_pressed"]
 [connection signal="pressed" from="CenterContainer/PausePanel/VBoxContainer/ButtonContainer/MainMenuButton" to="." method="_on_main_menu_pressed"]

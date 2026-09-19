@@ -15,7 +15,6 @@
 [ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
 [ext_resource type="PackedScene" uid="uid://3wwhicdeo8hl" path="res://scenes/info_popup.tscn" id="info_popup_res"]
 [ext_resource type="PackedScene" path="res://scenes/level_intro_banner.tscn" id="level_banner_res"]
-[ext_resource type="PackedScene" path="res://scenes/rock.tscn" id="rock_res"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.8, 0.68, 0.46, 1)
@@ -147,12 +146,6 @@ position = Vector2(2587, -45)
 
 [node name="candle4" parent="." unique_id=2074176246 instance=ExtResource("15_jkv2x")]
 position = Vector2(3682, -126)
-
-[node name="rock" parent="." unique_id=630847138 instance=ExtResource("rock_res")]
-position = Vector2(450, -80)
-
-[node name="rock2" parent="." unique_id=1028924772 instance=ExtResource("rock_res")]
-position = Vector2(1600, -80)
 
 [node name="Costume7" type="Sprite2D" parent="." unique_id=632085231]
 z_index = 99

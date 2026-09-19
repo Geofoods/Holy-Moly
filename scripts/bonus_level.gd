@@ -156,7 +156,7 @@ func _build_exit() -> void:
 	exit.collision_layer = 0
 	exit.collision_mask = 1
 	exit.set_script(preload("res://scenes/nextlevel.gd"))
-	exit.set("next_scene", "res://scenes/level_%02d.tscn" % (level_id + 1) if level_id < 12 else "res://scenes/map.tscn")
+	exit.set("next_scene", "res://scenes/level_%02d.tscn" % (level_id + 1) if level_id < 12 else "res://scenes/level1.tscn")
 	var shape := CollisionShape2D.new()
 	var rectangle := RectangleShape2D.new()
 	rectangle.size = Vector2(180, 500)

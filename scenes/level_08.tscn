@@ -318,10 +318,10 @@ texture = ExtResource("21_2exuq")
 
 [node name="ColorRect3" type="ColorRect" parent="Costume9" unique_id=1124192100]
 z_index = 99
-offset_left = 222.78896
-offset_top = 2641.37
-offset_right = 676.18964
-offset_bottom = 5107.2437
+offset_left = 222.78723
+offset_top = 2641.561
+offset_right = 676.1879
+offset_bottom = 5107.4346
 rotation = 3.1415927
 mouse_filter = 2
 color = Color(0, 0, 0, 1)

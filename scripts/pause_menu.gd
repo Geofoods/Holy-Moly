@@ -55,6 +55,7 @@ func _set_input_enabled(enabled: bool) -> void:
 
 	var button_container = $CenterContainer/PausePanel/VBoxContainer/ButtonContainer
 	button_container.get_node("ResumeButton").disabled = not enabled
+	button_container.get_node("RestartButton").disabled = not enabled
 	button_container.get_node("FieldGuideButton").disabled = not enabled
 	button_container.get_node("MainMenuButton").disabled = not enabled
 
@@ -64,6 +65,11 @@ func _on_background_input(event: InputEvent) -> void:
 
 func _on_resume_pressed() -> void:
 	toggle_pause()
+
+func _on_restart_pressed() -> void:
+	get_tree().paused = false
+	Inventory.player_health = Inventory.MAX_HEALTH
+	get_tree().reload_current_scene()
 
 func _on_field_guide_pressed() -> void:
 	var info_popup = get_parent().get_node_or_null("InfoPopup")
