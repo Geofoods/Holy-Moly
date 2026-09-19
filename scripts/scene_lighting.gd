@@ -14,6 +14,10 @@ func _process(_delta: float) -> void:
 		return
 	if path.ends_with("win_screen.tscn") or path.ends_with("game_over.tscn"):
 		return
+	# The shopkeeper's room is lit by its own candles, so it never gets the
+	# cave shade the campaign levels use.
+	if path.ends_with("shopkeeper_item.tscn"):
+		return
 	if scene.get_node_or_null("AmbientModulate") == null:
 		var cm := CanvasModulate.new()
 		cm.name = "AmbientModulate"

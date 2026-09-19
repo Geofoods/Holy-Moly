@@ -104,7 +104,7 @@ func _explode() -> void:
 				var tp := Vector2i(center_tile.x + dx, center_tile.y + dy)
 				if tilemap.get_cell_source_id(0, tp) != -1:
 					TileBreakSFX.break_tile(tilemap, tp, get_parent())
-				elif tilemap.get_cell_source_id(1, tp) != -1:
+				elif tilemap.get_layers_count() > 1 and tilemap.get_cell_source_id(1, tp) != -1:
 					TileBreakSFX.break_decoration_tile(tilemap, tp, get_parent())
 		TileBreakSFX.break_opened_chests_near(get_parent(), global_position, explosion_radius)
 

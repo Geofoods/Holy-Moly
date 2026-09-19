@@ -39,8 +39,8 @@ corner_radius_top_left = 14
 corner_radius_top_right = 14
 corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
-shadow_color = Color(0, 0, 0, 0.9)
-shadow_size = 10
+shadow_color = Color(0, 0, 0, 0.4)
+shadow_size = 8
 shadow_offset = Vector2(0, 5)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_playbutton_hover"]
@@ -69,8 +69,8 @@ corner_radius_top_left = 14
 corner_radius_top_right = 14
 corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
-shadow_color = Color(0, 0, 0, 0.9)
-shadow_size = 10
+shadow_color = Color(0, 0, 0, 0.4)
+shadow_size = 8
 shadow_offset = Vector2(0, 5)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_exitbutton_hover"]
@@ -84,8 +84,8 @@ corner_radius_top_left = 14
 corner_radius_top_right = 14
 corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
-shadow_color = Color(0, 0, 0, 0.9)
-shadow_size = 14
+shadow_color = Color(0, 0, 0, 0.4)
+shadow_size = 10
 shadow_offset = Vector2(0, 4)
 
 [node name="WinScreen" type="Control" unique_id=2142739552]

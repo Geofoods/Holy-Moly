@@ -153,7 +153,7 @@ func _on_tutorial_death() -> void:
 	mole.global_position = current_checkpoint
 	mole.invulnerable = false
 	mole.hurt_anim_time_left = 0.0
-	mole.health = 6
+	mole.health = Inventory.MAX_HEALTH
 	mole.set_physics_process(true)
 	if is_instance_valid(dialogue) and is_instance_valid(dialogue.main_label):
 		var original_text: String = dialogue.main_label.text

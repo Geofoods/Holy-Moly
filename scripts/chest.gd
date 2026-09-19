@@ -170,6 +170,7 @@ func _play_break_shatter() -> void:
 		piece.size = entry["rect"].size
 		piece.z_index = 15
 		piece.modulate.a = 1.0
+		piece.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		chest_body.add_child(piece)
 		pieces.append(piece)
 		piece.position += entry["offset"]

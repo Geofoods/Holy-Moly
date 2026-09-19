@@ -8,6 +8,14 @@ const PROJECTILE_SPEED := 800.0
 const CHEST_SPAWN_INTERVAL := 10.0
 const BOUNCE_FORCE := 700.0
 
+## Boss death finale: the floor gives way under the mole and the destruction
+## keeps pace with it on the way down to the bottom of the level.
+const COLLAPSE_STEP_TIME := 0.06
+const COLLAPSE_HALF_WIDTH_TILES := 3
+const COLLAPSE_RIDE_OFFSET := 40.0
+const COLLAPSE_CAM_OFFSET := -60.0
+const COLLAPSE_LAND_DELAY := 0.8
+
 const EnemyDamage := preload("res://scripts/enemy.gd")
 
 const INTRO_LINES := [
@@ -34,6 +42,9 @@ var _dialogue_line_index := 0
 var _dialogue_finished := false
 
 var _mole_in_bounce_zone := false
+
+var _collapse_started := false
+var _death_finished := false
 
 var _tilemap: TileMap = null
 var _tile_break_script: GDScript = null
@@ -95,6 +106,7 @@ func _create_health_bar() -> void:
 	panel_style.corner_radius_top_right = 8
 	panel_style.corner_radius_bottom_left = 8
 	panel_style.corner_radius_bottom_right = 8
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_theme_stylebox_override("panel", panel_style)
 	_health_bar_layer.add_child(panel)
 
@@ -159,6 +171,8 @@ func _health_color(ratio: float) -> Color:
 		return Color(0.9, 0.3, 0.2, 1)
 
 func _animate_health_bar() -> void:
+	if _health_bar_fill == null or _health_bar_label == null:
+		return
 	if _health_bar_tween and _health_bar_tween.is_valid():
 		_health_bar_tween.kill()
 	_health_bar_tween = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_SINE)
@@ -505,6 +519,8 @@ func _on_hurtbox_area_entered(area: Area2D) -> void:
 		take_damage(parent.get_damage())
 
 func take_damage(amount: float) -> void:
+	if not _boss_active:
+		return
 	if health <= 0:
 		return
 	health -= amount
@@ -545,12 +561,12 @@ func die() -> void:
 	big_tw.tween_interval(0.2)
 	big_tw.tween_callback(_break_apart)
 	big_tw.tween_callback(_play_death_effect)
+	big_tw.tween_interval(0.25)
+	big_tw.tween_callback(_start_collapse)
 
 	var tw := create_tween().set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_SINE)
 	tw.tween_interval(0.5)
 	tw.tween_property(self, "modulate:a", 0.0, 2.5)
-	tw.tween_interval(0.4)
-	tw.tween_callback(_finish_death_cutscene)
 
 func _small_explosion(local_pos: Vector2) -> void:
 	if not is_instance_valid(self):
@@ -623,6 +639,11 @@ func _start_death_cutscene() -> void:
 	zoom_tw.tween_property(_cutscene_cam, "zoom", Vector2(0.4, 0.4), 2.8)
 
 func _finish_death_cutscene() -> void:
+	# The collapse ends the cutscene once the mole lands; stay one-shot in case
+	# the death sequence and the collapse ever both try to finish it.
+	if _death_finished:
+		return
+	_death_finished = true
 	if _cutscene_cam and is_instance_valid(_cutscene_cam):
 		_cutscene_cam.queue_free()
 	_cutscene_cam = null
@@ -640,6 +661,105 @@ func _finish_death_cutscene() -> void:
 	process_mode = PROCESS_MODE_INHERIT
 	_go_to_win_screen()
 	queue_free()
+
+## The boss's death takes the floor with it: the tiles beneath the mole break
+## away row by row, the mole rides the collapse down, and everything caught in
+## the shaft is killed on the way. It ends at the bottom of the level.
+func _start_collapse() -> void:
+	if _collapse_started:
+		return
+	_collapse_started = true
+
+	var mole := _cutscene_mole as Node2D
+	if _tilemap == null or mole == null or not is_instance_valid(mole):
+		_finish_death_cutscene()
+		return
+	_run_collapse(mole)
+
+func _run_collapse(mole: Node2D) -> void:
+	# The mole is driven by this cutscene rather than by physics, so drop its
+	# collision layer while it rides: otherwise it would trip area triggers
+	# (coins, chests, exit zones) as it passes them on the way down.
+	var body := mole as CollisionObject2D
+	if body:
+		body.collision_layer = 0
+	_play_mole_fall_anim(mole)
+
+	var center_tile := _tilemap.local_to_map(_tilemap.to_local(mole.global_position))
+	var first_row := center_tile.y + 1
+	# Captured up front: the used rect shrinks as the shaft is carved out.
+	var bottom_row := _tilemap.get_used_rect().end.y - 1
+
+	for row in range(first_row, bottom_row + 1):
+		var broken_and_solid := _break_collapse_row(row, center_tile.x)
+		# Unbreakable ground (tiles, but none of them breakable) stops the fall;
+		# an air gap (no tiles at all) is just the mole dropping through.
+		if broken_and_solid.x == 0 and broken_and_solid.y > 0:
+			break
+		_kill_enemies_in_row(row, center_tile.x)
+
+		var target := Vector2(mole.global_position.x, _row_world_y(row) - COLLAPSE_RIDE_OFFSET)
+		var ride := create_tween()
+		ride.set_parallel(true)
+		ride.tween_property(mole, "global_position", target, COLLAPSE_STEP_TIME)
+		if _cutscene_cam and is_instance_valid(_cutscene_cam):
+			ride.tween_property(_cutscene_cam, "global_position", target + Vector2(0, COLLAPSE_CAM_OFFSET), COLLAPSE_STEP_TIME)
+		await ride.finished
+
+	await get_tree().create_timer(COLLAPSE_LAND_DELAY).timeout
+	_finish_death_cutscene()
+
+func _play_mole_fall_anim(mole: Node2D) -> void:
+	# The mole's own animation state machine is paused for the cutscene, so show
+	# its airborne pose while it rides the collapse.
+	var sprite := mole.get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
+	if sprite == null or sprite.sprite_frames == null:
+		return
+	if sprite.sprite_frames.has_animation("jumpbold"):
+		sprite.play("jumpbold")
+
+## Breaks one row of the shaft. Returns (broken, solid): how many tiles gave
+## way, and how many were found in the band at all.
+func _break_collapse_row(row: int, center_x: int) -> Vector2i:
+	var broken := 0
+	var solid := 0
+	var min_x := center_x - COLLAPSE_HALF_WIDTH_TILES
+	var max_x := center_x + COLLAPSE_HALF_WIDTH_TILES
+	for x in range(min_x, max_x + 1):
+		var tp := Vector2i(x, row)
+		if _tilemap.get_cell_source_id(0, tp) == -1:
+			continue
+		solid += 1
+		if _is_bedrock(tp):
+			continue
+		# force = false, so the collapse still respects unbreakable tiles.
+		_tile_break_script.break_tile(_tilemap, tp, get_parent())
+		broken += 1
+	return Vector2i(broken, solid)
+
+func _is_bedrock(tile_pos: Vector2i) -> bool:
+	var tile_data := _tilemap.get_cell_tile_data(0, tile_pos)
+	return tile_data != null and (tile_data.get_custom_data("bedrock") as bool)
+
+func _row_world_y(row: int) -> float:
+	return _tilemap.to_global(_tilemap.map_to_local(Vector2i(0, row))).y
+
+func _kill_enemies_in_row(row: int, center_x: int) -> void:
+	var min_x := center_x - COLLAPSE_HALF_WIDTH_TILES
+	var max_x := center_x + COLLAPSE_HALF_WIDTH_TILES
+	for hurtbox in get_tree().get_nodes_in_group("enemy_hurtbox"):
+		if not is_instance_valid(hurtbox):
+			continue
+		var enemy := hurtbox.get_parent()
+		if enemy == null or enemy == self or not (enemy is Node2D) or not enemy.has_method("die"):
+			continue
+		var cell := _tilemap.local_to_map(_tilemap.to_local((enemy as Node2D).global_position))
+		if cell.y != row or cell.x < min_x or cell.x > max_x:
+			continue
+		# Enemies animate their own deaths with tweens, so let them keep running
+		# while the cutscene holds the rest of the tree paused.
+		enemy.process_mode = Node.PROCESS_MODE_ALWAYS
+		enemy.call("die")
 
 func _go_to_win_screen() -> void:
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()

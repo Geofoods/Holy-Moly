@@ -76,6 +76,7 @@ func _set_buttons_enabled(enabled: bool) -> void:
 
 func _on_main_menu_pressed():
 	SFX.play_ui("ui_click")
+	Inventory.player_health = Inventory.MAX_HEALTH
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 	get_tree().root.add_child(transition)
 	transition.change_to("res://scenes/level1.tscn")

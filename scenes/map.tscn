@@ -16,24 +16,24 @@
 [ext_resource type="Script" path="res://scripts/shop_gate.gd" id="19_shopgate"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
-bg_color = Color(0.1, 0.1, 0.12, 0.85)
+bg_color = Color(0.8, 0.68, 0.46, 1)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.95, 0.4, 0.7, 1)
+border_color = Color(0.42, 0.28, 0.14, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton_hover"]
-bg_color = Color(0.2, 0.2, 0.22, 0.9)
+bg_color = Color(0.97, 0.91, 0.78, 1)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(1, 0.5, 0.8, 1)
+border_color = Color(0.42, 0.28, 0.14, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
@@ -147,7 +147,7 @@ offset_top = 20.0
 offset_right = -20.0
 offset_bottom = 65.0
 grow_horizontal = 0
-theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_color = Color(0.32, 0.2, 0.08, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_fonts/font = ExtResource("7_y2ir2")
 theme_override_font_sizes/font_size = 18
@@ -169,7 +169,7 @@ offset_right = -20.0
 offset_bottom = -20.0
 grow_horizontal = 0
 grow_vertical = 0
-theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_color = Color(0.32, 0.2, 0.08, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_fonts/font = ExtResource("7_y2ir2")
 theme_override_font_sizes/font_size = 22
@@ -208,6 +208,7 @@ scale = Vector2(30.055723, 1.7175142)
 texture = ExtResource("18_12q1p")
 
 [node name="ColorRect" type="ColorRect" parent="." unique_id=1170994223]
+mouse_filter = 2
 z_index = 999
 offset_left = -5085.0
 offset_top = 1256.9999

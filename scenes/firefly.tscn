@@ -7,6 +7,7 @@ z_index = 10
 script = ExtResource("1_firefly")
 
 [node name="Body" type="ColorRect" parent="."]
+mouse_filter = 2
 offset_left = -5.0
 offset_top = -5.0
 offset_right = 5.0

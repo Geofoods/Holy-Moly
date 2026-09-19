@@ -6,6 +6,11 @@ const SLOT_GAP := 14
 const HOTBAR_FONT := preload("res://Baby Doll.otf")
 var _font: Font = HOTBAR_FONT
 
+const PARCHMENT_BG := Color(0.8, 0.68, 0.46)
+const PARCHMENT_BG_ACTIVE := Color(0.97, 0.91, 0.78)
+const PARCHMENT_BORDER := Color(0.42, 0.28, 0.14)
+const PARCHMENT_TEXT := Color(0.32, 0.2, 0.08)
+
 var slot_panels: Array = []
 var slot_icons: Array = []
 var slot_textures: Array = []
@@ -97,8 +102,8 @@ func _build_ui() -> void:
 					Inventory.selected_slot = slot_idx
 		)
 		var style := StyleBoxFlat.new()
-		style.bg_color = Color("595959")
-		style.border_color = Color("f266b3")
+		style.bg_color = PARCHMENT_BG
+		style.border_color = PARCHMENT_BORDER
 		style.border_width_left = 2
 		style.border_width_top = 2
 		style.border_width_right = 2
@@ -134,6 +139,7 @@ func _build_ui() -> void:
 		icon_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		icon_label.add_theme_font_size_override("font_size", 24)
 		icon_label.add_theme_font_override("font", HOTBAR_FONT)
+		icon_label.add_theme_color_override("font_color", PARCHMENT_TEXT)
 		icon_label.text = ""
 		icon_label.mouse_filter = Control.MOUSE_FILTER_PASS
 		panel.add_child(icon_label)
@@ -157,6 +163,10 @@ func hotbar_left_top() -> Vector2:
 		return Vector2.ZERO
 	var total_width := SLOT_COUNT * SLOT_SIZE.x + (SLOT_COUNT - 1) * SLOT_GAP
 	return container.position + Vector2(-total_width / 2.0, 8.0)
+func hotbar_center_y() -> float:
+	if container == null:
+		return get_viewport().get_visible_rect().size.y - SLOT_SIZE.y / 2.0 - 16.0 + 8.0
+	return container.position.y + 8.0 + SLOT_SIZE.y / 2.0
 func _on_slots_changed(a): for i in a: _update_slot(i)
 func _on_selected_slot_changed(_s): _update_all_slots()
 func _update_all_slots(): for i in SLOT_COUNT: _update_slot(i)
@@ -172,15 +182,15 @@ func _update_slot(idx):
 	style.corner_radius_bottom_left=6
 	style.corner_radius_bottom_right=6
 	if Inventory.selected_slot==idx:
-		style.bg_color=Color("707070")
-		style.border_color=Color("ff8fcb")
+		style.bg_color=PARCHMENT_BG_ACTIVE
+		style.border_color=PARCHMENT_BORDER
 		style.border_width_left=3
 		style.border_width_top=3
 		style.border_width_right=3
 		style.border_width_bottom=3
 	else:
-		style.bg_color=Color("595959")
-		style.border_color=Color("f266b3")
+		style.bg_color=PARCHMENT_BG
+		style.border_color=PARCHMENT_BORDER
 		style.border_width_left=2
 		style.border_width_top=2
 		style.border_width_right=2

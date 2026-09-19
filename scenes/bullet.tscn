@@ -12,6 +12,7 @@ script = ExtResource("1_bullet")
 shape = SubResource("RectangleShape2D_bullet")
 
 [node name="Visual" type="ColorRect" parent="." unique_id=1726591604]
+mouse_filter = 2
 offset_left = -7.0
 offset_top = -7.0
 offset_right = 7.0

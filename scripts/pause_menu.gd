@@ -13,6 +13,7 @@ func _ready() -> void:
 	panel.scale = Vector2(0.9, 0.9)
 	panel.call_deferred("set", "pivot_offset", panel.size / 2.0)
 	$DimBackground.modulate.a = 0.0
+	$DimBackground.gui_input.connect(_on_background_input)
 	_set_input_enabled(false)
 
 func _input(event: InputEvent) -> void:
@@ -46,14 +47,20 @@ func toggle_pause() -> void:
 	pause_toggled.emit(is_paused)
 
 func _set_input_enabled(enabled: bool) -> void:
+	$DimBackground.visible = enabled
+	$CenterContainer.visible = enabled
 	$DimBackground.mouse_filter = Control.MOUSE_FILTER_STOP if enabled else Control.MOUSE_FILTER_IGNORE
-	$CenterContainer.mouse_filter = Control.MOUSE_FILTER_STOP if enabled else Control.MOUSE_FILTER_IGNORE
+	$CenterContainer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	$CenterContainer/PausePanel.mouse_filter = Control.MOUSE_FILTER_STOP if enabled else Control.MOUSE_FILTER_IGNORE
 
 	var button_container = $CenterContainer/PausePanel/VBoxContainer/ButtonContainer
 	button_container.get_node("ResumeButton").disabled = not enabled
 	button_container.get_node("FieldGuideButton").disabled = not enabled
 	button_container.get_node("MainMenuButton").disabled = not enabled
+
+func _on_background_input(event: InputEvent) -> void:
+	if is_paused and event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		toggle_pause()
 
 func _on_resume_pressed() -> void:
 	toggle_pause()

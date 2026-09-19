@@ -118,8 +118,6 @@ func _build_encounters() -> void:
 			_spawn_enemy("slime", Vector2(450, 270))
 			_spawn_enemy("ant", Vector2(850, 110))
 			_spawn_enemy("goblin", Vector2(1340, 260))
-			if ResourceLoader.exists("res://scenes/hornet_enemy.tscn"):
-				_spawn_enemy("hornet", Vector2(1880, 90))
 			_spawn_enemy("beetle", Vector2(2400, 240))
 			_spawn_enemy("slime", Vector2(2940, 100))
 			_spawn_enemy("goblin", Vector2(3700, 240))
@@ -136,8 +134,6 @@ func _build_encounters() -> void:
 
 func _spawn_enemy(kind: String, spawn_position: Vector2) -> void:
 	var path: String = ENEMIES.get(kind, "")
-	if kind == "hornet":
-		path = "res://scenes/hornet_enemy.tscn"
 	if path.is_empty() or not ResourceLoader.exists(path):
 		return
 	var enemy: Node2D = load(path).instantiate()

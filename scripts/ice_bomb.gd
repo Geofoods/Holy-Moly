@@ -82,7 +82,7 @@ func _freeze_tiles(tilemap: TileMap) -> void:
 		for dy in range(-tile_break_radius, tile_break_radius + 1):
 			var tp := Vector2i(center_tile.x + dx, center_tile.y + dy)
 			var cell_data := tilemap.get_cell_tile_data(0, tp)
-			var has_decoration := tilemap.get_cell_source_id(1, tp) != -1
+			var has_decoration := tilemap.get_layers_count() > 1 and tilemap.get_cell_source_id(1, tp) != -1
 			var is_stuff := cell_data != null and (cell_data.get_custom_data("stuff") as bool)
 
 			if is_stuff:

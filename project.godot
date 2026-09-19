@@ -13,7 +13,6 @@ config_version=5
 config/name="Holy Moley"
 run/main_scene="res://scenes/intro.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")
-run/max_fps=60
 boot_splash/bg_color=Color(0.36078432, 0.1254902, 0.105882354, 1)
 boot_splash/image="res://holymolylogo.png"
 config/icon="res://icon.svg"

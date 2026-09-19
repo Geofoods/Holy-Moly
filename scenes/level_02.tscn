@@ -20,24 +20,24 @@
 [ext_resource type="PackedScene" path="res://scenes/level_intro_banner.tscn" id="level_banner_res"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
-bg_color = Color(0.1, 0.1, 0.12, 0.85)
+bg_color = Color(0.8, 0.68, 0.46, 1)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.95, 0.4, 0.7, 1)
+border_color = Color(0.42, 0.28, 0.14, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton_hover"]
-bg_color = Color(0.2, 0.2, 0.22, 0.9)
+bg_color = Color(0.97, 0.91, 0.78, 1)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(1, 0.5, 0.8, 1)
+border_color = Color(0.42, 0.28, 0.14, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
@@ -94,7 +94,7 @@ offset_top = 20.0
 offset_right = -20.0
 offset_bottom = 65.0
 grow_horizontal = 0
-theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_color = Color(0.32, 0.2, 0.08, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_fonts/font = ExtResource("6_tipki")
 theme_override_font_sizes/font_size = 18
@@ -117,7 +117,7 @@ offset_right = -20.0
 offset_bottom = -20.0
 grow_horizontal = 0
 grow_vertical = 0
-theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_color = Color(0.32, 0.2, 0.08, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_fonts/font = ExtResource("6_tipki")
 theme_override_font_sizes/font_size = 22
@@ -201,6 +201,7 @@ offset_top = -1614.0
 offset_right = 14140.0
 offset_bottom = -564.23193
 rotation = 3.1415927
+mouse_filter = 2
 color = Color(0, 0, 0, 1)
 
 [node name="ColorRect3" type="ColorRect" parent="." unique_id=767174682]
@@ -210,6 +211,7 @@ offset_top = 2766.7688
 offset_right = 8639.529
 offset_bottom = 7615.759
 rotation = 3.1415927
+mouse_filter = 2
 color = Color(0, 0, 0, 1)
 
 [node name="candle2" parent="." unique_id=815664404 instance=ExtResource("12_ikbui")]
@@ -229,18 +231,19 @@ position = Vector2(-182, -74)
 
 [node name="Costume8" type="Sprite2D" parent="." unique_id=706686980]
 z_index = 99
-position = Vector2(-542.00006, 97.99999)
+position = Vector2(-483.0001, 97.99999)
 rotation = 1.5631456
 scale = Vector2(18.090199, 1.717514)
 texture = ExtResource("15_xo5qq")
 
 [node name="ColorRect3" type="ColorRect" parent="Costume8" unique_id=2004052000]
 z_index = 99
-offset_left = 222.9914
-offset_top = 1565.6759
-offset_right = 676.3921
-offset_bottom = 2982.19
+offset_left = 229.58444
+offset_top = 1590.0039
+offset_right = 682.9852
+offset_bottom = 3006.518
 rotation = 3.1415927
+mouse_filter = 2
 color = Color(0, 0, 0, 1)
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]

@@ -17,7 +17,7 @@ func _ready():
 	vbox.scale = Vector2(0.85, 0.85)
 	vbox.call_deferred("set", "pivot_offset", vbox.size / 2.0)
 	_set_buttons_enabled(false)
-	for btn in [$CenterContainer/VBoxContainer/ButtonContainer/CancelButton]:
+	for btn in [$CenterContainer/VBoxContainer/ButtonContainer/PlayButton, $CenterContainer/VBoxContainer/ButtonContainer/CancelButton]:
 		_setup_button_hover(btn)
 
 	animate_game_over()
@@ -90,10 +90,10 @@ func animate_menu_reveal() -> void:
 	tween.tween_property(vbox, "scale", Vector2(1.0, 1.0), 0.55).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 func _set_buttons_enabled(enabled: bool) -> void:
-	var cancel_btn = $CenterContainer/VBoxContainer/ButtonContainer/CancelButton
-	cancel_btn.disabled = not enabled
-	if enabled:
-		cancel_btn.pivot_offset = cancel_btn.size / 2.0
+	for btn in [$CenterContainer/VBoxContainer/ButtonContainer/PlayButton, $CenterContainer/VBoxContainer/ButtonContainer/CancelButton]:
+		btn.disabled = not enabled
+		if enabled:
+			btn.pivot_offset = btn.size / 2.0
 
 func _start_game_over_music() -> void:
 	_game_over_music = AudioStreamPlayer.new()
@@ -109,6 +109,13 @@ func _fade_out_game_over_music() -> void:
 		tween.tween_property(_game_over_music, "volume_db", -40.0, 0.8)
 		tween.tween_callback(_game_over_music.queue_free)
 		_game_over_music = null
+
+func _on_play_again_pressed():
+	SFX.play_ui("ui_click")
+	_fade_out_game_over_music()
+	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
+	get_tree().root.add_child(transition)
+	transition.change_to("res://scenes/level1.tscn")
 
 func _on_cancel_pressed():
 	SFX.play_ui("ui_click")

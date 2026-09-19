@@ -1,9 +1,9 @@
 [gd_scene format=3 uid="uid://cscwxuv4b0aul"]
 
-[ext_resource type="Texture2D" uid="uid://500paylfurey" path="res://Default/button_circle.png" id="1_svdgb"]
-[ext_resource type="Texture2D" uid="uid://dkstsrqgpno8k" path="res://Defaulticons/icon_arrow.png" id="2_ui5ya"]
-[ext_resource type="Texture2D" uid="uid://cilxc57meeep6" path="res://Defaulticons/icon_jump.png" id="3_s3714"]
-[ext_resource type="Texture2D" uid="uid://8t0p77056nts" path="res://Defaulticons/icon_burst.png" id="4_wlcjf"]
+[ext_resource type="Texture2D" uid="uid://cpufnq4fsdlb4" path="res://Default/button_circle.png" id="1_svdgb"]
+[ext_resource type="Texture2D" uid="uid://c77b3arjmlwny" path="res://Defaulticons/icon_arrow.png" id="2_ui5ya"]
+[ext_resource type="Texture2D" uid="uid://ctlut3omcj3ka" path="res://Defaulticons/icon_jump.png" id="3_s3714"]
+[ext_resource type="Texture2D" uid="uid://dl0kenif074ju" path="res://Defaulticons/icon_burst.png" id="4_wlcjf"]
 
 [node name="mobile controls" type="CanvasLayer" unique_id=183254107]
 layer = 100

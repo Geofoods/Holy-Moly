@@ -91,7 +91,7 @@ func _process(delta: float) -> void:
 		if tile_pos != prev_tile_pos:
 			if tilemap.get_cell_source_id(0, tile_pos) != -1:
 				TileBreakSFX.break_tile(tilemap, tile_pos, get_parent())
-			elif tilemap.get_cell_source_id(1, tile_pos) != -1:
+			elif tilemap.get_layers_count() > 1 and tilemap.get_cell_source_id(1, tile_pos) != -1:
 				TileBreakSFX.break_decoration_tile(tilemap, tile_pos, get_parent())
 			prev_tile_pos = tile_pos
 

@@ -96,7 +96,6 @@ var shield_active := false
 var hurt_anim_time_left := 0.0
 var air_time := 0.0
 var launched_from_jump := false
-var _dig_dash_weapon_was_visible := false
 var using_ranged := false
 var _coyote_timer := 0.0
 var _jump_held := false
@@ -115,25 +114,31 @@ var _grapple_rope: Line2D = null
 var _grapple_anchor_sprite: Sprite2D = null
 
 var death_override: Callable = Callable()
+var _restoring_health := false
 
-var health: float = 6.0:
+const MAX_HEALTH := 12.0
+
+var health: float = MAX_HEALTH:
 	set(value):
 		var old_health := health
-		health = clamp(value, 0, 6)
+		health = clamp(value, 0, MAX_HEALTH)
+		if health > 0:
+			Inventory.player_health = health
 		if is_inside_tree():
 			if health > 0:
 				var heart_node = get_parent().get_node_or_null("CanvasLayer/heart")
 				if heart_node:
 					var heart_anim = heart_node.get_node_or_null("AnimatedSprite2D")
 					if heart_anim:
-						heart_anim.play(str(int(health)) + "hp")
-					if health < old_health:
+						heart_anim.play(_heart_anim_name(health))
+					if health < old_health and not _restoring_health:
 						_animate_heart_damage(heart_node)
 			else:
 				set_physics_process(false)
 				if death_override.is_valid():
 					death_override.call()
 					return
+				Inventory.player_health = MAX_HEALTH
 				Inventory.current_level_path = get_tree().current_scene.scene_file_path
 				var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 				get_tree().root.add_child(transition)
@@ -142,6 +147,11 @@ var health: float = 6.0:
 var tilemap: TileMap = null
 @onready var _sprite: AnimatedSprite2D = $AnimatedSprite2D
 var _heart_base_scale := Vector2.ONE
+
+func _heart_anim_name(hp: float) -> String:
+	# The heart sprite only has 6 art states; map 0..MAX_HEALTH onto them.
+	var level := int(ceil(clampf(hp, 0.0, MAX_HEALTH) / MAX_HEALTH * 6.0))
+	return str(clampi(level, 1, 6)) + "hp"
 
 func _animate_heart_damage(heart_node: Node2D) -> void:
 	if _heart_base_scale == Vector2.ONE:
@@ -158,7 +168,9 @@ func _ready() -> void:
 	_normal_collision_mask = collision_mask
 	_restore_level_position()
 	await get_tree().process_frame
-	self.health = health
+	_restoring_health = true
+	self.health = Inventory.player_health
+	_restoring_health = false
 	add_to_group("mole")
 	var camera := get_node_or_null("Camera2D") as Camera2D
 	if camera:
@@ -177,6 +189,7 @@ func _ready() -> void:
 	Inventory.selected_slot = 0
 	_setup_held_item_sprites()
 	_setup_grapple_visuals()
+	Engine.time_scale = 1.0
 	if AudioServer.get_bus_effect_count(0) == 0:
 		AudioServer.add_bus_effect(0, AudioEffectReverb.new())
 	_reverb = AudioServer.get_bus_effect(0, 0) as AudioEffectReverb
@@ -344,13 +357,18 @@ func _update_held_item() -> void:
 		return
 
 	var slot := Inventory.selected_slot
+	var item: ItemData = Inventory.slots[slot] if slot >= 0 and slot < Inventory.slots.size() else null
+	# The melee tool is the default action: it stays active whenever nothing
+	# usable is equipped (no slot selected, or the selected slot is empty after
+	# the item was consumed). Otherwise consuming a bomb/drill/potion would leave
+	# the player unable to dig or attack until they re-press a hotbar key.
+	var melee_active := slot == 0 or item == null
 
 	if has_node("Weapon"):
-		$Weapon.visible = (slot == 0 and Inventory.slots[0] != null) and can_break and not using_ranged
+		$Weapon.visible = melee_active and Inventory.slots[0] != null and can_break and not using_ranged
 	if has_node("RangedWeapon"):
 		$RangedWeapon.visible = using_ranged and Shop.has_ranged_weapon()
 
-	var item: ItemData = Inventory.slots[slot] if slot >= 0 and slot < Inventory.slots.size() else null
 	if has_node("HeldBomb"):
 		$HeldBomb.visible = (item != null and item.item_name in ["Bomb", "Golden Bomb", "Mine", "Coal Lump", "Stink Bomb", "Flare", "Spark Bomb"])
 	if has_node("HeldIceBomb"):
@@ -526,7 +544,8 @@ func _physics_process(delta: float) -> void:
 
 	var can_jump := is_on_floor() or _coyote_timer > 0.0
 	var can_wall_jump := Shop.has_wall_jump() and not can_jump \
-			and _wall_jump_lock_timer <= 0.0 and _wall_coyote_timer > 0.0
+			and _wall_jump_lock_timer <= 0.0 and _wall_coyote_timer > 0.0 \
+			and not _is_touching_unbreakable_wall()
 	if climbing_talons_active and is_on_wall() and direction != 0 \
 			and signf(direction) == -signf(get_wall_normal().x) and velocity.y > 0.0:
 		velocity.y = 0.0
@@ -625,6 +644,22 @@ func _physics_process(delta: float) -> void:
 		else:
 			_sprite.play("idlebold")
 
+func _is_touching_unbreakable_wall() -> bool:
+	if tilemap == null or not is_on_wall():
+		return false
+	for i in get_slide_collision_count():
+		var collision := get_slide_collision(i)
+		if collision.get_collider() is TileMap:
+			var tm := collision.get_collider() as TileMap
+			var probe: Vector2 = collision.get_position() + collision.get_normal() * -10.0
+			var tile_pos: Vector2i = tm.local_to_map(tm.to_local(probe))
+			if tm.get_cell_source_id(0, tile_pos) == -1:
+				continue
+			var tile_data := tm.get_cell_tile_data(0, tile_pos)
+			if tile_data != null and (tile_data.get_custom_data("bedrock") as bool):
+				return true
+	return false
+
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("swap_weapon") and not event.echo:
 		if Shop.has_ranged_weapon():
@@ -695,14 +730,20 @@ func _input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 			"Grappling Hook":
 				get_viewport().set_input_as_handled()
-			"Holy Water", "Health Potion", "Miner's Rations":
-				if health < 6:
+			"Holy Water":
+				if health < MAX_HEALTH:
+					Inventory.use_item(slot)
+					heal(6)
+				Inventory.selected_slot = -1
+				get_viewport().set_input_as_handled()
+			"Health Potion", "Miner's Rations":
+				if health < MAX_HEALTH:
 					Inventory.use_item(slot)
 					heal(1)
 				Inventory.selected_slot = -1
 				get_viewport().set_input_as_handled()
 			"Potted Honeycomb":
-				if health < 6:
+				if health < MAX_HEALTH:
 					Inventory.use_item(slot)
 					heal(2)
 				Inventory.selected_slot = -1
@@ -723,8 +764,19 @@ func _toggle_slot(slot: int) -> void:
 	if item == null:
 		return
 
-	if item.item_name == "Health Potion" or item.item_name == "Holy Water" or item.item_name == "Miner's Rations":
-		if health < 6:
+	if item.item_name == "Holy Water":
+		if health < MAX_HEALTH:
+			Inventory.use_item(slot)
+			heal(6)
+			return
+		else:
+			if Inventory.selected_slot == slot:
+				Inventory.selected_slot = -1
+			else:
+				Inventory.selected_slot = slot
+			return
+	elif item.item_name == "Health Potion" or item.item_name == "Miner's Rations":
+		if health < MAX_HEALTH:
 			Inventory.use_item(slot)
 			heal(1)
 			return
@@ -735,7 +787,7 @@ func _toggle_slot(slot: int) -> void:
 				Inventory.selected_slot = slot
 			return
 	elif item.item_name == "Potted Honeycomb":
-		if health < 6:
+		if health < MAX_HEALTH:
 			Inventory.use_item(slot)
 			heal(2)
 			return
@@ -829,7 +881,7 @@ func _throw_ice_bomb() -> void:
 	bomb.arm()
 
 func heal(amount: float) -> bool:
-	if health >= 6:
+	if health >= MAX_HEALTH:
 		return false
 	health += amount
 	SFX.play("heal", global_position)
@@ -1010,6 +1062,7 @@ func _damage_flash() -> void:
 	add_child(canvas_layer)
 	var flash := ColorRect.new()
 	flash.color = Color(0.8, 0.05, 0.05, 0.3)
+	flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	flash.set_anchors_preset(Control.PRESET_FULL_RECT)
 	canvas_layer.add_child(flash)
 	var tween := create_tween()
@@ -1244,7 +1297,7 @@ func _break_tiles_in_radius() -> void:
 			var tp := Vector2i(center_tile.x + dx, center_tile.y + dy)
 			if tilemap.get_cell_source_id(0, tp) != -1:
 				TileBreakSFX.break_tile(tilemap, tp, get_parent())
-			elif tilemap.get_cell_source_id(1, tp) != -1:
+			elif tilemap.get_layers_count() > 1 and tilemap.get_cell_source_id(1, tp) != -1:
 				TileBreakSFX.break_decoration_tile(tilemap, tp, get_parent())
 	var chest_radius := lerpf(GROUND_POUND_BASE_HIT_RADIUS, GROUND_POUND_MAX_HIT_RADIUS, _ground_pound_power)
 	TileBreakSFX.break_opened_chests_near(get_parent(), global_position, chest_radius)
@@ -1282,9 +1335,7 @@ func start_dig_dash() -> void:
 	SFX.play("dig_dash", global_position)
 	is_digging = true
 	_dash_invulnerable = Shop.has_dash_ability()
-	_dig_dash_weapon_was_visible = false
 	if has_node("Weapon"):
-		_dig_dash_weapon_was_visible = $Weapon.visible
 		$Weapon.hide()
 	_sprite.play("dig")
 
@@ -1321,10 +1372,10 @@ func _dash_cancel_into_attack() -> void:
 	_dash_hit_enemies.clear()
 	velocity.x = tunnel_direction * SPEED * 0.5
 	velocity.y = -200.0
+	_update_held_item()
 	if using_ranged:
 		return
-	if has_node("Weapon"):
-		$Weapon.show()
+	if has_node("Weapon") and $Weapon.visible:
 		if $Weapon.has_method("dig_slash"):
 			$Weapon.dig_slash()
 	screen_shake(18.0, 0.3)
@@ -1337,8 +1388,7 @@ func _end_dig_dash() -> void:
 	_dash_hit_enemies.clear()
 	velocity.x = 0
 	velocity.y = JUMP_VELOCITY
-	if has_node("Weapon") and _dig_dash_weapon_was_visible:
-		$Weapon.show()
+	_update_held_item()
 	_sprite.play("jumpbold")
 
 func apply_slow(duration: float) -> void:
@@ -1411,11 +1461,13 @@ func _setup_slow_ui() -> void:
 	var bar_bg := ColorRect.new()
 	bar_bg.custom_minimum_size = Vector2(160, 14)
 	bar_bg.color = Color(0.2, 0.2, 0.2, 0.9)
+	bar_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vbox.add_child(bar_bg)
 
 	_slow_bar = ColorRect.new()
 	_slow_bar.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_slow_bar.color = Color(1.0, 0.5, 0.0, 0.9)
+	_slow_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bar_bg.add_child(_slow_bar)
 
 func show_inventory_full_message() -> void:

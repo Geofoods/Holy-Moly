@@ -6,6 +6,7 @@
 radius = 191.9427
 
 [node name="Sprite2D" type="ColorRect" unique_id=713534953]
+mouse_filter = 2
 script = ExtResource("1_door")
 offset_right = 61.0
 offset_bottom = 100.0

@@ -16,31 +16,29 @@
 [ext_resource type="PackedScene" uid="uid://bcd57whed7bys" path="res://chest.tscn" id="15_wjc4k"]
 [ext_resource type="PackedScene" uid="uid://u77s8ew4xenh" path="res://scenes/beetleenemy.tscn" id="16_1ohpt"]
 [ext_resource type="PackedScene" uid="uid://iuqjuk37ur0d" path="res://scenes/slimeenemy.tscn" id="17_dxywq"]
-[ext_resource type="Script" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
+[ext_resource type="Script" uid="uid://dpsujuff7o60j" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
 [ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
-[ext_resource type="PackedScene" uid="uid://c0pwtkklnyw5s" path="res://scenes/hornet_enemy.tscn" id="hornet_res"]
 [ext_resource type="PackedScene" uid="uid://3wwhicdeo8hl" path="res://scenes/info_popup.tscn" id="info_popup_res"]
-[ext_resource type="PackedScene" uid="uid://chhdtofija7c4" path="res://scenes/snake_enemy.tscn" id="snake_res"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
-bg_color = Color(0.1, 0.1, 0.12, 0.85)
+bg_color = Color(0.8, 0.68, 0.46, 1)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.95, 0.4, 0.7, 1)
+border_color = Color(0.42, 0.28, 0.14, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton_hover"]
-bg_color = Color(0.2, 0.2, 0.22, 0.9)
+bg_color = Color(0.97, 0.91, 0.78, 1)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(1, 0.5, 0.8, 1)
+border_color = Color(0.42, 0.28, 0.14, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
@@ -91,7 +89,7 @@ offset_top = 20.0
 offset_right = -20.0
 offset_bottom = 65.0
 grow_horizontal = 0
-theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_color = Color(0.32, 0.2, 0.08, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_fonts/font = ExtResource("6_tipki")
 theme_override_font_sizes/font_size = 18
@@ -113,7 +111,7 @@ offset_right = -20.0
 offset_bottom = -20.0
 grow_horizontal = 0
 grow_vertical = 0
-theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_color = Color(0.32, 0.2, 0.08, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_fonts/font = ExtResource("6_tipki")
 theme_override_font_sizes/font_size = 22
@@ -252,24 +250,6 @@ position = Vector2(1062, 2226)
 
 [node name="chest18" parent="." unique_id=302478732 instance=ExtResource("15_wjc4k")]
 position = Vector2(1343, 2228)
-
-[node name="Hornet1" parent="." unique_id=869812293 instance=ExtResource("hornet_res")]
-position = Vector2(2600, 3200)
-
-[node name="Hornet2" parent="." unique_id=893463735 instance=ExtResource("hornet_res")]
-position = Vector2(2450, 5700)
-
-[node name="Hornet3" parent="." unique_id=553967047 instance=ExtResource("hornet_res")]
-position = Vector2(2900, 8600)
-
-[node name="Snake1" parent="." unique_id=1680188367 instance=ExtResource("snake_res")]
-position = Vector2(2350, 3500)
-
-[node name="Snake2" parent="." unique_id=1245373160 instance=ExtResource("snake_res")]
-position = Vector2(2750, 6000)
-
-[node name="Snake3" parent="." unique_id=112721341 instance=ExtResource("snake_res")]
-position = Vector2(2600, 8900)
 
 [node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=1262179149]
 

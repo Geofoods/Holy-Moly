@@ -129,9 +129,9 @@ const ENTRIES: Array[Dictionary] = [
 		"icon_region": Rect2(),
 		"category": "Item",
 		"danger_level": 0,
-		"description": "A blessed flask of water that restores your health.",
-		"behavior": "Select it from your inventory and use it to heal.",
-		"attack_pattern": "Instantly heals you when consumed.",
+		"description": "A blessed flask of water that restores 6 HP.",
+		"behavior": "Select it from your inventory and use it to heal a large chunk of health.",
+		"attack_pattern": "Instantly restores 6 HP when consumed.",
 		"strategy": "Save it for emergencies when your health is running low.",
 	},
 	{
@@ -182,7 +182,7 @@ const CONTROLS: Array[Dictionary] = [
 	{
 		"category": "Health & Objective",
 		"rows": [
-			{"label": "Hearts (top-left)", "detail": "You have 6 hearts. Taking damage costs hearts and grants a brief moment of invulnerability."},
+			{"label": "Health (bottom-left)", "detail": "You have 12 hearts of health, shown as a bar. Taking damage costs health and grants a brief moment of invulnerability."},
 			{"label": "Depth meter", "detail": "Shows how far underground you've dug, near the bottom of the screen."},
 			{"label": "Losing", "detail": "Running out of hearts sends you to the Game Over screen."},
 			{"label": "Winning a level", "detail": "Reach the glowing level exit to move on. There are 9 levels in total."},

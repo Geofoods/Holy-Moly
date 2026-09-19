@@ -9,6 +9,7 @@ const SPAWNS_PER_FRAME := 5
 const SCAN_INTERVAL := 0.25
 
 var firefly_scene := preload("res://scenes/firefly.tscn")
+var _pool: Array[Node2D] = []
 
 var _mole: Node2D = null
 var _mole_refresh_timer := 0.0
@@ -30,18 +31,23 @@ func _process(delta: float) -> void:
 	_scan_timer -= delta
 	if _scan_timer <= 0.0:
 		_scan_timer = SCAN_INTERVAL
-		_despawn_far_children()
+		_recycle_far_children()
 
 	var spawned := 0
 	while _live_count < MAX_FIREFLIES and spawned < SPAWNS_PER_FRAME:
-		var f := firefly_scene.instantiate()
+		var f := _take_firefly()
 		var angle := randf_range(0.0, TAU)
 		var dist := randf_range(50.0, SPAWN_RADIUS)
 		f.global_position = _mole.global_position + Vector2(cos(angle), sin(angle)) * dist
 		add_child(f)
 		spawned += 1
 
-func _despawn_far_children() -> void:
+func _take_firefly() -> Node2D:
+	if not _pool.is_empty():
+		return _pool.pop_back()
+	return firefly_scene.instantiate()
+
+func _recycle_far_children() -> void:
 	var mole_pos: Vector2 = _mole.global_position
 	var max_dist_sq := DESPAWN_DIST * DESPAWN_DIST
 	for child in get_children():
@@ -49,4 +55,5 @@ func _despawn_far_children() -> void:
 		if node2d == null:
 			continue
 		if node2d.global_position.distance_squared_to(mole_pos) > max_dist_sq:
-			node2d.queue_free()
+			remove_child(node2d)
+			_pool.append(node2d)

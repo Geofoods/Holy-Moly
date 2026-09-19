@@ -1,11 +1,11 @@
-[gd_resource type="Resource" script_class="ItemData" format=3]
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://c6ixo5aglltlu"]
 
-[ext_resource type="Script" path="res://scripts/item_data.gd" id="1"]
+[ext_resource type="Script" uid="uid://cdp5qkqnggyt8" path="res://scripts/item_data.gd" id="1"]
 [ext_resource type="Texture2D" uid="uid://uesjxm0j6175" path="res://holywater.webp" id="2_tex"]
 
 [resource]
 script = ExtResource("1")
 item_name = "Holy Water"
-description = "Restores 1 HP"
+description = "Restores 6 HP"
 icon_texture = ExtResource("2_tex")
 stackable = true

@@ -344,6 +344,7 @@ func _load_data() -> void:
 func _setup_coin_hud() -> void:
 	_coin_hud = HBoxContainer.new()
 	_coin_hud.name = "CoinHud"
+	_coin_hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_coin_hud.anchor_left = 0.0
 	_coin_hud.anchor_top = 0.0
 	_coin_hud.offset_left = 16.0

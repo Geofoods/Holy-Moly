@@ -14,8 +14,8 @@ corner_radius_top_left = 18
 corner_radius_top_right = 18
 corner_radius_bottom_right = 18
 corner_radius_bottom_left = 18
-shadow_color = Color(0, 0, 0, 0.9)
-shadow_size = 16
+shadow_color = Color(0, 0, 0, 0.45)
+shadow_size = 10
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_resumebutton"]
 bg_color = Color(0.8, 0.68, 0.46, 1)
@@ -159,7 +159,7 @@ alignment = 1
 [node name="ResumeButton" type="Button" parent="CenterContainer/PausePanel/VBoxContainer/ButtonContainer" unique_id=1696080540]
 custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
-size_flags_horizontal = 2
+size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.32, 0.2, 0.08, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_fonts/font = ExtResource("2_myx47")
@@ -173,7 +173,7 @@ text = " RESUME "
 [node name="FieldGuideButton" type="Button" parent="CenterContainer/PausePanel/VBoxContainer/ButtonContainer"]
 custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
-size_flags_horizontal = 2
+size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.32, 0.2, 0.08, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_fonts/font = ExtResource("2_myx47")
@@ -187,7 +187,7 @@ text = " FIELD GUIDE "
 [node name="MainMenuButton" type="Button" parent="CenterContainer/PausePanel/VBoxContainer/ButtonContainer" unique_id=726517987]
 custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
-size_flags_horizontal = 2
+size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.32, 0.2, 0.08, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_fonts/font = ExtResource("2_myx47")

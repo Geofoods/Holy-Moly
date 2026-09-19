@@ -3,6 +3,10 @@ extends RigidBody2D
 ## Candles are decoration, so they stay frozen (static) until the tile under
 ## them is dug away. This avoids rigidbody jitter/ejection glitches entirely;
 ## when support disappears they fall once, settle, and freeze again.
+##
+## They collide with the mole like any world object, but carry almost no mass
+## (mass = 0.01), so a mole bumping into one shoves it aside instead of being
+## held up by candle-weight.
 
 const TILE_CHECK_INTERVAL := 0.25
 const BOTTOM_LOCAL_Y := 40.0  # collision rect bottom edge in local space (25.25 + 29.5/2)
@@ -11,6 +15,7 @@ const MAX_FALL_SPEED := 1200.0
 const MAX_SPIN := 3.0
 const SETTLE_SPEED := 30.0
 const REFREEZE_DELAY := 0.35
+const PUSH_SPEED := 600.0
 
 var _tilemap: TileMap = null
 var _check_timer := 0.0
@@ -19,14 +24,17 @@ var _settle_timer := 0.0
 
 func _ready() -> void:
 	freeze = true
+	add_to_group("pushable")
 	_tilemap = _find_tilemap()
-	_exclude_mole()
 
-func _exclude_mole() -> void:
-	# The mole shares the tiles' collision layer, so explicitly ignore it.
-	var mole := get_tree().get_first_node_in_group("mole")
-	if mole is CollisionObject2D:
-		add_collision_exception_with(mole)
+func push(direction: Vector2) -> void:
+	if direction.length_squared() == 0.0:
+		return
+	_was_fast = true
+	_settle_timer = REFREEZE_DELAY
+	if freeze:
+		freeze = false
+	linear_velocity = direction * PUSH_SPEED + linear_velocity * Vector2(0.0, 1.0)
 
 func _find_tilemap() -> TileMap:
 	var root := get_tree().current_scene
@@ -83,7 +91,6 @@ func _has_support() -> bool:
 	return false
 
 func _start_fall() -> void:
-	_exclude_mole()
 	_was_fast = false
 	_settle_timer = REFREEZE_DELAY
 	freeze = false

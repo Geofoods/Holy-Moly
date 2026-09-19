@@ -198,6 +198,7 @@ func _create_health_bar() -> void:
 	panel_style.corner_radius_top_right = 8
 	panel_style.corner_radius_bottom_left = 8
 	panel_style.corner_radius_bottom_right = 8
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_theme_stylebox_override("panel", panel_style)
 	_health_bar_layer.add_child(panel)
 
@@ -262,6 +263,8 @@ func _health_color(ratio: float) -> Color:
 		return Color(0.9, 0.3, 0.2, 1)
 
 func _animate_health_bar() -> void:
+	if _health_bar_fill == null or _health_bar_label == null:
+		return
 	if _health_bar_tween and _health_bar_tween.is_valid():
 		_health_bar_tween.kill()
 	_health_bar_tween = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_SINE)
@@ -389,11 +392,6 @@ func _physics_process(delta: float) -> void:
 	if _spit_cooldown <= 0.0:
 		_spit()
 		_spit_cooldown = SPIT_INTERVAL
-
-	_hornet_timer -= delta
-	if _hornet_timer <= 0.0:
-		_spawn_hornets()
-		_hornet_timer = HORNET_SPAWN_INTERVAL
 
 	_sting_cooldown -= delta
 	match _state:
@@ -674,6 +672,8 @@ func _on_hurtbox_area_entered(area: Area2D) -> void:
 		take_damage(parent.get_damage())
 
 func take_damage(amount: float) -> void:
+	if not _boss_active:
+		return
 	if health <= 0:
 		return
 	health -= amount

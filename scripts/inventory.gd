@@ -4,11 +4,16 @@ signal slots_changed(slot_indices: Array)
 signal selected_slot_changed(slot: int)
 
 const MAX_SLOTS := 4
+const MAX_HEALTH := 12.0
 
 var slots: Array = [null, null, null, null]
 var slot_counts: Array = [0, 0, 0, 0]
 
 var current_level_path: String = "res://scenes/level1.tscn"
+
+## Player health is persistent across level transitions, so the mole carries
+## damage (and healed hearts) from one level into the next.
+var player_health: float = MAX_HEALTH
 
 ## Remembers where the mole left each level so re-entering that level restores
 ## the same position instead of the scene's default spawn point.
@@ -43,6 +48,7 @@ func initialize() -> void:
 func reset() -> void:
 	clear()
 	level_return_positions.clear()
+	player_health = MAX_HEALTH
 	_initialized = false
 
 func add_item(item: ItemData) -> bool:

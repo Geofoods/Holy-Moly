@@ -61,6 +61,7 @@ func _hit_impact() -> void:
 	flash.rotation = randf_range(0.0, TAU)
 	flash.color = _color
 	flash.modulate.a = 0.9
+	flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	get_tree().current_scene.add_child(flash)
 	flash.global_position = global_position - flash.size * 0.5
 	var tw := flash.create_tween()
