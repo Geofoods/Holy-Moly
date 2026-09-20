@@ -4,6 +4,7 @@ const GRAVITY := 1960.0
 const DETECT_RANGE := 300.0
 const JUMP_VELOCITY := -900.0
 const JUMP_HORIZONTAL := 700.0
+const HOP_VELOCITY := -460.0
 const MAX_HEALTH := 10.0
 
 const EnemyDamage := preload("res://scripts/enemy.gd")
@@ -18,6 +19,7 @@ var _mole_in_contact := false
 
 @onready var hurtbox: Area2D = $Area2D
 @onready var visual: Sprite2D = $Visual
+@onready var notifier: VisibleOnScreenNotifier2D = $VisibleOnScreenNotifier2D
 var _health_bar: Node2D = null
 
 func _ready() -> void:
@@ -25,6 +27,7 @@ func _ready() -> void:
 	hurtbox.body_entered.connect(_on_body_entered)
 	hurtbox.body_exited.connect(_on_body_exited)
 	hurtbox.add_to_group("enemy_hurtbox")
+	notifier.screen_entered.connect(_check_on_screen_hop)
 	visual.z_index = 1
 	_setup_health_bar()
 
@@ -74,6 +77,11 @@ func _find_target() -> void:
 		target_mole = get_tree().get_first_node_in_group("mole")
 		if target_mole:
 			add_collision_exception_with(target_mole)
+
+func _check_on_screen_hop() -> void:
+	if is_on_floor():
+		velocity.y = HOP_VELOCITY
+		SFX.play("jump", global_position, -12.0, 0.3)
 
 func _jump_toward_target() -> void:
 	var dir: float = sign(target_mole.global_position.x - global_position.x)

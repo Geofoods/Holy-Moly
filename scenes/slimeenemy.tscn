@@ -8,7 +8,7 @@ size = Vector2(108, 86)
 
 [node name="Enemy" type="CharacterBody2D" unique_id=866104770]
 position = Vector2(2, -1)
-scale = Vector2(0.4, 0.4)
+scale = Vector2(0.6, 0.6)
 collision_layer = 4
 script = ExtResource("1_qykxs")
 
@@ -22,6 +22,10 @@ position = Vector2(-20, -5)
 shape = SubResource("RectangleShape2D_body")
 
 [node name="Area2D" type="Area2D" parent="." unique_id=1008187029]
+
+[node name="VisibleOnScreenNotifier2D" type="VisibleOnScreenNotifier2D" parent="." unique_id=1008187030]
+position = Vector2(-20, -40)
+rect = Rect2(-90, -90, 180, 200)
 
 [node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Area2D" unique_id=1317430411]
 position = Vector2(-16.500002, -13.000002)

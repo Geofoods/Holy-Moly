@@ -11,6 +11,7 @@
 [ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="11_eb6dy"]
 [ext_resource type="PackedScene" uid="uid://brmtyiqcy1wkv" path="res://scenes/inventory_ui.tscn" id="12_invui"]
 [ext_resource type="PackedScene" uid="uid://cdxu1kg5or16d" path="res://candle.tscn" id="15_jkv2x"]
+[ext_resource type="PackedScene" uid="uid://dg6omg8f4xhgx" path="res://scenes/snail.tscn" id="16_14jow"]
 [ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="16_dxn3v"]
 [ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
 [ext_resource type="PackedScene" uid="uid://3wwhicdeo8hl" path="res://scenes/info_popup.tscn" id="info_popup_res"]
@@ -67,7 +68,7 @@ zoom = Vector2(0.65, 0.65)
 position_smoothing_enabled = true
 
 [node name="Enemy" parent="." unique_id=1155690396 instance=ExtResource("2_enemy")]
-position = Vector2(300, -116)
+position = Vector2(3436, -143)
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=71896557]
 layer = 2
@@ -163,6 +164,13 @@ offset_bottom = 4218.14
 rotation = 3.1415927
 mouse_filter = 2
 color = Color(0, 0, 0, 1)
+
+[node name="Snail" parent="." unique_id=1260151595 instance=ExtResource("16_14jow")]
+position = Vector2(1771, -46)
+dialogue_text = "Watch out, there is a ant up ahead. Remember, click to attack!"
+
+[node name="AnimatedSprite2D" parent="Snail" index="0"]
+flip_h = true
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]

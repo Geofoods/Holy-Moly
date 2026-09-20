@@ -1,14 +1,16 @@
 extends Camera2D
 ## Drives the arena camera sequence in "The Arena". When the mole enters the
 ## `arenastart` zone the game pauses while the view pans from the player camera
-## to the arena camera, then unpauses for the fight. Once the wave manager
-## reports the enemies cleared, the view pans over to the "breaking camera" to
-## watch the wall shatter, then pans back to the player camera.
+## to the "breaking camera" where the snail begs for help, shows its dialogue,
+## then pans back to this arena overview camera and unpauses for the fight. Once
+## the wave manager reports the enemies cleared, the view pans over to the
+## "breaking camera" to watch the wall shatter, then pans back to the player
+## camera.
 
 const PAN_DURATION := 1.0
 const BREAK_HOLD := 2.5
 
-enum State { IDLE, PANNING_IN, FIGHTING, PANNING_TO_BREAK, BREAKING, PANNING_OUT }
+enum State { IDLE, PANNING_TO_SNAIL, DIALOG, PANNING_BACK, FIGHTING, PANNING_TO_BREAK, BREAKING, PANNING_OUT }
 
 var _state := State.IDLE
 var _done := false
@@ -45,17 +47,19 @@ func _ready() -> void:
 		waves.cleared.connect(_on_waves_cleared)
 
 func _process(delta: float) -> void:
-	if _state == State.PANNING_IN or _state == State.PANNING_TO_BREAK or _state == State.PANNING_OUT:
+	if _state == State.PANNING_TO_SNAIL or _state == State.PANNING_TO_BREAK or _state == State.PANNING_BACK or _state == State.PANNING_OUT:
 		_t += delta / PAN_DURATION
 		var s := _smoothstep(minf(_t, 1.0))
 		global_position = _from_pos.lerp(_to_pos, s)
 		zoom = _from_zoom.lerp(_to_zoom, s)
 		if _t >= 1.0:
 			match _state:
-				State.PANNING_IN:
-					_finish_pan_in()
+				State.PANNING_TO_SNAIL:
+					_finish_pan_to_snail()
 				State.PANNING_TO_BREAK:
 					_finish_pan_to_break()
+				State.PANNING_BACK:
+					_finish_pan_back()
 				State.PANNING_OUT:
 					_finish_pan_out()
 
@@ -71,12 +75,12 @@ func _on_arena_start_entered(body: Node) -> void:
 	_begin_sequence()
 
 func _begin_sequence() -> void:
-	_state = State.PANNING_IN
+	_state = State.PANNING_TO_SNAIL
 	_t = 0.0
 	_from_pos = _mole_cam.global_position
 	_from_zoom = _mole_cam.zoom
-	_to_pos = _arena_pos
-	_to_zoom = _arena_zoom
+	_to_pos = _break_pos
+	_to_zoom = _break_zoom
 
 	var arena_map := get_parent().get_node_or_null("TileMap2") as TileMap
 	if arena_map:
@@ -91,7 +95,32 @@ func _begin_sequence() -> void:
 	make_current()
 	get_tree().paused = true
 
-func _finish_pan_in() -> void:
+func _finish_pan_to_snail() -> void:
+	_state = State.DIALOG
+	var snail := get_parent().get_node_or_null("Snail")
+	if snail and snail.has_signal("dialogue_closed") and snail.has_method("show_dialogue"):
+		if not snail.dialogue_closed.is_connected(_on_snail_dialogue_closed):
+			snail.dialogue_closed.connect(_on_snail_dialogue_closed)
+		snail.show_dialogue()
+	else:
+		call_deferred("_begin_pan_back")
+
+func _on_snail_dialogue_closed() -> void:
+	if _state != State.DIALOG:
+		return
+	_begin_pan_back()
+
+func _begin_pan_back() -> void:
+	_state = State.PANNING_BACK
+	_t = 0.0
+	_from_pos = global_position
+	_from_zoom = zoom
+	_to_pos = _arena_pos
+	_to_zoom = _arena_zoom
+	if is_instance_valid(_mole):
+		_mole.process_mode = Node.PROCESS_MODE_DISABLED
+
+func _finish_pan_back() -> void:
 	_state = State.FIGHTING
 	if is_instance_valid(_mole):
 		_mole.process_mode = Node.PROCESS_MODE_INHERIT
@@ -107,6 +136,10 @@ func _on_waves_cleared() -> void:
 	_from_zoom = zoom
 	_to_pos = _break_pos
 	_to_zoom = _break_zoom
+	global_position = _from_pos
+	zoom = _from_zoom
+	enabled = true
+	make_current()
 	if is_instance_valid(_mole):
 		_mole.process_mode = Node.PROCESS_MODE_DISABLED
 

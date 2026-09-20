@@ -43,7 +43,7 @@ func _blast() -> void:
 		_already_hit.append(nearest)
 		_draw_bolt(origin, nearest.global_position)
 		if nearest.has_method("take_damage"):
-			nearest.take_damage(enemy_damage)
+			nearest.take_damage(_rolled_enemy_damage())
 			SFX.play("enemy_hit", nearest.global_position)
 		origin = nearest.global_position
 		jumps_left -= 1

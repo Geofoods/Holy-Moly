@@ -84,12 +84,15 @@ animations = [{
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_f1ulr"]
-size = Vector2(74, 16)
+size = Vector2(74, 51)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_txh3t"]
 size = Vector2(638, 496)
 
 [node name="Snail" type="RigidBody2D" unique_id=1260151595]
+script = ExtResource("3_script")
+portrait_texture = ExtResource("1_png1")
+dialogue_text = "Would you like a shell? It's very cozy in here. Sorry, I don't have any to spare just yet."
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1909848161]
 position = Vector2(-3, -1)
@@ -99,13 +102,10 @@ animation = &"idle"
 autoplay = "idle"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=569889419]
-position = Vector2(-6, 26)
+position = Vector2(-6, 8.5)
 shape = SubResource("RectangleShape2D_f1ulr")
 
 [node name="Area2D" type="Area2D" parent="." unique_id=1339046545]
-script = ExtResource("3_script")
-portrait_texture = ExtResource("1_png1")
-dialogue_text = "Would you like a shell? It's very cozy in here. Sorry, I don't have any to spare just yet."
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=141970544]
 shape = SubResource("RectangleShape2D_txh3t")

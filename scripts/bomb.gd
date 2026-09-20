@@ -2,6 +2,9 @@ extends RigidBody2D
 
 const FUSE_TIME := 2.5
 const FLASH_TIME := 0.4
+const ENEMY_DAMAGE := 5.0
+const DAMAGE_SCALAR := 10.0
+const DAMAGE_VARIATION := 0.2
 const TileBreakSFX := preload("res://scripts/tile_break_sfx.gd")
 
 @export var explosion_radius := 200.0
@@ -114,7 +117,8 @@ func _explode() -> void:
 		var enemy := hurtbox.get_parent()
 		if enemy and is_instance_valid(enemy) and global_position.distance_to(enemy.global_position) <= explosion_radius:
 			if enemy.has_method("take_damage"):
-				enemy.take_damage(5)
+				var dmg := ENEMY_DAMAGE * DAMAGE_SCALAR * ComboManager.get_damage_multiplier() * randf_range(1.0 - DAMAGE_VARIATION, 1.0 + DAMAGE_VARIATION)
+				enemy.take_damage(dmg)
 			elif enemy.has_method("die"):
 				enemy.die()
 

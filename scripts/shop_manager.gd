@@ -62,7 +62,6 @@ func _build_catalog() -> void:
 		_make_ranged("wizard_staff", "Wizard Staff", "Arcane bolts crackle from this gnarled staff.", 140, 18.0, 26.0, 0.55, 1200.0, Color(0.7, 0.35, 1.0)),
 		_make_ability("dash_ability", "Dash Impact", "Dig-dash slams enemies with knockback and damage. Airborne shift slams a damaging ground pound (also breaks blocks).", 120, Color(0.6, 0.9, 1.0)),
 		_make_ability("triple_shot", "Triple Shot", "Ranged weapons fire 3 shots in a spread.", 200, Color(1.0, 0.7, 0.3)),
-		_make_ability("wall_jump", "Wall Jump Grip", "Grip the tunnels like a true mole: press Jump while pressed against a wall to kick off it. Holding toward the wall slows your fall while sliding.", 150, Color(0.55, 0.85, 0.45)),
 		_make_ability("grappling_hook", "Grappling Hook", "A selectable tool that fills the SECOND hotbar slot: select it, then LEFT-CLICK toward your cursor to fire a cable and reel yourself over gaps and up to high ledges. Hold to pull, release to let go.", 130, Color(0.85, 0.65, 0.3)),
 	]
 	weapon_catalog.clear()
@@ -212,6 +211,18 @@ func has_wall_jump() -> bool:
 
 func has_grappling_hook() -> bool:
 	return owns("grappling_hook")
+
+# --- Story unlocks ---------------------------------------------------------
+
+## Grants an ability directly (no coin cost, no catalog requirement). Used for
+## story unlocks such as the snail's "Grippy Hands" wall jump.
+func give(id: String) -> void:
+	if owns(id):
+		return
+	_owned_append(id)
+	loadout_changed.emit()
+	_save_data()
+	SFX.play_ui("item_pickup", -4.0, 1.1)
 
 # --- Purchasing / equipping ----------------------------------------------
 

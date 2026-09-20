@@ -257,6 +257,11 @@ zoom = Vector2(0.5, 0.5)
 
 [node name="Snail" parent="." unique_id=1357957573 instance=ExtResource("20_434ko")]
 position = Vector2(7255, -126)
+dialogue_text = "Help MEEEE!!!!"
+post_dialogue_text = "Thanks for saving me! I almost got shredded into bits! Please take this as an thank you"
+condition_wave_path = NodePath("../WaveManager")
+unlock_ability = "wall_jump"
+unlock_text = "GRIPPY HANDS"
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]

@@ -4,6 +4,15 @@
 [ext_resource type="Texture2D" path="res://parallax_blurred/bg1_l1.png" id="2_blur"]
 [ext_resource type="Texture2D" uid="uid://b6utvm1g37xbh" path="res://3.png" id="3_tex"]
 [ext_resource type="Texture2D" uid="uid://ms25h64vbgar" path="res://4.png" id="4_tex"]
+[ext_resource type="Shader" path="res://shaders/parallax_blur.gdshader" id="5_shader"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_blur2"]
+shader = ExtResource("5_shader")
+shader_parameter/blur_radius = 1.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_blur3"]
+shader = ExtResource("5_shader")
+shader_parameter/blur_radius = 0.5
 
 [node name="ParallaxBackground" type="Node2D" unique_id=285942024]
 z_index = -10
@@ -36,6 +45,7 @@ repeat_size = Vector2(4608, 2592)
 repeat_times = 2
 
 [node name="Sprite" type="Sprite2D" parent="Layer2" unique_id=604041333]
+material = SubResource("ShaderMaterial_blur2")
 modulate = Color(0.82, 0.82, 0.82, 0.75)
 scale = Vector2(8, 8)
 texture = ExtResource("3_tex")
@@ -47,6 +57,7 @@ repeat_size = Vector2(4608, 2592)
 repeat_times = 2
 
 [node name="Sprite" type="Sprite2D" parent="Layer3" unique_id=1989623677]
+material = SubResource("ShaderMaterial_blur3")
 modulate = Color(0.9, 0.9, 0.9, 1.0)
 scale = Vector2(8, 8)
 texture = ExtResource("4_tex")

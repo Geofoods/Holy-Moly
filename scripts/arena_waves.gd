@@ -15,6 +15,8 @@ const WAVE_ENEMIES: Array[Dictionary] = [
 
 var _wave := -1
 var _alive := 0
+var _wave_total := 0
+var _wave_name := ""
 var _active := false
 var _spawn_points: Array[Vector2] = []
 var _banner: Label = null
@@ -32,10 +34,13 @@ func _ready() -> void:
 
 func _track(node: Node) -> void:
 	_alive += 1
+	_wave_total += 1
+	_update_banner_text()
 	node.tree_exited.connect(_on_enemy_killed)
 
 func _on_enemy_killed() -> void:
 	_alive -= 1
+	_update_banner_text()
 	if not _active or _alive > 0:
 		return
 	call_deferred("_spawn_next_wave")
@@ -51,6 +56,7 @@ func _spawn_next_wave() -> void:
 		if is_inside_tree():
 			get_tree().create_timer(0.8).timeout.connect(_break_arena_blocks)
 		return
+	_wave_total = 0
 	var entry: Dictionary = WAVE_ENEMIES[_wave]
 	var scene: PackedScene = load(entry["scene"] as String)
 	for point in _spawn_points:
@@ -71,12 +77,24 @@ func _break_arena_blocks() -> void:
 		TileBreakSFX.break_tile(tilemap, cell, get_parent(), true)
 
 func _show_wave_name(text_value: String) -> void:
-	if _banner:
-		var tween := create_tween()
-		_banner.modulate.a = 1.0
+	if _banner == null:
+		return
+	_wave_name = text_value
+	_banner.modulate.a = 1.0
+	if text_value == "CLEARED!":
 		_banner.text = text_value
+		var tween := create_tween()
 		tween.tween_interval(1.6)
 		tween.tween_property(_banner, "modulate:a", 0.0, 0.6)
+	else:
+		_update_banner_text()
+
+func _update_banner_text() -> void:
+	if _banner == null or _wave_name == "":
+		return
+	var total := maxi(1, _wave_total)
+	var beaten := clampi(_wave_total - _alive, 0, total)
+	_banner.text = "%s (%d/%d)" % [_wave_name, beaten, total]
 
 func _build_banner() -> void:
 	var layer := CanvasLayer.new()
@@ -100,3 +118,4 @@ func _build_banner() -> void:
 	layer.add_child(label)
 	add_child(layer)
 	_banner = label
+	_update_banner_text()

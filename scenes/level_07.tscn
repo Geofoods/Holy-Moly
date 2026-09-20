@@ -327,9 +327,9 @@ color = Color(0, 0, 0, 1)
 
 [node name="Costume10" type="Sprite2D" parent="." unique_id=1146149762]
 z_index = 99
-position = Vector2(4956, 4481)
+position = Vector2(3453.9995, 4421.0005)
 rotation = 6.275262
-scale = Vector2(18.090199, 1.717514)
+scale = Vector2(27.443565, 1.717514)
 texture = ExtResource("22_nfrlo")
 
 [node name="ColorRect3" type="ColorRect" parent="Costume10" unique_id=655571233]

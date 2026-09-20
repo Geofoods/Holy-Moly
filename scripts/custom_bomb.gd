@@ -7,6 +7,8 @@ extends RigidBody2D
 
 const FUSE_TIME := 2.2
 const FLASH_TIME := 0.35
+const DAMAGE_SCALAR := 10.0
+const DAMAGE_VARIATION := 0.2
 const TileBreakSFX := preload("res://scripts/tile_break_sfx.gd")
 
 var accent := Color(1.0, 1.0, 1.0, 1.0)
@@ -95,6 +97,9 @@ func _explode() -> void:
 func _blast() -> void:
 	pass
 
+func _rolled_enemy_damage() -> float:
+	return enemy_damage * DAMAGE_SCALAR * ComboManager.get_damage_multiplier() * randf_range(1.0 - DAMAGE_VARIATION, 1.0 + DAMAGE_VARIATION)
+
 func _damage_enemies_in_radius() -> void:
 	for hurtbox in get_tree().get_nodes_in_group("enemy_hurtbox"):
 		if not is_instance_valid(hurtbox):
@@ -102,7 +107,7 @@ func _damage_enemies_in_radius() -> void:
 		var enemy := hurtbox.get_parent()
 		if enemy and is_instance_valid(enemy) and global_position.distance_to(enemy.global_position) <= blast_radius:
 			if enemy.has_method("take_damage"):
-				enemy.take_damage(enemy_damage)
+				enemy.take_damage(_rolled_enemy_damage())
 			elif enemy.has_method("die"):
 				enemy.die()
 
