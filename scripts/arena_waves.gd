@@ -1,5 +1,7 @@
 extends Node
 
+signal cleared
+
 const ANTS_SCENE := "res://scenes/antenemy.tscn"
 const FONT_PATH := "res://Baby Doll.otf"
 const TileBreakSFX := preload("res://scripts/tile_break_sfx.gd")
@@ -45,6 +47,7 @@ func _spawn_next_wave() -> void:
 	if _wave >= WAVE_ENEMIES.size():
 		_active = false
 		_show_wave_name("CLEARED!")
+		cleared.emit()
 		if is_inside_tree():
 			get_tree().create_timer(0.8).timeout.connect(_break_arena_blocks)
 		return

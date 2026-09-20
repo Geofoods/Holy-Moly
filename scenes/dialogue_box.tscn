@@ -100,14 +100,16 @@ theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 16
 text = "TUTORIAL"
 
-[node name="MainLabel" type="Label" parent="Panel/MarginContainer/VBoxContainer"]
+[node name="MainLabel" type="RichTextLabel" parent="Panel/MarginContainer/VBoxContainer"]
 custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.32, 0.2, 0.08, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 26
+theme_override_colors/default_color = Color(0.32, 0.2, 0.08, 1)
+theme_override_fonts/normal_font = ExtResource("2_font")
+theme_override_font_sizes/normal_font_size = 26
+bbcode_enabled = true
+scroll_active = false
 autowrap_mode = 3
-vertical_alignment = 0
+fit_content = true
 
 [node name="NextRow" type="HBoxContainer" parent="Panel/MarginContainer/VBoxContainer"]
 layout_mode = 2

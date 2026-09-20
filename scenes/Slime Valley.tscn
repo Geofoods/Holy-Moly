@@ -150,7 +150,7 @@ script = ExtResource("12_kwefy")
 [node name="nextlevel3" type="Area2D" parent="." unique_id=161596051]
 position = Vector2(-10532, -3941)
 script = ExtResource("19_ybsq2")
-next_scene = "uid://dnalp7pe0fqi0"
+next_scene = "uid://rhwldatn6rxx"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="nextlevel3" unique_id=677544796]
 position = Vector2(9284, 1151)

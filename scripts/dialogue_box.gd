@@ -8,7 +8,7 @@ const SLIDE_DISTANCE := 240.0
 
 @onready var panel: PanelContainer = $Panel
 @onready var step_label: Label = $Panel/MarginContainer/VBoxContainer/StepLabel
-@onready var main_label: Label = $Panel/MarginContainer/VBoxContainer/MainLabel
+@onready var main_label: RichTextLabel = $Panel/MarginContainer/VBoxContainer/MainLabel
 @onready var next_button: Button = $Panel/MarginContainer/VBoxContainer/NextRow/NextButton
 @onready var prev_button: Button = $Panel/MarginContainer/VBoxContainer/NextRow/PrevButton
 
