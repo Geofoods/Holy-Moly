@@ -455,6 +455,7 @@ static func _acquire_player(parent: Node) -> AudioStreamPlayer2D:
 		p.finished.connect(_release_player.bind(p))
 	else:
 		p = _pool.pop_back()
+	p.process_mode = Node.PROCESS_MODE_ALWAYS
 	parent.add_child(p)
 	return p
 

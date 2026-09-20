@@ -62,6 +62,7 @@ func _acquire_2d() -> AudioStreamPlayer2D:
 		p.finished.connect(_release_2d.bind(p))
 	else:
 		p = _pool_2d.pop_back()
+	p.process_mode = Node.PROCESS_MODE_ALWAYS
 	return p
 
 func _release_2d(p: AudioStreamPlayer2D) -> void:
@@ -94,6 +95,7 @@ func _acquire_ui() -> AudioStreamPlayer:
 		p.finished.connect(_release_ui.bind(p))
 	else:
 		p = _pool_ui.pop_back()
+	p.process_mode = Node.PROCESS_MODE_ALWAYS
 	return p
 
 func _release_ui(p: AudioStreamPlayer) -> void:

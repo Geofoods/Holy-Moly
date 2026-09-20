@@ -18,6 +18,8 @@
 [ext_resource type="Texture2D" uid="uid://dcaydqv4femy7" path="res://sprites/snail/Idle Blinking_015.png" id="1_png16"]
 [ext_resource type="Texture2D" uid="uid://bacgmn1hdljfp" path="res://sprites/snail/Idle Blinking_016.png" id="1_png17"]
 [ext_resource type="Texture2D" uid="uid://b5kj0xew5m1ge" path="res://sprites/snail/Idle Blinking_017.png" id="1_png18"]
+[ext_resource type="Script" uid="uid://cxx8fkh3o0ybr" path="res://scripts/snail_dialogue.gd" id="3_script"]
+[ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="4_font"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_snail"]
 animations = [{
@@ -82,17 +84,42 @@ animations = [{
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_f1ulr"]
-size = Vector2(385, 30)
+size = Vector2(74, 16)
 
-[node name="Snail" type="CharacterBody2D" unique_id=1357957573]
-scale = Vector2(0.25, 0.25)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_txh3t"]
+size = Vector2(638, 496)
+
+[node name="Snail" type="RigidBody2D" unique_id=1260151595]
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1909848161]
 position = Vector2(-3, -1)
+scale = Vector2(0.25, 0.25)
 sprite_frames = SubResource("SpriteFrames_snail")
 animation = &"idle"
 autoplay = "idle"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=569889419]
-position = Vector2(-24.5, 131)
+position = Vector2(-6, 26)
 shape = SubResource("RectangleShape2D_f1ulr")
+
+[node name="Area2D" type="Area2D" parent="." unique_id=1339046545]
+script = ExtResource("3_script")
+portrait_texture = ExtResource("1_png1")
+dialogue_text = "Would you like a shell? It's very cozy in here. Sorry, I don't have any to spare just yet."
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=141970544]
+shape = SubResource("RectangleShape2D_txh3t")
+
+[node name="Prompt" type="Label" parent="Area2D" unique_id=141970545]
+visible = false
+offset_left = -140.0
+offset_top = -150.0
+offset_right = 140.0
+offset_bottom = -104.0
+theme_override_colors/font_color = Color(1, 0.93, 0.66, 1)
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 1)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("4_font")
+theme_override_font_sizes/font_size = 26
+text = "PRESS E TO INTERACT"
+horizontal_alignment = 1

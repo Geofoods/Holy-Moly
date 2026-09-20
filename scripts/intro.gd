@@ -56,6 +56,7 @@ func _add_version_label() -> void:
 
 func animate_intro():
 	_intro_music = AudioStreamPlayer.new()
+	_intro_music.process_mode = Node.PROCESS_MODE_ALWAYS
 	_intro_music.stream = preload("res://ivan_luzan-epic-hybrid-logo-157092.mp3")
 	_intro_music.volume_db = -4.0
 	add_child(_intro_music)
@@ -75,6 +76,7 @@ func _fade_out_intro_music() -> void:
 
 func _start_menu_music() -> void:
 	var music := AudioStreamPlayer.new()
+	music.process_mode = Node.PROCESS_MODE_ALWAYS
 	music.stream = preload("res://pink_sound-neon-symphony-phonk-house-background-music-for-video-21-second-533504.mp3")
 	music.volume_db = -14.0
 	music.pitch_scale = 0.8

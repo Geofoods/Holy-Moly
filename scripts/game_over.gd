@@ -63,6 +63,7 @@ func animate_mole_death() -> void:
 	await fall_tween.finished
 
 	var break_sound := AudioStreamPlayer2D.new()
+	break_sound.process_mode = Node.PROCESS_MODE_ALWAYS
 	break_sound.stream = load("res://sounds/break_corrupted_1.ogg")
 	break_sound.volume_db = -2.0
 	break_sound.pitch_scale = randf_range(0.8, 1.0)
@@ -97,6 +98,7 @@ func _set_buttons_enabled(enabled: bool) -> void:
 
 func _start_game_over_music() -> void:
 	_game_over_music = AudioStreamPlayer.new()
+	_game_over_music.process_mode = Node.PROCESS_MODE_ALWAYS
 	_game_over_music.stream = preload("res://soundreality-crystal-cave-136472.mp3")
 	_game_over_music.volume_db = -14.0
 	add_child(_game_over_music)

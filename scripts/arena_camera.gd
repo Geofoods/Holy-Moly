@@ -2,11 +2,13 @@ extends Camera2D
 ## Drives the arena camera sequence in "The Arena". When the mole enters the
 ## `arenastart` zone the game pauses while the view pans from the player camera
 ## to the arena camera, then unpauses for the fight. Once the wave manager
-## reports the enemies cleared, the view pans back to the player camera.
+## reports the enemies cleared, the view pans over to the "breaking camera" to
+## watch the wall shatter, then pans back to the player camera.
 
 const PAN_DURATION := 1.0
+const BREAK_HOLD := 2.5
 
-enum State { IDLE, PANNING_IN, FIGHTING, PANNING_OUT }
+enum State { IDLE, PANNING_IN, FIGHTING, PANNING_TO_BREAK, BREAKING, PANNING_OUT }
 
 var _state := State.IDLE
 var _done := false
@@ -14,6 +16,8 @@ var _mole: Node2D = null
 var _mole_cam: Camera2D = null
 var _arena_pos := Vector2.ZERO
 var _arena_zoom := Vector2(0.5, 0.5)
+var _break_pos := Vector2.ZERO
+var _break_zoom := Vector2(0.5, 0.5)
 var _from_pos := Vector2.ZERO
 var _from_zoom := Vector2.ONE
 var _to_pos := Vector2.ZERO
@@ -25,6 +29,14 @@ func _ready() -> void:
 	_arena_pos = global_position
 	_arena_zoom = zoom
 	enabled = false
+	var break_cam := get_parent().get_node_or_null("breaking camera") as Camera2D
+	if break_cam:
+		_break_pos = break_cam.global_position
+		_break_zoom = break_cam.zoom
+	var arena_map := get_parent().get_node_or_null("TileMap2") as TileMap
+	if arena_map:
+		for layer in range(arena_map.get_layers_count()):
+			arena_map.set_layer_enabled(layer, false)
 	var start := get_parent().get_node_or_null("arenastart") as Area2D
 	if start:
 		start.body_entered.connect(_on_arena_start_entered)
@@ -33,16 +45,19 @@ func _ready() -> void:
 		waves.cleared.connect(_on_waves_cleared)
 
 func _process(delta: float) -> void:
-	if _state == State.PANNING_IN or _state == State.PANNING_OUT:
+	if _state == State.PANNING_IN or _state == State.PANNING_TO_BREAK or _state == State.PANNING_OUT:
 		_t += delta / PAN_DURATION
 		var s := _smoothstep(minf(_t, 1.0))
 		global_position = _from_pos.lerp(_to_pos, s)
 		zoom = _from_zoom.lerp(_to_zoom, s)
 		if _t >= 1.0:
-			if _state == State.PANNING_IN:
-				_finish_pan_in()
-			else:
-				_finish_pan_out()
+			match _state:
+				State.PANNING_IN:
+					_finish_pan_in()
+				State.PANNING_TO_BREAK:
+					_finish_pan_to_break()
+				State.PANNING_OUT:
+					_finish_pan_out()
 
 func _on_arena_start_entered(body: Node) -> void:
 	if _done or _state != State.IDLE:
@@ -63,6 +78,12 @@ func _begin_sequence() -> void:
 	_to_pos = _arena_pos
 	_to_zoom = _arena_zoom
 
+	var arena_map := get_parent().get_node_or_null("TileMap2") as TileMap
+	if arena_map:
+		arena_map.visible = true
+		for layer in range(arena_map.get_layers_count()):
+			arena_map.set_layer_enabled(layer, true)
+
 	_mole.process_mode = Node.PROCESS_MODE_DISABLED
 	global_position = _from_pos
 	zoom = _from_zoom
@@ -80,6 +101,22 @@ func _on_waves_cleared() -> void:
 	if _state != State.FIGHTING:
 		return
 	_done = true
+	_state = State.PANNING_TO_BREAK
+	_t = 0.0
+	_from_pos = global_position
+	_from_zoom = zoom
+	_to_pos = _break_pos
+	_to_zoom = _break_zoom
+	if is_instance_valid(_mole):
+		_mole.process_mode = Node.PROCESS_MODE_DISABLED
+
+func _finish_pan_to_break() -> void:
+	_state = State.BREAKING
+	await get_tree().create_timer(BREAK_HOLD).timeout
+	if is_inside_tree() and _state == State.BREAKING:
+		_begin_pan_out()
+
+func _begin_pan_out() -> void:
 	_state = State.PANNING_OUT
 	_t = 0.0
 	_from_pos = global_position

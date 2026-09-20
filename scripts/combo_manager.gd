@@ -22,10 +22,10 @@ func _ready() -> void:
 	_label.anchor_right = 1.0
 	_label.anchor_top = 0.0
 	_label.anchor_bottom = 0.0
-	_label.offset_left = -270
+	_label.offset_left = -320
 	_label.offset_right = -20
-	_label.offset_top = 75
-	_label.offset_bottom = 275
+	_label.offset_top = 60
+	_label.offset_bottom = 420
 	_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 
@@ -82,7 +82,8 @@ func _reset_combo() -> void:
 func _update_label() -> void:
 	var time_left := int(ceil(combo_timer))
 	var mult := maxi(1, combo)
-	_label.text = "COMBO x%d\nDMG x%d   COIN x%d  -  %ds" % [combo, mult, mult, time_left]
+	_label.text = "COMBO x%d\nDMG x%d\nCOIN x%d\nSPD x%.2f\nCOYOTE %.2fs\nTIME %ds" % \
+		[combo, mult, mult, get_speed_multiplier(), get_coyote_time(), time_left]
 
 func _get_combo_color() -> Color:
 	if combo >= 10:
@@ -141,6 +142,7 @@ func _play_combo_sound() -> void:
 	var volume := -8.0 + float(mini(combo, 8)) * 0.5
 	var stream := preload("res://combo sound mole.wav")
 	var player := AudioStreamPlayer.new()
+	player.process_mode = Node.PROCESS_MODE_ALWAYS
 	player.stream = stream
 	player.volume_db = volume
 	player.pitch_scale = pitch

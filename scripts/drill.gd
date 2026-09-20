@@ -16,6 +16,7 @@ func _start_drill_sound() -> void:
 	if not SFX._sounds.has("drill") or SFX._sounds["drill"].size() == 0:
 		return
 	var drill_player := AudioStreamPlayer2D.new()
+	drill_player.process_mode = Node.PROCESS_MODE_ALWAYS
 	drill_player.stream = SFX._sounds["drill"][0]
 	drill_player.volume_db = -8.0
 	drill_player.max_distance = 2000.0

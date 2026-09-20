@@ -66,6 +66,7 @@ func _save_return_position(body: Node) -> void:
 
 func _play_exit_sound() -> void:
 	var player := AudioStreamPlayer.new()
+	player.process_mode = Node.PROCESS_MODE_ALWAYS
 	player.stream = _exit_sound
 	player.volume_db = -6.0
 	player.pitch_scale = 1.8
