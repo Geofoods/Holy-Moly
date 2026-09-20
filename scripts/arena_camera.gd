@@ -87,6 +87,8 @@ func _begin_sequence() -> void:
 		arena_map.visible = true
 		for layer in range(arena_map.get_layers_count()):
 			arena_map.set_layer_enabled(layer, true)
+		arena_map.collision_layer = 0
+		arena_map.collision_mask = 0
 
 	_mole.process_mode = Node.PROCESS_MODE_DISABLED
 	global_position = _from_pos

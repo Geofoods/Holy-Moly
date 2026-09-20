@@ -251,7 +251,7 @@ class FloatingDamageLabel:
 
 static var _damage_font: Font = null
 
-static func spawn_damage_number(enemy: Node2D, amount: float) -> void:
+static func spawn_damage_number(enemy: Node2D, amount: float, origin: Vector2 = Vector2.INF) -> void:
 	if not is_instance_valid(enemy) or not enemy.is_inside_tree():
 		return
 	var current := enemy.get_tree().current_scene
@@ -273,7 +273,10 @@ static func spawn_damage_number(enemy: Node2D, amount: float) -> void:
 	label.velocity = Vector2.from_angle(randf_range(-PI * 0.78, -PI * 0.22)) * randf_range(880.0, 960.0)
 	label.scale = Vector2(0.6, 0.6)
 	current.add_child(label)
-	label.global_position = enemy.global_position + Vector2(randf_range(-16.0, 16.0), randf_range(-28.0, -6.0))
+	var start := enemy.global_position
+	if origin != Vector2.INF:
+		start = origin
+	label.global_position = start + Vector2(randf_range(-16.0, 16.0), randf_range(-28.0, -6.0))
 
 	var pop := label.create_tween()
 	pop.tween_property(label, "scale", Vector2.ONE, 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)

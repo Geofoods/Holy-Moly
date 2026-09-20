@@ -1,18 +1,9 @@
 [gd_scene format=3 uid="uid://wjt35doljo8p"]
 
-[ext_resource type="Texture2D" path="res://parallax_blurred/bg3_l0.png" id="1_r1vwf"]
-[ext_resource type="Texture2D" path="res://parallax_blurred/bg3_l1.png" id="2_mk8nb"]
+[ext_resource type="Texture2D" uid="uid://cd1hed2jlle7c" path="res://parallax_blurred/bg3_l0.png" id="1_r1vwf"]
+[ext_resource type="Texture2D" uid="uid://kjomrf2rayuk" path="res://parallax_blurred/bg3_l1.png" id="2_mk8nb"]
 [ext_resource type="Texture2D" uid="uid://sx170tmk2xu4" path="res://craftpix-net-576316-pixel-cave-game-parallax-backgrounds/background 3/3.png" id="3_ruc0d"]
 [ext_resource type="Texture2D" uid="uid://hh4qh5xsv7wn" path="res://craftpix-net-576316-pixel-cave-game-parallax-backgrounds/background 3/4.png" id="4_86jx2"]
-[ext_resource type="Shader" path="res://shaders/parallax_blur.gdshader" id="5_shader"]
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_blur2"]
-shader = ExtResource("5_shader")
-shader_parameter/blur_radius = 1.0
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_blur3"]
-shader = ExtResource("5_shader")
-shader_parameter/blur_radius = 0.5
 
 [node name="ParallaxBackgroun2" type="Node2D" unique_id=1654768929]
 modulate = Color(0.9369252, 0.5776125, 0.95337397, 1)
@@ -46,7 +37,6 @@ repeat_size = Vector2(4608, 2592)
 repeat_times = 2
 
 [node name="Sprite" type="Sprite2D" parent="Layer2" unique_id=24721702]
-material = SubResource("ShaderMaterial_blur2")
 modulate = Color(0.82, 0.82, 0.82, 0.75)
 scale = Vector2(8, 8)
 texture = ExtResource("3_ruc0d")
@@ -58,8 +48,7 @@ repeat_size = Vector2(4608, 2592)
 repeat_times = 2
 
 [node name="Sprite" type="Sprite2D" parent="Layer3" unique_id=1088071746]
-material = SubResource("ShaderMaterial_blur3")
-modulate = Color(0.9, 0.9, 0.9, 1.0)
+modulate = Color(0.9, 0.9, 0.9, 1)
 scale = Vector2(8, 8)
 texture = ExtResource("4_86jx2")
 centered = false

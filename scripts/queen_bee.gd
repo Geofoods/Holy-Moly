@@ -664,6 +664,11 @@ func _on_hitbox_body_exited(body: Node) -> void:
 	if body.is_in_group("mole"):
 		_mole_in_contact = false
 
+func _sprite_center() -> Vector2:
+	var frame_tex := anim.sprite_frames.get_frame_texture(anim.animation, anim.frame)
+	var frame_size := frame_tex.get_size()
+	return to_global(anim.position + anim.scale * frame_size * 0.5)
+
 func _on_hurtbox_area_entered(area: Area2D) -> void:
 	if not _boss_active:
 		return
@@ -677,7 +682,7 @@ func take_damage(amount: float) -> void:
 	if health <= 0:
 		return
 	health -= amount
-	EnemyDamage.spawn_damage_number(self, amount)
+	EnemyDamage.spawn_damage_number(self, amount, _sprite_center())
 	modulate = Color(2, 1.5, 1.2, 1)
 	var flash_tween := create_tween()
 	flash_tween.tween_property(self, "modulate", Color.WHITE, 0.15)
