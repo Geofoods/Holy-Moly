@@ -1,6 +1,7 @@
 [gd_resource type="Resource" script_class="ItemData" format=3]
 
 [ext_resource type="Script" path="res://scripts/item_data.gd" id="1_rxrym"]
+[ext_resource type="Texture2D" uid="uid://bgj1nafjl5eu1" path="res://icons/wax_cache.svg" id="2_tex"]
 
 [resource]
 script = ExtResource("1_rxrym")
@@ -8,5 +9,6 @@ item_name = "Wax Cache"
 description = "60s buff: 25% chance any item you consume is refunded."
 icon_color = Color(0.5, 0.8, 1, 1)
 icon_text = "WC"
+icon_texture = ExtResource("2_tex")
 consumable = true
 stackable = true

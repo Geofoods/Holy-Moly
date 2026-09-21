@@ -1,6 +1,7 @@
 [gd_resource type="Resource" script_class="ItemData" format=3]
 
 [ext_resource type="Script" path="res://scripts/item_data.gd" id="1_rxrym"]
+[ext_resource type="Texture2D" uid="uid://bxyr5qwngyjdc" path="res://icons/rebound_hook.svg" id="2_tex"]
 
 [resource]
 script = ExtResource("1_rxrym")
@@ -8,5 +9,6 @@ item_name = "Rebound Hook"
 description = "60s buff: a missed grapple yanks the nearest coin to you."
 icon_color = Color(0.8, 0.8, 0.9, 1)
 icon_text = "RH"
+icon_texture = ExtResource("2_tex")
 consumable = true
 stackable = true

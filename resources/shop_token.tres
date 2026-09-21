@@ -1,6 +1,7 @@
 [gd_resource type="Resource" script_class="ItemData" format=3]
 
 [ext_resource type="Script" path="res://scripts/item_data.gd" id="1_rxrym"]
+[ext_resource type="Texture2D" uid="uid://d2uoky0ihokhe" path="res://icons/shop_token.svg" id="2_tex"]
 
 [resource]
 script = ExtResource("1_rxrym")
@@ -8,5 +9,6 @@ item_name = "Shop Token"
 description = "Rings the shopkeeper - opens the shop anywhere."
 icon_color = Color(0.6, 0.4, 0.2, 1)
 icon_text = "ST"
+icon_texture = ExtResource("2_tex")
 consumable = true
 stackable = true

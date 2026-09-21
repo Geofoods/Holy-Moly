@@ -167,6 +167,11 @@ func _ready() -> void:
 	_setup_input_actions()
 	_normal_collision_mask = collision_mask
 	_restore_level_position()
+	# The mole village is a peaceful hub, so the mole never carries its shovel
+	# there and cannot break blocks. Set in code so editor re-saves of the
+	# scene can't re-enable it.
+	if str(get_tree().current_scene.scene_file_path).ends_with("molevillage.tscn"):
+		can_break = false
 	await get_tree().process_frame
 	_restoring_health = true
 	self.health = Inventory.player_health

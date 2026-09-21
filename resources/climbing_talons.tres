@@ -1,6 +1,7 @@
 [gd_resource type="Resource" script_class="ItemData" format=3]
 
 [ext_resource type="Script" path="res://scripts/item_data.gd" id="1_rxrym"]
+[ext_resource type="Texture2D" uid="uid://bd053u20miye7" path="res://icons/climbing_talons.svg" id="2_tex"]
 
 [resource]
 script = ExtResource("1_rxrym")
@@ -8,5 +9,6 @@ item_name = "Climbing Talons"
 description = "10s buff: cling to walls instead of sliding down."
 icon_color = Color(0.9, 0.7, 0.35, 1)
 icon_text = "CT"
+icon_texture = ExtResource("2_tex")
 consumable = true
 stackable = true

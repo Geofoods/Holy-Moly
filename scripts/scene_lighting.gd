@@ -12,6 +12,10 @@ func _process(_delta: float) -> void:
 	var path := str(scene.scene_file_path)
 	if path.ends_with("intro.tscn") or path.ends_with("level1.tscn"):
 		return
+	# The mole village is a surface area like level 1, so it stays lit the
+	# same way instead of getting the cave shade campaign levels use.
+	if path.ends_with("molevillage.tscn"):
+		return
 	if path.ends_with("win_screen.tscn") or path.ends_with("game_over.tscn"):
 		return
 	# The shopkeeper's room is lit by its own candles, so it never gets the

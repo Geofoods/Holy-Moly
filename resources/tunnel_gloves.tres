@@ -1,6 +1,7 @@
 [gd_resource type="Resource" script_class="ItemData" format=3]
 
 [ext_resource type="Script" path="res://scripts/item_data.gd" id="1_rxrym"]
+[ext_resource type="Texture2D" uid="uid://vlvgp0k6vthq" path="res://icons/tunnel_gloves.svg" id="2_tex"]
 
 [resource]
 script = ExtResource("1_rxrym")
@@ -8,5 +9,6 @@ item_name = "Tunnel Gloves"
 description = "60s buff: dig-dash chews a taller tunnel."
 icon_color = Color(0.75, 0.55, 0.9, 1)
 icon_text = "TG"
+icon_texture = ExtResource("2_tex")
 consumable = true
 stackable = true

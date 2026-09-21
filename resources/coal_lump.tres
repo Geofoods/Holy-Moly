@@ -1,6 +1,7 @@
 [gd_resource type="Resource" script_class="ItemData" format=3]
 
 [ext_resource type="Script" path="res://scripts/item_data.gd" id="1_rxrym"]
+[ext_resource type="Texture2D" uid="uid://ljxa0ppckkiw" path="res://icons/coal_lump.svg" id="2_tex"]
 
 [resource]
 script = ExtResource("1_rxrym")
@@ -8,5 +9,6 @@ item_name = "Coal Lump"
 description = "Bouncy coal that smacks enemies flying."
 icon_color = Color(0.25, 0.22, 0.2, 1)
 icon_text = "C"
+icon_texture = ExtResource("2_tex")
 consumable = true
 stackable = true
