@@ -1,7 +1,8 @@
-[gd_scene format=3 uid="uid://34rv3wyj5y5s"]
+[gd_scene format=3 uid="uid://oucemvqovkp5"]
 
 [ext_resource type="Texture2D" uid="uid://blp357sqm6m5c" path="res://sprites/moleacharacterwalk.png" id="1_walk"]
 [ext_resource type="Script" uid="uid://l2l53rhnanjn" path="res://scripts/npc_mole.gd" id="2_script"]
+[ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="3_font"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_walk1"]
 atlas = ExtResource("1_walk")
@@ -50,18 +51,49 @@ animations = [{
 radius = 51.09794
 height = 368.12317
 
-[node name="NpcMole" type="CharacterBody2D"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_interact"]
+size = Vector2(700, 700)
+
+[sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_5t1dk"]
+polygon = PackedVector2Array(-176, 20, -201, -67, -152, -154, -35, -165, 115, -129, 189, -42, 201, 41, 35, 76, -92, 67, -164, 62)
+
+[node name="NpcMole" type="CharacterBody2D" unique_id=1362594445]
 z_index = 1
 script = ExtResource("2_script")
 
-[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1302158727]
 light_mask = 2
 sprite_frames = SubResource("SpriteFrames_walk")
 animation = &"walk"
 autoplay = "walk"
 flip_h = true
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1018577503]
 position = Vector2(6, 14.000008)
 rotation = 1.5707964
 shape = SubResource("CapsuleShape2D_npc")
+
+[node name="EdgeRay" type="RayCast2D" parent="." unique_id=1915538423]
+target_position = Vector2(-300, 300)
+
+[node name="InteractionArea" type="Area2D" parent="." unique_id=1743089472]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="InteractionArea" unique_id=1588916197]
+shape = SubResource("RectangleShape2D_interact")
+
+[node name="Prompt" type="Label" parent="." unique_id=969192075]
+visible = false
+offset_left = -150.0
+offset_top = -40.0
+offset_right = 150.0
+offset_bottom = 14.0
+theme_override_colors/font_color = Color(1, 0.93, 0.66, 1)
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 1)
+theme_override_constants/outline_size = 5
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 40
+text = "PRESS E"
+horizontal_alignment = 1
+
+[node name="LightOccluder2D" type="LightOccluder2D" parent="." unique_id=1962173183]
+occluder = SubResource("OccluderPolygon2D_5t1dk")

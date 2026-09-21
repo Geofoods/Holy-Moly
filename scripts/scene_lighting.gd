@@ -22,6 +22,9 @@ func _process(_delta: float) -> void:
 	# cave shade the campaign levels use.
 	if path.ends_with("shopkeeper_item.tscn"):
 		return
+	# The tutorial is an above-ground training area, so it stays fully lit.
+	if path.ends_with("tutorial.tscn"):
+		return
 	if scene.get_node_or_null("AmbientModulate") == null:
 		var cm := CanvasModulate.new()
 		cm.name = "AmbientModulate"

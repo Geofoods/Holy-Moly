@@ -14,6 +14,9 @@ polygon = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
 [sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_p0366"]
 polygon = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
 
+[sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_mjrc7"]
+polygon = PackedVector2Array(-80, -80, 80, -80, 80, -25.652004, -80, -17.908012)
+
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_choun"]
 texture = ExtResource("1_2urvg")
 texture_region_size = Vector2i(160, 160)
@@ -48,13 +51,14 @@ texture_region_size = Vector2i(160, 160)
 8:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
 8:0/0/custom_data_0 = true
 9:0/0 = 0
-9:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -46.52009, 80, 12, -80, -14)
+9:0/0/occlusion_layer_0/polygon_0/polygon = SubResource("OccluderPolygon2D_mjrc7")
+9:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, -12.099998, -80, -8.228004)
 9:0/0/custom_data_2 = true
 10:0/0 = 0
-10:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -50, 80, -51, 80, 8, -80, 17)
+10:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, -12.099998, -80, -8.228004)
 10:0/0/custom_data_2 = true
 11:0/0 = 0
-11:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -58, 80, -80, 80, -27, -80, 2)
+11:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, -12.099998, -80, -8.228004)
 11:0/0/custom_data_2 = true
 12:0/0 = 0
 0:1/0 = 0
@@ -88,15 +92,15 @@ texture_region_size = Vector2i(160, 160)
 8:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, 80, -80, 80)
 8:1/0/custom_data_0 = true
 9:1/0 = 0
-9:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -51, 80, 8, -80, -17)
+9:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, -12.099998, -80, -8.228004)
 9:1/0/custom_data_0 = true
 9:1/0/custom_data_2 = true
 10:1/0 = 0
-10:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -58, 80, -51, 80, 8, -80, 2)
+10:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, -12.099998, -80, -8.228004)
 10:1/0/custom_data_0 = true
 10:1/0/custom_data_2 = true
 11:1/0 = 0
-11:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -58, 80, -80, 80, -27, -80, 2)
+11:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-80, -80, 80, -80, 80, -12.099998, -80, -8.228004)
 11:1/0/custom_data_0 = true
 11:1/0/custom_data_2 = true
 12:1/0 = 0

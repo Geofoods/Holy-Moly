@@ -8,6 +8,7 @@ const SLIDE_DISTANCE := 240.0
 
 @onready var panel: PanelContainer = $Panel
 @onready var step_label: Label = $Panel/MarginContainer/VBoxContainer/StepLabel
+@onready var name_label: Label = $Panel/MarginContainer/VBoxContainer/NameLabel
 @onready var portrait: TextureRect = $Panel/MarginContainer/VBoxContainer/ContentRow/Portrait
 @onready var main_label: RichTextLabel = $Panel/MarginContainer/VBoxContainer/ContentRow/MainLabel
 @onready var next_button: Button = $Panel/MarginContainer/VBoxContainer/NextRow/NextButton
@@ -61,9 +62,14 @@ func _type_text() -> void:
 func _set_typed_length(length: int) -> void:
 	main_label.text = _full_text.substr(0, length)
 
-func set_portrait(texture: Texture2D) -> void:
+func set_portrait(texture: Texture2D, tint: Color = Color.WHITE) -> void:
 	portrait.visible = texture != null
 	portrait.texture = texture
+	portrait.modulate = tint
+
+func set_npc_name(text: String) -> void:
+	name_label.visible = text != ""
+	name_label.text = text
 
 func skip_typing() -> void:
 	if _type_tween:
