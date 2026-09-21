@@ -15,6 +15,7 @@ const COLLAPSE_HALF_WIDTH_TILES := 3
 const COLLAPSE_RIDE_OFFSET := 40.0
 const COLLAPSE_CAM_OFFSET := -60.0
 const COLLAPSE_LAND_DELAY := 0.8
+const COLLAPSE_MOVE_SPEED := 320.0
 
 const EnemyDamage := preload("res://scripts/enemy.gd")
 
@@ -46,7 +47,14 @@ var _mole_in_bounce_zone := false
 var _collapse_started := false
 var _death_finished := false
 
+var _collapse_player_control := false
+var _ride_mole: Node2D = null
+var _ride_mole_layer := 0
+var _ride_min_x := 0.0
+var _ride_max_x := 0.0
+
 var _tilemap: TileMap = null
+var _arena_map: TileMap = null
 var _tile_break_script: GDScript = null
 var _last_break_tile_y := -999999
 
@@ -80,6 +88,7 @@ func _ready() -> void:
 	bounce_zone.body_entered.connect(_on_bounce_zone_body_entered)
 	bounce_zone.body_exited.connect(_on_bounce_zone_body_exited)
 	_tilemap = get_parent().get_node_or_null("TileMap") as TileMap
+	_arena_map = get_parent().get_node_or_null("TileMap2") as TileMap
 	_tile_break_script = load("res://scripts/tile_break_sfx.gd")
 	_projectile_scene = preload("res://area_2d.tscn")
 	_chest_scene = preload("res://chest.tscn")
@@ -265,6 +274,9 @@ func _destroy_offscreen_indicator() -> void:
 	_indicator_arrow = null
 
 func _process(delta: float) -> void:
+	if _collapse_player_control:
+		_update_ride_mole(delta)
+		return
 	if _cutscene_stage < 0:
 		return
 
@@ -356,13 +368,31 @@ func _break_tiles_in_path() -> void:
 	for x in range(top_left.x, bottom_right.x + 1):
 		for y in range(top_left.y, bottom_right.y + 1):
 			var tp := Vector2i(x, y)
+			if _is_bedrock(tp):
+				continue
 			_tile_break_script.break_tile(_tilemap, tp, get_parent(), true)
+
+func _enable_arena_map() -> void:
+	if _arena_map == null:
+		return
+	_arena_map.visible = true
+	for layer in range(_arena_map.get_layers_count()):
+		_arena_map.set_layer_enabled(layer, true)
+
+func _break_arena_blocks() -> void:
+	if _arena_map == null:
+		return
+	for cell in _arena_map.get_used_cells(0):
+		# force = true ignores the bedrock tag, so every arena block is torn
+		# away and the erase removes its collision with it.
+		_tile_break_script.break_tile(_arena_map, cell, get_parent(), true)
 
 func _on_trigger_entered(body: Node) -> void:
 	if _boss_active or _cutscene_playing:
 		return
 	if not body.is_in_group("mole"):
 		return
+	_enable_arena_map()
 	_cutscene_playing = true
 	_start_cutscene(body)
 
@@ -566,6 +596,7 @@ func die() -> void:
 	big_tw.tween_interval(0.2)
 	big_tw.tween_callback(_break_apart)
 	big_tw.tween_callback(_play_death_effect)
+	big_tw.tween_callback(_break_arena_blocks)
 	big_tw.tween_interval(0.25)
 	big_tw.tween_callback(_start_collapse)
 
@@ -660,11 +691,13 @@ func _finish_death_cutscene() -> void:
 			mole_cam.zoom = Vector2(0.65, 0.65)
 			mole_cam.position.y = -500
 		_cutscene_mole.process_mode = PROCESS_MODE_INHERIT
+		var mole_body := _cutscene_mole as CollisionObject2D
+		if mole_body and _ride_mole_layer != 0:
+			mole_body.collision_layer = _ride_mole_layer
 	_cutscene_mole = null
 
 	get_tree().paused = false
 	process_mode = PROCESS_MODE_INHERIT
-	_go_to_win_screen()
 	queue_free()
 
 ## The boss's death takes the floor with it: the tiles beneath the mole break
@@ -682,21 +715,27 @@ func _start_collapse() -> void:
 	_run_collapse(mole)
 
 func _run_collapse(mole: Node2D) -> void:
-	# The mole is driven by this cutscene rather than by physics, so drop its
-	# collision layer while it rides: otherwise it would trip area triggers
-	# (coins, chests, exit zones) as it passes them on the way down.
+	# Keep the descent playable: the tree stays unpaused so break particles and
+	# sounds run, and the mole keeps sideways control while the floor falls away.
 	var body := mole as CollisionObject2D
 	if body:
+		_ride_mole_layer = body.collision_layer
 		body.collision_layer = 0
 	_play_mole_fall_anim(mole)
+	get_tree().paused = false
+	_collapse_player_control = true
+	_ride_mole = mole
 
 	var center_tile := _tilemap.local_to_map(_tilemap.to_local(mole.global_position))
+	_ride_min_x = _tilemap.to_global(_tilemap.map_to_local(Vector2i(center_tile.x - COLLAPSE_HALF_WIDTH_TILES, 0))).x
+	_ride_max_x = _tilemap.to_global(_tilemap.map_to_local(Vector2i(center_tile.x + COLLAPSE_HALF_WIDTH_TILES, 0))).x
 	var first_row := center_tile.y + 1
 	# Captured up front: the used rect shrinks as the shaft is carved out.
 	var bottom_row := _tilemap.get_used_rect().end.y - 1
 
 	for row in range(first_row, bottom_row + 1):
 		var broken_and_solid := _break_collapse_row(row, center_tile.x)
+		_break_chests_in_row(row, center_tile.x)
 		# Unbreakable ground (tiles, but none of them breakable) stops the fall;
 		# an air gap (no tiles at all) is just the mole dropping through.
 		if broken_and_solid.x == 0 and broken_and_solid.y > 0:
@@ -710,6 +749,9 @@ func _run_collapse(mole: Node2D) -> void:
 		if _cutscene_cam and is_instance_valid(_cutscene_cam):
 			ride.tween_property(_cutscene_cam, "global_position", target + Vector2(0, COLLAPSE_CAM_OFFSET), COLLAPSE_STEP_TIME)
 		await ride.finished
+
+	_collapse_player_control = false
+	_ride_mole = null
 
 	await get_tree().create_timer(COLLAPSE_LAND_DELAY).timeout
 	_finish_death_cutscene()
@@ -762,14 +804,42 @@ func _kill_enemies_in_row(row: int, center_x: int) -> void:
 		if cell.y != row or cell.x < min_x or cell.x > max_x:
 			continue
 		# Enemies animate their own deaths with tweens, so let them keep running
-		# while the cutscene holds the rest of the tree paused.
+		# while the descent carries the mole past them.
 		enemy.process_mode = Node.PROCESS_MODE_ALWAYS
 		enemy.call("die")
 
-func _go_to_win_screen() -> void:
-	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
-	get_tree().root.add_child(transition)
-	transition.change_to("res://scenes/win_screen.tscn")
+func _update_ride_mole(delta: float) -> void:
+	if _ride_mole == null or not is_instance_valid(_ride_mole):
+		return
+	var dir := Input.get_axis("ui_left", "ui_right")
+	if dir != 0.0:
+		var new_x := clampf(_ride_mole.global_position.x + dir * COLLAPSE_MOVE_SPEED * delta, _ride_min_x, _ride_max_x)
+		_ride_mole.global_position.x = new_x
+		var sprite := _ride_mole.get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
+		if sprite:
+			sprite.flip_h = dir < 0.0
+
+## Smashes every chest the mole plows through in this row of the shaft, opening
+## unopened ones first so they still drop their loot.
+func _break_chests_in_row(row: int, center_x: int) -> void:
+	var min_x := center_x - COLLAPSE_HALF_WIDTH_TILES
+	var max_x := center_x + COLLAPSE_HALF_WIDTH_TILES
+	for child in get_parent().get_children():
+		if not (child is Node2D):
+			continue
+		var chest_area: Area2D = null
+		for c in child.get_children():
+			if c is Area2D and c.has_method("_open_chest"):
+				chest_area = c as Area2D
+				break
+		if chest_area == null:
+			continue
+		var cell := _tilemap.local_to_map(_tilemap.to_local((child as Node2D).global_position))
+		if cell.y != row or cell.x < min_x or cell.x > max_x:
+			continue
+		if chest_area.get("is_open") == false:
+			chest_area.call("_open_chest")
+		chest_area.call("break_as_block")
 
 func _break_apart() -> void:
 	anim.visible = false

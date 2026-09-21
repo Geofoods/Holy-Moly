@@ -25,6 +25,7 @@ var completed := {}
 var queen_defeated := false
 var corrupted_defeated := false
 var boss_rush_cleared := false
+var arena_completed := false
 var best_combo := 0
 
 var acorn_total := ACORN_LEVELS.size()
@@ -138,6 +139,14 @@ func mark_boss_rush_cleared() -> void:
 		boss_rush_cleared = true
 		save_progress()
 
+func mark_arena_completed() -> void:
+	if not arena_completed:
+		arena_completed = true
+		save_progress()
+
+func is_arena_completed() -> bool:
+	return arena_completed
+
 func update_best_combo(value: int) -> void:
 	if value > best_combo:
 		best_combo = value
@@ -152,6 +161,7 @@ func save_progress() -> void:
 	cfg.set_value("bosses", "queen", queen_defeated)
 	cfg.set_value("bosses", "corrupted", corrupted_defeated)
 	cfg.set_value("bosses", "rush", boss_rush_cleared)
+	cfg.set_value("arena", "completed", arena_completed)
 	cfg.set_value("meta", "best_combo", best_combo)
 	cfg.save(SAVE_PATH)
 

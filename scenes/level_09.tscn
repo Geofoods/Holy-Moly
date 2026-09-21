@@ -10,12 +10,15 @@
 [ext_resource type="PackedScene" uid="uid://cdxu1kg5or16d" path="res://candle.tscn" id="7_dxywq"]
 [ext_resource type="Shader" uid="uid://qjf1ibg12yh2" path="res://shaders/vignette.gdshader" id="7_vignette"]
 [ext_resource type="PackedScene" path="res://scenes/death_plane.tscn" id="10_deathplane"]
+[ext_resource type="Script" uid="uid://bui5e5fix7jju" path="res://scripts/hidden_tilemap.gd" id="11_tilescript"]
 [ext_resource type="TileSet" uid="uid://d07lidnoim34q" path="res://tileset.tres" id="12_2ph1e"]
 [ext_resource type="PackedScene" uid="uid://brmtyiqcy1wkv" path="res://scenes/inventory_ui.tscn" id="12_invui"]
 [ext_resource type="PackedScene" uid="uid://k06dbe7sq1ph" path="res://scenes/goblinenemy.tscn" id="14_f4ykh"]
 [ext_resource type="PackedScene" uid="uid://bcd57whed7bys" path="res://chest.tscn" id="15_wjc4k"]
 [ext_resource type="PackedScene" uid="uid://u77s8ew4xenh" path="res://scenes/beetleenemy.tscn" id="16_1ohpt"]
 [ext_resource type="PackedScene" uid="uid://iuqjuk37ur0d" path="res://scenes/slimeenemy.tscn" id="17_dxywq"]
+[ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="21_o5381"]
+[ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="22_qnxt5"]
 [ext_resource type="Script" uid="uid://dpsujuff7o60j" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
 [ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
 [ext_resource type="PackedScene" uid="uid://3wwhicdeo8hl" path="res://scenes/info_popup.tscn" id="info_popup_res"]
@@ -49,6 +52,9 @@ shader = ExtResource("7_vignette")
 shader_parameter/inner_radius = 0.25
 shader_parameter/outer_radius = 0.55
 shader_parameter/darkness = 0.9
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_m8yro"]
+size = Vector2(4079.5, 933)
 
 [node name="Node2D" type="Node2D" unique_id=1979316305]
 
@@ -153,6 +159,7 @@ scale = Vector2(0.5, 0.5)
 tile_set = ExtResource("12_2ph1e")
 format = 2
 layer_0/tile_data = PackedInt32Array(6422566, 524288, 1, 6488102, 393216, 1, 6553638, 524288, 1, 6619174, 458752, 2, 6684710, 524288, 2, 6750246, 393216, 2, 6815782, 458752, 2, 6881318, 458752, 2, 6422567, 393216, 1, 6488103, 524288, 1, 6553639, 458752, 2, 6619175, 524288, 1, 6684711, 524288, 2, 6750247, 393216, 2, 6815783, 524288, 0, 6881319, 524288, 1, 6422568, 458752, 1, 6488104, 524288, 2, 6553640, 458752, 1, 6619176, 393216, 1, 6684712, 524288, 0, 6750248, 524288, 2, 6815784, 393216, 1, 6881320, 524288, 0, 6422569, 458752, 1, 6488105, 524288, 1, 6553641, 524288, 0, 6619177, 524288, 1, 6684713, 393216, 1, 6750249, 393216, 2, 6815785, 393216, 2, 6881321, 458752, 2, 6422570, 458752, 2, 6488106, 524288, 2, 6553642, 458752, 1, 6619178, 458752, 1, 6684714, 458752, 2, 6750250, 458752, 1, 6815786, 524288, 1, 6881322, 524288, 1, 65556, 393216, 1, 131092, 393216, 2, 196628, 524288, 2, 65557, 524288, 2, 131093, 524288, 1, 196629, 458752, 1)
+script = ExtResource("11_tilescript")
 
 [node name="Enemy" parent="." unique_id=866104770 instance=ExtResource("2_enemy")]
 position = Vector2(2484, 2955)
@@ -261,6 +268,32 @@ position = Vector2(2298, 2585)
 
 [node name="candle4" parent="." unique_id=1764163342 instance=ExtResource("7_dxywq")]
 position = Vector2(3199, 2588)
+
+[node name="Costume10" type="Sprite2D" parent="." unique_id=1489153741]
+z_index = 99
+position = Vector2(4331.0015, 10126.999)
+rotation = 4.7053285
+scale = Vector2(27.443565, 1.717514)
+texture = ExtResource("21_o5381")
+
+[node name="ColorRect3" type="ColorRect" parent="Costume10" unique_id=701919843]
+z_index = 99
+offset_left = 222.78905
+offset_top = 1592.0105
+offset_right = 676.18976
+offset_bottom = 3008.5244
+rotation = 3.1415927
+mouse_filter = 2
+color = Color(0, 0, 0, 1)
+
+[node name="nextlevel3" type="Area2D" parent="." unique_id=493675538]
+position = Vector2(-2600, 9073)
+script = ExtResource("22_qnxt5")
+next_scene = "uid://rhwldatn6rxx"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="nextlevel3" unique_id=1433040898]
+position = Vector2(9284, 1151)
+shape = SubResource("RectangleShape2D_m8yro")
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]
