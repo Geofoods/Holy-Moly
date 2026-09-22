@@ -23,6 +23,8 @@ const MIN_FOLLOW_DISTANCE := 80.0
 @export var prompt_text := "PRESS E"
 @export_multiline var dialogue_text := ""
 @export_multiline var dialogue_text_2 := ""
+@export_multiline var dialogue_text_3 := ""
+@export_multiline var dialogue_text_4 := ""
 @export var npc_name := "Mole"
 @export var portrait_texture: Texture2D = null
 @export var prompt_offset := Vector2(0, -90)
@@ -40,6 +42,8 @@ var _dialogue_open := false
 var _dialogue_box: CanvasLayer = null
 var _greeting_triggered := false
 var _second_triggered := false
+var _third_triggered := false
+var _fourth_triggered := false
 var _jump_cooldown := 0.0
 
 func _ready() -> void:
@@ -244,6 +248,26 @@ func on_secondary_area_entered(body: Node) -> void:
 		return
 	_second_triggered = true
 	_open_dialogue(dialogue_text_2)
+
+func on_tertiary_area_entered(body: Node) -> void:
+	if _third_triggered or _dialogue_open:
+		return
+	if not body.is_in_group("mole"):
+		return
+	if dialogue_text_3.is_empty():
+		return
+	_third_triggered = true
+	_open_dialogue(dialogue_text_3)
+
+func on_quaternary_area_entered(body: Node) -> void:
+	if _fourth_triggered or _dialogue_open:
+		return
+	if not body.is_in_group("mole"):
+		return
+	if dialogue_text_4.is_empty():
+		return
+	_fourth_triggered = true
+	_open_dialogue(dialogue_text_4)
 
 func _face_player() -> void:
 	_face_target(_player)
