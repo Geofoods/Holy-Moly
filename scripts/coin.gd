@@ -125,7 +125,7 @@ func _merge_into_bag(group: Array) -> void:
 		(c as RigidBody2D).freeze_mode = RigidBody2D.FREEZE_MODE_KINEMATIC
 		(c as RigidBody2D).collision_layer = 0
 		(c as RigidBody2D).collision_mask = 0
-		var tw := c.create_tween()
+		var tw: Tween = c.create_tween()
 		tw.set_parallel(true)
 		tw.tween_property(c, "global_position", centroid, 0.26).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 		var spr: Sprite2D = c.get("_sprite")
