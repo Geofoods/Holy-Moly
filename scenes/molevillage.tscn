@@ -120,6 +120,7 @@ text = "?"
 
 [node name="nextlevel" type="Area2D" parent="." unique_id=254585503]
 script = ExtResource("13_7uaym")
+next_scene = "uid://b16phqrsrbx5d"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="nextlevel" unique_id=1570220951]
 position = Vector2(2048, 1577)
@@ -147,7 +148,7 @@ position = Vector2(3682, -126)
 z_index = 99
 position = Vector2(1736.0002, 557)
 rotation = -0.0016440153
-scale = Vector2(18.090199, 1.717514)
+scale = Vector2(39.52905, 1.717514)
 texture = ExtResource("15_ijuyj")
 
 [node name="ColorRect3" type="ColorRect" parent="Costume7" unique_id=401983242]
