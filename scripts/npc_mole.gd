@@ -23,6 +23,8 @@ const MIN_FOLLOW_DISTANCE := 80.0
 @export var prompt_text := "PRESS E"
 @export_multiline var dialogue_text := ""
 @export_multiline var dialogue_text_2 := ""
+@export_multiline var dialogue_text_3 := ""
+@export_multiline var dialogue_text_4 := ""
 @export var npc_name := "Mole"
 @export var portrait_texture: Texture2D = null
 @export var prompt_offset := Vector2(0, -90)
@@ -40,6 +42,9 @@ var _dialogue_open := false
 var _dialogue_box: CanvasLayer = null
 var _greeting_triggered := false
 var _second_triggered := false
+var _third_triggered := false
+var _fourth_triggered := false
+var _active_area := 0
 var _jump_cooldown := 0.0
 
 func _ready() -> void:
@@ -233,6 +238,7 @@ func on_greeting_area_entered(body: Node) -> void:
 	if not body.is_in_group("mole"):
 		return
 	_greeting_triggered = true
+	_active_area = 1
 	_open_dialogue(dialogue_text)
 
 func on_secondary_area_entered(body: Node) -> void:
@@ -243,7 +249,30 @@ func on_secondary_area_entered(body: Node) -> void:
 	if dialogue_text_2.is_empty():
 		return
 	_second_triggered = true
+	_active_area = 2
 	_open_dialogue(dialogue_text_2)
+
+func on_tertiary_area_entered(body: Node) -> void:
+	if _third_triggered or _dialogue_open:
+		return
+	if not body.is_in_group("mole"):
+		return
+	if dialogue_text_3.is_empty():
+		return
+	_third_triggered = true
+	_active_area = 3
+	_open_dialogue(dialogue_text_3)
+
+func on_quaternary_area_entered(body: Node) -> void:
+	if _fourth_triggered or _dialogue_open:
+		return
+	if not body.is_in_group("mole"):
+		return
+	if dialogue_text_4.is_empty():
+		return
+	_fourth_triggered = true
+	_active_area = 4
+	_open_dialogue(dialogue_text_4)
 
 func _face_player() -> void:
 	_face_target(_player)
@@ -256,6 +285,16 @@ func _face_target(target: Node2D) -> void:
 		_direction = dir
 		_update_facing()
 
+func _text_for_area() -> String:
+	match _active_area:
+		2:
+			return dialogue_text_2 if not dialogue_text_2.is_empty() else dialogue_text
+		3:
+			return dialogue_text_3 if not dialogue_text_3.is_empty() else dialogue_text
+		4:
+			return dialogue_text_4 if not dialogue_text_4.is_empty() else dialogue_text
+	return dialogue_text
+
 func _open_dialogue(text: String = "") -> void:
 	_dialogue_open = true
 	_dialogue_box = preload("res://scenes/dialogue_box.tscn").instantiate()
@@ -264,7 +303,7 @@ func _open_dialogue(text: String = "") -> void:
 	_dialogue_box.next_pressed.connect(_on_dialogue_done)
 	_dialogue_box.set_portrait(_portrait_texture(), modulate)
 	_dialogue_box.set_npc_name(npc_name)
-	_dialogue_box.show_text(text if not text.is_empty() else dialogue_text, 0, 0, true, false)
+	_dialogue_box.show_text(text if not text.is_empty() else _text_for_area(), 0, 0, true, false)
 
 func _portrait_texture() -> Texture2D:
 	if portrait_texture:
