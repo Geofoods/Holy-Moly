@@ -19,10 +19,38 @@
 [ext_resource type="Texture2D" uid="uid://bacgmn1hdljfp" path="res://sprites/snail/Idle Blinking_016.png" id="1_png17"]
 [ext_resource type="Texture2D" uid="uid://b5kj0xew5m1ge" path="res://sprites/snail/Idle Blinking_017.png" id="1_png18"]
 [ext_resource type="Script" uid="uid://cxx8fkh3o0ybr" path="res://scripts/snail_dialogue.gd" id="3_script"]
+[ext_resource type="Script" path="res://scripts/idle_blinker.gd" id="5_blink"]
+[ext_resource type="Texture2D" uid="uid://dv7bvnhfnx4hi" path="res://sprites/snail.png" id="3_sse2s"]
 [ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="4_font"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dty4f"]
+atlas = ExtResource("3_sse2s")
+region = Rect2(0, 0, 585, 442)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_l2hbm"]
+atlas = ExtResource("3_sse2s")
+region = Rect2(585, 0, 585, 442)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qyv2e"]
+atlas = ExtResource("3_sse2s")
+region = Rect2(1170, 0, 585, 442)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_snail"]
 animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dty4f")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_l2hbm")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qyv2e")
+}],
+"loop": false,
+"name": &"blink",
+"speed": 5.0
+}, {
 "frames": [{
 "duration": 1.0,
 "texture": ExtResource("1_png1")
@@ -91,15 +119,16 @@ size = Vector2(638, 496)
 
 [node name="Snail" type="RigidBody2D" unique_id=1260151595]
 script = ExtResource("3_script")
-portrait_texture = ExtResource("1_png1")
+portrait_texture = SubResource("AtlasTexture_dty4f")
 dialogue_text = "Would you like a shell? It's very cozy in here. Sorry, I don't have any to spare just yet."
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1909848161]
 position = Vector2(-3, -1)
 scale = Vector2(0.25, 0.25)
 sprite_frames = SubResource("SpriteFrames_snail")
-animation = &"idle"
-autoplay = "idle"
+animation = &"blink"
+frame_progress = 0.0
+script = ExtResource("5_blink")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=569889419]
 position = Vector2(-6, 8.5)

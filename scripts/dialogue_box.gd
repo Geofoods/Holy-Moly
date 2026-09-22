@@ -17,6 +17,18 @@ const SLIDE_DISTANCE := 240.0
 var _full_text := ""
 var _type_tween: Tween
 
+# Optional idle-blink for the portrait: parks on a rest frame and plays the
+# frame list through at random intervals, mirroring the NPC's own blink.
+var _portrait_frames: Array = []
+var _portrait_rest := 0
+var _portrait_fps := 5.0
+var _portrait_min := 1.0
+var _portrait_max := 3.0
+var _portrait_timer := 0.0
+var _portrait_index := 0
+var _portrait_frame_time := 0.0
+var _portrait_playing := false
+
 func _ready() -> void:
 	next_button.pressed.connect(func():
 		SFX.play_ui("ui_click")
@@ -63,9 +75,53 @@ func _set_typed_length(length: int) -> void:
 	main_label.text = _full_text.substr(0, length)
 
 func set_portrait(texture: Texture2D, tint: Color = Color.WHITE) -> void:
+	_portrait_frames = []
+	_portrait_playing = false
 	portrait.visible = texture != null
 	portrait.texture = texture
 	portrait.modulate = tint
+
+## Give the portrait the same blink cycle the NPC sprite uses. `frames` is the
+## ordered texture list of the blink animation; it rests on `rest_frame` and
+## plays through every `min_interval`-`max_interval` seconds.
+func set_portrait_animation(frames: Array, min_interval := 1.0, max_interval := 3.0, rest_frame := 0, fps := 5.0) -> void:
+	_portrait_frames = frames
+	if _portrait_frames.is_empty():
+		return
+	_portrait_rest = clampi(rest_frame, 0, _portrait_frames.size() - 1)
+	_portrait_fps = maxf(fps, 0.01)
+	_portrait_min = min_interval
+	_portrait_max = max_interval
+	_portrait_playing = false
+	_portrait_index = _portrait_rest
+	portrait.visible = true
+	portrait.texture = _portrait_frames[_portrait_rest]
+	_reset_portrait_timer()
+
+func _reset_portrait_timer() -> void:
+	_portrait_timer = randf_range(_portrait_min, _portrait_max)
+
+func _process(delta: float) -> void:
+	if _portrait_frames.is_empty():
+		return
+	if not _portrait_playing:
+		_portrait_timer -= delta
+		if _portrait_timer <= 0.0:
+			_reset_portrait_timer()
+			_portrait_playing = true
+			_portrait_index = 0
+			_portrait_frame_time = 0.0
+			portrait.texture = _portrait_frames[0]
+		return
+	_portrait_frame_time += delta
+	while _portrait_frame_time >= 1.0 / _portrait_fps:
+		_portrait_frame_time -= 1.0 / _portrait_fps
+		_portrait_index += 1
+		if _portrait_index >= _portrait_frames.size():
+			_portrait_playing = false
+			_portrait_index = _portrait_rest
+			break
+	portrait.texture = _portrait_frames[_portrait_index]
 
 func set_npc_name(text: String) -> void:
 	name_label.visible = text != ""
