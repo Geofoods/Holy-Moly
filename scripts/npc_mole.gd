@@ -7,6 +7,7 @@ const JUMP_VELOCITY := -1400.0
 const JUMP_ELEVATION_THRESHOLD := 1.0
 const JUMP_X_RANGE := 1000.0
 const JUMP_COOLDOWN := 0.4
+const MIN_FOLLOW_DISTANCE := 80.0
 
 @export var move_speed := 45.0
 @export var min_walk_time := 1.0
@@ -21,6 +22,7 @@ const JUMP_COOLDOWN := 0.4
 
 @export var prompt_text := "PRESS E"
 @export_multiline var dialogue_text := ""
+@export_multiline var dialogue_text_2 := ""
 @export var npc_name := "Mole"
 @export var portrait_texture: Texture2D = null
 @export var prompt_offset := Vector2(0, -90)
@@ -37,6 +39,7 @@ var _player: Node2D = null
 var _dialogue_open := false
 var _dialogue_box: CanvasLayer = null
 var _greeting_triggered := false
+var _second_triggered := false
 var _jump_cooldown := 0.0
 
 func _ready() -> void:
@@ -147,14 +150,23 @@ func _follow_player(delta: float) -> float:
 	_face_target(player)
 	var sprite := player.get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
 	var face := -1.0 if sprite and sprite.flip_h else 1.0
+	if global_position.x != player.global_position.x \
+			and absf(global_position.x - player.global_position.x) < MIN_FOLLOW_DISTANCE:
+		var back_dir := -1.0 if global_position.x < player.global_position.x else 1.0
+		velocity.x = move_toward(velocity.x, follow_speed * back_dir, 600.0 * delta)
+		if _sprite:
+			_sprite.speed_scale = 1.0
+		return back_dir
+
 	var target_x := player.global_position.x - face * follow_offset
 	var dist := target_x - global_position.x
 	var wanted := signf(dist)
 	if absf(dist) > 8.0:
-		velocity.x = move_toward(velocity.x, follow_speed * wanted, 600.0 * delta)
+		var approach_speed := follow_speed * minf(1.0, absf(dist) / 96.0)
+		velocity.x = move_toward(velocity.x, approach_speed * wanted, 600.0 * delta)
 	else:
 		wanted = 0.0
-		velocity.x = move_toward(velocity.x, 0.0, 600.0 * delta)
+		velocity.x = move_toward(velocity.x, 0.0, 1800.0 * delta)
 	if _sprite:
 		_sprite.speed_scale = 1.0 if wanted != 0.0 else 0.0
 	return wanted
@@ -221,7 +233,17 @@ func on_greeting_area_entered(body: Node) -> void:
 	if not body.is_in_group("mole"):
 		return
 	_greeting_triggered = true
-	_open_dialogue()
+	_open_dialogue(dialogue_text)
+
+func on_secondary_area_entered(body: Node) -> void:
+	if _second_triggered or _dialogue_open:
+		return
+	if not body.is_in_group("mole"):
+		return
+	if dialogue_text_2.is_empty():
+		return
+	_second_triggered = true
+	_open_dialogue(dialogue_text_2)
 
 func _face_player() -> void:
 	_face_target(_player)
@@ -234,7 +256,7 @@ func _face_target(target: Node2D) -> void:
 		_direction = dir
 		_update_facing()
 
-func _open_dialogue() -> void:
+func _open_dialogue(text: String = "") -> void:
 	_dialogue_open = true
 	_dialogue_box = preload("res://scenes/dialogue_box.tscn").instantiate()
 	_dialogue_box.process_mode = PROCESS_MODE_ALWAYS
@@ -242,7 +264,7 @@ func _open_dialogue() -> void:
 	_dialogue_box.next_pressed.connect(_on_dialogue_done)
 	_dialogue_box.set_portrait(_portrait_texture(), modulate)
 	_dialogue_box.set_npc_name(npc_name)
-	_dialogue_box.show_text(dialogue_text, 0, 0, true, false)
+	_dialogue_box.show_text(text if not text.is_empty() else dialogue_text, 0, 0, true, false)
 
 func _portrait_texture() -> Texture2D:
 	if portrait_texture:

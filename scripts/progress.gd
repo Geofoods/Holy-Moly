@@ -30,10 +30,6 @@ var best_combo := 0
 
 var acorn_total := ACORN_LEVELS.size()
 
-var _last_scene_path := ""
-var _spawned_scene := ""
-var _spawn_pending := false
-var _acorn_scene := preload("res://scenes/golden_acorn.tscn")
 var _hub_layer: CanvasLayer = null
 var _hub_label: Label = null
 
@@ -46,39 +42,10 @@ func _process(_delta: float) -> void:
 	if cs == null:
 		return
 	var path := str(cs.scene_file_path)
-	if path != _last_scene_path:
-		_last_scene_path = path
-		_spawn_pending = false
-		if path in ACORN_LEVELS and not acorns.has(path):
-			_spawned_scene = path
-		else:
-			_spawned_scene = ""
-	else:
-		if _spawned_scene != "" and not _spawn_pending:
-			_spawn_pending = true
-			get_tree().create_timer(0.6).timeout.connect(_spawn_acorn)
 	if _hub_layer != null:
 		_hub_layer.visible = path == "res://scenes/map.tscn"
 		if _hub_layer.visible and _hub_label != null:
 			_hub_label.text = "ACORNS   %d / %d" % [acorns.size(), acorn_total]
-
-func _spawn_acorn() -> void:
-	_spawn_pending = false
-	var cs = get_tree().current_scene
-	if cs == null:
-		return
-	var path := str(cs.scene_file_path)
-	if path != _spawned_scene or acorns.has(path):
-		_spawned_scene = ""
-		return
-	var acorn = _acorn_scene.instantiate()
-	var mole = get_tree().get_first_node_in_group("mole") as Node2D
-	var anchor := Vector2(220, 60)
-	if mole != null and is_instance_valid(mole):
-		anchor = mole.global_position
-	acorn.level_path = path
-	cs.add_child(acorn)
-	acorn.global_position = anchor + Vector2(70, -70)
 
 func _build_hub_layer() -> void:
 	_hub_layer = CanvasLayer.new()
