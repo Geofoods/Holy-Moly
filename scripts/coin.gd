@@ -2,6 +2,8 @@ extends RigidBody2D
 
 var value := 1
 
+const COIN_RADIUS := 22.0
+
 const MAGNET_RANGE := 260.0
 const MAGNET_SPEED := 1500.0
 const MAGNET_DELAY := 0.5
@@ -9,8 +11,10 @@ const COLLECT_DISTANCE := 46.0
 
 var _time := 0.0
 var _mole: Node2D = null
+var _sprite: Sprite2D = null
 
 func _ready() -> void:
+	_setup_sprite()
 	add_to_group("coin")
 	contact_monitor = true
 	max_contacts_reported = 8
@@ -18,6 +22,23 @@ func _ready() -> void:
 	angular_velocity = randf_range(-8.0, 8.0)
 	body_entered.connect(_on_body_entered)
 	_mole = get_tree().get_first_node_in_group("mole")
+
+## Use the coin artwork when it is present, otherwise fall back to _draw().
+func _setup_sprite() -> void:
+	var tex := CoinArt.texture()
+	if tex == null:
+		return
+	var region := CoinArt.region()
+	var longest := maxf(region.size.x, region.size.y)
+	if longest <= 0.0:
+		return
+	_sprite = Sprite2D.new()
+	_sprite.texture = tex
+	_sprite.region_enabled = true
+	_sprite.region_rect = region
+	_sprite.scale = Vector2.ONE * (COIN_RADIUS * 2.0 / longest)
+	add_child(_sprite)
+	queue_redraw()
 
 func _physics_process(delta: float) -> void:
 	_time += delta
@@ -91,6 +112,8 @@ func _spawn_collect_burst() -> void:
 	burst.finished.connect(burst.queue_free)
 
 func _draw() -> void:
+	if _sprite != null:
+		return
 	var gold := Color(1.0, 0.82, 0.25)
 	var dark := Color(0.8, 0.55, 0.1)
 	for i in 3:
