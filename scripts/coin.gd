@@ -9,9 +9,14 @@ const MAGNET_SPEED := 1500.0
 const MAGNET_DELAY := 0.5
 const COLLECT_DISTANCE := 46.0
 
+const MERGE_RADIUS := 110.0
+const MERGE_COUNT := 4
+
 var _time := 0.0
 var _mole: Node2D = null
 var _sprite: Sprite2D = null
+var _consumed := false
+var _is_merging := false
 
 func _ready() -> void:
 	_setup_sprite()
@@ -41,7 +46,11 @@ func _setup_sprite() -> void:
 	queue_redraw()
 
 func _physics_process(delta: float) -> void:
+	if _consumed or _is_merging:
+		return
 	_time += delta
+	if _try_merge():
+		return
 	if _time < MAGNET_DELAY:
 		return
 	var mole := _mole
@@ -62,6 +71,69 @@ func _physics_process(delta: float) -> void:
 func _on_body_entered(body: Node) -> void:
 	if body.is_in_group("mole"):
 		_collect()
+
+## When this coin is one of at least MERGE_COUNT coins within MERGE_RADIUS, the
+## group floats together into a moneybag worth the combined value.
+func _try_merge() -> bool:
+	var coins := get_tree().get_nodes_in_group("coin")
+	var near: Array = []
+	for c in coins:
+		if c == self:
+			continue
+		if not (c is RigidBody2D):
+			continue
+		if bool(c.get("_consumed")) or bool(c.get("_is_merging")):
+			continue
+		if global_position.distance_to((c as Node2D).global_position) > MERGE_RADIUS:
+			continue
+		near.append(c)
+	if near.size() + 1 < MERGE_COUNT:
+		return false
+	near.sort_custom(func(a, b) -> bool:
+		return global_position.distance_squared_to(a.global_position) < global_position.distance_squared_to(b.global_position))
+	near = near.slice(0, MERGE_COUNT - 1)
+	var group: Array = [self]
+	group.append_array(near)
+	var leader: Node = self
+	for c in group:
+		if c.get_instance_id() < leader.get_instance_id():
+			leader = c
+	if leader != self:
+		return false
+	_merge_into_bag(group)
+	return true
+
+func _merge_into_bag(group: Array) -> void:
+	_is_merging = true
+	var centroid := Vector2.ZERO
+	var total := 0
+	for c in group:
+		centroid += c.global_position
+		total += int(c.get("value"))
+		c.set("_consumed", true)
+	centroid /= group.size()
+	var scene := get_tree().current_scene
+	if scene:
+		var bag: RigidBody2D = preload("res://scenes/moneybag.tscn").instantiate()
+		bag.set("value", total)
+		bag.global_position = centroid
+		scene.add_child(bag)
+		bag.scale = Vector2.ZERO
+		bag.create_tween().tween_property(bag, "scale", Vector2.ONE, 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	for c in group:
+		(c as RigidBody2D).freeze = true
+		(c as RigidBody2D).freeze_mode = RigidBody2D.FREEZE_MODE_KINEMATIC
+		(c as RigidBody2D).collision_layer = 0
+		(c as RigidBody2D).collision_mask = 0
+		var tw := c.create_tween()
+		tw.set_parallel(true)
+		tw.tween_property(c, "global_position", centroid, 0.26).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+		var spr: Sprite2D = c.get("_sprite")
+		if spr != null:
+			tw.tween_property(spr, "modulate:a", 0.0, 0.26)
+		else:
+			tw.tween_property(c, "modulate:a", 0.0, 0.26)
+		tw.chain().tween_callback(c.queue_free)
 
 func _collect() -> void:
 	var gained := value * roundi(ComboManager.get_coin_multiplier())

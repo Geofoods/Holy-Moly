@@ -19,9 +19,9 @@
 [ext_resource type="Texture2D" uid="uid://bacgmn1hdljfp" path="res://sprites/snail/Idle Blinking_016.png" id="1_png17"]
 [ext_resource type="Texture2D" uid="uid://b5kj0xew5m1ge" path="res://sprites/snail/Idle Blinking_017.png" id="1_png18"]
 [ext_resource type="Script" uid="uid://cxx8fkh3o0ybr" path="res://scripts/snail_dialogue.gd" id="3_script"]
-[ext_resource type="Script" path="res://scripts/idle_blinker.gd" id="5_blink"]
 [ext_resource type="Texture2D" uid="uid://dv7bvnhfnx4hi" path="res://sprites/snail.png" id="3_sse2s"]
 [ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="4_font"]
+[ext_resource type="Script" uid="uid://b0p1lpwlks6n3" path="res://scripts/idle_blinker.gd" id="5_blink"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_dty4f"]
 atlas = ExtResource("3_sse2s")
@@ -112,7 +112,7 @@ animations = [{
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_f1ulr"]
-size = Vector2(74, 51)
+size = Vector2(114, 56)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_txh3t"]
 size = Vector2(638, 496)
@@ -127,11 +127,10 @@ position = Vector2(-3, -1)
 scale = Vector2(0.25, 0.25)
 sprite_frames = SubResource("SpriteFrames_snail")
 animation = &"blink"
-frame_progress = 0.0
 script = ExtResource("5_blink")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=569889419]
-position = Vector2(-6, 8.5)
+position = Vector2(-1, 11)
 shape = SubResource("RectangleShape2D_f1ulr")
 
 [node name="Area2D" type="Area2D" parent="." unique_id=1339046545]
