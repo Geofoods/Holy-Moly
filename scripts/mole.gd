@@ -1600,8 +1600,11 @@ func _swing_grub_stick() -> void:
 		if rel_np.x != 0.0 and signf(rel_np.x) != face:
 			continue
 		if npc is CharacterBody2D:
-			(npc as CharacterBody2D).velocity = Vector2(face, -0.35).normalized() * 700.0
-			SFX.play("enemy_hit", npc.global_position)
+			if npc.has_method("apply_knockback"):
+				(npc as CharacterBody2D).apply_knockback(Vector2(face, -0.5).normalized() * 700.0)
+			else:
+				(npc as CharacterBody2D).velocity = Vector2(face, -0.5).normalized() * 700.0
+		SFX.play("enemy_hit", npc.global_position)
 	_spawn_grub_swish(face, hit)
 	if not hit:
 		heal(1)

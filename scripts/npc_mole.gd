@@ -226,6 +226,10 @@ func _follow_player(delta: float) -> float:
 		_sprite.speed_scale = 1.0 if wanted != 0.0 else 0.0
 	return wanted
 
+func apply_knockback(knockback: Vector2) -> void:
+	_knockback_velocity = knockback
+	_knockback_timer = KNOCKBACK_DURATION
+
 func _should_follow_jump(player: Node2D) -> bool:
 	if _jump_cooldown > 0.0 or not is_on_floor():
 		return false

@@ -15,7 +15,6 @@
 [ext_resource type="PackedScene" uid="uid://bcd57whed7bys" path="res://chest.tscn" id="chest_res"]
 [ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
 [ext_resource type="PackedScene" uid="uid://3wwhicdeo8hl" path="res://scenes/info_popup.tscn" id="info_popup_res"]
-[ext_resource type="Resource" uid="uid://ca178x4dekvst" path="res://resources/bomb.tres" id="bomb_res"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_skipbutton"]
 bg_color = Color(0.8, 0.68, 0.46, 1)
@@ -114,14 +113,23 @@ modulate = Color(0.65866673, 0, 0.76, 1)
 position = Vector2(-60, -56)
 scale = Vector2(0.25, 0.25)
 move_speed = 0.0
+min_walk_time = null
+max_walk_time = null
+min_pause_time = null
+max_pause_time = null
+edge_probe = null
+stationary = null
 follow_player = true
+follow_speed = null
 follow_offset = 350.0
+prompt_text = null
 dialogue_text = "Hello! Welcome to the caves! Left click on blocks to break them and dig tunnels!"
 dialogue_text_2 = "Go close to chests and press E to open them!"
 dialogue_text_3 = "Left click and point to attack enemies!"
 dialogue_text_4 = "Press the number keys to change item slots in the inventory. Use the item by pressing left click!"
 dialogue_text_5 = "You are now prepared to fight! Jump down and do your best!"
 npc_name = "Grub"
+prompt_offset = null
 
 [node name="greeting area" type="Area2D" parent="." unique_id=548195668]
 
@@ -137,7 +145,6 @@ shape = SubResource("RectangleShape2D_g2equ")
 
 [node name="chest" parent="chest area" unique_id=950738903 instance=ExtResource("chest_res")]
 position = Vector2(2314, -120)
-item = ExtResource("bomb_res")
 
 [node name="attack area" type="Area2D" parent="." unique_id=1794671274]
 

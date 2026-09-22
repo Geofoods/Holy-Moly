@@ -277,10 +277,13 @@ func _on_hitbox_area_entered(area: Area2D) -> void:
 			hit_enemies.append(npc)
 			SFX.play("enemy_hit", npc.global_position)
 			var mole = get_parent()
-			if mole:
+			if npc is CharacterBody2D and mole:
 				var knockback_dir = (npc.global_position - mole.global_position).normalized()
 				if npc.has_method("apply_knockback"):
-					npc.apply_knockback(knockback_dir * 700.0)
+					npc.apply_knockback(knockback_dir * 700.0 + Vector2(0, -80.0))
+				else:
+					npc.velocity = knockback_dir * 700.0
+					npc.velocity.y = -250.0
 		return
 	if area.is_in_group("enemy_hurtbox"):
 		var enemy = area.get_parent()
