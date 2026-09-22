@@ -1588,6 +1588,20 @@ func _swing_grub_stick() -> void:
 		if "_stun_timer" in enemy:
 			enemy._stun_timer = maxf(enemy._stun_timer, 0.35)
 		SFX.play("enemy_hit", enemy.global_position)
+	for hurtbox in get_tree().get_nodes_in_group("npc_hurtbox"):
+		if not is_instance_valid(hurtbox):
+			continue
+		var npc := hurtbox.get_parent()
+		if npc == null or not is_instance_valid(npc):
+			continue
+		var rel_np: Vector2 = npc.global_position - origin
+		if rel_np.length() > 125.0:
+			continue
+		if rel_np.x != 0.0 and signf(rel_np.x) != face:
+			continue
+		if npc is CharacterBody2D:
+			(npc as CharacterBody2D).velocity = Vector2(face, -0.35).normalized() * 700.0
+			SFX.play("enemy_hit", npc.global_position)
 	_spawn_grub_swish(face, hit)
 	if not hit:
 		heal(1)

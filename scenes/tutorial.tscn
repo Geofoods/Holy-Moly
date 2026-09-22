@@ -15,6 +15,7 @@
 [ext_resource type="PackedScene" uid="uid://bcd57whed7bys" path="res://chest.tscn" id="chest_res"]
 [ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
 [ext_resource type="PackedScene" uid="uid://3wwhicdeo8hl" path="res://scenes/info_popup.tscn" id="info_popup_res"]
+[ext_resource type="Resource" uid="uid://ca178x4dekvst" path="res://resources/bomb.tres" id="bomb_res"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_skipbutton"]
 bg_color = Color(0.8, 0.68, 0.46, 1)
@@ -119,6 +120,7 @@ dialogue_text = "Hello! Welcome to the caves! Left click on blocks to break them
 dialogue_text_2 = "Go close to chests and press E to open them!"
 dialogue_text_3 = "Left click and point to attack enemies!"
 dialogue_text_4 = "Press the number keys to change item slots in the inventory. Use the item by pressing left click!"
+dialogue_text_5 = "You are now prepared to fight! Jump down and do your best!"
 npc_name = "Grub"
 
 [node name="greeting area" type="Area2D" parent="." unique_id=548195668]
@@ -135,6 +137,7 @@ shape = SubResource("RectangleShape2D_g2equ")
 
 [node name="chest" parent="chest area" unique_id=950738903 instance=ExtResource("chest_res")]
 position = Vector2(2314, -120)
+item = ExtResource("bomb_res")
 
 [node name="attack area" type="Area2D" parent="." unique_id=1794671274]
 
@@ -145,6 +148,13 @@ shape = SubResource("RectangleShape2D_g2equ")
 [node name="item area" type="Area2D" parent="." unique_id=833896781]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="item area" unique_id=1938246412]
+position = Vector2(5401, -205)
+shape = SubResource("RectangleShape2D_g2equ")
+
+[node name="set area" type="Area2D" parent="." unique_id=496319109]
+position = Vector2(1208, -23)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="set area" unique_id=1358894752]
 position = Vector2(5401, -205)
 shape = SubResource("RectangleShape2D_g2equ")
 
@@ -204,7 +214,7 @@ color = Color(0, 0, 0, 1)
 position = Vector2(1836, -287)
 rotation = 0.000104022154
 script = ExtResource("15_wr8iv")
-target_scene = "res://scenes/level_09.tscn"
+target_scene = "res://scenes/level1.tscn"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="nextlevel" unique_id=419485726]
 position = Vector2(6890.067, 1228)
@@ -215,3 +225,4 @@ shape = SubResource("RectangleShape2D_e13mp")
 [connection signal="body_entered" from="chest area" to="NpcMole4" method="on_secondary_area_entered"]
 [connection signal="body_entered" from="attack area" to="NpcMole4" method="on_tertiary_area_entered"]
 [connection signal="body_entered" from="item area" to="NpcMole4" method="on_quaternary_area_entered"]
+[connection signal="body_entered" from="set area" to="NpcMole4" method="on_quinary_area_entered"]

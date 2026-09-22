@@ -65,6 +65,7 @@ func _has_line_of_sight(target: Node2D) -> bool:
 
 func _open_chest() -> void:
 	is_open = true
+	TutorialEvents.chest_opened.emit()
 	add_to_group("opened_chest")
 	SFX.play("chest_open", global_position)
 	var spr = get_node_or_null("../AnimatedSprite2D")

@@ -9,6 +9,11 @@ const JUMP_X_RANGE := 1000.0
 const JUMP_COOLDOWN := 0.4
 const MIN_FOLLOW_DISTANCE := 80.0
 
+const DIG_STUCK_TIME := 0.35
+const DIG_COOLDOWN := 0.55
+
+const TileBreakSFX := preload("res://scripts/tile_break_sfx.gd")
+
 @export var move_speed := 45.0
 @export var min_walk_time := 1.0
 @export var max_walk_time := 3.5
@@ -25,6 +30,7 @@ const MIN_FOLLOW_DISTANCE := 80.0
 @export_multiline var dialogue_text_2 := ""
 @export_multiline var dialogue_text_3 := ""
 @export_multiline var dialogue_text_4 := ""
+@export_multiline var dialogue_text_5 := ""
 @export var npc_name := "Mole"
 @export var portrait_texture: Texture2D = null
 @export var prompt_offset := Vector2(0, -90)
@@ -44,8 +50,16 @@ var _greeting_triggered := false
 var _second_triggered := false
 var _third_triggered := false
 var _fourth_triggered := false
+var _fifth_triggered := false
 var _active_area := 0
 var _jump_cooldown := 0.0
+var _knockback_velocity := Vector2.ZERO
+var _knockback_timer := 0.0
+
+const KNOCKBACK_DURATION := 0.16
+const KNOCKBACK_DAMP := 700.0
+var _stuck_time := 0.0
+var _dig_cooldown := 0.0
 
 func _ready() -> void:
 	_sprite = get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
@@ -76,6 +90,23 @@ func _ready() -> void:
 		_sprite.play("walk")
 	_set_random_timer(min_walk_time, max_walk_time)
 	_update_facing()
+	_connect_tutorial_events()
+
+## Listens for tutorial task completions so an open dialogue closes itself as
+## soon as the player finishes what that area's line instructed.
+func _connect_tutorial_events() -> void:
+	var events: Node = get_node_or_null("/root/TutorialEvents")
+	if events == null:
+		return
+	events.block_broken.connect(_on_task_event.bind(1))
+	events.chest_opened.connect(_on_task_event.bind(2))
+	events.enemy_attacked.connect(_on_task_event.bind(3))
+	events.item_used.connect(_on_task_event.bind(4))
+
+func _on_task_event(area: int) -> void:
+	if not _dialogue_open or _active_area != area:
+		return
+	_close_dialogue()
 
 func _process(_delta: float) -> void:
 	if _prompt:
@@ -91,6 +122,16 @@ func _set_random_timer(min_time: float, max_time: float) -> void:
 	_state_timer = randf_range(min_time, max_time)
 
 func _physics_process(delta: float) -> void:
+	if _knockback_timer > 0.0:
+		_knockback_timer -= delta
+		velocity.y += AIR_GRAVITY * delta
+		if _knockback_velocity != Vector2.ZERO:
+			_knockback_velocity.x = move_toward(_knockback_velocity.x, 0.0, KNOCKBACK_DAMP * delta)
+		velocity.x = _knockback_velocity.x
+		if _sprite:
+			_sprite.speed_scale = 1.0
+		move_and_slide()
+		return
 	velocity.y += AIR_GRAVITY * delta
 	if _dialogue_open:
 		velocity.x = move_toward(velocity.x, 0.0, 600.0 * delta)
@@ -124,6 +165,15 @@ func _physics_process(delta: float) -> void:
 			velocity.x = 0.0
 			if _sprite:
 				_sprite.speed_scale = 0.0
+			_stuck_time += delta
+			if _dig_cooldown > 0.0:
+				_dig_cooldown -= delta
+			if _stuck_time >= DIG_STUCK_TIME and _dig_cooldown <= 0.0:
+				if _dig_blocked_tile():
+					_dig_cooldown = DIG_COOLDOWN
+				_stuck_time = 0.0
+		else:
+			_stuck_time = 0.0
 		return
 	_state_timer -= delta
 	if is_on_floor():
@@ -187,6 +237,27 @@ func _should_follow_jump(player: Node2D) -> bool:
 	if absf(rel.x) > JUMP_X_RANGE:
 		return false
 	return true
+
+## When stuck against a tile wall while following, breaks the tile that is
+## blocking the way so he can dig through to the player.
+func _dig_blocked_tile() -> bool:
+	var world := get_parent()
+	var tilemap := world.get_node_or_null("TileMap") as TileMap
+	if tilemap == null:
+		return false
+	for i in get_slide_collision_count():
+		var collision := get_slide_collision(i)
+		var collider := collision.get_collider()
+		if not (collider is TileMap):
+			continue
+		var contact: Vector2 = collision.get_position()
+		var probe: Vector2 = contact + collision.get_normal() * -8.0
+		var tm := collider as TileMap
+		var tile_pos: Vector2i = tm.local_to_map(tm.to_local(probe))
+		if tm.get_cell_source_id(0, tile_pos) != -1:
+			TileBreakSFX.break_tile(tm, tile_pos, world)
+			return true
+	return false
 
 func _start_walking() -> void:
 	_is_paused = false
@@ -274,6 +345,17 @@ func on_quaternary_area_entered(body: Node) -> void:
 	_active_area = 4
 	_open_dialogue(dialogue_text_4)
 
+func on_quinary_area_entered(body: Node) -> void:
+	if _fifth_triggered or _dialogue_open:
+		return
+	if not body.is_in_group("mole"):
+		return
+	if dialogue_text_5.is_empty():
+		return
+	_fifth_triggered = true
+	_active_area = 5
+	_open_dialogue(dialogue_text_5)
+
 func _face_player() -> void:
 	_face_target(_player)
 
@@ -293,6 +375,8 @@ func _text_for_area() -> String:
 			return dialogue_text_3 if not dialogue_text_3.is_empty() else dialogue_text
 		4:
 			return dialogue_text_4 if not dialogue_text_4.is_empty() else dialogue_text
+		5:
+			return dialogue_text_5 if not dialogue_text_5.is_empty() else dialogue_text
 	return dialogue_text
 
 func _open_dialogue(text: String = "") -> void:
@@ -313,6 +397,9 @@ func _portrait_texture() -> Texture2D:
 	return null
 
 func _on_dialogue_done() -> void:
+	_close_dialogue()
+
+func _close_dialogue() -> void:
 	_update_animation()
 	if _dialogue_box == null or not is_instance_valid(_dialogue_box):
 		_dialogue_box = null

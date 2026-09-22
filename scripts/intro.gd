@@ -177,7 +177,7 @@ func _on_play_pressed() -> void:
 	var play_btn = $CenterContainer/VBoxContainer/ButtonContainer/PlayButton
 	play_btn.disabled = true
 	Inventory.reset()
-	var target := "res://scenes/level1.tscn"
+	var target := "res://scenes/molevillage.tscn"
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 	get_tree().root.add_child(transition)
 	transition.change_to(target)
