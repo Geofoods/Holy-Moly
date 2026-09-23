@@ -2,6 +2,8 @@ extends Area2D
 
 signal opened
 
+const TileBreakSFX := preload("res://scripts/tile_break_sfx.gd")
+
 var is_open := false
 var is_breaking := false
 var player_nearby := false
@@ -152,39 +154,25 @@ func _play_break_shatter() -> void:
 		chest_lock.visible = false
 
 	var chest_body := get_parent()
-	var pieces: Array[Control] = []
-	var piece_defs := [
-		{"color": Color(0.4, 0.25, 0.12, 1.0), "rect": Rect2(-45, -50, 90, 60), "offset": Vector2(-12, -8)},
-		{"color": Color(0.4, 0.25, 0.12, 1.0), "rect": Rect2(-45, 10, 90, 14), "offset": Vector2(10, 14)},
-		{"color": Color(0.18, 0.11, 0.05, 1.0), "rect": Rect2(-45, -22, 90, 12), "offset": Vector2(-14, 4)},
-		{"color": Color(0.85, 0.7, 0.2, 1.0), "rect": Rect2(-8, -24, 16, 16), "offset": Vector2(18, -6)},
-		{"color": Color(0.55, 0.38, 0.16, 1.0), "rect": Rect2(-45, -14, 90, 14), "offset": Vector2(-22, -18)},
-		{"color": Color(0.55, 0.38, 0.16, 1.0), "rect": Rect2(-45, -50, 90, 14), "offset": Vector2(20, -20)},
-		{"color": Color(0.4, 0.25, 0.12, 1.0), "rect": Rect2(-45, -8, 90, 18), "offset": Vector2(-20, 10)},
-		{"color": Color(0.18, 0.11, 0.05, 1.0), "rect": Rect2(-45, -30, 90, 10), "offset": Vector2(16, 8)},
-	]
+	var scene_root := get_tree().current_scene
 
-	for entry in piece_defs:
-		var piece := ColorRect.new()
-		piece.color = entry["color"]
-		piece.position = entry["rect"].position
-		piece.size = entry["rect"].size
-		piece.z_index = 15
-		piece.modulate.a = 1.0
-		piece.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		chest_body.add_child(piece)
-		pieces.append(piece)
-		piece.position += entry["offset"]
+	var spr := get_node_or_null("../AnimatedSprite2D")
+	var chest_tex: Texture2D = null
+	if spr is AnimatedSprite2D:
+		var animated := spr as AnimatedSprite2D
+		chest_tex = animated.sprite_frames.get_frame_texture("default", animated.frame)
+		animated.visible = false
 
-	var tween := create_tween()
-	tween.set_parallel(true)
-	for piece in pieces:
-		var dir := Vector2(randf_range(-1.0, 1.0), randf_range(-1.6, -0.2)).normalized()
-		var target := piece.position + dir * randf_range(45.0, 120.0)
-		tween.tween_property(piece, "position", target, 0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-		tween.parallel().tween_property(piece, "rotation_degrees", randf_range(-160.0, 160.0), 0.35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		tween.parallel().tween_property(piece, "modulate:a", 0.0, 0.35).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
-	tween.chain().tween_callback(Callable(chest_body, "queue_free"))
+	TileBreakSFX.spawn_texture_break_particles(
+		chest_tex,
+		Rect2(Vector2.ZERO, chest_tex.get_size()) if chest_tex else Rect2(),
+		global_position,
+		scene_root,
+		8,
+		20.0,
+		40.0)
+
+	chest_body.queue_free()
 
 
 func _play_open_animation() -> void:

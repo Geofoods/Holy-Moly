@@ -483,6 +483,7 @@ static func _break_single_tile(tilemap: TileMap, tile_pos: Vector2i, atlas_coord
 	tilemap.erase_cell(0, tile_pos)
 
 const MAX_POOLED := 12
+const DEBRIS_COUNT := 4
 static var _pool: Array[AudioStreamPlayer2D] = []
 
 static func _acquire_player(parent: Node) -> AudioStreamPlayer2D:
@@ -519,8 +520,16 @@ static func spawn_break_particles(tilemap: TileMap, tile_pos: Vector2i, atlas_co
 		piece_tex = src.texture
 		basis = Vector2(src.texture_region_size)
 
-	const DEBRIS_COUNT := 4
-	for i in range(DEBRIS_COUNT):
+	if piece_tex != null and basis.x > 0.0 and basis.y > 0.0:
+		var origin := Vector2(atlas_coords) * basis
+		spawn_texture_break_particles(piece_tex, Rect2(origin, basis), world_pos, parent, DEBRIS_COUNT)
+	else:
+		spawn_texture_break_particles(null, Rect2(), world_pos, parent, DEBRIS_COUNT)
+
+static func spawn_texture_break_particles(texture: Texture2D, region: Rect2, world_pos: Vector2, parent: Node, count: int = 4, min_size: float = 18.0, max_size: float = 34.0) -> void:
+	if not is_instance_valid(parent):
+		return
+	for i in range(count):
 		var chunk := RigidBody2D.new()
 		chunk.collision_layer = 2
 		chunk.gravity_scale = 3.2
@@ -531,15 +540,14 @@ static func spawn_break_particles(tilemap: TileMap, tile_pos: Vector2i, atlas_co
 		chunk.global_position = world_pos
 		chunk.rotation = randf_range(0.0, TAU)
 
-		var piece_size := Vector2(randf_range(18.0, 34.0), randf_range(18.0, 34.0))
-		if piece_tex != null and basis.x > 0.0 and basis.y > 0.0:
+		var piece_size := Vector2(randf_range(min_size, max_size), randf_range(min_size, max_size))
+		if texture != null and region.size.x > 0.0 and region.size.y > 0.0:
 			var piece := AtlasTexture.new()
-			piece.atlas = piece_tex
-			var origin := Vector2(atlas_coords) * basis
+			piece.atlas = texture
 			var piece_offset := Vector2(
-				randf_range(0.0, basis.x - piece_size.x),
-				randf_range(0.0, basis.y - piece_size.y))
-			piece.region = Rect2(origin + piece_offset, piece_size)
+				randf_range(0.0, maxf(region.size.x - piece_size.x, 0.0)),
+				randf_range(0.0, maxf(region.size.y - piece_size.y, 0.0)))
+			piece.region = Rect2(region.position + piece_offset, piece_size)
 			var sprite := Sprite2D.new()
 			sprite.texture = piece
 			chunk.add_child(sprite)
@@ -551,7 +559,7 @@ static func spawn_break_particles(tilemap: TileMap, tile_pos: Vector2i, atlas_co
 				Vector2(piece_size.x / 2.0, piece_size.y / 2.0),
 				Vector2(-piece_size.x / 2.0, piece_size.y / 2.0),
 			])
-			dust.color = sample_tile_modulate(src, atlas_coords)
+			dust.color = Color(0.72, 0.58, 0.38, 1.0)
 			chunk.add_child(dust)
 
 		var shape := RectangleShape2D.new()
