@@ -271,10 +271,25 @@ func _on_hitbox_area_entered(area: Area2D) -> void:
 	if area.is_in_group("opened_chest"):
 		area.call("break_as_block")
 		return
+	if area.is_in_group("npc_hurtbox"):
+		var npc = area.get_parent()
+		if npc not in hit_enemies:
+			hit_enemies.append(npc)
+			SFX.play("enemy_hit", npc.global_position)
+			var mole = get_parent()
+			if npc is CharacterBody2D and mole:
+				var knockback_dir = (npc.global_position - mole.global_position).normalized()
+				if npc.has_method("apply_knockback"):
+					npc.apply_knockback(knockback_dir * 700.0 + Vector2(0, -80.0))
+				else:
+					npc.velocity = knockback_dir * 700.0
+					npc.velocity.y = -250.0
+		return
 	if area.is_in_group("enemy_hurtbox"):
 		var enemy = area.get_parent()
 		if enemy not in hit_enemies:
 			hit_enemies.append(enemy)
+			TutorialEvents.enemy_attacked.emit()
 			SFX.play("enemy_hit", enemy.global_position)
 			var mole = get_parent()
 			if mole.has_method("screen_shake"):
@@ -330,6 +345,7 @@ func _break_tile_at_mouse() -> void:
 		sfx.break_decoration_tile(tilemap, tile_pos, world)
 		broke_tile = true
 	if broke_tile:
+		TutorialEvents.block_broken.emit()
 		var mole = get_parent()
 		if mole and mole.has_method("spawn_dirt_particles"):
 			var tile_world = tilemap.to_global(tilemap.map_to_local(tile_pos))

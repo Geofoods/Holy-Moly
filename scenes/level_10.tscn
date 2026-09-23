@@ -139,6 +139,7 @@ mouse_filter = 2
 script = ExtResource("11_5sae1")
 
 [node name="TileMap" type="TileMap" parent="." unique_id=1753828275]
+modulate = Color(0.9843137, 0.54509807, 0.14117648, 1)
 scale = Vector2(0.5, 0.5)
 tile_set = ExtResource("13_3kbcw")
 format = 2
@@ -146,6 +147,7 @@ layer_0/tile_data = PackedInt32Array(983027, 327680, 0, 1048563, 262144, 1, 1114
 
 [node name="FireflySpawner" type="Node2D" parent="." unique_id=1550880571]
 script = ExtResource("12_av4wb")
+firefly_color = Color(0.372549, 0.0588235, 0.25098, 0.9)
 
 [node name="nextlevel" type="Area2D" parent="." unique_id=802151679]
 position = Vector2(-8452, 4980)

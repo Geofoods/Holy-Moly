@@ -11,6 +11,8 @@ const SCAN_INTERVAL := 0.25
 var firefly_scene := preload("res://scenes/firefly.tscn")
 var _pool: Array[Node2D] = []
 
+@export var firefly_color := Color(1, 0.9, 0.4, 0.9)
+
 var _mole: Node2D = null
 var _mole_refresh_timer := 0.0
 var _scan_timer := 0.0
@@ -43,9 +45,13 @@ func _process(delta: float) -> void:
 		spawned += 1
 
 func _take_firefly() -> Node2D:
+	var f: Node2D
 	if not _pool.is_empty():
-		return _pool.pop_back()
-	return firefly_scene.instantiate()
+		f = _pool.pop_back()
+	else:
+		f = firefly_scene.instantiate()
+	f.set("color", firefly_color)
+	return f
 
 func _recycle_far_children() -> void:
 	var mole_pos: Vector2 = _mole.global_position

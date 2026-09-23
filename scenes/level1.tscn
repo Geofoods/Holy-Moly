@@ -48,8 +48,10 @@ size = Vector2(12788, 933)
 
 [node name="FireflySpawner" type="Node2D" parent="." unique_id=522481684]
 script = ExtResource("firefly_script")
+firefly_color = Color(0.890196, 0.392157, 0.0784314, 0.9)
 
 [node name="TileMap" type="TileMap" parent="." unique_id=193735831]
+modulate = Color(0.8784314, 0.62352943, 0.24313726, 1)
 scale = Vector2(0.5, 0.5)
 tile_set = ExtResource("1_ya4ey")
 format = 2
@@ -168,9 +170,6 @@ color = Color(0, 0, 0, 1)
 [node name="Snail" parent="." unique_id=1260151595 instance=ExtResource("16_14jow")]
 position = Vector2(1771, -46)
 dialogue_text = "Watch out, there is a ant up ahead. Remember, click to attack!"
-
-[node name="AnimatedSprite2D" parent="Snail" index="0"]
-flip_h = true
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]

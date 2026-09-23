@@ -55,7 +55,7 @@ shader_parameter/darkness = 0.85
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hhqif"]
 size = Vector2(558.375, 933)
 
-[node name="Node2D" type="Node2D" unique_id=1979316305]
+[node name="TileMap" type="Node2D" unique_id=1979316305]
 
 [node name="ParallaxBackground" parent="." unique_id=1010942744 instance=ExtResource("1_2exuq")]
 
@@ -140,8 +140,10 @@ script = ExtResource("dyn_vignette")
 
 [node name="FireflySpawner" type="Node2D" parent="." unique_id=467127367]
 script = ExtResource("firefly_script")
+firefly_color = Color(0.372549, 0.0588235, 0.25098, 0.9)
 
 [node name="TileMap" type="TileMap" parent="." unique_id=190893331]
+modulate = Color(0.9843137, 0.54509807, 0.14117648, 1)
 position = Vector2(441, 2030)
 scale = Vector2(0.5, 0.5)
 tile_set = ExtResource("11_x3xbi")

@@ -50,7 +50,9 @@ const GRAPPLE_ROPE_COLOR := Color(0.85, 0.65, 0.3, 1.0)
 const GRAPPLE_ROPE_WIDTH := 6.0
 const GRAPPLE_ITEM := preload("res://resources/grappling_hook.tres")
 const DEBRIS_LAYER_BIT := 2
+const CANDLE_LAYER_BIT := 8
 const TileBreakSFX := preload("res://scripts/tile_break_sfx.gd")
+const GAME_SPEED := 1.2
 
 @export var can_break := true
 
@@ -191,12 +193,11 @@ func _ready() -> void:
 		_mole_light_base_scale = _mole_light.texture_scale
 	LevelMusic.start()
 	Inventory.initialize()
-	_grant_grapple_hook()
 	Inventory.selected_slot_changed.connect(_on_selected_slot_changed)
 	Inventory.selected_slot = 0
 	_setup_held_item_sprites()
 	_setup_grapple_visuals()
-	Engine.time_scale = 1.0
+	Engine.time_scale = GAME_SPEED
 	if AudioServer.get_bus_effect_count(0) == 0:
 		AudioServer.add_bus_effect(0, AudioEffectReverb.new())
 	_reverb = AudioServer.get_bus_effect(0, 0) as AudioEffectReverb
@@ -454,6 +455,8 @@ func _physics_process(delta: float) -> void:
 	collision_mask = _normal_collision_mask
 	if is_digging or is_tunneling or is_ground_pounding:
 		collision_mask &= ~DEBRIS_LAYER_BIT
+	if is_digging or is_tunneling:
+		collision_mask &= ~CANDLE_LAYER_BIT
 
 	if not grapple_active and not is_on_floor():
 		velocity.y += AIR_GRAVITY * delta
@@ -1114,18 +1117,19 @@ func _spawn_land_dust() -> void:
 func hit_freeze(duration: float) -> void:
 	Engine.time_scale = 0.05
 	await get_tree().create_timer(duration * 0.05).timeout
-	Engine.time_scale = 1.0
+	Engine.time_scale = GAME_SPEED
 
 func screen_shake(intensity: float, duration: float) -> void:
 	var camera := _camera
 	if not camera:
 		return
+	var magnitude := intensity * maxf(3.0, intensity / 2.5)
 	var tween := create_tween()
-	var steps := 8
+	var steps := 10
 	var step_time := duration / steps
 	for i in steps:
-		var offset := Vector2(randf_range(-intensity, intensity), randf_range(-intensity, intensity))
-		intensity *= 0.8
+		var offset := Vector2(randf_range(-magnitude, magnitude), randf_range(-magnitude, magnitude))
+		magnitude *= 0.9
 		tween.tween_property(camera, "offset", offset, step_time).set_trans(Tween.TRANS_SINE)
 	tween.tween_property(camera, "offset", Vector2.ZERO, step_time).set_trans(Tween.TRANS_SINE)
 
@@ -1352,6 +1356,7 @@ func _ground_pound_strike() -> void:
 
 func start_dig_dash() -> void:
 	SFX.play("dig_dash", global_position)
+	screen_shake(18.0, 0.3)
 	is_digging = true
 	_dash_invulnerable = Shop.has_dash_ability()
 	if has_node("Weapon"):
@@ -1407,6 +1412,7 @@ func _end_dig_dash() -> void:
 	_dash_hit_enemies.clear()
 	velocity.x = 0
 	velocity.y = JUMP_VELOCITY
+	screen_shake(14.0, 0.25)
 	_update_held_item()
 	_sprite.play("jumpbold")
 
@@ -1602,6 +1608,23 @@ func _swing_grub_stick() -> void:
 		if "_stun_timer" in enemy:
 			enemy._stun_timer = maxf(enemy._stun_timer, 0.35)
 		SFX.play("enemy_hit", enemy.global_position)
+	for hurtbox in get_tree().get_nodes_in_group("npc_hurtbox"):
+		if not is_instance_valid(hurtbox):
+			continue
+		var npc := hurtbox.get_parent()
+		if npc == null or not is_instance_valid(npc):
+			continue
+		var rel_np: Vector2 = npc.global_position - origin
+		if rel_np.length() > 125.0:
+			continue
+		if rel_np.x != 0.0 and signf(rel_np.x) != face:
+			continue
+		if npc is CharacterBody2D:
+			if npc.has_method("apply_knockback"):
+				(npc as CharacterBody2D).apply_knockback(Vector2(face, -0.5).normalized() * 700.0)
+			else:
+				(npc as CharacterBody2D).velocity = Vector2(face, -0.5).normalized() * 700.0
+		SFX.play("enemy_hit", npc.global_position)
 	_spawn_grub_swish(face, hit)
 	if not hit:
 		heal(1)

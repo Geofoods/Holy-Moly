@@ -19,6 +19,7 @@ func _ready():
 	
 	var vbox = $CenterContainer/VBoxContainer
 	vbox.modulate.a = 0.0
+	$CreditsLabel.modulate.a = 0.0
 	vbox.scale = Vector2(0.85, 0.85)
 	vbox.call_deferred("set", "pivot_offset", vbox.size / 2.0)
 	_set_buttons_enabled(false)
@@ -52,6 +53,7 @@ func _add_version_label() -> void:
 	label.offset_top = -44.0
 	label.offset_right = -16.0
 	label.offset_bottom = -16.0
+	label.modulate.a = 0.0
 	add_child(label)
 
 func animate_intro():
@@ -142,6 +144,14 @@ func animate_menu_reveal() -> void:
 	tween.tween_property(vbox, "modulate:a", 1.0, 0.55).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tween.tween_property(vbox, "scale", Vector2(1.0, 1.0), 0.55).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
+	var version_label := get_node_or_null("VersionLabel")
+	if version_label:
+		tween.tween_property(version_label, "modulate:a", 1.0, 0.55).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+
+	var credits_label := get_node_or_null("CreditsLabel")
+	if credits_label:
+		tween.tween_property(credits_label, "modulate:a", 1.0, 0.62).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+
 func _set_buttons_enabled(enabled: bool) -> void:
 	var play_btn = $CenterContainer/VBoxContainer/ButtonContainer/PlayButton
 	var field_guide_btn = $CenterContainer/VBoxContainer/ButtonContainer/FieldGuideButton
@@ -177,7 +187,7 @@ func _on_play_pressed() -> void:
 	var play_btn = $CenterContainer/VBoxContainer/ButtonContainer/PlayButton
 	play_btn.disabled = true
 	Inventory.reset()
-	var target := "res://scenes/level1.tscn"
+	var target := "res://scenes/molevillage.tscn"
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 	get_tree().root.add_child(transition)
 	transition.change_to(target)

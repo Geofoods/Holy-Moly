@@ -101,6 +101,7 @@ func use_item(slot: int) -> bool:
 	var item: ItemData = slots[slot]
 	if not item.consumable:
 		return false
+	TutorialEvents.item_used.emit()
 	slot_counts[slot] -= 1
 	if slot_counts[slot] <= 0:
 		remove_item(slot)

@@ -140,6 +140,7 @@ mouse_filter = 2
 script = ExtResource("dyn_vignette")
 
 [node name="TileMap" type="TileMap" parent="." unique_id=1811742437]
+modulate = Color(1, 0.64705884, 0.67058825, 1)
 scale = Vector2(0.5, 0.5)
 tile_set = ExtResource("9_eceou")
 format = 2

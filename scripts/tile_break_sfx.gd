@@ -255,6 +255,43 @@ static func get_tile_colors(atlas_coords: Vector2i) -> Array:
 	var tile_type := get_tile_type(atlas_coords)
 	return TYPE_COLORS[tile_type]
 
+static var _atlas_image_cache := {}
+
+static func _atlas_image(src: TileSetAtlasSource) -> Image:
+	if src == null or src.texture == null:
+		return null
+	var key := src.texture.get_instance_id()
+	if _atlas_image_cache.has(key) and is_instance_valid(_atlas_image_cache[key]):
+		return _atlas_image_cache[key]
+	var img := src.texture.get_image()
+	_atlas_image_cache[key] = img
+	return img
+
+static func sample_tile_modulate(src: TileSetAtlasSource, atlas_coords: Vector2i) -> Color:
+	# Average the block's real on-screen color straight from the tileset icon
+	# region, so debris matches the actual modulation of the block that was
+	# broken instead of the approximation in the palette above.
+	if src == null:
+		return Color.WHITE
+	var basis := Vector2(src.texture_region_size)
+	if basis.x <= 0.0 or basis.y <= 0.0:
+		return Color.WHITE
+	var img := _atlas_image(src)
+	if img == null:
+		return Color.WHITE
+	var origin := Vector2i(atlas_coords) * Vector2i(int(basis.x), int(basis.y))
+	const GRID := 8
+	var total := Color(0, 0, 0, 0)
+	var count := 0
+	for gy in range(GRID):
+		for gx in range(GRID):
+			var px := origin + Vector2i(
+				int(basis.x * (float(gx) + 0.5) / float(GRID)),
+				int(basis.y * (float(gy) + 0.5) / float(GRID)))
+			total += img.get_pixel(px.x, px.y)
+			count += 1
+	return total / float(count)
+
 const STALACTITE_ROWS := [2, 3, 4]
 const CORRUPTED_STALACTITE_COLS := {9: true, 10: true, 11: true, 12: true, 13: true}
 
@@ -446,6 +483,7 @@ static func _break_single_tile(tilemap: TileMap, tile_pos: Vector2i, atlas_coord
 	tilemap.erase_cell(0, tile_pos)
 
 const MAX_POOLED := 12
+const DEBRIS_COUNT := 4
 static var _pool: Array[AudioStreamPlayer2D] = []
 
 static func _acquire_player(parent: Node) -> AudioStreamPlayer2D:
@@ -473,7 +511,6 @@ static func _release_player(p: AudioStreamPlayer2D) -> void:
 		p.queue_free()
 
 static func spawn_break_particles(tilemap: TileMap, tile_pos: Vector2i, atlas_coords: Vector2i, parent: Node) -> void:
-	var colors := get_tile_colors(atlas_coords)
 	var world_pos := tilemap.to_global(tilemap.map_to_local(tile_pos))
 
 	var piece_tex: Texture2D = null
@@ -483,8 +520,16 @@ static func spawn_break_particles(tilemap: TileMap, tile_pos: Vector2i, atlas_co
 		piece_tex = src.texture
 		basis = Vector2(src.texture_region_size)
 
-	const DEBRIS_COUNT := 4
-	for i in range(DEBRIS_COUNT):
+	if piece_tex != null and basis.x > 0.0 and basis.y > 0.0:
+		var origin := Vector2(atlas_coords) * basis
+		spawn_texture_break_particles(piece_tex, Rect2(origin, basis), world_pos, parent, DEBRIS_COUNT)
+	else:
+		spawn_texture_break_particles(null, Rect2(), world_pos, parent, DEBRIS_COUNT)
+
+static func spawn_texture_break_particles(texture: Texture2D, region: Rect2, world_pos: Vector2, parent: Node, count: int = 4, min_size: float = 18.0, max_size: float = 34.0) -> void:
+	if not is_instance_valid(parent):
+		return
+	for i in range(count):
 		var chunk := RigidBody2D.new()
 		chunk.collision_layer = 2
 		chunk.gravity_scale = 3.2
@@ -495,15 +540,14 @@ static func spawn_break_particles(tilemap: TileMap, tile_pos: Vector2i, atlas_co
 		chunk.global_position = world_pos
 		chunk.rotation = randf_range(0.0, TAU)
 
-		var piece_size := Vector2(randf_range(18.0, 34.0), randf_range(18.0, 34.0))
-		if piece_tex != null and basis.x > 0.0 and basis.y > 0.0:
+		var piece_size := Vector2(randf_range(min_size, max_size), randf_range(min_size, max_size))
+		if texture != null and region.size.x > 0.0 and region.size.y > 0.0:
 			var piece := AtlasTexture.new()
-			piece.atlas = piece_tex
-			var origin := Vector2(atlas_coords) * basis
+			piece.atlas = texture
 			var piece_offset := Vector2(
-				randf_range(0.0, basis.x - piece_size.x),
-				randf_range(0.0, basis.y - piece_size.y))
-			piece.region = Rect2(origin + piece_offset, piece_size)
+				randf_range(0.0, maxf(region.size.x - piece_size.x, 0.0)),
+				randf_range(0.0, maxf(region.size.y - piece_size.y, 0.0)))
+			piece.region = Rect2(region.position + piece_offset, piece_size)
 			var sprite := Sprite2D.new()
 			sprite.texture = piece
 			chunk.add_child(sprite)
@@ -515,7 +559,7 @@ static func spawn_break_particles(tilemap: TileMap, tile_pos: Vector2i, atlas_co
 				Vector2(piece_size.x / 2.0, piece_size.y / 2.0),
 				Vector2(-piece_size.x / 2.0, piece_size.y / 2.0),
 			])
-			dust.color = colors[0] if colors.size() > 0 else Color.WHITE
+			dust.color = Color(0.72, 0.58, 0.38, 1.0)
 			chunk.add_child(dust)
 
 		var shape := RectangleShape2D.new()
