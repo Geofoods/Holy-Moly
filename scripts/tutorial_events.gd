@@ -7,3 +7,5 @@ signal block_broken
 signal chest_opened
 signal enemy_attacked
 signal item_used
+signal dig_dash_started
+signal ground_pound_done

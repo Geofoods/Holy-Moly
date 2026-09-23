@@ -222,6 +222,9 @@ func swing() -> void:
 	var arc: float = w.swing_arc if w else SWING_ARC
 	var dur: float = w.swing_duration if w else SWING_DURATION
 	SFX.play("swing", global_position)
+	var mole := get_parent()
+	if mole and mole.has_method("screen_shake"):
+		mole.screen_shake(6.0, 0.1)
 	is_swinging = true
 	hitbox.monitoring = true
 	hit_enemies = []

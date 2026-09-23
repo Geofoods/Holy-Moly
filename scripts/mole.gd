@@ -1109,7 +1109,7 @@ func screen_shake(intensity: float, duration: float) -> void:
 	var camera := _camera
 	if not camera:
 		return
-	var magnitude := intensity * maxf(3.0, intensity / 2.5)
+	var magnitude := intensity * maxf(0.75, intensity / 10.0)
 	var tween := create_tween()
 	var steps := 10
 	var step_time := duration / steps
@@ -1284,6 +1284,7 @@ func _complete_ground_pound() -> void:
 	is_ground_pounding = false
 	_dash_invulnerable = false
 	SFX.play("land", global_position)
+	TutorialEvents.ground_pound_done.emit()
 	var fall_px := global_position.y - _ground_pound_start_y
 	_ground_pound_power = clampf((fall_px - GROUND_POUND_MIN_FALL) / (GROUND_POUND_MAX_FALL - GROUND_POUND_MIN_FALL), 0.0, 1.0)
 	screen_shake(lerpf(12.0, 32.0, _ground_pound_power), 0.3)
@@ -1343,6 +1344,7 @@ func _ground_pound_strike() -> void:
 func start_dig_dash() -> void:
 	SFX.play("dig_dash", global_position)
 	screen_shake(18.0, 0.3)
+	TutorialEvents.dig_dash_started.emit()
 	is_digging = true
 	_dash_invulnerable = Shop.has_dash_ability()
 	if has_node("Weapon"):

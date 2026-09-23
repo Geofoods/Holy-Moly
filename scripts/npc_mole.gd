@@ -31,6 +31,7 @@ const TileBreakSFX := preload("res://scripts/tile_break_sfx.gd")
 @export_multiline var dialogue_text_3 := ""
 @export_multiline var dialogue_text_4 := ""
 @export_multiline var dialogue_text_5 := ""
+@export_multiline var dialogue_text_6 := ""
 @export var npc_name := "Mole"
 @export var portrait_texture: Texture2D = null
 @export var prompt_offset := Vector2(0, -90)
@@ -51,6 +52,7 @@ var _second_triggered := false
 var _third_triggered := false
 var _fourth_triggered := false
 var _fifth_triggered := false
+var _sixth_triggered := false
 var _active_area := 0
 var _jump_cooldown := 0.0
 var _knockback_velocity := Vector2.ZERO
@@ -103,6 +105,8 @@ func _connect_tutorial_events() -> void:
 	events.chest_opened.connect(_on_task_event.bind(2))
 	events.enemy_attacked.connect(_on_task_event.bind(3))
 	events.item_used.connect(_on_task_event.bind(4))
+	events.dig_dash_started.connect(_on_task_event.bind(5))
+	events.ground_pound_done.connect(_on_task_event.bind(6))
 
 func _on_task_event(area: int) -> void:
 	if not _dialogue_open or _active_area != area:
@@ -361,6 +365,17 @@ func on_quinary_area_entered(body: Node) -> void:
 	_active_area = 5
 	_open_dialogue(dialogue_text_5)
 
+func on_senary_area_entered(body: Node) -> void:
+	if _sixth_triggered or _dialogue_open:
+		return
+	if not body.is_in_group("mole"):
+		return
+	if dialogue_text_6.is_empty():
+		return
+	_sixth_triggered = true
+	_active_area = 6
+	_open_dialogue(dialogue_text_6)
+
 func _face_player() -> void:
 	_face_target(_player)
 
@@ -382,6 +397,8 @@ func _text_for_area() -> String:
 			return dialogue_text_4 if not dialogue_text_4.is_empty() else dialogue_text
 		5:
 			return dialogue_text_5 if not dialogue_text_5.is_empty() else dialogue_text
+		6:
+			return dialogue_text_6 if not dialogue_text_6.is_empty() else dialogue_text
 	return dialogue_text
 
 func _open_dialogue(text: String = "") -> void:

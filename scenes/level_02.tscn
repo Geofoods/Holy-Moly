@@ -76,9 +76,6 @@ scale = Vector2(4, 4)
 zoom = Vector2(0.65, 0.65)
 position_smoothing_enabled = true
 
-[node name="Enemy" parent="." unique_id=1155690396 instance=ExtResource("2_enemy")]
-position = Vector2(2104, -206)
-
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=71896557]
 layer = 99
 
@@ -164,12 +161,6 @@ position = Vector2(1323, 432)
 
 [node name="Enemy5" parent="." unique_id=1597899762 instance=ExtResource("2_enemy")]
 position = Vector2(1321, 112)
-
-[node name="Enemy6" parent="." unique_id=1726246920 instance=ExtResource("2_enemy")]
-position = Vector2(1348, -209)
-
-[node name="Enemy7" parent="." unique_id=594941613 instance=ExtResource("2_enemy")]
-position = Vector2(1701, -209)
 
 [node name="nextlevel" type="Area2D" parent="." unique_id=829723827]
 script = ExtResource("13_ikbui")

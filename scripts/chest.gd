@@ -86,6 +86,9 @@ func break_as_block() -> void:
 		return
 	is_breaking = true
 	remove_from_group("opened_chest")
+	var mole := get_tree().get_first_node_in_group("mole")
+	if mole and mole.has_method("screen_shake"):
+		mole.screen_shake(10.0, 0.2)
 	set_deferred("monitoring", false)
 	set_deferred("monitorable", false)
 	var chest_body := get_parent()
