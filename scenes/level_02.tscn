@@ -55,6 +55,7 @@ size = Vector2(4369.75, 933)
 [node name="Node2D" type="Node2D" unique_id=1979316305]
 
 [node name="TileMap" type="TileMap" parent="." unique_id=117175245]
+modulate = Color(0.8784314, 0.62352943, 0.24313726, 1)
 scale = Vector2(0.5, 0.5)
 tile_set = ExtResource("1_ikbui")
 format = 2
@@ -179,6 +180,7 @@ shape = SubResource("RectangleShape2D_vqvml")
 
 [node name="FireflySpawner" type="Node2D" parent="." unique_id=728425090]
 script = ExtResource("firefly_script")
+firefly_color = Color(0.890196, 0.392157, 0.0784314, 0.9)
 
 [node name="Costume6" type="Sprite2D" parent="." unique_id=669981536]
 z_index = 99

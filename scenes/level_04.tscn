@@ -57,6 +57,7 @@ size = Vector2(4079.5, 933)
 [node name="ParallaxBackgroun2" parent="." unique_id=1654768929 instance=ExtResource("11_nmhu5")]
 
 [node name="TileMap" type="TileMap" parent="." unique_id=228293968]
+modulate = Color(1, 0.64705884, 0.67058825, 1)
 scale = Vector2(0.5, 0.5)
 tile_set = ExtResource("1_22m3q")
 format = 2

@@ -71,8 +71,9 @@ func _ready() -> void:
 	_prompt = get_node_or_null("Prompt") as Label
 	if _prompt:
 		_prompt.top_level = true
-		_prompt.z_index = 100
+		_prompt.z_index = 200
 		_prompt.z_as_relative = false
+		_prompt.light_mask = 0
 		_prompt.set_anchors_preset(Control.PRESET_TOP_LEFT)
 		_prompt.offset_left = 0.0
 		_prompt.offset_top = 0.0

@@ -144,8 +144,10 @@ script = ExtResource("dyn_vignette")
 
 [node name="FireflySpawner" type="Node2D" parent="." unique_id=1326414272]
 script = ExtResource("firefly_script")
+firefly_color = Color(0.372549, 0.0588235, 0.25098, 0.9)
 
 [node name="TileMap" type="TileMap" parent="." unique_id=1481215778]
+modulate = Color(0.9843137, 0.54509807, 0.14117648, 1)
 position = Vector2(441, 2026)
 scale = Vector2(0.5, 0.5)
 tile_set = ExtResource("12_2ph1e")
@@ -154,6 +156,7 @@ layer_0/tile_data = PackedInt32Array(-65541, 524288, 1, -5, 393216, 1, 65531, 52
 
 [node name="TileMap2" type="TileMap" parent="." unique_id=1320823126]
 visible = false
+modulate = Color(0.9843137, 0.54509807, 0.14117648, 1)
 position = Vector2(441, 2026)
 scale = Vector2(0.5, 0.5)
 tile_set = ExtResource("12_2ph1e")

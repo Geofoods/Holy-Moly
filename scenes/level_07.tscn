@@ -141,6 +141,7 @@ mouse_filter = 2
 script = ExtResource("dyn_vignette")
 
 [node name="TileMap" type="TileMap" parent="." unique_id=1753828275]
+modulate = Color(0.9843137, 0.54509807, 0.14117648, 1)
 scale = Vector2(0.5, 0.5)
 tile_set = ExtResource("10_jqe1v")
 format = 2
@@ -148,6 +149,7 @@ layer_0/tile_data = PackedInt32Array(262127, 262144, 0, 327663, 327680, 1, 39319
 
 [node name="FireflySpawner" type="Node2D" parent="." unique_id=1550880571]
 script = ExtResource("firefly_script")
+firefly_color = Color(0.372549, 0.0588235, 0.25098, 0.9)
 
 [node name="chest" parent="." unique_id=425848034 instance=ExtResource("12_u86im")]
 position = Vector2(-266, 881)

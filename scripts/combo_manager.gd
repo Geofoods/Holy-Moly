@@ -22,8 +22,8 @@ func _ready() -> void:
 	_label.anchor_bottom = 0.0
 	_label.offset_left = -320
 	_label.offset_right = -20
-	_label.offset_top = 60
-	_label.offset_bottom = 420
+	_label.offset_top = 90
+	_label.offset_bottom = 450
 	_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 

@@ -189,7 +189,6 @@ func _ready() -> void:
 		_mole_light_base_scale = _mole_light.texture_scale
 	LevelMusic.start()
 	Inventory.initialize()
-	_grant_grapple_hook()
 	Inventory.selected_slot_changed.connect(_on_selected_slot_changed)
 	Inventory.selected_slot = 0
 	_setup_held_item_sprites()

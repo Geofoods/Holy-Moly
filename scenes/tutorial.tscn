@@ -56,6 +56,7 @@ size = Vector2(2594.1362, 933)
 [node name="DeathPlane" parent="." unique_id=1053433606 instance=ExtResource("8_deathplane")]
 
 [node name="TileMap" type="TileMap" parent="." unique_id=142169555]
+modulate = Color(0.8784314, 0.62352943, 0.24313726, 1)
 scale = Vector2(0.5, 0.5)
 tile_set = ExtResource("4_0hilk")
 format = 2
@@ -107,29 +108,21 @@ text = "?"
 
 [node name="FireflySpawner" type="Node2D" parent="." unique_id=578334012]
 script = ExtResource("firefly_script")
+firefly_color = Color(0.890196, 0.392157, 0.0784314, 0.9)
 
 [node name="NpcMole4" parent="." unique_id=1362594445 instance=ExtResource("14_0hilk")]
 modulate = Color(0.65866673, 0, 0.76, 1)
 position = Vector2(-60, -56)
 scale = Vector2(0.25, 0.25)
 move_speed = 0.0
-min_walk_time = null
-max_walk_time = null
-min_pause_time = null
-max_pause_time = null
-edge_probe = null
-stationary = null
 follow_player = true
-follow_speed = null
 follow_offset = 350.0
-prompt_text = null
 dialogue_text = "Hello! Welcome to the caves! Left click on blocks to break them and dig tunnels!"
 dialogue_text_2 = "Go close to chests and press E to open them!"
 dialogue_text_3 = "Left click and point to attack enemies!"
 dialogue_text_4 = "Press the number keys to change item slots in the inventory. Use the item by pressing left click!"
 dialogue_text_5 = "You are now prepared to fight! Jump down and do your best!"
 npc_name = "Grub"
-prompt_offset = null
 
 [node name="greeting area" type="Area2D" parent="." unique_id=548195668]
 

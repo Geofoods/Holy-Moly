@@ -13,6 +13,12 @@ var origin: Vector2
 var wander_target: Vector2
 var float_phase := 0.0
 
+@export var color := Color(1, 0.9, 0.4, 0.9):
+	set(value):
+		color = value
+		if is_instance_valid(body):
+			body.color = color
+
 var _mole: Node2D = null
 var _mole_check_timer := 0.0
 var _last_glow := -1.0
@@ -20,6 +26,7 @@ var _last_glow := -1.0
 @onready var body: ColorRect = $Body
 
 func _ready() -> void:
+	body.color = color
 	origin = global_position
 	wander_target = origin
 	float_phase = randf_range(0.0, TAU)
