@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://cbcolr7uenr4j"]
 
-[ext_resource type="Texture2D" uid="uid://cx3o05cg372vl" path="res://scenes/bomb.webp" id="1_573fp"]
+[ext_resource type="Texture2D" uid="uid://dp27o53f63vdf" path="res://sprites/icebomb.png" id="1_573fp"]
 [ext_resource type="Script" path="res://scripts/ice_bomb.gd" id="2_script"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_4fn8o"]
@@ -14,7 +14,6 @@ script = ExtResource("2_script")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 scale = Vector2(0.25, 0.25)
-modulate = Color(0.65, 0.85, 1.15, 1)
 texture = ExtResource("1_573fp")
 
 [node name="FuseTimer" type="Timer" parent="."]

@@ -6,6 +6,8 @@ const JUMP_CUT_MULTIPLIER = 0.4
 const ACCELERATION = 3600.0
 const FRICTION = 3600.0
 const AIR_FRICTION = 1600.0
+const ICE_ACCELERATION = 900.0
+const ICE_FRICTION = 500.0
 const TUNNEL_SPEED = 2400.0
 const FAST_FALL_SPEED = 1200.0
 const AIR_GRAVITY = 2450.0
@@ -275,6 +277,13 @@ func _setup_inventory_actions() -> void:
 			ev.physical_keycode = keys[i]
 			InputMap.action_add_event(actions[i], ev)
 
+func _is_on_frozen_tile() -> bool:
+	if tilemap == null:
+		return false
+	var feet_pos: Vector2 = global_position + Vector2(0, 30.0)
+	var tile_pos: Vector2i = tilemap.local_to_map(tilemap.to_local(feet_pos))
+	return FrozenTiles.is_frozen(tile_pos)
+
 const HOLD_ITEM_ORBIT_RADIUS := 60.0
 const HOLD_ITEM_SCALE := 0.8
 
@@ -301,9 +310,8 @@ func _setup_held_item_sprites() -> void:
 
 	var ice_sprite := Sprite2D.new()
 	ice_sprite.name = "HeldIceBomb"
-	ice_sprite.texture = bomb_tex
+	ice_sprite.texture = preload("res://sprites/icebomb.png")
 	ice_sprite.scale = Vector2(HOLD_ITEM_SCALE, HOLD_ITEM_SCALE)
-	ice_sprite.modulate = Color(0.65, 0.85, 1.15, 1.0)
 	ice_sprite.z_index = 2
 	ice_sprite.hide()
 	add_child(ice_sprite)
@@ -600,12 +608,18 @@ func _physics_process(delta: float) -> void:
 	if slow_timer > 0.0:
 		effective_speed *= 0.4
 
+	var on_ice := is_on_floor() and _is_on_frozen_tile()
+
 	if direction:
 		var accel = ACCELERATION if is_on_floor() else ACCELERATION * 0.6
+		if on_ice:
+			accel = ICE_ACCELERATION
 		velocity.x = move_toward(velocity.x, direction * effective_speed, accel * delta)
 		_sprite.flip_h = direction < 0
 	else:
 		var friction = FRICTION if is_on_floor() else AIR_FRICTION
+		if on_ice:
+			friction = ICE_FRICTION
 		velocity.x = move_toward(velocity.x, 0, friction * delta)
 
 	if not is_on_floor() and not is_sideways_jump and direction != 0:

@@ -101,7 +101,7 @@ const ENTRIES: Array[Dictionary] = [
 	{
 		"id": "ice_bomb",
 		"name": "Ice Bomb",
-		"icon": "res://scenes/bomb.webp",
+		"icon": "res://sprites/icebomb.png",
 		"icon_region": Rect2(),
 		"category": "Item",
 		"danger_level": 2,

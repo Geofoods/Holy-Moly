@@ -31,6 +31,7 @@ MobileControls="*uid://cscwxuv4b0aul"
 MapOverlay="*res://scripts/map_overlay.gd"
 TileDepth="*res://scripts/tilemap_depth_controller.gd"
 Progress="*res://scripts/progress.gd"
+FrozenTiles="*res://scripts/frozen_tiles.gd"
 Lighting="*res://scripts/scene_lighting.gd"
 
 [display]
