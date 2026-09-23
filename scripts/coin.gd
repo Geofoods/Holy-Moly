@@ -6,11 +6,12 @@ const COIN_RADIUS := 22.0
 
 const MAGNET_RANGE := 260.0
 const MAGNET_SPEED := 1500.0
-const MAGNET_DELAY := 0.5
+const MAGNET_DELAY := 0.65
 const COLLECT_DISTANCE := 46.0
 
 const MERGE_RADIUS := 110.0
 const MERGE_COUNT := 4
+const MERGE_DELAY := 0.6
 
 var _time := 0.0
 var _mole: Node2D = null
@@ -49,7 +50,7 @@ func _physics_process(delta: float) -> void:
 	if _consumed or _is_merging:
 		return
 	_time += delta
-	if _try_merge():
+	if _time >= MERGE_DELAY and _try_merge():
 		return
 	if _time < MAGNET_DELAY:
 		return

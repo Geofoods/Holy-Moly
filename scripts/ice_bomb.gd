@@ -67,6 +67,9 @@ func _explode() -> void:
 ## Breaks the stuff tiles in the blast radius (decorations and tiles flagged
 ## as stuff) and coats the remaining normal tiles in ice instead of destroying
 ## them.
+const FROST_DURATION := 6.0
+const ICE_OVERLAY_TEXTURE := preload("res://sprites/iceoverlay.png")
+
 func _freeze_tiles(tilemap: TileMap) -> void:
 	var center_tile := tilemap.local_to_map(tilemap.to_local(global_position))
 	var tile_world_size := Vector2(tilemap.tile_set.tile_size) * tilemap.scale
@@ -94,14 +97,15 @@ func _freeze_tiles(tilemap: TileMap) -> void:
 
 			if tilemap.get_cell_source_id(0, tp) == -1:
 				continue
-			var rect := ColorRect.new()
-			rect.position = tilemap.to_global(tilemap.map_to_local(tp)) - half
-			rect.size = tile_world_size
-			rect.modulate = Color(0.55, 0.83, 1.15, randf_range(0.28, 0.42))
-			rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			frost_layer.add_child(rect)
+			var overlay := Sprite2D.new()
+			overlay.texture = ICE_OVERLAY_TEXTURE
+			overlay.position = tilemap.to_global(tilemap.map_to_local(tp)) - half + tile_world_size * 0.5
+			overlay.scale = tile_world_size / ICE_OVERLAY_TEXTURE.get_size()
+			overlay.modulate = Color(1.0, 1.0, 1.0, randf_range(0.53, 0.83))
+			frost_layer.add_child(overlay)
+			FrozenTiles.register(tp, FROST_DURATION)
 	if frost_layer.get_child_count() > 0:
-		get_tree().create_timer(6.0).timeout.connect(frost_layer.queue_free)
+		get_tree().create_timer(FROST_DURATION).timeout.connect(frost_layer.queue_free)
 	else:
 		frost_layer.queue_free()
 
