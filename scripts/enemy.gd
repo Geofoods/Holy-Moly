@@ -16,6 +16,9 @@ var target_mole: Node2D = null
 var is_climbing := false
 var climb_timer := 0.0
 var health := MAX_HEALTH
+## Direction the last hit pushed this enemy (attacker -> enemy). Its death
+## fragments are blown that way so they read as the blow that killed it.
+var hit_direction := Vector2.ZERO
 var _move_sfx_timer := 0.0
 var _shoot_timer := SHOOT_INTERVAL
 var _stun_timer := 0.0
@@ -209,14 +212,17 @@ func _on_hurtbox_area_entered(area: Area2D) -> void:
 		return
 	var parent = area.get_parent()
 	if "is_swinging" in parent and parent.is_swinging:
+		var swing_dir := Vector2.ZERO
 		var mole = get_tree().get_first_node_in_group("mole")
 		if mole:
-			var dir = (global_position - mole.global_position).normalized()
-			velocity = dir * 600.0 + Vector2(0, -250)
+			swing_dir = (global_position - mole.global_position).normalized()
+			velocity = swing_dir * 600.0 + Vector2(0, -250)
 			_stun_timer = 0.25
-		take_damage(parent.get_damage())
+		take_damage(parent.get_damage(), swing_dir)
 
-func take_damage(amount: float) -> void:
+func take_damage(amount: float, hit_dir: Vector2 = Vector2.ZERO) -> void:
+	if hit_dir != Vector2.ZERO:
+		hit_direction = hit_dir.normalized()
 	if health <= 0:
 		return
 	health -= amount
@@ -317,44 +323,129 @@ func die() -> void:
 	tween.tween_interval(0.5)
 	tween.tween_callback(queue_free)
 
+## Fragments are the pieces an enemy breaks into when it dies. They are real
+## rigid bodies, so they tumble, bounce off the terrain and settle, and they are
+## flung away from the blow that landed rather than in an even ring.
+const FRAGMENT_COLS := 4
+const FRAGMENT_ROWS := 2
+## Debris layer, shared with the chunks tile breaking leaves behind.
+const FRAGMENT_LAYER := 2
+## Fragments collide with the terrain only - never with enemies or each other.
+const FRAGMENT_WORLD_LAYER := 1
+const FRAGMENT_SPEED_MIN := 180.0
+const FRAGMENT_SPEED_MAX := 420.0
+## How far a fragment may stray from the blow direction, in radians.
+const FRAGMENT_SPREAD := 0.9
+## Upward kick, so the burst arcs instead of skidding along the floor.
+const FRAGMENT_LIFT := 220.0
+const FRAGMENT_LINGER := 0.55
+const FRAGMENT_FADE := 0.35
+
 func _break_apart() -> void:
+	spawn_death_fragments(self, visual, hit_direction, scale.x)
+
+## Cuts `visual`'s current frame into a grid of gibs and throws them into the
+## level as rigid bodies, blown away from `hit_dir` (defaults to away from the
+## mole). `visual` can be either an AnimatedSprite2D or a plain Sprite2D.
+static func spawn_death_fragments(enemy: Node2D, visual: Node2D, hit_dir := Vector2.ZERO, pop_scale := 1.0) -> void:
+	if not is_instance_valid(enemy) or not is_instance_valid(visual):
+		return
+	var parent := enemy.get_parent()
+	if parent == null:
+		return
+
+	var source_tex: Texture2D = null
+	var source_region := Rect2()
+	var visual_scale := Vector2.ONE
+	var visual_offset := Vector2.ZERO
+	var flipped := false
+
+	if visual is AnimatedSprite2D:
+		var animated := visual as AnimatedSprite2D
+		visual_scale = animated.scale
+		visual_offset = animated.position
+		flipped = animated.flip_h
+		var frame_tex := animated.sprite_frames.get_frame_texture(animated.animation, animated.frame)
+		if frame_tex == null:
+			return
+		var atlas := frame_tex as AtlasTexture
+		source_tex = atlas.atlas if atlas else frame_tex
+		source_region = atlas.region if atlas else Rect2(Vector2.ZERO, frame_tex.get_size())
+	elif visual is Sprite2D:
+		var plain := visual as Sprite2D
+		visual_scale = plain.scale
+		visual_offset = plain.position
+		flipped = plain.flip_h
+		source_tex = plain.texture
+		if source_tex == null:
+			return
+		source_region = plain.region_rect if plain.region_enabled else Rect2(Vector2.ZERO, source_tex.get_size())
+	else:
+		return
+
+	if source_region.size.x <= 0.0 or source_region.size.y <= 0.0:
+		return
 	visual.visible = false
 
-	var frame_tex := visual.sprite_frames.get_frame_texture(visual.animation, visual.frame)
-	var atlas := frame_tex as AtlasTexture
-	var source_tex := atlas.atlas if atlas else frame_tex
-	var source_region := atlas.region if atlas else Rect2(Vector2.ZERO, frame_tex.get_size())
+	var piece_size := Vector2(source_region.size.x / FRAGMENT_COLS, source_region.size.y / FRAGMENT_ROWS)
+	var center_offset := source_region.size * 0.5
+	var blast_angle := _fragment_blast_direction(enemy, hit_dir).angle()
+	# die() pops the enemy up in scale just before it bursts, and the pieces are
+	# spawned in the level instead of on the enemy, so bake that pop in by hand.
+	var exit_scale := maxf(pop_scale, 0.0)
+	var piece_scale := visual_scale * exit_scale * 0.5
 
-	var w := source_region.size.x
-	var h := source_region.size.y
-	var ox := source_region.position.x
-	var oy := source_region.position.y
+	for col in FRAGMENT_COLS:
+		for row in FRAGMENT_ROWS:
+			var offset := Vector2(col * piece_size.x + piece_size.x * 0.5, row * piece_size.y + piece_size.y * 0.5) - center_offset
+			if flipped:
+				offset.x = -offset.x
+			var sub_rect := Rect2(source_region.position + Vector2(col * piece_size.x, row * piece_size.y), piece_size)
 
-	var cols := 4
-	var rows := 2
-	var pw := w / cols
-	var ph := h / rows
-	var center_offset := Vector2(w * 0.5, h * 0.5)
+			var chunk := RigidBody2D.new()
+			chunk.collision_layer = FRAGMENT_LAYER
+			chunk.collision_mask = FRAGMENT_WORLD_LAYER
+			chunk.gravity_scale = 3.2
+			chunk.linear_damp = 2.0
+			chunk.angular_damp = 1.5
+			chunk.z_index = 3
 
-	for col in cols:
-		for row in rows:
-			var local_center := Vector2(col * pw + pw * 0.5, row * ph + ph * 0.5) - center_offset
-			var sub_rect := Rect2(ox + col * pw, oy + row * ph, pw, ph)
+			var sprite := Sprite2D.new()
+			sprite.texture = source_tex
+			sprite.region_enabled = true
+			sprite.region_rect = sub_rect
+			sprite.scale = piece_scale
+			chunk.add_child(sprite)
 
-			var piece := Sprite2D.new()
-			piece.texture = source_tex
-			piece.region_enabled = true
-			piece.region_rect = sub_rect
-			piece.scale = visual.scale * 0.5
-			piece.position = visual.position + local_center
-			add_child(piece)
+			var shape := RectangleShape2D.new()
+			shape.size = piece_size * piece_scale
+			var collision := CollisionShape2D.new()
+			collision.shape = shape
+			chunk.add_child(collision)
 
-			var angle := randf_range(0.0, TAU)
-			var speed := randf_range(150.0, 350.0)
-			var vel := Vector2.RIGHT.rotated(angle) * speed
+			parent.add_child(chunk)
+			chunk.global_position = enemy.global_position + (visual_offset + offset) * exit_scale
+			chunk.rotation = randf_range(0.0, TAU)
+			chunk.linear_velocity = Vector2.from_angle(blast_angle + randf_range(-FRAGMENT_SPREAD, FRAGMENT_SPREAD)) \
+				* randf_range(FRAGMENT_SPEED_MIN, FRAGMENT_SPEED_MAX) + Vector2(0.0, -FRAGMENT_LIFT)
+			chunk.angular_velocity = randf_range(-10.0, 10.0)
 
-			var pt := create_tween()
-			pt.tween_property(piece, "position", piece.position + vel, 0.5).set_ease(Tween.EASE_OUT)
-			pt.parallel().tween_property(piece, "rotation", randf_range(-4.0, 4.0), 0.5).set_ease(Tween.EASE_OUT)
-			pt.parallel().tween_property(piece, "modulate", Color(1, 1, 1, 0), 0.5).set_ease(Tween.EASE_IN)
-			pt.tween_callback(piece.queue_free)
+			var fade := chunk.create_tween()
+			fade.tween_interval(FRAGMENT_LINGER)
+			fade.tween_property(chunk, "modulate:a", 0.0, FRAGMENT_FADE)
+			fade.tween_callback(chunk.queue_free)
+
+## Which way the gibs should go: the way the blow was pointing, or away from the
+## mole when the hit didn't say (mole attacks land from wherever the mole is).
+static func _fragment_blast_direction(enemy: Node2D, hit_dir: Vector2) -> Vector2:
+	if hit_dir != Vector2.ZERO:
+		return hit_dir.normalized()
+	var tree := enemy.get_tree()
+	if tree == null:
+		return Vector2.UP
+	var mole := tree.get_first_node_in_group("mole") as Node2D
+	if mole != null:
+		var away := enemy.global_position - mole.global_position
+		if away != Vector2.ZERO:
+			return away.normalized()
+	return Vector2.UP

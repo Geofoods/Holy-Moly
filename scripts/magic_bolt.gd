@@ -36,7 +36,7 @@ func _on_area_entered(area: Area2D) -> void:
 		var enemy := area.get_parent()
 		if enemy and enemy.has_method("take_damage"):
 			_dead = true
-			enemy.take_damage(_damage)
+			enemy.take_damage(_damage, _velocity.normalized())
 			_explode()
 
 func _on_body_entered(body: Node) -> void:

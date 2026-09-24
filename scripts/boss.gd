@@ -553,12 +553,18 @@ func _sprite_center() -> Vector2:
 	var frame_size := frame_tex.get_size()
 	return to_global(anim.position + anim.scale * frame_size * 0.5)
 
-func take_damage(amount: float) -> void:
+## Direction the last hit pushed the boss, so its death fragments are blown the
+## same way (see spawn_death_fragments in enemy.gd).
+var hit_direction := Vector2.ZERO
+
+func take_damage(amount: float, direction: Vector2 = Vector2.ZERO) -> void:
 	if not _boss_active:
 		return
 	if health <= 0:
 		return
 	health -= amount
+	if direction != Vector2.ZERO:
+		hit_direction = direction.normalized()
 	EnemyDamage.spawn_damage_number(self, amount, _sprite_center())
 	modulate = Color(2, 1.5, 1.5, 1)
 	var flash_tween := create_tween()
@@ -842,46 +848,7 @@ func _break_chests_in_row(row: int, center_x: int) -> void:
 		chest_area.call("break_as_block")
 
 func _break_apart() -> void:
-	anim.visible = false
-
-	var frame_tex := anim.sprite_frames.get_frame_texture(anim.animation, anim.frame)
-	var atlas := frame_tex as AtlasTexture
-	var source_tex := atlas.atlas if atlas else frame_tex
-	var source_region := atlas.region if atlas else Rect2(Vector2.ZERO, frame_tex.get_size())
-
-	var w := source_region.size.x
-	var h := source_region.size.y
-	var ox := source_region.position.x
-	var oy := source_region.position.y
-
-	var cols := 4
-	var rows := 2
-	var pw := w / cols
-	var ph := h / rows
-	var center_offset := Vector2(w * 0.5, h * 0.5)
-
-	for col in cols:
-		for row in rows:
-			var local_center := Vector2(col * pw + pw * 0.5, row * ph + ph * 0.5) - center_offset
-			var sub_rect := Rect2(ox + col * pw, oy + row * ph, pw, ph)
-
-			var piece := Sprite2D.new()
-			piece.texture = source_tex
-			piece.region_enabled = true
-			piece.region_rect = sub_rect
-			piece.scale = anim.scale * 0.5
-			piece.position = anim.position + local_center
-			add_child(piece)
-
-			var angle := randf_range(0.0, TAU)
-			var speed := randf_range(250.0, 500.0)
-			var vel := Vector2.RIGHT.rotated(angle) * speed
-
-			var pt := create_tween()
-			pt.tween_property(piece, "position", piece.position + vel, 1.0).set_ease(Tween.EASE_OUT)
-			pt.parallel().tween_property(piece, "rotation", randf_range(-4.0, 4.0), 1.0).set_ease(Tween.EASE_OUT)
-			pt.parallel().tween_property(piece, "modulate", Color(1, 1, 1, 0), 0.9).set_ease(Tween.EASE_IN)
-			pt.tween_callback(piece.queue_free)
+	EnemyDamage.spawn_death_fragments(self, anim, hit_direction, scale.x)
 
 func _play_death_effect() -> void:
 	var sprite := $AnimatedSprite2D

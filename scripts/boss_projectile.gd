@@ -39,7 +39,7 @@ func _on_area_entered(area: Area2D) -> void:
 	if deflected and area.is_in_group("enemy_hurtbox"):
 		var enemy = area.get_parent()
 		if enemy.has_method("take_damage"):
-			enemy.take_damage(5)
+			enemy.take_damage(5, velocity.normalized())
 		elif enemy.has_method("die"):
 			enemy.die()
 		queue_free()

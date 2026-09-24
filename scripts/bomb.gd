@@ -7,9 +7,16 @@ const DAMAGE_SCALAR := 10.0
 const DAMAGE_VARIATION := 0.2
 const TileBreakSFX := preload("res://scripts/tile_break_sfx.gd")
 
-@export var explosion_radius := 200.0
+## Blast radius the Retro Explosion particle art was authored for, so the effect
+## can be scaled up when the radius grows.
+const EXPLOSION_ART_RADIUS := 200.0
+
+# The blast reach and the crater it digs are tuned together: three tiles out
+# plus half a tile is 280px at the usual 80px-per-tile scale, so the damage
+# circle still lines up with the edge of the hole.
+@export var explosion_radius := 280.0
 @export var explosion_damage := 2.0
-@export var tile_break_radius := 2
+@export var tile_break_radius := 3
 
 var dead := false
 var fuse_active := false
@@ -65,6 +72,7 @@ func _explode() -> void:
 
 	var explosion_particles := preload("res://Retro Explosion.tscn").instantiate()
 	explosion_particles.global_position = global_position
+	explosion_particles.scale = Vector2.ONE * (explosion_radius / EXPLOSION_ART_RADIUS)
 	get_parent().add_child(explosion_particles)
 	explosion_particles.emitting = true
 
@@ -118,7 +126,7 @@ func _explode() -> void:
 		if enemy and is_instance_valid(enemy) and global_position.distance_to(enemy.global_position) <= explosion_radius:
 			if enemy.has_method("take_damage"):
 				var dmg := ENEMY_DAMAGE * DAMAGE_SCALAR * ComboManager.get_damage_multiplier() * randf_range(1.0 - DAMAGE_VARIATION, 1.0 + DAMAGE_VARIATION)
-				enemy.take_damage(dmg)
+				enemy.take_damage(dmg, (enemy.global_position - global_position).normalized())
 			elif enemy.has_method("die"):
 				enemy.die()
 

@@ -97,7 +97,9 @@ func _freeze_tiles(tilemap: TileMap) -> void:
 
 			if tilemap.get_cell_source_id(0, tp) == -1:
 				continue
-			var overlay := Sprite2D.new()
+			var overlay := IceOverlay.new()
+			overlay.tilemap = tilemap
+			overlay.cell = tp
 			overlay.texture = ICE_OVERLAY_TEXTURE
 			overlay.position = tilemap.to_global(tilemap.map_to_local(tp)) - half + tile_world_size * 0.5
 			overlay.scale = tile_world_size / ICE_OVERLAY_TEXTURE.get_size()

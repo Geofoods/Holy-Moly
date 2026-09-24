@@ -167,7 +167,9 @@ func _on_hurtbox_area_entered(area: Area2D) -> void:
 		velocity = (global_position - parent.global_position).normalized() * 500.0 + Vector2(0, -200)
 		take_damage(parent.get_damage())
 
-func take_damage(amount: float) -> void:
+## Takes the hit direction the fragment-spawning enemies use for their death
+## gibs; this one just shrinks away, so it ignores it.
+func take_damage(amount: float, _direction: Vector2 = Vector2.ZERO) -> void:
 	if health <= 0:
 		return
 	health -= amount

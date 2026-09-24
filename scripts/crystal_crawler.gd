@@ -94,7 +94,9 @@ func _on_hitbox_body_exited(body: Node) -> void:
 	if body.is_in_group("mole"):
 		_mole_contact = false
 
-func take_damage(amount: float) -> void:
+## Takes the hit direction the fragment-spawning enemies use for their death
+## gibs; this one just shrinks away, so it ignores it.
+func take_damage(amount: float, _direction: Vector2 = Vector2.ZERO) -> void:
 	health -= amount
 	ComboManager.increment()
 	EnemyDamage.spawn_damage_number(self, amount)

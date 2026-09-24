@@ -162,8 +162,9 @@ func _play_break_shatter() -> void:
 		animated.visible = false
 
 	var chest_dim := chest_tex.get_size() if chest_tex else Vector2(56, 52)
-	var piece_lo := maxf(chest_dim.x * 0.22, 24.0)
-	var piece_hi := maxf(chest_dim.x * 0.44, piece_lo + 6.0)
+	# Keep the shards a touch undersized so they read as splinters, not chunks.
+	var piece_lo := maxf(chest_dim.x * 0.085, 7.0)
+	var piece_hi := maxf(chest_dim.x * 0.135, piece_lo + 3.5)
 
 	TileBreakSFX.spawn_texture_break_particles(
 		chest_tex,

@@ -107,7 +107,7 @@ func _damage_enemies_in_radius() -> void:
 		var enemy := hurtbox.get_parent()
 		if enemy and is_instance_valid(enemy) and global_position.distance_to(enemy.global_position) <= blast_radius:
 			if enemy.has_method("take_damage"):
-				enemy.take_damage(_rolled_enemy_damage())
+				enemy.take_damage(_rolled_enemy_damage(), (enemy.global_position - global_position).normalized())
 			elif enemy.has_method("die"):
 				enemy.die()
 

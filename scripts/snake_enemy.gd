@@ -194,7 +194,13 @@ func _on_hurtbox_area_entered(area: Area2D) -> void:
 			_stun_timer = 0.25
 		take_damage(parent.get_damage())
 
-func take_damage(amount: float) -> void:
+## Direction the last hit pushed this enemy, so its death fragments are blown
+## the same way (see spawn_death_fragments in enemy.gd).
+var hit_direction := Vector2.ZERO
+
+func take_damage(amount: float, hit_dir: Vector2 = Vector2.ZERO) -> void:
+	if hit_dir != Vector2.ZERO:
+		hit_direction = hit_dir.normalized()
 	if health <= 0:
 		return
 	health -= amount
@@ -246,44 +252,7 @@ func die() -> void:
 	tween.tween_callback(queue_free)
 
 func _break_apart() -> void:
-	visual.visible = false
-
-	var source_tex := visual.texture
-	var source_region := Rect2(Vector2.ZERO, source_tex.get_size())
-
-	var w := source_region.size.x
-	var h := source_region.size.y
-	var ox := source_region.position.x
-	var oy := source_region.position.y
-
-	var cols := 4
-	var rows := 2
-	var pw := w / cols
-	var ph := h / rows
-	var center_offset := Vector2(w * 0.5, h * 0.5)
-
-	for col in cols:
-		for row in rows:
-			var local_center := Vector2(col * pw + pw * 0.5, row * ph + ph * 0.5) - center_offset
-			var sub_rect := Rect2(ox + col * pw, oy + row * ph, pw, ph)
-
-			var piece := Sprite2D.new()
-			piece.texture = source_tex
-			piece.region_enabled = true
-			piece.region_rect = sub_rect
-			piece.scale = visual.scale * 0.5
-			piece.position = visual.position + local_center
-			add_child(piece)
-
-			var angle := randf_range(0.0, TAU)
-			var speed := randf_range(150.0, 350.0)
-			var vel := Vector2.RIGHT.rotated(angle) * speed
-
-			var pt := create_tween()
-			pt.tween_property(piece, "position", piece.position + vel, 0.5).set_ease(Tween.EASE_OUT)
-			pt.parallel().tween_property(piece, "rotation", randf_range(-4.0, 4.0), 0.5).set_ease(Tween.EASE_OUT)
-			pt.parallel().tween_property(piece, "modulate", Color(1, 1, 1, 0), 0.5).set_ease(Tween.EASE_IN)
-			pt.tween_callback(piece.queue_free)
+	EnemyDamage.spawn_death_fragments(self, visual, hit_direction, scale.x)
 
 func _should_spray() -> bool:
 	if target_mole == null or not is_instance_valid(target_mole):

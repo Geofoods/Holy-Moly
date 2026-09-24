@@ -1154,7 +1154,7 @@ func _dash_ability_strike() -> void:
 		_dash_hit_enemies[enemy] = true
 		var dmg := DASH_ABILITY_DAMAGE * ComboManager.get_damage_multiplier()
 		if enemy.has_method("take_damage"):
-			enemy.take_damage(dmg)
+			enemy.take_damage(dmg, Vector2(tunnel_direction, 0.0))
 			EnemyDamage.spawn_damage_number(enemy, dmg)
 			SFX.play("enemy_hit", enemy.global_position)
 			spawn_dirt_particles(enemy.global_position)
@@ -1342,15 +1342,15 @@ func _ground_pound_strike() -> void:
 		if global_position.distance_to(enemy.global_position) > hit_radius:
 			continue
 		var dmg := strike_damage * ComboManager.get_damage_multiplier()
-		if enemy.has_method("take_damage"):
-			enemy.take_damage(dmg)
-			EnemyDamage.spawn_damage_number(enemy, dmg)
-			SFX.play("enemy_hit", enemy.global_position)
-			spawn_dirt_particles(enemy.global_position)
 		var dir: Vector2 = (enemy as Node2D).global_position - global_position
 		dir = dir.normalized()
 		if dir == Vector2.ZERO:
 			dir = Vector2(1.0, -0.5).normalized()
+		if enemy.has_method("take_damage"):
+			enemy.take_damage(dmg, dir)
+			EnemyDamage.spawn_damage_number(enemy, dmg)
+			SFX.play("enemy_hit", enemy.global_position)
+			spawn_dirt_particles(enemy.global_position)
 		_apply_knockback(enemy, dir * GROUND_POUND_KNOCKBACK + Vector2(0, -350.0))
 		if earthquake_boots_active and "_stun_timer" in enemy:
 			enemy._stun_timer = maxf(enemy._stun_timer, 0.9)
@@ -1602,9 +1602,9 @@ func _swing_grub_stick() -> void:
 		if rel.x != 0.0 and signf(rel.x) != face:
 			continue
 		hit = true
-		if enemy.has_method("take_damage"):
-			enemy.take_damage(8.0)
 		var dir := Vector2(face, -0.35).normalized()
+		if enemy.has_method("take_damage"):
+			enemy.take_damage(8.0, dir)
 		if enemy is CharacterBody2D:
 			(enemy as CharacterBody2D).velocity = dir * 700.0
 		if "_stun_timer" in enemy:
@@ -1764,7 +1764,7 @@ func _dozer_ram() -> void:
 			continue
 		_mol_dozer_hit[collider] = true
 		if collider.has_method("take_damage"):
-			collider.take_damage(12.0)
+			collider.take_damage(12.0, Vector2(face, -0.3).normalized())
 		if collider is CharacterBody2D:
 			(collider as CharacterBody2D).velocity = Vector2(face * 850.0, -300.0)
 		if "_stun_timer" in collider:

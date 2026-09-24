@@ -61,12 +61,12 @@ func _on_body_entered(body: Node) -> void:
 
 func _hit_enemy(enemy: Node) -> void:
 	SFX.play("enemy_hit", global_position)
-	if enemy.has_method("take_damage"):
-		enemy.take_damage(HIT_DAMAGE)
 	var dir := ((enemy as Node2D).global_position - global_position).normalized()
 	if dir == Vector2.ZERO:
 		dir = Vector2.RIGHT
 	dir = Vector2(signf(dir.x), -0.35).normalized()
+	if enemy.has_method("take_damage"):
+		enemy.take_damage(HIT_DAMAGE, dir)
 	if enemy is CharacterBody2D:
 		(enemy as CharacterBody2D).velocity = dir * HIT_KNOCKBACK
 	if "_stun_timer" in enemy:
