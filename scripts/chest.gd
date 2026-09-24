@@ -4,6 +4,10 @@ signal opened
 
 const TileBreakSFX := preload("res://scripts/tile_break_sfx.gd")
 
+const ChestChunks := 8  # number of chest-sized break pieces
+
+const CHEST_CHUNKS := 8
+
 var is_open := false
 var is_breaking := false
 var player_nearby := false
@@ -157,14 +161,18 @@ func _play_break_shatter() -> void:
 		chest_tex = animated.sprite_frames.get_frame_texture("default", animated.frame)
 		animated.visible = false
 
+	var chest_dim := chest_tex.get_size() if chest_tex else Vector2(56, 52)
+	var piece_lo := maxf(chest_dim.x * 0.40, 46.0)
+	var piece_hi := maxf(chest_dim.x * 0.72, piece_lo + 8.0)
+
 	TileBreakSFX.spawn_texture_break_particles(
 		chest_tex,
 		Rect2(Vector2.ZERO, chest_tex.get_size()) if chest_tex else Rect2(),
 		global_position,
 		scene_root,
-		8,
-		20.0,
-		40.0)
+		ChestChunks,
+		piece_lo,
+		piece_hi)
 
 	chest_body.queue_free()
 
