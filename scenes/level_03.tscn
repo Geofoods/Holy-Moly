@@ -80,12 +80,6 @@ position_smoothing_enabled = true
 [node name="Enemy" parent="." unique_id=1155690396 instance=ExtResource("2_enemy")]
 position = Vector2(1989, 11)
 
-[node name="Enemy2" parent="." unique_id=105590653 instance=ExtResource("2_enemy")]
-position = Vector2(2522, 719)
-
-[node name="Enemy3" parent="." unique_id=650573908 instance=ExtResource("2_enemy")]
-position = Vector2(3041, 688)
-
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=71896557]
 layer = 99
 

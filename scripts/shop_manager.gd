@@ -55,14 +55,7 @@ func _grant_all_weapons_for_testing() -> void:
 func _build_catalog() -> void:
 	catalog = [
 		_make_melee("shovel", "Shovel", "The trusty starting tool.", 0, 5.0, 10.0, 2.4, 0.3, Color(0.9, 0.8, 0.55)),
-		_make_melee("iron_shovel", "Iron Shovel", "A heavier swing that bites harder.", 60, 14.0, 20.0, 2.4, 0.24, Color(0.7, 0.75, 0.85)),
 		_make_melee("gold_shovel", "Golden Shovel", "Wide arc, quick swing, big damage.", 160, 22.0, 30.0, 2.8, 0.2, Color(1.0, 0.8, 0.2)),
-		_make_ranged("pistol", "Pistol", "Reliable sidearm. Semi-automatic.", 80, 10.0, 14.0, 0.45, 1500.0, Color(0.8, 0.9, 1.0)),
-		_make_ranged("revolver", "Revolver", "Slow shots, devastating punch.", 220, 26.0, 36.0, 0.8, 1800.0, Color(1.0, 0.5, 0.3)),
-		_make_ranged("wizard_staff", "Wizard Staff", "Arcane bolts crackle from this gnarled staff.", 140, 18.0, 26.0, 0.55, 1200.0, Color(0.7, 0.35, 1.0)),
-		_make_ability("dash_ability", "Dash Impact", "Dig-dash slams enemies with knockback and damage. Airborne shift slams a damaging ground pound (also breaks blocks).", 120, Color(0.6, 0.9, 1.0)),
-		_make_ability("triple_shot", "Triple Shot", "Ranged weapons fire 3 shots in a spread.", 200, Color(1.0, 0.7, 0.3)),
-		_make_ability("grappling_hook", "Grappling Hook", "A selectable tool that fills the SECOND hotbar slot: select it, then LEFT-CLICK toward your cursor to fire a cable and reel yourself over gaps and up to high ledges. Hold to pull, release to let go.", 130, Color(0.85, 0.65, 0.3)),
 	]
 	weapon_catalog.clear()
 	ability_catalog.clear()

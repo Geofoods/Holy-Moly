@@ -145,6 +145,8 @@ func _grant_unlock() -> void:
 	if shop == null or not shop.has_method("give"):
 		return
 	shop.give(unlock_ability)
+	if shop.has_method("equip"):
+		shop.equip(unlock_ability)
 	_show_unlock_banner(unlock_text if unlock_text != "" else unlock_ability.to_upper())
 
 func _show_unlock_banner(label_text: String) -> void:

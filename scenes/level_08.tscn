@@ -302,9 +302,6 @@ position = Vector2(4971, 2476)
 [node name="chest6" parent="." unique_id=1940171027 instance=ExtResource("19_sy85i")]
 position = Vector2(5703, 2972)
 
-[node name="candle" parent="." unique_id=158104047 instance=ExtResource("20_2exuq")]
-position = Vector2(410, 2556)
-
 [node name="candle2" parent="." unique_id=1824990162 instance=ExtResource("20_2exuq")]
 position = Vector2(1226, 2555)
 

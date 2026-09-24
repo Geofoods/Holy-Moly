@@ -197,7 +197,7 @@ mouse_filter = 2
 color = Color(0, 0, 0, 1)
 
 [node name="candle" parent="." unique_id=1128492063 instance=ExtResource("14_wr8iv")]
-position = Vector2(192, -130)
+position = Vector2(1036, -56)
 
 [node name="candle2" parent="." unique_id=760822270 instance=ExtResource("14_wr8iv")]
 position = Vector2(1650, -59)

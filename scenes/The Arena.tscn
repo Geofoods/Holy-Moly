@@ -258,10 +258,10 @@ zoom = Vector2(0.5, 0.5)
 [node name="Snail" parent="." unique_id=1357957573 instance=ExtResource("20_434ko")]
 position = Vector2(7255, -126)
 dialogue_text = "Help MEEEE!!!!"
-post_dialogue_text = "Thanks for saving me! I almost got shredded into bits! Please take this as an thank you"
+post_dialogue_text = "Thanks for saving me! I almost got shredded into bits! Please take this golden shovel as a thank you"
 condition_wave_path = NodePath("../WaveManager")
-unlock_ability = "wall_jump"
-unlock_text = "GRIPPY HANDS"
+unlock_ability = "gold_shovel"
+unlock_text = "GOLDEN SHOVEL"
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]
