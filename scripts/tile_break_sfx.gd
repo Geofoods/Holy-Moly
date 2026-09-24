@@ -536,7 +536,7 @@ static func spawn_texture_break_particles(texture: Texture2D, region: Rect2, wor
 		chunk.linear_damp = 3.5
 		chunk.angular_damp = 2.0
 		chunk.z_index = 3
-		parent.add_child(chunk)
+		parent.call_deferred("add_child", chunk)
 		chunk.global_position = world_pos
 		chunk.rotation = randf_range(0.0, TAU)
 

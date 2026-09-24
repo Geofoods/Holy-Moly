@@ -189,7 +189,7 @@ func _spawn_split_slimes() -> void:
 		var offset_x := 30.0 if i == 0 else -30.0
 		child.global_position = global_position + Vector2(offset_x, -16.0)
 		child.velocity = Vector2(offset_x * 2.0, HOP_VELOCITY)
-		get_parent().add_child(child)
+		get_parent().call_deferred("add_child", child)
 
 func _break_apart() -> void:
 	visual.visible = false
