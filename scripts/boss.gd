@@ -342,7 +342,7 @@ func _spit() -> void:
 		var rot := atan2(dir.y, dir.x) + offset
 		var spread_dir := Vector2(cos(rot), sin(rot))
 		var proj := _projectile_scene.instantiate() as Area2D
-		get_parent().add_child(proj)
+		get_parent().call_deferred("add_child", proj)
 		proj.global_position = spawn_pos
 		proj.scale = Vector2(0.3, 0.3)
 		proj.rotation = rot

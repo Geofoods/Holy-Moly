@@ -93,7 +93,7 @@ func _spawn_explosion_particles() -> void:
 	grad_tex.gradient = fade
 	material.color_ramp = grad_tex
 	particles.process_material = material
-	get_parent().add_child(particles)
+	get_parent().call_deferred("add_child", particles)
 	particles.global_position = global_position
 	get_tree().create_timer(1.0).timeout.connect(particles.queue_free)
 

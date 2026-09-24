@@ -154,7 +154,7 @@ func _release_mushroom() -> void:
 	var dir := (target_mole.global_position - global_position).normalized()
 
 	var mushroom = mushroom_scene.instantiate()
-	get_parent().add_child(mushroom)
+	get_parent().call_deferred("add_child", mushroom)
 	mushroom.global_position = global_position + Vector2(sign(dir.x) * 30, -40)
 	mushroom.linear_velocity = dir * THROW_VELOCITY
 	mushroom.arm()

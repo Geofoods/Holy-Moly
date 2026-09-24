@@ -305,7 +305,7 @@ func _fire_venom() -> void:
 	for i in VENOM_COUNT:
 		var a := base_angle + deg_to_rad(VENOM_SPREAD_DEGREES) * (i - (VENOM_COUNT - 1) / 2.0)
 		var proj = VENOM_SCENE.instantiate()
-		get_parent().add_child(proj)
+		get_parent().call_deferred("add_child", proj)
 		proj.global_position = global_position + aim * 16.0 + Vector2(0, -18)
 		proj.direction = Vector2.from_angle(a)
 		proj.source_snake = self

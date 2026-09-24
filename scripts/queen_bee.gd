@@ -509,7 +509,7 @@ func _spit() -> void:
 	var dir: Vector2 = (mole.global_position - anim.global_position).normalized()
 	var spawn_pos: Vector2 = anim.global_position + dir * 120.0
 	var proj := _projectile_scene.instantiate() as Area2D
-	get_parent().add_child(proj)
+	get_parent().call_deferred("add_child", proj)
 	proj.global_position = spawn_pos
 	proj.scale = Vector2(0.25, 0.25)
 	proj.rotation = dir.angle()

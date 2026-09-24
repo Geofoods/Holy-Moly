@@ -80,7 +80,7 @@ func _fire_shards() -> void:
 	for i in 3:
 		var dir := base.rotated((float(i) - 1.0) * 0.42)
 		var proj := preload("res://area_2d.tscn").instantiate()
-		get_parent().add_child(proj)
+		get_parent().call_deferred("add_child", proj)
 		proj.global_position = global_position + Vector2(0, -28)
 		proj.scale = Vector2(0.3, 0.3)
 		proj.setup(dir * SHARD_SPEED)
