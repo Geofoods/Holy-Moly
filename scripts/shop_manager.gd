@@ -69,30 +69,8 @@ func _build_catalog() -> void:
 ## resources) rather than weapons.
 func _build_item_catalog() -> void:
 	var defs := [
-		{"name": "Miner's Rations", "price": 40},
-		{"name": "Potted Honeycomb", "price": 60},
 		{"name": "Bomb", "price": 80},
 		{"name": "Ice Bomb", "price": 90},
-		{"name": "Golden Bomb", "price": 140},
-		{"name": "Mine", "price": 100},
-		{"name": "Stink Bomb", "price": 90},
-		{"name": "Spark Bomb", "price": 110},
-		{"name": "Flare", "price": 60},
-		{"name": "Coal Lump", "price": 70},
-		{"name": "Vacuum Jelly", "price": 80},
-		{"name": "Bounce Mushroom", "price": 60},
-		{"name": "Shiny Lure", "price": 90},
-		{"name": "Compass Charm", "price": 70},
-		{"name": "Shop Token", "price": 50},
-		{"name": "Grub Stick", "price": 75},
-		{"name": "Tunnel Gloves", "price": 130},
-		{"name": "Shelled Backpack", "price": 140},
-		{"name": "Climbing Talons", "price": 90},
-		{"name": "Lantern Charm", "price": 100},
-		{"name": "Rebound Hook", "price": 80},
-		{"name": "Wax Cache", "price": 120},
-		{"name": "Earthquake Boots", "price": 160},
-		{"name": "Mol-dozer Ram", "price": 150},
 	]
 	for def in defs:
 		var item := _find_item(def["name"])
