@@ -22,15 +22,6 @@ func _ready() -> void:
 	_build_visual()
 
 func _build_visual() -> void:
-	var sprite := Sprite2D.new()
-	sprite.name = "Sprite"
-	var img := Image.create(12, 12, false, Image.FORMAT_RGBA8)
-	img.fill(Color(1.0, 0.6, 0.0, 1.0))
-	var tex := ImageTexture.create_from_image(img)
-	sprite.texture = tex
-	sprite.scale = Vector2(1.6, 1.6)
-	add_child(sprite)
-
 	var trail := CPUParticles2D.new()
 	trail.emitting = true
 	trail.amount = 6
@@ -59,6 +50,8 @@ func _physics_process(delta: float) -> void:
 		return
 	var spd := DEFLECTED_SPEED if deflected else SPEED
 	global_position += direction * spd * delta
+	if direction != Vector2.ZERO:
+		rotation = direction.angle()
 
 func deflect(target_pos: Vector2) -> void:
 	if deflected:
@@ -69,7 +62,7 @@ func deflect(target_pos: Vector2) -> void:
 		direction = (source_ant.global_position - global_position).normalized()
 	else:
 		direction = (target_pos - global_position).normalized()
-	var sprite = get_node_or_null("Sprite")
+	var sprite = get_node_or_null("AnimatedSprite2D")
 	if sprite:
 		sprite.modulate = Color(0.5, 0.8, 1.0, 1.0)
 

@@ -1,16 +1,51 @@
-[gd_scene load_steps=3 format=3 uid="uid://ant_bullet_scene"]
+[gd_scene format=3 uid="uid://xgw60qkvon16"]
 
-[ext_resource type="Script" path="res://scripts/ant_bullet.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://dghxb57g1j0e0" path="res://scripts/ant_bullet.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://b6v86l34dq6vv" path="res://sprites/antbullet1.png" id="2_ltb8g"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_1"]
 radius = 8.0
 
-[node name="AntBullet" type="Area2D"]
+[sub_resource type="AtlasTexture" id="AtlasTexture_gh4it"]
+atlas = ExtResource("2_ltb8g")
+region = Rect2(0, 0, 215, 135)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j0dlw"]
+atlas = ExtResource("2_ltb8g")
+region = Rect2(215, 0, 215, 135)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_o6lyp"]
+atlas = ExtResource("2_ltb8g")
+region = Rect2(430, 0, 215, 135)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_kw4ry"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gh4it")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j0dlw")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_o6lyp")
+}],
+"loop": true,
+"name": &"bulletspin",
+"speed": 5.0
+}]
+
+[node name="AntBullet" type="Area2D" unique_id=1620551022]
 collision_layer = 2
 collision_mask = 0
 monitoring = false
-monitorable = true
 script = ExtResource("1_script")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1782787444]
 shape = SubResource("CircleShape2D_1")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1147621088]
+scale = Vector2(0.4, 0.4)
+sprite_frames = SubResource("SpriteFrames_kw4ry")
+animation = &"bulletspin"
+autoplay = "bulletspin"
