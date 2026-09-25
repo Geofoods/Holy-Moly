@@ -1,6 +1,7 @@
 extends RigidBody2D
 
 @export var prompt_text := "PRESS E TO INTERACT"
+@export var npc_name := "Snail"
 @export var portrait_texture: Texture2D = null
 @export_multiline var dialogue_text := ""
 @export_multiline var post_dialogue_text := ""
@@ -93,6 +94,7 @@ func _open_dialogue() -> void:
 	get_tree().root.add_child(_dialogue_box)
 	_dialogue_box.next_pressed.connect(_on_dialogue_done)
 	_dialogue_box.set_portrait(portrait_texture)
+	_dialogue_box.set_npc_name(npc_name)
 	_apply_portrait_blink()
 	_dialogue_box.show_text(dialogue_text, 0, 0, true, false)
 

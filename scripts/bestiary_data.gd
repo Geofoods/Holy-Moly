@@ -70,9 +70,9 @@ const ENTRIES: Array[Dictionary] = [
 		"category": "Enemy",
 		"danger_level": 4,
 		"description": "A hostile buzzing insect that rules the open caverns with hit-and-run attacks.",
-		"behavior": "Hovers in the air and drifts toward you when it spots you. Every few seconds it locks on with a visible shake, then dashes straight at your last position.",
-		"attack_pattern": "A fast 900 px/s dash lasting about half a second, dealing contact damage, followed by a tired recovery drift and a roughly 2.5 second cooldown.",
-		"strategy": "Watch for the shake that precedes its dash and step aside at the last moment, then punish it while it recovers. It is fragile and takes only 2 shovel hits to defeat.",
+		"behavior": "Hovers in the air and drifts toward you when it spots you. Every few seconds it locks on with a visible shake, then dashes straight at your last position, smashing through any blocks in its way.",
+		"attack_pattern": "A fast 900 px/s dash lasting about half a second that breaks solid blocks and leaves a poisoned sting on contact, followed by a tired recovery drift and a roughly 2.5 second cooldown.",
+		"strategy": "Watch for the shake that precedes its dash and step aside at the last moment, then punish it while it recovers. Its sting poisons you for a few seconds, so keep moving after you dodge. It is fragile and takes only 2 shovel hits to defeat.",
 	},
 	{
 		"id": "drill",

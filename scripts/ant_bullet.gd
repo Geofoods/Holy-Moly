@@ -5,6 +5,8 @@ const DEFLECTED_SPEED := 1000
 const SLOW_DURATION := 3.0
 const LIFETIME := 8.0
 const SPAWN_GRACE := 0.25
+## Pellet-sized pop, so the ground burst reads as a spark rather than a blast.
+const GROUND_BLAST_POWER := 0.5
 
 var direction := Vector2.ZERO
 var deflected := false
@@ -78,7 +80,7 @@ func _on_body_entered(body: Node) -> void:
 			queue_free()
 			return
 		if body is TileMap:
-			queue_free()
+			_pop()
 			return
 	else:
 		if body.is_in_group("mole"):
@@ -87,7 +89,7 @@ func _on_body_entered(body: Node) -> void:
 			queue_free()
 			return
 		if body is TileMap:
-			queue_free()
+			_pop()
 			return
 
 func _on_area_entered(area: Area2D) -> void:
@@ -97,3 +99,36 @@ func _on_area_entered(area: Area2D) -> void:
 	if parent == source_ant and parent.has_method("die"):
 		parent.die()
 		queue_free()
+
+## Dying on impact with the world: a small burst of fire at the impact point
+## plus a quiet explosion cue, then the pellet is gone.
+func _pop() -> void:
+	_spawn_ground_blast(global_position)
+	queue_free()
+
+func _spawn_ground_blast(world_pos: Vector2) -> void:
+	var power := GROUND_BLAST_POWER
+	SFX.play("explosion", world_pos, -16.0, 0.25)
+	var particles := CPUParticles2D.new()
+	particles.emitting = true
+	particles.one_shot = true
+	particles.explosiveness = 1.0
+	particles.amount = int(28 * power)
+	particles.lifetime = 0.6
+	particles.direction = Vector2(0, -1)
+	particles.spread = 60.0
+	particles.initial_velocity_min = 130.0 * power
+	particles.initial_velocity_max = 430.0 * power
+	particles.gravity = Vector2(0, 420)
+	particles.damping_min = 120.0
+	particles.damping_max = 260.0
+	particles.scale_amount_min = 4.0 * power
+	particles.scale_amount_max = 8.0 * power
+	particles.color = Color(1.0, 0.55, 0.15, 1.0)
+	var gradient := Gradient.new()
+	gradient.set_color(0, Color(1.0, 0.95, 0.6, 1.0))
+	gradient.set_color(1, Color(0.45, 0.12, 0.04, 0.0))
+	particles.color_ramp = gradient
+	get_parent().add_child(particles)
+	particles.global_position = world_pos
+	get_tree().create_timer(particles.lifetime + 0.4).timeout.connect(particles.queue_free)

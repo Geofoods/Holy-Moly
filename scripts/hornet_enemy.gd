@@ -1,6 +1,7 @@
 extends CharacterBody2D
 
 ## Flying enemy that hovers near the player, then telegraphs and dashes at them periodically.
+## The dash chews straight through terrain, and the stinger leaves the mole poisoned.
 
 signal died
 
@@ -19,8 +20,15 @@ const MAX_HEALTH := 20.0
 const GRAVITY := 1400.0
 const BUZZ_SFX_INTERVAL := 0.45
 const HURT_DURATION := 0.5
+const CONTACT_DAMAGE := 1.0
+## Sting damage plus the venom slow, matching the Cave Snake globs.
+const STING_DAMAGE := 1.0
+const STING_SLOW_DURATION := 2.5
+## Tiles a single charge is allowed to smash before it stalls on bedrock or a door.
+const DASH_MAX_BREAKS := 6
 
 const EnemyDamage := preload("res://scripts/enemy.gd")
+const TileBreakSFX := preload("res://scripts/tile_break_sfx.gd")
 
 var state := State.HOVER
 var direction := 1.0
@@ -34,6 +42,7 @@ var _buzz_timer := 0.0
 var _mole_in_contact := false
 var _health_bar: Node2D = null
 var _hurt_timer := 0.0
+var _dash_breaks := 0
 
 @onready var hurtbox: Area2D = $Hurtbox
 @onready var hitbox: Area2D = $Hitbox
@@ -107,6 +116,7 @@ func _do_aim(delta: float) -> void:
 func _enter_dash() -> void:
 	state = State.DASH
 	dash_timer = DASH_DURATION
+	_dash_breaks = 0
 	velocity = dash_direction * DASH_SPEED
 	visual.rotation = dash_direction.angle() - PI / 2.0
 	visual.play("spinning")
@@ -114,10 +124,39 @@ func _enter_dash() -> void:
 
 func _do_dash(delta: float) -> void:
 	dash_timer -= delta
-	if is_on_wall() or is_on_floor() or is_on_ceiling():
+	# Smash the terrain it slams into and keep charging, so a dash tunnels
+	# through cave walls instead of being stopped by the first block.
+	if not _dash_break_tiles() and (is_on_wall() or is_on_floor() or is_on_ceiling()):
 		dash_timer = 0.0
 	if dash_timer <= 0.0:
 		_enter_recover()
+
+## Erases any tilemap block the dash ran into last frame. Returns true when the
+## path was cleared, so the dash does not treat its own freshly broken block as
+## a wall.
+func _dash_break_tiles() -> bool:
+	if _dash_breaks >= DASH_MAX_BREAKS:
+		return false
+	var world := get_parent()
+	var broke := false
+	for i in get_slide_collision_count():
+		if _dash_breaks >= DASH_MAX_BREAKS:
+			break
+		var collision := get_slide_collision(i)
+		var collider := collision.get_collider()
+		if not (collider is TileMap):
+			continue
+		var tilemap := collider as TileMap
+		# Step just inside the contact point so the probe lands in the block
+		# rather than the empty cell the dash is about to travel into.
+		var probe := collision.get_position() + collision.get_normal() * -8.0
+		var tile_pos := tilemap.local_to_map(tilemap.to_local(probe))
+		if tilemap.get_cell_source_id(0, tile_pos) == -1:
+			continue
+		TileBreakSFX.break_tile(tilemap, tile_pos, world)
+		_dash_breaks += 1
+		broke = true
+	return broke
 
 func _enter_recover() -> void:
 	state = State.RECOVER
@@ -162,9 +201,44 @@ func _find_target() -> void:
 		target_mole = null
 
 func _on_hitbox_body_entered(body: Node) -> void:
-	if body.is_in_group("mole") and not _mole_in_contact:
-		_mole_in_contact = true
-		body.take_damage(1, global_position, true)
+	if not body.is_in_group("mole") or _mole_in_contact:
+		return
+	_mole_in_contact = true
+	if state == State.DASH:
+		_sting(body)
+	else:
+		body.take_damage(CONTACT_DAMAGE, global_position, true)
+
+## The dash is the sting: contact damage plus a venom slow, with a green puff so
+## the poison reads on screen the way the Cave Snake globs do.
+func _sting(body: Node) -> void:
+	body.take_damage(STING_DAMAGE, global_position, true)
+	if body.has_method("apply_slow"):
+		body.apply_slow(STING_SLOW_DURATION)
+	_spawn_venom_puff(global_position.lerp(body.global_position, 0.5))
+	SFX.play("hurt", global_position, -6.0, 0.1, 0.9)
+
+func _spawn_venom_puff(world_pos: Vector2) -> void:
+	var puff := CPUParticles2D.new()
+	puff.emitting = true
+	puff.one_shot = true
+	puff.amount = 10
+	puff.lifetime = 0.4
+	puff.explosiveness = 1.0
+	puff.direction = Vector2.ZERO
+	puff.spread = 180.0
+	puff.initial_velocity_min = 40.0
+	puff.initial_velocity_max = 120.0
+	puff.gravity = Vector2(0, 220)
+	puff.scale_amount_min = 4.0
+	puff.scale_amount_max = 8.0
+	var grad := Gradient.new()
+	grad.set_color(0, Color(0.6, 1.0, 0.3, 0.8))
+	grad.set_color(1, Color(0.3, 0.8, 0.15, 0.0))
+	puff.color_ramp = grad
+	get_parent().add_child(puff)
+	puff.global_position = world_pos
+	get_tree().create_timer(puff.lifetime + 0.3).timeout.connect(puff.queue_free)
 
 func _on_hitbox_body_exited(body: Node) -> void:
 	if body.is_in_group("mole"):
