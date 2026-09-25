@@ -1120,11 +1120,13 @@ func hit_freeze(duration: float) -> void:
 	Engine.time_scale = GAME_SPEED
 
 func screen_shake(intensity: float, duration: float) -> void:
-	var camera := _camera
+	var camera := _shake_camera()
 	if not camera:
 		return
 	var magnitude := intensity * maxf(0.75, intensity / 10.0)
-	var tween := create_tween()
+	# The tween rides the shaken camera rather than the mole, so shakes keep
+	# running while the mole itself is frozen by a cutscene.
+	var tween := camera.create_tween()
 	var steps := 10
 	var step_time := duration / steps
 	for i in steps:
@@ -1132,6 +1134,15 @@ func screen_shake(intensity: float, duration: float) -> void:
 		magnitude *= 0.9
 		tween.tween_property(camera, "offset", offset, step_time).set_trans(Tween.TRANS_SINE)
 	tween.tween_property(camera, "offset", Vector2.ZERO, step_time).set_trans(Tween.TRANS_SINE)
+
+## The camera the player is actually looking through. Scripted sequences swap in
+## their own camera (the arena overview in "The Arena"), and shaking the mole's
+## camera would be invisible while that one is current.
+func _shake_camera() -> Camera2D:
+	var current := get_viewport().get_camera_2d()
+	if current and current != _camera and is_instance_valid(current):
+		return current
+	return _camera
 
 func _dash_ability_strike() -> void:
 	if not Shop.has_dash_ability():

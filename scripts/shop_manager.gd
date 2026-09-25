@@ -4,6 +4,8 @@ signal coins_changed(amount: int)
 signal loadout_changed
 
 const SAVE_PATH := "user://holy_moley_shop.cfg"
+## Bumped whenever an old save needs repairing; see _migrate_save().
+const SAVE_VERSION := 1
 const FONT_PATH := "res://Baby Doll.otf"
 const HUD_SHOW_TIME := 1.8
 
@@ -29,7 +31,6 @@ func _ready() -> void:
 	_build_catalog()
 	_build_item_catalog()
 	_load_data()
-	_grant_all_weapons_for_testing() # TODO: remove before release
 	_setup_coin_hud()
 	_loadout_refresh()
 
@@ -43,14 +44,6 @@ func _process(_delta: float) -> void:
 		var in_menu := scene != null and str(scene.scene_file_path).ends_with("intro.tscn")
 		if in_menu:
 			_coin_hud.visible = false
-
-func _grant_all_weapons_for_testing() -> void:
-	for w in catalog:
-		_owned_append(w.id)
-		if w.weapon_type == WeaponData.Type.MELEE:
-			equipped_melee_id = w.id
-		elif w.weapon_type == WeaponData.Type.RANGED and equipped_ranged_id == "":
-			equipped_ranged_id = w.id
 
 func _build_catalog() -> void:
 	catalog = [
@@ -302,6 +295,7 @@ func _loadout_refresh() -> void:
 
 func _save_data() -> void:
 	var cfg := ConfigFile.new()
+	cfg.set_value("shop", "version", SAVE_VERSION)
 	cfg.set_value("shop", "coins", coins)
 	cfg.set_value("shop", "equipped_melee", equipped_melee_id)
 	cfg.set_value("shop", "equipped_ranged", equipped_ranged_id)
@@ -319,7 +313,24 @@ func _load_data() -> void:
 	if owned_str != "":
 		for id in owned_str.split(","):
 			_owned_append(id)
+	var version := int(cfg.get_value("shop", "version", 0))
+	if version < SAVE_VERSION:
+		_migrate_save(version)
 	coins_changed.emit(coins)
+
+## Repairs saves written by older builds, then stamps them with SAVE_VERSION so
+## each fix runs once.
+##
+## Version 1 drops the golden shovel. It used to be handed to every player by a
+## debug grant, which was then written into the save the first time a coin was
+## picked up - so the mole started every run already holding it. It is earned
+## from the snail now, and must not be sitting in `owned` before that.
+func _migrate_save(from_version: int) -> void:
+	if from_version < 1:
+		owned.erase("gold_shovel")
+		if equipped_melee_id == "gold_shovel":
+			equipped_melee_id = "shovel"
+	_save_data()
 
 # --- HUD ------------------------------------------------------------------
 

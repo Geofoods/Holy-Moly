@@ -5,6 +5,11 @@ signal cleared
 const ANTS_SCENE := "res://scenes/antenemy.tscn"
 const FONT_PATH := "res://Baby Doll.otf"
 const TileBreakSFX := preload("res://scripts/tile_break_sfx.gd")
+const EnemySpawn := preload("res://scripts/enemy_spawn.gd")
+
+## Delay between the members of one wave bursting out, so a wave surges in
+## enemy by enemy instead of popping as a single block.
+const SPAWN_STAGGER := 0.12
 
 const WAVE_ENEMIES: Array[Dictionary] = [
 	{"scene": "res://scenes/goblinenemy.tscn", "name": "GOBLINS"},
@@ -20,6 +25,10 @@ var _wave_name := ""
 var _active := false
 var _spawn_points: Array[Vector2] = []
 var _banner: Label = null
+## The first wave is placed in the arena scene rather than spawned, so these
+## nodes are the ones that burst out when the fight is triggered.
+var _opening_wave: Array[Node] = []
+var _arena_started := false
 
 func _ready() -> void:
 	var root := get_parent()
@@ -27,10 +36,14 @@ func _ready() -> void:
 		var node := child as Node2D
 		if node != null and child.scene_file_path == ANTS_SCENE:
 			_spawn_points.append(node.global_position)
+			_opening_wave.append(node)
 			_track(child)
 	_active = _spawn_points.size() > 0
 	_build_banner()
 	_show_wave_name("ANTS")
+	var start := root.get_node_or_null("arenastart")
+	if start is Area2D:
+		(start as Area2D).body_entered.connect(_on_arena_start_entered)
 
 func _track(node: Node) -> void:
 	_alive += 1
@@ -59,13 +72,35 @@ func _spawn_next_wave() -> void:
 	_wave_total = 0
 	var entry: Dictionary = WAVE_ENEMIES[_wave]
 	var scene: PackedScene = load(entry["scene"] as String)
+	var index := 0
 	for point in _spawn_points:
 		var enemy := scene.instantiate()
 		_track(enemy)
 		if enemy is Node2D:
 			(enemy as Node2D).global_position = point
+		# The burst is fired from the enemy's own ready signal: the node is added
+		# deferred, so it does not exist in the tree yet and its _ready (which
+		# picks sprites and initial animation) must run before we animate it.
+		enemy.ready.connect(_on_wave_enemy_ready.bind(enemy, index * SPAWN_STAGGER))
+		index += 1
 		get_parent().add_child.call_deferred(enemy)
 	_show_wave_name(entry["name"] as String)
+
+func _on_wave_enemy_ready(enemy: Node, delay: float) -> void:
+	if enemy is Node2D and is_instance_valid(enemy):
+		EnemySpawn.play(enemy as Node2D, delay)
+
+## The opening wave is already in the scene, so it cannot animate as it spawns.
+## Instead it bursts out of the ground the moment the mole triggers the arena,
+## which is also when the overview camera takes over the screen.
+func _on_arena_start_entered(body: Node) -> void:
+	if _arena_started or not body.is_in_group("mole"):
+		return
+	_arena_started = true
+	for i in _opening_wave.size():
+		var enemy := _opening_wave[i] as Node2D
+		if enemy != null and is_instance_valid(enemy):
+			EnemySpawn.play(enemy, i * SPAWN_STAGGER)
 
 func _break_arena_blocks() -> void:
 	if not is_inside_tree() or not is_instance_valid(get_parent()):

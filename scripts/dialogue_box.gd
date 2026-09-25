@@ -16,6 +16,7 @@ const SLIDE_DISTANCE := 240.0
 
 var _full_text := ""
 var _type_tween: Tween
+var _closing := false
 
 # Optional idle-blink for the portrait: parks on a rest frame and plays the
 # frame list through at random intervals, mirroring the NPC's own blink.
@@ -30,20 +31,31 @@ var _portrait_frame_time := 0.0
 var _portrait_playing := false
 
 func _ready() -> void:
-	next_button.pressed.connect(func():
-		SFX.play_ui("ui_click")
-		next_pressed.emit()
-	)
-	prev_button.pressed.connect(func():
-		SFX.play_ui("ui_click")
-		prev_pressed.emit()
-	)
+	next_button.pressed.connect(_on_next_pressed)
+	prev_button.pressed.connect(_on_prev_pressed)
 
 	# The panel sizes and positions itself from the scene (bottom-anchored, grows
 	# upward with content), so the buttons are always visible. We only animate the
 	# whole layer sliding in and fading.
 	offset.y = SLIDE_DISTANCE
 	panel.modulate.a = 0.0
+
+## Interact doubles as the continue/close key, so the box can be dismissed
+## without reaching for the mouse.
+func _unhandled_input(event: InputEvent) -> void:
+	if _closing:
+		return
+	if event.is_action_pressed("interact"):
+		get_viewport().set_input_as_handled()
+		_on_next_pressed()
+
+func _on_next_pressed() -> void:
+	SFX.play_ui("ui_click")
+	next_pressed.emit()
+
+func _on_prev_pressed() -> void:
+	SFX.play_ui("ui_click")
+	prev_pressed.emit()
 
 func show_text(text: String, step: int = 0, total: int = 0, show_next: bool = false, show_prev: bool = false) -> void:
 	_full_text = text
@@ -133,6 +145,7 @@ func skip_typing() -> void:
 	main_label.text = _full_text
 
 func hide_box() -> void:
+	_closing = true
 	var tween := create_tween()
 	tween.set_parallel(true)
 	tween.tween_property(self, "offset:y", SLIDE_DISTANCE, 0.3).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)

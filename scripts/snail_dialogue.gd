@@ -12,6 +12,13 @@ extends RigidBody2D
 ## The artwork faces left at flip_h = false, so flipping points it right.
 @export var sprite_faces_left := true
 
+const ITEM_GET := preload("res://scripts/item_get_animation.gd")
+## Melee weapons have no artwork of their own, so - like the weapon the mole
+## actually carries - the fanfare tints the shovel icon with the weapon colour.
+const MELEE_ICON := preload("res://sprites/shovel.png")
+## Roughly the dialogue box's slide-away, so the fanfare lands once it is gone.
+const FANFARE_DELAY := 0.35
+
 var _mole_overlapping := false
 var _dialogue_open := false
 var _condition_met := false
@@ -19,6 +26,13 @@ var _label: Label = null
 var _dialogue_box: CanvasLayer = null
 var _sprite: AnimatedSprite2D = null
 var _player: Node2D = null
+
+## The reward earned by the last dialogue, held back until the box has slid
+## away so the fanfare is not talking over the text that announced it.
+var _reward_message := ""
+var _reward_icon: Texture2D = null
+var _reward_tint := Color.WHITE
+var _banner_text := ""
 
 signal dialogue_closed
 
@@ -127,13 +141,17 @@ func _on_dialogue_done() -> void:
 		_dialogue_box = null
 		_dialogue_open = false
 		dialogue_closed.emit()
+		_show_reward()
 		return
 	var box := _dialogue_box
 	_dialogue_box = null
 	box.hide_box()
-	get_tree().create_timer(0.35).timeout.connect(func():
+	# process_always = true, so the reward still plays out if the game is paused
+	# underneath it (the arena starts panning back the moment this emits).
+	get_tree().create_timer(FANFARE_DELAY).timeout.connect(func():
 		if is_instance_valid(box):
 			box.queue_free()
+		_show_reward()
 	)
 	_dialogue_open = false
 	dialogue_closed.emit()
@@ -149,7 +167,29 @@ func _grant_unlock() -> void:
 	shop.give(unlock_ability)
 	if shop.has_method("equip"):
 		shop.equip(unlock_ability)
-	_show_unlock_banner(unlock_text if unlock_text != "" else unlock_ability.to_upper())
+	_prepare_reward()
+
+## Decides how the reward is presented: a tool with artwork of its own gets the
+## full "get" fanfare, anything else (story abilities) keeps the plain banner.
+func _prepare_reward() -> void:
+	var shop := get_tree().get_root().get_node_or_null("/root/Shop")
+	var weapon: WeaponData = null
+	if shop != null and shop.has_method("get_weapon"):
+		weapon = shop.get_weapon(unlock_ability)
+	if weapon != null and weapon.weapon_type == WeaponData.Type.MELEE:
+		_reward_message = "%s Collected!" % weapon.display_name
+		_reward_icon = MELEE_ICON
+		_reward_tint = weapon.icon_color
+		return
+	_banner_text = unlock_text if unlock_text != "" else unlock_ability.to_upper()
+
+func _show_reward() -> void:
+	if _reward_message != "":
+		var fanfare: CanvasLayer = ITEM_GET.new()
+		fanfare.configure(_reward_message, _reward_icon, _reward_tint)
+		get_tree().root.add_child(fanfare)
+	elif _banner_text != "":
+		_show_unlock_banner(_banner_text)
 
 func _show_unlock_banner(label_text: String) -> void:
 	var layer := CanvasLayer.new()

@@ -4,6 +4,7 @@ const MOLE_SIZE := Vector2(180.0, 240.0)
 const GROUND_RATIO := 0.72
 const FALL_START_RATIO := 0.22
 const FALL_X_RATIO := 0.78
+const DEFAULT_RETRY_PATH := "res://scenes/level1.tscn"
 
 var _game_over_music: AudioStreamPlayer = null
 
@@ -117,7 +118,16 @@ func _on_play_again_pressed():
 	_fade_out_game_over_music()
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 	get_tree().root.add_child(transition)
-	transition.change_to("res://scenes/level1.tscn")
+	transition.change_to(_retry_path())
+
+## Replays the level the mole died in. `Inventory.current_level_path` is written
+## on every level transition and again at the moment of death (mole.gd), so it
+## still points at the level we came from by the time this screen is up.
+func _retry_path() -> String:
+	var path := Inventory.current_level_path
+	if path.is_empty() or not ResourceLoader.exists(path):
+		return DEFAULT_RETRY_PATH
+	return path
 
 func _on_cancel_pressed():
 	SFX.play_ui("ui_click")
