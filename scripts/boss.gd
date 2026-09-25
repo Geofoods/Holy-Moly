@@ -428,6 +428,8 @@ func _start_intro_dialogue() -> void:
 	_dialogue_box = preload("res://scenes/dialogue_box.tscn").instantiate()
 	_dialogue_box.process_mode = PROCESS_MODE_ALWAYS
 	get_tree().root.add_child(_dialogue_box)
+	_dialogue_box.set_npc_name("Corrupted Heart")
+	_dialogue_box.set_portrait(anim.sprite_frames.get_frame_texture("default", 0), Color.WHITE)
 	_dialogue_box.next_pressed.connect(_on_intro_dialogue_next)
 	_show_intro_dialogue_line()
 
