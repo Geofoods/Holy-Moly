@@ -1,7 +1,112 @@
 [gd_scene format=3 uid="uid://c0pwtkklnyw5s"]
 
 [ext_resource type="Script" uid="uid://uj54gn360ua5" path="res://scripts/hornet_enemy.gd" id="1_script"]
-[ext_resource type="Texture2D" uid="uid://kxuxl3b4klyr" path="res://icon.svg" id="2_icon"]
+[ext_resource type="Texture2D" uid="uid://v388chx14xxq" path="res://sprites/hornetidle.png" id="2_idle"]
+[ext_resource type="Texture2D" uid="uid://dcicn2arr2xet" path="res://sprites/hornetspin.png" id="3_spin"]
+[ext_resource type="Texture2D" uid="uid://cv6as4200veol" path="res://sprites/wasphurt.png" id="4_hurt"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle0"]
+atlas = ExtResource("2_idle")
+region = Rect2(0, 0, 600, 600)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle1"]
+atlas = ExtResource("2_idle")
+region = Rect2(600, 0, 600, 600)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle2"]
+atlas = ExtResource("2_idle")
+region = Rect2(1200, 0, 600, 600)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle3"]
+atlas = ExtResource("2_idle")
+region = Rect2(1800, 0, 600, 600)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_spinstart0"]
+atlas = ExtResource("3_spin")
+region = Rect2(0, 0, 600, 600)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_spinstart1"]
+atlas = ExtResource("3_spin")
+region = Rect2(600, 0, 600, 600)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_spin0"]
+atlas = ExtResource("3_spin")
+region = Rect2(1200, 0, 600, 600)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_spin1"]
+atlas = ExtResource("3_spin")
+region = Rect2(1800, 0, 600, 600)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_spin2"]
+atlas = ExtResource("3_spin")
+region = Rect2(2400, 0, 600, 600)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_spin3"]
+atlas = ExtResource("3_spin")
+region = Rect2(3000, 0, 600, 600)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_spin4"]
+atlas = ExtResource("3_spin")
+region = Rect2(3600, 0, 600, 600)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_hornet"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle3")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_spinstart0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_spinstart1")
+}],
+"loop": true,
+"name": &"spinstart",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_spin0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_spin1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_spin2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_spin3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_spin4")
+}],
+"loop": true,
+"name": &"spinning",
+"speed": 20.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("4_hurt")
+}],
+"loop": false,
+"name": &"hurt",
+"speed": 5.0
+}]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_body"]
 radius = 34.0
@@ -16,10 +121,10 @@ radius = 44.0
 collision_layer = 4
 script = ExtResource("1_script")
 
-[node name="Visual" type="Sprite2D" parent="." unique_id=1037263960]
-modulate = Color(1, 0.75, 0.1, 1)
-scale = Vector2(0.45, 0.45)
-texture = ExtResource("2_icon")
+[node name="Visual" type="AnimatedSprite2D" parent="." unique_id=1037263960]
+scale = Vector2(0.32, 0.32)
+sprite_frames = SubResource("SpriteFrames_hornet")
+animation = &"idle"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1304491454]
 shape = SubResource("CircleShape2D_body")

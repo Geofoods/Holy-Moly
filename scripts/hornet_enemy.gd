@@ -18,6 +18,7 @@ const DETECT_RANGE := 520.0
 const MAX_HEALTH := 20.0
 const GRAVITY := 1400.0
 const BUZZ_SFX_INTERVAL := 0.45
+const HURT_DURATION := 0.5
 
 const EnemyDamage := preload("res://scripts/enemy.gd")
 
@@ -32,16 +33,18 @@ var detect_range := DETECT_RANGE
 var _buzz_timer := 0.0
 var _mole_in_contact := false
 var _health_bar: Node2D = null
+var _hurt_timer := 0.0
 
 @onready var hurtbox: Area2D = $Hurtbox
 @onready var hitbox: Area2D = $Hitbox
-@onready var visual: Sprite2D = $Visual
+@onready var visual: AnimatedSprite2D = $Visual
 
 func _ready() -> void:
 	hurtbox.area_entered.connect(_on_hurtbox_area_entered)
 	hitbox.body_entered.connect(_on_hitbox_body_entered)
 	hitbox.body_exited.connect(_on_hitbox_body_exited)
 	hurtbox.add_to_group("enemy_hurtbox")
+	visual.play("idle")
 	_setup_health_bar()
 
 func _physics_process(delta: float) -> void:
@@ -87,12 +90,14 @@ func _enter_aim() -> void:
 	state = State.AIM
 	dash_timer = AIM_DURATION
 	velocity = Vector2.ZERO
+	visual.play("spinstart")
 
 func _do_aim(delta: float) -> void:
-	# Shake while locking on, keep tracking the target until the last moment.
+	# Shake while locking on, orienting its stinger toward the target until the last moment.
 	if target_mole != null:
 		dash_direction = (target_mole.global_position - global_position).normalized()
 		velocity = dash_direction * 40.0
+	visual.rotation = dash_direction.angle() - PI / 2.0
 	dash_timer -= delta
 	visual.offset.x = sin(dash_timer * 80.0) * 4.0
 	if dash_timer <= 0.0:
@@ -103,6 +108,8 @@ func _enter_dash() -> void:
 	state = State.DASH
 	dash_timer = DASH_DURATION
 	velocity = dash_direction * DASH_SPEED
+	visual.rotation = dash_direction.angle() - PI / 2.0
+	visual.play("spinning")
 	SFX.play("swing", global_position, -8.0, 0.4)
 
 func _do_dash(delta: float) -> void:
@@ -117,10 +124,17 @@ func _enter_recover() -> void:
 	dash_timer = RECOVER_DURATION
 	velocity *= 0.2
 	visual.offset.x = 0.0
+	visual.rotation = 0.0
+	_hurt_timer = HURT_DURATION
+	visual.play("hurt")
 
 func _do_recover(delta: float) -> void:
-	# Tired drift downward until the cooldown lets it hover/dash again.
+	# Dazed for a beat, then tired drift upward until the cooldown lets it hover/dash again.
 	dash_timer -= delta
+	if _hurt_timer > 0.0:
+		_hurt_timer -= delta
+		if _hurt_timer <= 0.0:
+			visual.play("idle")
 	velocity.x = move_toward(velocity.x, 0.0, HOVER_SPEED * delta)
 	if not is_on_floor():
 		velocity.y = move_toward(velocity.y, 120.0, GRAVITY * 0.3 * delta)
@@ -133,10 +147,11 @@ func _do_recover(delta: float) -> void:
 			velocity.y = -RECOVER_LIFT_SPEED
 
 func _update_visual_direction() -> void:
-	if state == State.AIM and target_mole != null:
-		visual.flip_h = dash_direction.x < 0.0
-	elif absf(velocity.x) > 1.0:
-		visual.flip_h = velocity.x < 0.0
+	if state != State.HOVER:
+		return
+	if absf(velocity.x) > 1.0:
+		# Idle art faces left by default, so flip it to face right.
+		visual.flip_h = velocity.x > 0.0
 
 func _find_target() -> void:
 	if target_mole == null or not is_instance_valid(target_mole):
