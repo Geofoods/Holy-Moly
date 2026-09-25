@@ -1,4 +1,4 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://exlebeeens4r"]
 
 [ext_resource type="PackedScene" uid="uid://wjt35doljo8p" path="res://scenes/parallax_background2.tscn" id="1_pb"]
 [ext_resource type="PackedScene" uid="uid://p1of6ummc17j" path="res://scenes/mole.tscn" id="2_mole"]
@@ -12,6 +12,22 @@
 [ext_resource type="PackedScene" uid="uid://cdxu1kg5or16d" path="res://candle.tscn" id="10_candle"]
 [ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="11_firefly"]
 [ext_resource type="PackedScene" path="res://scenes/level_intro_banner.tscn" id="13_banner"]
+[ext_resource type="PackedScene" uid="uid://c0pwtkklnyw5s" path="res://scenes/hornet_enemy.tscn" id="13_uirdw"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ground"]
+size = Vector2(2400, 90)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall"]
+size = Vector2(40, 1200)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ceiling"]
+size = Vector2(2400, 40)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_platform"]
+size = Vector2(330, 44)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_lock"]
+size = Vector2(60, 900)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.8, 0.68, 0.46, 1)
@@ -37,21 +53,6 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_ground"]
-size = Vector2(2400, 90)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall"]
-size = Vector2(40, 1200)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_ceiling"]
-size = Vector2(2400, 40)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_platform"]
-size = Vector2(330, 44)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_lock"]
-size = Vector2(60, 900)
-
 [node name="LevelHive" type="Node2D" unique_id=1979316001]
 
 [node name="ParallaxBackground" parent="." unique_id=1010942745 instance=ExtResource("1_pb")]
@@ -63,7 +64,6 @@ script = ExtResource("11_firefly")
 
 [node name="Ground" type="StaticBody2D" parent="." unique_id=1262179150]
 position = Vector2(1250, 1345)
-collision_layer = 1
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Ground" unique_id=164938329]
@@ -71,7 +71,6 @@ shape = SubResource("RectangleShape2D_ground")
 
 [node name="LeftWall" type="StaticBody2D" parent="." unique_id=1262179151]
 position = Vector2(170, 700)
-collision_layer = 1
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="LeftWall" unique_id=164938330]
@@ -79,7 +78,6 @@ shape = SubResource("RectangleShape2D_wall")
 
 [node name="RightWall" type="StaticBody2D" parent="." unique_id=1262179152]
 position = Vector2(2330, 700)
-collision_layer = 1
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="RightWall" unique_id=164938331]
@@ -87,7 +85,6 @@ shape = SubResource("RectangleShape2D_wall")
 
 [node name="Ceiling" type="StaticBody2D" parent="." unique_id=1262179153]
 position = Vector2(1250, 100)
-collision_layer = 1
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Ceiling" unique_id=164938332]
@@ -95,7 +92,6 @@ shape = SubResource("RectangleShape2D_ceiling")
 
 [node name="Platform1" type="StaticBody2D" parent="." unique_id=1262179154]
 position = Vector2(700, 1200)
-collision_layer = 1
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platform1" unique_id=164938333]
@@ -103,7 +99,6 @@ shape = SubResource("RectangleShape2D_platform")
 
 [node name="Platform2" type="StaticBody2D" parent="." unique_id=1262179155]
 position = Vector2(1250, 1100)
-collision_layer = 1
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platform2" unique_id=164938334]
@@ -111,7 +106,6 @@ shape = SubResource("RectangleShape2D_platform")
 
 [node name="Platform3" type="StaticBody2D" parent="." unique_id=1262179156]
 position = Vector2(1850, 1200)
-collision_layer = 1
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platform3" unique_id=164938335]
@@ -119,7 +113,6 @@ shape = SubResource("RectangleShape2D_platform")
 
 [node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=1262179157]
 position = Vector2(380, 850)
-collision_layer = 1
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D" unique_id=164938336]
@@ -200,7 +193,10 @@ text = "?"
 position = Vector2(700, 1280)
 
 [node name="candle2" parent="." unique_id=1311477703 instance=ExtResource("10_candle")]
-position = Vector2(2100, 1280)
+position = Vector2(2099, 1129)
+
+[node name="HornetEnemy" parent="." unique_id=937617817 instance=ExtResource("13_uirdw")]
+position = Vector2(729, 866)
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]

@@ -21,14 +21,6 @@ region = Rect2(1200, 0, 600, 600)
 atlas = ExtResource("2_idle")
 region = Rect2(1800, 0, 600, 600)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_spinstart0"]
-atlas = ExtResource("3_spin")
-region = Rect2(0, 0, 600, 600)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_spinstart1"]
-atlas = ExtResource("3_spin")
-region = Rect2(600, 0, 600, 600)
-
 [sub_resource type="AtlasTexture" id="AtlasTexture_spin0"]
 atlas = ExtResource("3_spin")
 region = Rect2(1200, 0, 600, 600)
@@ -49,8 +41,24 @@ region = Rect2(3000, 0, 600, 600)
 atlas = ExtResource("3_spin")
 region = Rect2(3600, 0, 600, 600)
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_spinstart0"]
+atlas = ExtResource("3_spin")
+region = Rect2(0, 0, 600, 600)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_spinstart1"]
+atlas = ExtResource("3_spin")
+region = Rect2(600, 0, 600, 600)
+
 [sub_resource type="SpriteFrames" id="SpriteFrames_hornet"]
 animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("4_hurt")
+}],
+"loop": false,
+"name": &"hurt",
+"speed": 5.0
+}, {
 "frames": [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_idle0")
@@ -67,17 +75,6 @@ animations = [{
 "loop": true,
 "name": &"idle",
 "speed": 6.0
-}, {
-"frames": [{
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_spinstart0")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_spinstart1")
-}],
-"loop": true,
-"name": &"spinstart",
-"speed": 10.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -101,11 +98,14 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": ExtResource("4_hurt")
+"texture": SubResource("AtlasTexture_spinstart0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_spinstart1")
 }],
-"loop": false,
-"name": &"hurt",
-"speed": 5.0
+"loop": true,
+"name": &"spinstart",
+"speed": 10.0
 }]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_body"]
@@ -115,9 +115,10 @@ radius = 34.0
 radius = 38.0
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_hitbox"]
-radius = 44.0
+radius = 40.70558
 
 [node name="HornetEnemy" type="CharacterBody2D" unique_id=937617817]
+scale = Vector2(1.2, 1.2)
 collision_layer = 4
 script = ExtResource("1_script")
 
