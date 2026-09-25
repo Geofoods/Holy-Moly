@@ -8,14 +8,16 @@ signal died
 enum State { HOVER, AIM, DASH, RECOVER }
 
 const HOVER_SPEED := 180.0
-const DASH_SPEED := 900.0
-const DASH_DURATION := 0.45
+const DASH_SPEED := 720.0
+const DASH_DURATION := 3.0
 const AIM_DURATION := 0.6
 const RECOVER_DURATION := 0.7
 const RECOVER_LIFT_SPEED := 320.0
 const DASH_COOLDOWN := 2.5
 const HOVER_DISTANCE := 220.0
-const DETECT_RANGE := 520.0
+const DETECT_RANGE_X := 480.0
+const DETECT_RANGE_Y := 900.0
+const HOVER_HEIGHT_OFFSET := 150.0
 const MAX_HEALTH := 20.0
 const GRAVITY := 1400.0
 const BUZZ_SFX_INTERVAL := 0.45
@@ -37,7 +39,17 @@ var dash_timer := 0.0
 var cooldown_timer := 0.0
 var health := MAX_HEALTH
 var target_mole: Node2D = null
-var detect_range := DETECT_RANGE
+var detect_range_x := DETECT_RANGE_X
+var detect_range_y := DETECT_RANGE_Y
+## Backwards-compatible single-value override (e.g. queen_bee.gd); scales both
+## axes of the detection rectangle, keeping its tall aspect ratio.
+var detect_range: float:
+	set(value):
+		var scale_factor := value / DETECT_RANGE_Y
+		detect_range_y = value
+		detect_range_x = DETECT_RANGE_X * scale_factor
+	get:
+		return detect_range_y
 var _buzz_timer := 0.0
 var _mole_in_contact := false
 var _health_bar: Node2D = null
@@ -77,7 +89,8 @@ func _physics_process(delta: float) -> void:
 func _do_hover(delta: float) -> void:
 	# Float toward the player, keeping some distance; drift on patrol when no target.
 	if target_mole != null:
-		var to_target := target_mole.global_position - global_position
+		var hover_target := target_mole.global_position - Vector2(0, HOVER_HEIGHT_OFFSET)
+		var to_target := hover_target - global_position
 		var desired := to_target.normalized() * HOVER_SPEED
 		if absf(to_target.x) < HOVER_DISTANCE:
 			desired.x = 0.0
@@ -92,8 +105,12 @@ func _do_hover(delta: float) -> void:
 	if is_on_wall():
 		direction *= -1.0
 
-	if target_mole != null and cooldown_timer <= 0.0 and global_position.distance_to(target_mole.global_position) < detect_range:
+	if target_mole != null and cooldown_timer <= 0.0 and _within_detect_rect(target_mole.global_position):
 		_enter_aim()
+
+func _within_detect_rect(pos: Vector2) -> bool:
+	var offset := pos - global_position
+	return absf(offset.x) < detect_range_x and absf(offset.y) < detect_range_y
 
 func _enter_aim() -> void:
 	state = State.AIM
@@ -124,21 +141,21 @@ func _enter_dash() -> void:
 
 func _do_dash(delta: float) -> void:
 	dash_timer -= delta
+	var broke_through := _dash_break_tiles()
 	# Smash the terrain it slams into and keep charging, so a dash tunnels
 	# through cave walls instead of being stopped by the first block.
-	if not _dash_break_tiles() and (is_on_wall() or is_on_floor() or is_on_ceiling()):
+	if not broke_through and (is_on_wall() or is_on_floor() or is_on_ceiling()):
 		dash_timer = 0.0
 	if dash_timer <= 0.0:
 		_enter_recover()
 
-## Erases any tilemap block the dash ran into last frame. Returns true when the
-## path was cleared, so the dash does not treat its own freshly broken block as
-## a wall.
+## Erases dash collision blockers and nearby decoration. Returns true when a
+## solid tile was cleared, so dash impact logic does not stop on that frame.
 func _dash_break_tiles() -> bool:
 	if _dash_breaks >= DASH_MAX_BREAKS:
 		return false
 	var world := get_parent()
-	var broke := false
+	var broke_solid := false
 	for i in get_slide_collision_count():
 		if _dash_breaks >= DASH_MAX_BREAKS:
 			break
@@ -151,12 +168,17 @@ func _dash_break_tiles() -> bool:
 		# rather than the empty cell the dash is about to travel into.
 		var probe := collision.get_position() + collision.get_normal() * -8.0
 		var tile_pos := tilemap.local_to_map(tilemap.to_local(probe))
-		if tilemap.get_cell_source_id(0, tile_pos) == -1:
+		var source_id := tilemap.get_cell_source_id(0, tile_pos)
+		if source_id == -1:
+			TileBreakSFX.break_decoration_tile(tilemap, tile_pos, world)
+			continue
+		var tile_data := tilemap.get_cell_tile_data(0, tile_pos)
+		if tile_data and tile_data.get_custom_data("bedrock"):
 			continue
 		TileBreakSFX.break_tile(tilemap, tile_pos, world)
 		_dash_breaks += 1
-		broke = true
-	return broke
+		broke_solid = true
+	return broke_solid
 
 func _enter_recover() -> void:
 	state = State.RECOVER
@@ -175,15 +197,11 @@ func _do_recover(delta: float) -> void:
 		if _hurt_timer <= 0.0:
 			visual.play("idle")
 	velocity.x = move_toward(velocity.x, 0.0, HOVER_SPEED * delta)
-	if not is_on_floor():
-		velocity.y = move_toward(velocity.y, 120.0, GRAVITY * 0.3 * delta)
-	else:
-		velocity.y = 0.0
+	# Always climb back to altitude after an attack, even if it's still touching the floor.
+	velocity.y = move_toward(velocity.y, -RECOVER_LIFT_SPEED, GRAVITY * 0.6 * delta)
 	if dash_timer <= 0.0:
 		state = State.HOVER
 		cooldown_timer = DASH_COOLDOWN
-		if is_on_floor():
-			velocity.y = -RECOVER_LIFT_SPEED
 
 func _update_visual_direction() -> void:
 	if state != State.HOVER:
@@ -197,7 +215,7 @@ func _find_target() -> void:
 		target_mole = get_tree().get_first_node_in_group("mole")
 		if target_mole:
 			add_collision_exception_with(target_mole)
-	elif global_position.distance_squared_to(target_mole.global_position) > detect_range * detect_range:
+	elif not _within_detect_rect(target_mole.global_position):
 		target_mole = null
 
 func _on_hitbox_body_entered(body: Node) -> void:
@@ -206,6 +224,8 @@ func _on_hitbox_body_entered(body: Node) -> void:
 	_mole_in_contact = true
 	if state == State.DASH:
 		_sting(body)
+		# Stop dashing the moment it connects with the player.
+		_enter_recover()
 	else:
 		body.take_damage(CONTACT_DAMAGE, global_position, true)
 
