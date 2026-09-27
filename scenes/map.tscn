@@ -14,6 +14,7 @@
 [ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="17_081xv"]
 [ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="18_12q1p"]
 [ext_resource type="Script" path="res://scripts/shop_gate.gd" id="19_shopgate"]
+[ext_resource type="PackedScene" path="res://scenes/shopkeeper_npc.tscn" id="20_shopkeeper"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.8, 0.68, 0.46, 1)
@@ -279,6 +280,11 @@ offset_left = 5366.0
 offset_top = -1698.0
 offset_right = 5427.0
 offset_bottom = -1598.0
+
+[node name="ShopkeeperMole" parent="." instance=ExtResource("20_shopkeeper")]
+modulate = Color(0.98, 0.83, 0.45, 1)
+position = Vector2(470, -160)
+scale = Vector2(0.25, 0.25)
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]

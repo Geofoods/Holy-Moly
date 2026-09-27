@@ -238,6 +238,8 @@ func take_damage(amount: float, hit_dir: Vector2 = Vector2.ZERO) -> void:
 	var tween := create_tween()
 	tween.tween_property(self, "modulate", Color(2, 1, 1, 1), 0.05)
 	tween.tween_property(self, "modulate", Color.WHITE, 0.15)
+	if health > 0.0:
+		EnemyDamage.play_hit_feedback(self, visual)
 
 	if health <= 0:
 		die()

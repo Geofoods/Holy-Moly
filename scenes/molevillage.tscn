@@ -13,6 +13,7 @@
 [ext_resource type="PackedScene" uid="uid://oucemvqovkp5" path="res://scenes/npc_mole.tscn" id="14_3j6u0"]
 [ext_resource type="PackedScene" uid="uid://cdxu1kg5or16d" path="res://candle.tscn" id="14_q0jmn"]
 [ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="15_ijuyj"]
+[ext_resource type="PackedScene" path="res://scenes/shopkeeper_npc.tscn" id="16_shopkeeper"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.8, 0.68, 0.46, 1)
@@ -190,6 +191,11 @@ position = Vector2(4472, -299)
 scale = Vector2(0.25, 0.25)
 dialogue_text = "I heard you want to take on the evil corruption! I'll help teach you the ways. I'll meet you when you jump down!"
 npc_name = "Grub"
+
+[node name="ShopkeeperMole" parent="." instance=ExtResource("16_shopkeeper")]
+modulate = Color(0.98, 0.83, 0.45, 1)
+position = Vector2(1010, -90)
+scale = Vector2(0.25, 0.25)
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]

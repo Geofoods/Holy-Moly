@@ -14,6 +14,7 @@
 [ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="13_kk1nx"]
 [ext_resource type="PackedScene" uid="uid://cdxu1kg5or16d" path="res://candle.tscn" id="14_xt7jk"]
 [ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="16_s2rbe"]
+[ext_resource type="PackedScene" path="res://scenes/shopkeeper_npc.tscn" id="17_shopkeeper"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.8, 0.68, 0.46, 1)
@@ -168,6 +169,11 @@ metadata/_edit_use_anchors_ = true
 
 [node name="candle3" parent="." unique_id=632755668 instance=ExtResource("14_xt7jk")]
 position = Vector2(2920, 352)
+
+[node name="ShopkeeperMole" parent="." instance=ExtResource("17_shopkeeper")]
+modulate = Color(0.98, 0.83, 0.45, 1)
+position = Vector2(1860, -90)
+scale = Vector2(0.25, 0.25)
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]

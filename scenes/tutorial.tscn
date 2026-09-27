@@ -159,9 +159,6 @@ position = Vector2(3678, 79)
 position = Vector2(5408, -301)
 shape = SubResource("RectangleShape2D_g2equ")
 
-[node name="candle" parent="set area" unique_id=815664404 instance=ExtResource("14_wr8iv")]
-position = Vector2(5907, -167)
-
 [node name="groundpound area" type="Area2D" parent="." unique_id=172977355]
 position = Vector2(2394, -10)
 
@@ -207,6 +204,9 @@ position = Vector2(3730, -47)
 
 [node name="candle4" parent="." unique_id=2097778543 instance=ExtResource("14_wr8iv")]
 position = Vector2(5814, -59)
+
+[node name="candle7" parent="." unique_id=815664404 instance=ExtResource("14_wr8iv")]
+position = Vector2(9585, -88)
 
 [node name="candle5" parent="." unique_id=112907380 instance=ExtResource("14_wr8iv")]
 position = Vector2(6738, -51)

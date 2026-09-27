@@ -16,7 +16,8 @@ func _process(_delta: float) -> void:
 	# same way instead of getting the cave shade campaign levels use.
 	if path.ends_with("molevillage.tscn"):
 		return
-	if path.ends_with("win_screen.tscn") or path.ends_with("game_over.tscn"):
+	if path.ends_with("win_screen.tscn") or path.ends_with("game_over.tscn") \
+		or path.ends_with("credits.tscn"):
 		return
 	# The shopkeeper's room is lit by its own candles, so it never gets the
 	# cave shade the campaign levels use.

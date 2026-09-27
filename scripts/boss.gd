@@ -1,10 +1,36 @@
 extends CharacterBody2D
 
-const MAX_HEALTH := 700.0
+const MAX_HEALTH := 2500.0
+const BOSS_HEALTH_BAR_WIDTH := 592.0
+const BOSS_HEALTH_BAR_HEIGHT := 48.0
+const BOSS_HEALTH_BAR_INSET := 14.0
+const BOSS_HEALTH_FILL_INSET := 3.0
+const BOSS_HEALTH_BAR_INNER := BOSS_HEALTH_BAR_WIDTH - BOSS_HEALTH_FILL_INSET * 2.0
+const BOSS_HEALTH_PANEL_WIDTH := BOSS_HEALTH_BAR_WIDTH + BOSS_HEALTH_BAR_INSET * 2.0
+const BOSS_HEALTH_PANEL_HEIGHT := BOSS_HEALTH_BAR_HEIGHT + BOSS_HEALTH_BAR_INSET * 2.0
+const BOSS_HEALTH_NAME_HEIGHT := 46.0
+const BOSS_HEALTH_NAME_GAP := 12.0
+const BOSS_HEALTH_ROOT_WIDTH := BOSS_HEALTH_PANEL_WIDTH
+const BOSS_HEALTH_ROOT_HEIGHT := BOSS_HEALTH_NAME_HEIGHT + BOSS_HEALTH_NAME_GAP + BOSS_HEALTH_PANEL_HEIGHT
+const BOSS_HEALTH_FONT := preload("res://Baby Doll.otf")
 const PAN_DURATION := 0.75
 const DESCENT_SPEED := 20.0
 const SPIT_INTERVAL := 3.0
 const PROJECTILE_SPEED := 800.0
+## Beam period is this cooldown plus LASER_CHARGE_TIME + LASER_STRIKE_DURATION,
+## so 5.5-8.5s here means a beam roughly every 8.5-11.5s of fighting.
+const LASER_COOLDOWN_MIN := 5.5
+const LASER_COOLDOWN_MAX := 8.5
+const LASER_CHARGE_TIME := 1.6
+const LASER_STRIKE_DURATION := 1.25
+const LASER_LENGTH := 3000.0
+const LASER_GROUND_TRACE_STEP := 16.0
+const LASER_WIDTH := 156.0
+const LASER_COLLISION_MARGIN := 28.0
+const LASER_DAMAGE := 2.0
+const LASER_TILE_SAMPLE_SPACING := 38.0
+const LASER_TILE_HALF_WIDTH := LASER_WIDTH * 0.5
+const LASER_IMPACT_OVERSHOOT := 24.0
 const CHEST_SPAWN_INTERVAL := 10.0
 const BOUNCE_FORCE := 700.0
 
@@ -16,6 +42,11 @@ const COLLAPSE_RIDE_OFFSET := 40.0
 const COLLAPSE_CAM_OFFSET := -60.0
 const COLLAPSE_LAND_DELAY := 0.8
 const COLLAPSE_MOVE_SPEED := 320.0
+const HEART_FIREWORK_HOLD := 2.3
+
+## The heart's debris outlives a normal enemy's gibs by a long way, so the
+## shelter it broke into stays on screen for the whole ride down the shaft.
+const DEATH_FRAGMENT_LIFE := 10.0
 
 const EnemyDamage := preload("res://scripts/enemy.gd")
 
@@ -29,6 +60,9 @@ var health := MAX_HEALTH
 var _boss_active := false
 var _cutscene_playing := false
 var _spit_cooldown := 0.0
+var _laser_cooldown := 0.0
+var _laser_attack_active := false
+var _laser_hit_tile := Vector2i(-1, -1)
 
 var _cutscene_mole: Node = null
 var _cutscene_cam: Camera2D = null
@@ -46,6 +80,7 @@ var _mole_in_bounce_zone := false
 
 var _collapse_started := false
 var _death_finished := false
+var _cutscene_shake_tween: Tween = null
 
 var _collapse_player_control := false
 var _ride_mole: Node2D = null
@@ -68,9 +103,9 @@ var _chest_scene: PackedScene = null
 var _chest_spawn_timer: float = 10.0
 
 var _health_bar_layer: CanvasLayer = null
+var _health_bar_root: Control = null
 var _health_bar_bg: ColorRect = null
 var _health_bar_fill: ColorRect = null
-var _health_bar_label: Label = null
 var _health_bar_name: Label = null
 var _health_bar_tween: Tween = null
 var _displayed_health: float = 0.0
@@ -96,122 +131,133 @@ func _ready() -> void:
 func _create_health_bar() -> void:
 	_health_bar_layer = CanvasLayer.new()
 	_health_bar_layer.name = "BossHealthBar"
+	_health_bar_layer.layer = 100
 	get_parent().add_child(_health_bar_layer)
 
-	var font: Font = load("res://Baby Doll.otf")
-	var screen := get_viewport().get_visible_rect().size
+	var root := Control.new()
+	root.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	root.offset_left = -BOSS_HEALTH_ROOT_WIDTH * 0.5
+	root.offset_top = -100.0
+	root.offset_right = BOSS_HEALTH_ROOT_WIDTH * 0.5
+	root.offset_bottom = -100.0 + BOSS_HEALTH_ROOT_HEIGHT
+	root.custom_minimum_size = Vector2(BOSS_HEALTH_ROOT_WIDTH, BOSS_HEALTH_ROOT_HEIGHT)
+	root.z_index = 100
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_health_bar_layer.add_child(root)
+	_health_bar_root = root
 
-	var panel := Panel.new()
-	panel.size = Vector2(420, 44)
-	panel.position = Vector2(screen.x / 2.0 - 210, -50)
 	var panel_style := StyleBoxFlat.new()
-	panel_style.bg_color = Color(0.08, 0.08, 0.1, 0.85)
-	panel_style.border_width_left = 2
-	panel_style.border_width_top = 2
-	panel_style.border_width_right = 2
-	panel_style.border_width_bottom = 2
-	panel_style.border_color = Color(0.6, 0.3, 0.8, 1)
-	panel_style.corner_radius_top_left = 8
-	panel_style.corner_radius_top_right = 8
-	panel_style.corner_radius_bottom_left = 8
-	panel_style.corner_radius_bottom_right = 8
-	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.add_theme_stylebox_override("panel", panel_style)
-	_health_bar_layer.add_child(panel)
+	panel_style.bg_color = Color(0.12, 0.08, 0.05, 0.9)
+	panel_style.border_color = Color(0.42, 0.28, 0.14, 1.0)
+	panel_style.set_border_width_all(2)
+
+	var name_panel := Panel.new()
+	name_panel.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	name_panel.offset_left = 0.0
+	name_panel.offset_top = 0.0
+	name_panel.offset_right = 0.0
+	name_panel.offset_bottom = BOSS_HEALTH_NAME_HEIGHT
+	name_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	name_panel.add_theme_stylebox_override("panel", panel_style)
+	root.add_child(name_panel)
 
 	_health_bar_name = Label.new()
-	_health_bar_name.text = "THE CORRUPTED ONE"
-	_health_bar_name.size = Vector2(420, 20)
-	_health_bar_name.position = Vector2(screen.x / 2.0 - 210, -72)
-	_health_bar_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_health_bar_name.text = "Corrupted Heart"
+	_health_bar_name.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_health_bar_name.offset_left = 0.0
+	_health_bar_name.offset_top = 0.0
+	_health_bar_name.offset_right = 0.0
+	_health_bar_name.offset_bottom = 0.0
 	_health_bar_name.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_health_bar_name.add_theme_font_override("font", font)
-	_health_bar_name.add_theme_font_size_override("font_size", 14)
-	_health_bar_name.add_theme_color_override("font_color", Color(0.9, 0.7, 1.0, 1))
-	_health_bar_name.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	_health_bar_name.add_theme_constant_override("outline_size", 2)
-	_health_bar_layer.add_child(_health_bar_name)
+	_health_bar_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_health_bar_name.clip_text = false
+	_health_bar_name.add_theme_font_override("font", BOSS_HEALTH_FONT)
+	_health_bar_name.add_theme_font_size_override("font_size", 36)
+	_health_bar_name.add_theme_color_override("font_color", Color(0.92, 0.72, 1.0))
+	_health_bar_name.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	name_panel.add_child(_health_bar_name)
+
+	var panel := Panel.new()
+	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	panel.offset_left = 0.0
+	panel.offset_top = BOSS_HEALTH_NAME_HEIGHT + BOSS_HEALTH_NAME_GAP
+	panel.offset_right = 0.0
+	panel.offset_bottom = 0.0
+	panel.custom_minimum_size = Vector2(BOSS_HEALTH_PANEL_WIDTH, BOSS_HEALTH_PANEL_HEIGHT)
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_theme_stylebox_override("panel", panel_style)
+	root.add_child(panel)
 
 	_health_bar_bg = ColorRect.new()
-	_health_bar_bg.size = Vector2(400, 18)
-	_health_bar_bg.position = Vector2(10, 12)
-	_health_bar_bg.color = Color(0.12, 0.12, 0.15, 0.9)
+	_health_bar_bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_health_bar_bg.offset_left = BOSS_HEALTH_BAR_INSET
+	_health_bar_bg.offset_top = BOSS_HEALTH_BAR_INSET
+	_health_bar_bg.offset_right = -BOSS_HEALTH_BAR_INSET
+	_health_bar_bg.offset_bottom = -BOSS_HEALTH_BAR_INSET
+	_health_bar_bg.color = Color(0.12, 0.08, 0.05, 0.85)
 	_health_bar_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(_health_bar_bg)
 
 	_health_bar_fill = ColorRect.new()
-	_health_bar_fill.size = Vector2(400, 18)
-	_health_bar_fill.position = Vector2(10, 12)
-	_health_bar_fill.color = Color(0.2, 0.8, 0.3, 1)
+	_health_bar_fill.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_health_bar_fill.offset_left = BOSS_HEALTH_FILL_INSET
+	_health_bar_fill.offset_top = BOSS_HEALTH_FILL_INSET
+	_health_bar_fill.offset_right = -BOSS_HEALTH_FILL_INSET
+	_health_bar_fill.offset_bottom = -BOSS_HEALTH_FILL_INSET
+	_health_bar_fill.color = Color(0.85, 0.25, 0.25, 1.0)
 	_health_bar_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.add_child(_health_bar_fill)
-
-	_health_bar_label = Label.new()
-	_health_bar_label.size = Vector2(400, 18)
-	_health_bar_label.position = Vector2(10, 12)
-	_health_bar_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_health_bar_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_health_bar_label.add_theme_font_override("font", font)
-	_health_bar_label.add_theme_font_size_override("font_size", 11)
-	_health_bar_label.add_theme_color_override("font_color", Color(1, 1, 1, 0.9))
-	_health_bar_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
-	_health_bar_label.add_theme_constant_override("outline_size", 1)
-	panel.add_child(_health_bar_label)
+	_health_bar_bg.add_child(_health_bar_fill)
 
 	_displayed_health = health
 	_update_health_bar_instant()
 
 	var slide_tween := create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
-	slide_tween.tween_property(panel, "position:y", 10.0, 0.5)
-	slide_tween.parallel().tween_property(_health_bar_name, "position:y", -26.0, 0.5)
+	slide_tween.tween_property(root, "position:y", 18.0, 0.5)
+
+func _set_health_bar_ratio(ratio: float) -> void:
+	if _health_bar_fill == null:
+		return
+	var clamped := clampf(ratio, 0.0, 1.0)
+	_health_bar_fill.offset_right = -(BOSS_HEALTH_FILL_INSET + BOSS_HEALTH_BAR_INNER * (1.0 - clamped))
+	_health_bar_fill.color = _health_color(clamped)
 
 func _update_health_bar_instant() -> void:
-	var ratio := _displayed_health / MAX_HEALTH
-	_health_bar_fill.size.x = 400.0 * ratio
-	_health_bar_fill.color = _health_color(ratio)
-	_health_bar_label.text = "%d / %d" % [int(_displayed_health), MAX_HEALTH]
+	_set_health_bar_ratio(_displayed_health / MAX_HEALTH)
 
 func _health_color(ratio: float) -> Color:
-	if ratio > 0.5:
-		return Color(0.2, 0.8, 0.3, 1).lerp(Color(0.9, 0.8, 0.2, 1), (1.0 - ratio) * 2.0)
-	elif ratio > 0.25:
-		return Color(0.9, 0.8, 0.2, 1).lerp(Color(0.9, 0.3, 0.2, 1), (0.5 - ratio) * 4.0)
-	else:
-		return Color(0.9, 0.3, 0.2, 1)
+	return Color(0.85, 0.25, 0.25, 1.0) if ratio > 0.35 else Color(0.95, 0.6, 0.15, 1.0)
 
 func _animate_health_bar() -> void:
-	if _health_bar_fill == null or _health_bar_label == null:
+	if _health_bar_fill == null:
 		return
 	if _health_bar_tween and _health_bar_tween.is_valid():
 		_health_bar_tween.kill()
 	_health_bar_tween = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_SINE)
-	var target_ratio := health / MAX_HEALTH
-	var start_width := _health_bar_fill.size.x
-	var target_width := 400.0 * target_ratio
-	_health_bar_tween.tween_method(
-		func(w: float): 
-			_health_bar_fill.size.x = w
-			var r := w / 400.0
-			_health_bar_fill.color = _health_color(r)
-			_health_bar_label.text = "%d / %d" % [int(r * MAX_HEALTH), MAX_HEALTH],
-		start_width, target_width, 0.3
-	)
+	var start_ratio := _displayed_health / MAX_HEALTH
+	_displayed_health = health
+	_health_bar_tween.tween_method(_set_health_bar_ratio, start_ratio, health / MAX_HEALTH, 0.3)
 
 func _destroy_health_bar() -> void:
 	if _health_bar_tween and _health_bar_tween.is_valid():
 		_health_bar_tween.kill()
 	if not _health_bar_layer:
 		return
-	var panel := _health_bar_layer.get_child(0) as Control
+	var panel := _health_bar_root
+	if panel == null:
+		panel = _health_bar_layer.get_child(0) as Control
 	var death_tween := create_tween().set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_SINE)
-	death_tween.tween_property(_health_bar_fill, "size:x", 0.0, 0.8)
+	var start_ratio := 0.0
+	if _health_bar_fill != null:
+		start_ratio = 1.0 - (-_health_bar_fill.offset_right - BOSS_HEALTH_FILL_INSET) / BOSS_HEALTH_BAR_INNER
+	death_tween.tween_method(_set_health_bar_ratio, start_ratio, 0.0, 0.8)
 	death_tween.parallel().tween_method(
-		func(a: float): panel.modulate.a = a; _health_bar_name.modulate.a = a; _health_bar_label.modulate.a = a,
+		func(a: float): panel.modulate.a = a,
 		1.0, 0.0, 0.8
 	)
 	death_tween.tween_callback(func(): 
 		_health_bar_layer.queue_free()
 		_health_bar_layer = null
+		_health_bar_root = null
 	)
 
 func _create_offscreen_indicator() -> void:
@@ -313,6 +359,12 @@ func _physics_process(delta: float) -> void:
 		_spit()
 		_spit_cooldown = SPIT_INTERVAL
 
+	if not _laser_attack_active:
+		_laser_cooldown -= delta
+		if _laser_cooldown <= 0.0:
+			_laser_attack_active = true
+			_fire_laser_attack()
+
 	_chest_spawn_timer -= delta
 	if _chest_spawn_timer <= 0.0:
 		_spawn_chest()
@@ -321,6 +373,154 @@ func _physics_process(delta: float) -> void:
 	_break_tiles_in_path()
 	global_position.y += DESCENT_SPEED * delta
 	_update_offscreen_indicator()
+
+func _fire_laser_attack() -> void:
+	var mole := get_tree().get_first_node_in_group("mole") as Node2D
+	if not is_instance_valid(mole):
+		_laser_attack_active = false
+		return
+
+	# Lock aim at the start of the warning so the player can dodge the beam.
+	var laser_start := anim.global_position
+	var laser_direction := (mole.global_position - laser_start).normalized()
+	if laser_direction == Vector2.ZERO:
+		laser_direction = Vector2.DOWN
+	_laser_hit_tile = Vector2i(-1, -1)
+	var laser_end := _laser_endpoint(laser_start, laser_direction)
+	var telegraph_lines := _create_laser_glow(laser_start, laser_end, true)
+	for line in telegraph_lines:
+		if not is_instance_valid(line):
+			continue
+		var pulse := line.create_tween().set_loops(8)
+		pulse.tween_property(line, "modulate:a", 0.2, 0.1)
+		pulse.tween_property(line, "modulate:a", 1.0, 0.1)
+		var base_width := line.width
+		var width_pulse := line.create_tween().set_loops(8)
+		width_pulse.tween_property(line, "width", base_width * 0.78, 0.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		width_pulse.tween_property(line, "width", base_width * 1.3, 0.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	SFX.play("enemy_fire", laser_start, -2.0, 0.2)
+	if mole.has_method("screen_shake"):
+		mole.screen_shake(6.0, 0.18)
+	await get_tree().create_timer(LASER_CHARGE_TIME).timeout
+	if not is_inside_tree() or not _boss_active or health <= 0.0:
+		_clear_laser_lines(telegraph_lines)
+		_laser_attack_active = false
+		return
+
+	_clear_laser_lines(telegraph_lines)
+	var beam_lines := _create_laser_glow(laser_start, laser_end, false)
+	_animate_laser_beam(beam_lines)
+	SFX.play("explosion", laser_start, -2.0, 0.12)
+	if is_instance_valid(mole) and mole.has_method("screen_shake"):
+		mole.screen_shake(24.0, LASER_STRIKE_DURATION)
+	_damage_mole_in_laser(mole, laser_start, laser_end)
+	_break_tiles_along_laser(laser_start, laser_end)
+	if _laser_hit_tile != Vector2i(-1, -1):
+		_spawn_laser_ground_firework(laser_end)
+	var laser_time_left := LASER_STRIKE_DURATION
+	while laser_time_left > 0.0:
+		var damage_interval := minf(0.1, laser_time_left)
+		await get_tree().create_timer(damage_interval).timeout
+		laser_time_left -= damage_interval
+		_damage_mole_in_laser(mole, laser_start, laser_end)
+	_clear_laser_lines(beam_lines)
+	_laser_attack_active = false
+	_laser_cooldown = randf_range(LASER_COOLDOWN_MIN, LASER_COOLDOWN_MAX)
+
+func _laser_endpoint(start: Vector2, direction: Vector2) -> Vector2:
+	# The beam is always its full configured length, passing through terrain and
+	# other collision objects rather than stopping at the first obstruction.
+	return start + direction * LASER_LENGTH
+
+func _trace_laser_to_bedrock(start: Vector2, direction: Vector2, finish: Vector2) -> Vector2:
+	var distance := start.distance_to(finish)
+	var sample_count := maxi(1, int(ceil(distance / LASER_GROUND_TRACE_STEP)))
+	for i in range(1, sample_count + 1):
+		var progress := minf(float(i) * LASER_GROUND_TRACE_STEP, distance)
+		var sample := start + direction * progress
+		var cell := _tilemap.local_to_map(_tilemap.to_local(sample))
+		if _is_bedrock(cell):
+			_laser_hit_tile = cell
+			return sample
+	return finish
+
+func _create_laser_glow(start: Vector2, finish: Vector2, is_preview: bool) -> Array[Line2D]:
+	var lines: Array[Line2D] = []
+	if is_preview:
+		lines.append(_create_laser_line(start, finish, Color(0.34, 0.02, 0.72, 0.38), 90.0))
+		lines.append(_create_laser_line(start, finish, Color(0.72, 0.18, 1.0, 0.75), 42.0))
+	else:
+		lines.append(_create_laser_line(start, finish, Color(0.28, 0.01, 0.58, 0.32), LASER_WIDTH + 72.0))
+		lines.append(_create_laser_line(start, finish, Color(0.62, 0.06, 1.0, 0.62), LASER_WIDTH + 28.0))
+		lines.append(_create_laser_line(start, finish, Color(0.88, 0.42, 1.0, 0.95), LASER_WIDTH))
+		lines.append(_create_laser_line(start, finish, Color(0.98, 0.82, 1.0, 1.0), 30.0))
+	return lines
+
+func _animate_laser_beam(lines: Array[Line2D]) -> void:
+	for line in lines:
+		if not is_instance_valid(line):
+			continue
+		var base_width := line.width
+		var pulse := line.create_tween().set_loops()
+		pulse.tween_property(line, "width", base_width * 1.2, 0.14).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		pulse.tween_property(line, "width", base_width * 0.88, 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		pulse.tween_property(line, "width", base_width, 0.14).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+func _create_laser_line(start: Vector2, finish: Vector2, color: Color, width: float) -> Line2D:
+	var scene_root := get_tree().current_scene as Node2D
+	if scene_root == null:
+		return null
+	var line := Line2D.new()
+	line.width = width
+	line.default_color = color
+	line.z_index = 20
+	line.z_as_relative = false
+	line.add_point(scene_root.to_local(start))
+	line.add_point(scene_root.to_local(finish))
+	scene_root.add_child(line)
+	return line
+
+func _clear_laser_lines(lines: Array[Line2D]) -> void:
+	for line in lines:
+		if is_instance_valid(line):
+			line.queue_free()
+
+func _damage_mole_in_laser(mole: Node2D, start: Vector2, finish: Vector2) -> void:
+	if not is_instance_valid(mole) or not mole.has_method("take_damage"):
+		return
+	var segment := finish - start
+	if segment.length_squared() <= 0.0:
+		return
+	var t := clampf((mole.global_position - start).dot(segment) / segment.length_squared(), 0.0, 1.0)
+	var closest := start + segment * t
+	if mole.global_position.distance_to(closest) <= LASER_WIDTH * 0.5 + LASER_COLLISION_MARGIN:
+		mole.take_damage(LASER_DAMAGE, start, true, true)
+
+func _break_tiles_along_laser(start: Vector2, finish: Vector2) -> void:
+	if _tilemap == null or _tile_break_script == null:
+		return
+	if _laser_hit_tile != Vector2i(-1, -1) and not _is_bedrock(_laser_hit_tile):
+		_tile_break_script.break_tile(_tilemap, _laser_hit_tile, get_parent())
+	var direction := (finish - start).normalized()
+	var perpendicular := Vector2(-direction.y, direction.x)
+	var sample_count := maxi(1, int(ceil(start.distance_to(finish) / LASER_TILE_SAMPLE_SPACING)))
+	for i in range(sample_count + 1):
+		var center := start.lerp(finish, float(i) / float(sample_count))
+		for offset in [-LASER_TILE_HALF_WIDTH, -LASER_TILE_HALF_WIDTH * 0.5, 0.0, LASER_TILE_HALF_WIDTH * 0.5, LASER_TILE_HALF_WIDTH]:
+			var sample: Vector2 = center + perpendicular * offset
+			var cell := _tilemap.local_to_map(_tilemap.to_local(sample))
+			if _tilemap.get_cell_source_id(0, cell) == -1 or _is_bedrock(cell):
+				continue
+			_tile_break_script.break_tile(_tilemap, cell, get_parent())
+
+func _spawn_laser_ground_firework(world_pos: Vector2) -> void:
+	_spawn_firework_burst(world_pos, 180, Color(0.72, 0.12, 1.0, 1.0), 1100.0, 1.8)
+	_spawn_firework_burst(world_pos, 96, Color(0.96, 0.72, 1.0, 1.0), 760.0, 1.45)
+	_spawn_firework_burst(world_pos + Vector2(-38.0, -24.0), 56, Color(0.45, 0.18, 1.0, 1.0), 620.0, 1.25)
+	SFX.play("explosion", world_pos, -1.0, 0.08)
+	var mole := get_tree().get_first_node_in_group("mole")
+	if is_instance_valid(mole) and mole.has_method("screen_shake"):
+		mole.screen_shake(38.0, 0.65)
 
 func _spit() -> void:
 	var mole := get_tree().get_first_node_in_group("mole") as Node2D
@@ -518,6 +718,8 @@ func _end_cutscene() -> void:
 	_boss_active = true
 	_cutscene_playing = false
 	_spit_cooldown = 1.0
+	_laser_cooldown = randf_range(LASER_COOLDOWN_MIN, LASER_COOLDOWN_MAX)
+	_laser_attack_active = false
 	_chest_spawn_timer = CHEST_SPAWN_INTERVAL
 	anim.play("default")
 
@@ -567,7 +769,9 @@ func take_damage(amount: float, direction: Vector2 = Vector2.ZERO) -> void:
 	health -= amount
 	if direction != Vector2.ZERO:
 		hit_direction = direction.normalized()
-	EnemyDamage.spawn_damage_number(self, amount, _sprite_center())
+	EnemyDamage.spawn_damage_number(self, amount, get_global_mouse_position(), true)
+	if health > 0.0:
+		_hit_feedback()
 	modulate = Color(2, 1.5, 1.5, 1)
 	var flash_tween := create_tween()
 	flash_tween.tween_property(self, "modulate", Color.WHITE, 0.15)
@@ -577,6 +781,17 @@ func take_damage(amount: float, direction: Vector2 = Vector2.ZERO) -> void:
 		mole.screen_shake(14.0, 0.25)
 	if health <= 0:
 		die()
+
+func _hit_feedback() -> void:
+	var base_scale: Vector2 = anim.get_meta("hit_feedback_base_scale", anim.scale)
+	anim.set_meta("hit_feedback_base_scale", base_scale)
+	var old_tween := anim.get_meta("hit_feedback_tween", null) as Tween
+	if old_tween and old_tween.is_valid():
+		old_tween.kill()
+	var tween := anim.create_tween()
+	anim.set_meta("hit_feedback_tween", tween)
+	tween.tween_property(anim, "scale", base_scale * Vector2(1.06, 0.94), 0.06).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(anim, "scale", base_scale, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 func die() -> void:
 	ComboManager.increment()
@@ -599,18 +814,20 @@ func die() -> void:
 		get_tree().create_timer(delay).timeout.connect(_small_explosion.bind(center + offset))
 
 	var big_tw := create_tween()
-	big_tw.tween_interval(1.5)
+	big_tw.tween_interval(1.15)
+	big_tw.tween_callback(_pre_big_explosion.bind(center, half_w, half_h))
+	big_tw.tween_interval(0.35)
 	big_tw.tween_callback(_big_explosion.bind(center))
-	big_tw.tween_interval(0.2)
+	# Let the giant firework finish before the mole starts the collapse ride.
+	big_tw.tween_interval(HEART_FIREWORK_HOLD)
 	big_tw.tween_callback(_break_apart)
 	big_tw.tween_callback(_play_death_effect)
-	big_tw.tween_callback(_break_arena_blocks)
 	big_tw.tween_interval(0.25)
 	big_tw.tween_callback(_start_collapse)
 
 	var tw := create_tween().set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_SINE)
-	tw.tween_interval(0.5)
-	tw.tween_property(self, "modulate:a", 0.0, 2.5)
+	tw.tween_interval(1.5 + HEART_FIREWORK_HOLD)
+	tw.tween_property(self, "modulate:a", 0.0, 0.25)
 
 func _small_explosion(local_pos: Vector2) -> void:
 	if not is_instance_valid(self):
@@ -619,19 +836,89 @@ func _small_explosion(local_pos: Vector2) -> void:
 	if randf() < 0.6:
 		SFX.play("explosion", to_global(local_pos), -13.0, 0.3)
 
-func _big_explosion(local_pos: Vector2) -> void:
-	_spawn_explosion(to_global(local_pos), 3.0)
-	_spawn_explosion(to_global(local_pos) + Vector2(randf_range(-260, 260), randf_range(-260, 260)), 1.4)
-	SFX.play("explosion", to_global(local_pos), -1.0, 0.05)
-	_shake_cutscene_cam(28.0)
+func _pre_big_explosion(local_pos: Vector2, half_w: float, half_h: float) -> void:
+	# Crackling purple bursts race across the heart before the final blast.
+	for i in 7:
+		var offset := Vector2(randf_range(-half_w, half_w), randf_range(-half_h, half_h))
+		var particles := CPUParticles2D.new()
+		particles.one_shot = true
+		particles.emitting = true
+		particles.explosiveness = 1.0
+		particles.amount = 24
+		particles.lifetime = 0.5
+		particles.direction = Vector2.ZERO
+		particles.spread = 180.0
+		particles.initial_velocity_min = 240.0
+		particles.initial_velocity_max = 620.0
+		particles.gravity = Vector2.ZERO
+		particles.scale_amount_min = 5.0
+		particles.scale_amount_max = 12.0
+		var gradient := Gradient.new()
+		gradient.set_color(0, Color(1.0, 0.9, 1.0, 1.0))
+		gradient.set_color(0.45, Color(0.8, 0.25, 1.0, 1.0))
+		gradient.set_color(1, Color(0.3, 0.05, 0.55, 0.0))
+		particles.color_ramp = gradient
+		particles.z_index = 10
+		add_child(particles)
+		particles.global_position = to_global(local_pos + offset)
+		get_tree().create_timer(particles.lifetime + 0.2).timeout.connect(particles.queue_free)
 
-func _shake_cutscene_cam(strength: float) -> void:
+func _big_explosion(local_pos: Vector2) -> void:
+	var world_pos := to_global(local_pos)
+	# A bright core and overlapping colored shells make the heart burst like a
+	# huge firework instead of a single short-lived puff.
+	_spawn_firework_burst(world_pos, 180, Color(0.82, 0.25, 1.0, 1.0), 980.0, 1.8)
+	_spawn_firework_burst(world_pos, 120, Color(1.0, 0.78, 0.26, 1.0), 760.0, 1.6)
+	_spawn_firework_burst(world_pos + Vector2(-160, -80), 72, Color(0.35, 0.85, 1.0, 1.0), 620.0, 1.5)
+	_spawn_firework_burst(world_pos + Vector2(170, 65), 72, Color(1.0, 0.32, 0.48, 1.0), 620.0, 1.5)
+	for i in 4:
+		var offset := Vector2(randf_range(-300.0, 300.0), randf_range(-220.0, 220.0))
+		var color: Color = [Color(0.9, 0.35, 1.0), Color(1.0, 0.75, 0.25), Color(0.3, 0.8, 1.0), Color(1.0, 0.35, 0.5)][i]
+		get_tree().create_timer(0.18 * (i + 1)).timeout.connect(
+			_spawn_firework_burst.bind(world_pos + offset, 56, color, 560.0, 1.4))
+	SFX.play("explosion", world_pos, -1.0, 0.05)
+	_shake_cutscene_cam(68.0, 0.9)
+
+func _spawn_firework_burst(world_pos: Vector2, amount: int, color: Color, speed: float, lifetime: float) -> void:
+	var particles := CPUParticles2D.new()
+	particles.one_shot = true
+	particles.emitting = true
+	particles.explosiveness = 1.0
+	particles.amount = amount
+	particles.lifetime = lifetime
+	particles.direction = Vector2.UP
+	particles.spread = 180.0
+	particles.initial_velocity_min = speed * 0.45
+	particles.initial_velocity_max = speed
+	particles.gravity = Vector2(0.0, 120.0)
+	particles.damping_min = 18.0
+	particles.damping_max = 55.0
+	particles.scale_amount_min = 4.0
+	particles.scale_amount_max = 13.0
+	var gradient := Gradient.new()
+	gradient.set_color(0, Color(1.0, 1.0, 0.9, 1.0))
+	gradient.set_color(0.16, color)
+	gradient.set_color(1, Color(color.r * 0.35, color.g * 0.3, color.b * 0.45, 0.0))
+	particles.color_ramp = gradient
+	particles.z_index = 15
+	add_child(particles)
+	particles.global_position = world_pos
+	get_tree().create_timer(lifetime + 0.25).timeout.connect(particles.queue_free)
+
+func _shake_cutscene_cam(strength: float, duration: float = 0.45) -> void:
 	if not _cutscene_cam or not is_instance_valid(_cutscene_cam):
 		return
-	var tween := create_tween()
-	for i in 8:
-		tween.tween_property(_cutscene_cam, "offset", Vector2(randf_range(-strength, strength), randf_range(-strength, strength)), 0.04)
-	tween.tween_property(_cutscene_cam, "offset", Vector2.ZERO, 0.06)
+	if _cutscene_shake_tween and _cutscene_shake_tween.is_valid():
+		_cutscene_shake_tween.kill()
+	var tween := _cutscene_cam.create_tween()
+	_cutscene_shake_tween = tween
+	var steps := 18
+	var step_time := duration / steps
+	for i in steps:
+		var falloff := 1.0 - float(i) / float(steps)
+		var offset := Vector2(randf_range(-strength, strength), randf_range(-strength, strength)) * falloff
+		tween.tween_property(_cutscene_cam, "offset", offset, step_time).set_trans(Tween.TRANS_SINE)
+	tween.tween_property(_cutscene_cam, "offset", Vector2.ZERO, 0.1).set_trans(Tween.TRANS_SINE)
 
 func _spawn_explosion(world_pos: Vector2, power: float) -> void:
 	var particles := CPUParticles2D.new()
@@ -742,27 +1029,39 @@ func _run_collapse(mole: Node2D) -> void:
 	var bottom_row := _tilemap.get_used_rect().end.y - 1
 
 	for row in range(first_row, bottom_row + 1):
-		var broken_and_solid := _break_collapse_row(row, center_tile.x)
-		_break_chests_in_row(row, center_tile.x)
-		# Unbreakable ground (tiles, but none of them breakable) stops the fall;
-		# an air gap (no tiles at all) is just the mole dropping through.
-		if broken_and_solid.x == 0 and broken_and_solid.y > 0:
-			break
-		_kill_enemies_in_row(row, center_tile.x)
+		var row_center_x := _tilemap.local_to_map(_tilemap.to_local(mole.global_position)).x
+		var bedrock_x := _find_bedrock_x(row, row_center_x)
+		_break_collapse_row(row, row_center_x)
+		_break_chests_in_row(row, row_center_x)
+		_kill_enemies_in_row(row, row_center_x)
 
-		var target := Vector2(mole.global_position.x, _row_world_y(row) - COLLAPSE_RIDE_OFFSET)
-		var ride := create_tween()
-		ride.set_parallel(true)
-		ride.tween_property(mole, "global_position", target, COLLAPSE_STEP_TIME)
-		if _cutscene_cam and is_instance_valid(_cutscene_cam):
-			ride.tween_property(_cutscene_cam, "global_position", target + Vector2(0, COLLAPSE_CAM_OFFSET), COLLAPSE_STEP_TIME)
-		await ride.finished
+		# Break the loose blocks beside the landing point, then settle on top of
+		# the nearest intact bedrock instead of continuing through it.
+		if bedrock_x >= 0:
+			var landing_x := _tilemap.to_global(_tilemap.map_to_local(Vector2i(bedrock_x, row))).x
+			await _ride_mole_to_row(mole, row, landing_x)
+			break
+
+		await _ride_mole_to_row(mole, row, mole.global_position.x)
 
 	_collapse_player_control = false
 	_ride_mole = null
-
+	_kill_all_remaining_enemies()
+	# The arena's second tilemap is the final impact platform: break it only
+	# after the mole has reached the bedrock at the bottom of the shaft.
+	_shake_cutscene_cam(72.0, 0.9)
+	_break_arena_blocks()
 	await get_tree().create_timer(COLLAPSE_LAND_DELAY).timeout
 	_finish_death_cutscene()
+
+func _ride_mole_to_row(mole: Node2D, row: int, target_x: float) -> void:
+	var target := Vector2(target_x, _row_world_y(row) - COLLAPSE_RIDE_OFFSET)
+	var ride := create_tween()
+	ride.set_parallel(true)
+	ride.tween_property(mole, "global_position", target, COLLAPSE_STEP_TIME)
+	if _cutscene_cam and is_instance_valid(_cutscene_cam):
+		ride.tween_property(_cutscene_cam, "global_position", target + Vector2(0, COLLAPSE_CAM_OFFSET), COLLAPSE_STEP_TIME)
+	await ride.finished
 
 func _play_mole_fall_anim(mole: Node2D) -> void:
 	# The mole's own animation state machine is paused for the cutscene, so show
@@ -796,12 +1095,22 @@ func _is_bedrock(tile_pos: Vector2i) -> bool:
 	var tile_data := _tilemap.get_cell_tile_data(0, tile_pos)
 	return tile_data != null and (tile_data.get_custom_data("bedrock") as bool)
 
+func _find_bedrock_x(row: int, center_x: int) -> int:
+	var nearest_x := -1
+	var nearest_distance := COLLAPSE_HALF_WIDTH_TILES + 1
+	for x in range(center_x - COLLAPSE_HALF_WIDTH_TILES, center_x + COLLAPSE_HALF_WIDTH_TILES + 1):
+		if not _is_bedrock(Vector2i(x, row)):
+			continue
+		var distance := absi(x - center_x)
+		if distance < nearest_distance:
+			nearest_distance = distance
+			nearest_x = x
+	return nearest_x
+
 func _row_world_y(row: int) -> float:
 	return _tilemap.to_global(_tilemap.map_to_local(Vector2i(0, row))).y
 
-func _kill_enemies_in_row(row: int, center_x: int) -> void:
-	var min_x := center_x - COLLAPSE_HALF_WIDTH_TILES
-	var max_x := center_x + COLLAPSE_HALF_WIDTH_TILES
+func _kill_enemies_in_row(row: int, _center_x: int) -> void:
 	for hurtbox in get_tree().get_nodes_in_group("enemy_hurtbox"):
 		if not is_instance_valid(hurtbox):
 			continue
@@ -809,10 +1118,22 @@ func _kill_enemies_in_row(row: int, center_x: int) -> void:
 		if enemy == null or enemy == self or not (enemy is Node2D) or not enemy.has_method("die"):
 			continue
 		var cell := _tilemap.local_to_map(_tilemap.to_local((enemy as Node2D).global_position))
-		if cell.y != row or cell.x < min_x or cell.x > max_x:
+		if cell.y != row:
 			continue
-		# Enemies animate their own deaths with tweens, so let them keep running
-		# while the descent carries the mole past them.
+		# This is a level-wide collapse: every enemy is caught when the falling
+		# mole reaches its depth, even if it is outside the narrow break shaft.
+		hurtbox.remove_from_group("enemy_hurtbox")
+		enemy.process_mode = Node.PROCESS_MODE_ALWAYS
+		enemy.call("die")
+
+func _kill_all_remaining_enemies() -> void:
+	for hurtbox in get_tree().get_nodes_in_group("enemy_hurtbox"):
+		if not is_instance_valid(hurtbox):
+			continue
+		var enemy := hurtbox.get_parent()
+		if enemy == null or enemy == self or not enemy.has_method("die"):
+			continue
+		hurtbox.remove_from_group("enemy_hurtbox")
 		enemy.process_mode = Node.PROCESS_MODE_ALWAYS
 		enemy.call("die")
 
@@ -829,9 +1150,7 @@ func _update_ride_mole(delta: float) -> void:
 
 ## Smashes every chest the mole plows through in this row of the shaft, opening
 ## unopened ones first so they still drop their loot.
-func _break_chests_in_row(row: int, center_x: int) -> void:
-	var min_x := center_x - COLLAPSE_HALF_WIDTH_TILES
-	var max_x := center_x + COLLAPSE_HALF_WIDTH_TILES
+func _break_chests_in_row(row: int, _center_x: int) -> void:
 	for child in get_parent().get_children():
 		if not (child is Node2D):
 			continue
@@ -843,14 +1162,14 @@ func _break_chests_in_row(row: int, center_x: int) -> void:
 		if chest_area == null:
 			continue
 		var cell := _tilemap.local_to_map(_tilemap.to_local((child as Node2D).global_position))
-		if cell.y != row or cell.x < min_x or cell.x > max_x:
+		if cell.y != row:
 			continue
 		if chest_area.get("is_open") == false:
 			chest_area.call("_open_chest")
 		chest_area.call("break_as_block")
 
 func _break_apart() -> void:
-	EnemyDamage.spawn_death_fragments(self, anim, hit_direction, scale.x)
+	EnemyDamage.spawn_death_fragments(self, anim, Vector2.ZERO, scale.x, DEATH_FRAGMENT_LIFE, true)
 
 func _play_death_effect() -> void:
 	var sprite := $AnimatedSprite2D

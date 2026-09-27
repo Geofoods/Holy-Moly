@@ -2,6 +2,9 @@ extends CanvasLayer
 
 signal coins_changed(amount: int)
 signal loadout_changed
+## Emitted once the shop panel has closed, so a shopkeeper NPC can drop its
+## "busy" state - the panel pauses the tree, so nothing can poll for this.
+signal shop_closed(shop_type: String)
 
 const SAVE_PATH := "user://holy_moley_shop.cfg"
 ## Bumped whenever an old save needs repairing; see _migrate_save().
@@ -48,7 +51,7 @@ func _process(_delta: float) -> void:
 func _build_catalog() -> void:
 	catalog = [
 		_make_melee("shovel", "Shovel", "The trusty starting tool.", 0, 5.0, 10.0, 2.4, 0.3, Color(0.9, 0.8, 0.55)),
-		_make_melee("gold_shovel", "Golden Shovel", "Wide arc, quick swing, big damage.", 160, 22.0, 30.0, 2.8, 0.2, Color(1.0, 0.8, 0.2)),
+		_make_melee("gold_shovel", "Golden Shovel", "Wide arc, quick swing, double damage.", 160, 10.0, 20.0, 2.8, 0.2, Color(1.0, 0.8, 0.2)),
 	]
 	weapon_catalog.clear()
 	ability_catalog.clear()
@@ -59,11 +62,32 @@ func _build_catalog() -> void:
 			weapon_catalog.append(w)
 
 ## Items the shop sells. These are consumables/gear (the inventory ItemData
-## resources) rather than weapons.
+## resources) rather than weapons. Prices are tuned against the coins enemies
+## drop, so the cheap staples are always reachable within a couple of levels.
 func _build_item_catalog() -> void:
 	var defs := [
+		# Healing
+		{"name": "Miner's Rations", "price": 25},
+		{"name": "Potted Honeycomb", "price": 35},
+		{"name": "Holy Water", "price": 60},
+		# Explosives
 		{"name": "Bomb", "price": 80},
 		{"name": "Ice Bomb", "price": 90},
+		{"name": "Stink Bomb", "price": 65},
+		{"name": "Spark Bomb", "price": 85},
+		{"name": "Mine", "price": 70},
+		{"name": "Golden Bomb", "price": 200},
+		# Gear
+		{"name": "Drill", "price": 120},
+		{"name": "Grub Stick", "price": 75},
+		{"name": "Lantern Charm", "price": 95},
+		{"name": "Tunnel Gloves", "price": 110},
+		# Utility
+		{"name": "Shiny Lure", "price": 30},
+		{"name": "Bounce Mushroom", "price": 40},
+		{"name": "Compass Charm", "price": 50},
+		{"name": "Flare", "price": 45},
+		{"name": "Vacuum Jelly", "price": 55},
 	]
 	for def in defs:
 		var item := _find_item(def["name"])
@@ -79,6 +103,8 @@ func _find_item(item_name: String) -> ItemData:
 		"Bomb": "res://resources/bomb.tres",
 		"Ice Bomb": "res://resources/ice_bomb.tres",
 		"Golden Bomb": "res://resources/golden_bomb.tres",
+		"Drill": "res://resources/drill.tres",
+		"Holy Water": "res://resources/holy_water.tres",
 		"Mine": "res://resources/mine.tres",
 		"Stink Bomb": "res://resources/stink_bomb.tres",
 		"Spark Bomb": "res://resources/spark_bomb.tres",
@@ -257,6 +283,11 @@ func drop_coins(world_pos: Vector2, count: int, value_per_coin: int = 1) -> void
 
 # --- Shop UI --------------------------------------------------------------
 
+func is_shop_open(shop_type: String = "") -> bool:
+	if _panel == null or not is_instance_valid(_panel):
+		return false
+	return shop_type.is_empty() or String(_panel.get("shop_type")) == shop_type
+
 func open_shop(shop_type: String = "weapons") -> void:
 	if shop_type not in ["weapons", "abilities", "items"]:
 		shop_type = "weapons"
@@ -270,8 +301,10 @@ func open_shop(shop_type: String = "weapons") -> void:
 	var panel: CanvasLayer = preload("res://scripts/shop_ui.gd").new()
 	panel.set("shop_type", shop_type)
 	panel.tree_exited.connect(func() -> void:
-		if _panel == panel:
-			_panel = null
+		if _panel != panel:
+			return
+		_panel = null
+		shop_closed.emit(shop_type)
 	)
 	scene.add_child(panel)
 	_panel = panel

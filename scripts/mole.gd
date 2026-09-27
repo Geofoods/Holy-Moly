@@ -119,6 +119,7 @@ var _grapple_anchor_sprite: Sprite2D = null
 
 var death_override: Callable = Callable()
 var _restoring_health := false
+var _dying := false
 
 const MAX_HEALTH := 12.0
 
@@ -138,15 +139,13 @@ var health: float = MAX_HEALTH:
 					if health < old_health and not _restoring_health:
 						_animate_heart_damage(heart_node)
 			else:
-				set_physics_process(false)
+				# A scripted death (the boss finale) drives itself from outside, so
+				# it just freezes the mole; otherwise play the death animation.
 				if death_override.is_valid():
+					set_physics_process(false)
 					death_override.call()
 					return
-				Inventory.player_health = MAX_HEALTH
-				Inventory.current_level_path = get_tree().current_scene.scene_file_path
-				var transition := preload("res://scenes/scene_transition.tscn").instantiate()
-				get_tree().root.add_child(transition)
-				transition.change_to("res://scenes/game_over.tscn")
+				_die()
 
 var tilemap: TileMap = null
 @onready var _sprite: AnimatedSprite2D = $AnimatedSprite2D
@@ -458,6 +457,10 @@ func _physics_process(delta: float) -> void:
 	if is_digging or is_tunneling:
 		collision_mask &= ~CANDLE_LAYER_BIT
 
+	if _dying:
+		_death_fall(delta)
+		return
+
 	if not grapple_active and not is_on_floor():
 		velocity.y += AIR_GRAVITY * delta
 		if Input.is_action_pressed("ui_down"):
@@ -591,17 +594,6 @@ func _physics_process(delta: float) -> void:
 		if velocity.y < 0:
 			velocity.y *= JUMP_CUT_MULTIPLIER
 
-	if is_on_floor() and not was_on_floor:
-		SFX.play("land", global_position, -10.0)
-		_spawn_land_dust()
-		remove_mole_hole()
-		is_sideways_jump = false
-		air_time = 0.0
-		launched_from_jump = false
-		_jump_held = false
-
-	was_on_floor = is_on_floor()
-
 	var effective_speed := SPEED * ComboManager.get_speed_multiplier()
 	if speed_boost_active:
 		effective_speed *= 1.4
@@ -625,7 +617,20 @@ func _physics_process(delta: float) -> void:
 	if not is_on_floor() and not is_sideways_jump and direction != 0:
 		is_sideways_jump = true
 
+	var landing_speed := absf(velocity.y)
 	move_and_slide()
+	if is_on_floor() and not was_on_floor:
+		var landing_impact := minf(landing_speed / GROUND_POUND_SPEED, 1.0)
+		velocity.y = 0.0
+		SFX.play("land", global_position, lerpf(-16.0, -8.0, landing_impact), 0.12)
+		_spawn_land_dust(landing_impact)
+		_squash_landing(landing_impact)
+		remove_mole_hole()
+		is_sideways_jump = false
+		air_time = 0.0
+		launched_from_jump = false
+		_jump_held = false
+	was_on_floor = is_on_floor()
 	_push_rocks()
 	if mol_dozer_active:
 		_dozer_ram()
@@ -1059,6 +1064,7 @@ func take_damage(amount: float, source_position: Vector2 = Vector2.ZERO, has_sou
 	else:
 		SFX.play("hurt", global_position)
 	invulnerable = true
+	_start_invulnerability_blink()
 	_damage_flash()
 	hurt_anim_time_left = HURT_GROUND_DURATION if is_on_floor() else HURT_AIR_DURATION
 	var knockback_direction := -1.0 if _sprite.flip_h else 1.0
@@ -1073,10 +1079,88 @@ func take_damage(amount: float, source_position: Vector2 = Vector2.ZERO, has_sou
 		hit_freeze(0.06)
 	else:
 		screen_shake(12.0, 0.3)
+		hit_freeze(0.04)
 	get_tree().create_timer(1.0).timeout.connect(_end_invulnerability)
+
+## Ends the run: banks the level the mole died in (so PLAY AGAIN returns there),
+## tells the HUD to crack its health bar, plays the death animation, and only
+## then wipes to the game over screen.
+func _die() -> void:
+	if _dying:
+		return
+	_dying = true
+	is_digging = false
+	is_tunneling = false
+	is_ground_pounding = false
+	if grapple_active:
+		_end_grapple()
+	Inventory.player_health = MAX_HEALTH
+	Inventory.current_level_path = get_tree().current_scene.scene_file_path
+	Inventory.player_died.emit()
+	_play_death_animation()
+
+## The mole has no death frames, so the death is staged in code: a white flash,
+## then the mole topples onto its side and stays down. Mirrors the fall that
+## opens the game over screen (game_over.gd) so the two read as one sequence.
+func _play_death_animation() -> void:
+	set_process(false)
+	set_process_input(false)
+	velocity.x = 0.0
+
+	_sprite.flip_v = false
+	_sprite.rotation = 0.0
+	_sprite.play("hurtground")
+
+	var flash := create_tween()
+	flash.tween_property(_sprite, "modulate", Color(6.0, 6.0, 6.0, 1.0), 0.06)
+	flash.tween_property(_sprite, "modulate", Color.WHITE, 0.12)
+
+	var topple_dir := -1.0 if _sprite.flip_h else 1.0
+	var topple := create_tween().set_parallel(true)
+	topple.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	topple.tween_property(_sprite, "rotation", deg_to_rad(80.0) * topple_dir, 0.35)
+	topple.tween_property(_sprite, "position", Vector2(0.0, 30.0), 0.35)
+	topple.tween_property(_sprite, "scale", Vector2(1.15, 0.8), 0.35)
+	await topple.finished
+
+	_spawn_land_dust()
+	await get_tree().create_timer(0.45).timeout
+	_go_to_game_over()
+
+## Keeps the corpse falling to the ground through the death animation, so a mole
+## killed out of the air doesn't freeze mid-flight.
+func _death_fall(delta: float) -> void:
+	if is_on_floor():
+		velocity = Vector2.ZERO
+		return
+	velocity.x = move_toward(velocity.x, 0.0, FRICTION * delta)
+	velocity.y += AIR_GRAVITY * delta
+	move_and_slide()
+
+func _go_to_game_over() -> void:
+	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
+	get_tree().root.add_child(transition)
+	transition.change_to("res://scenes/game_over.tscn")
 
 func _end_invulnerability() -> void:
 	invulnerable = false
+	_stop_invulnerability_blink()
+
+## Flickers the mole while the i-frames are up so it reads as "this hit did not
+## count" instead of the player wondering whether they were hit at all.
+func _start_invulnerability_blink() -> void:
+	_stop_invulnerability_blink()
+	var tween := create_tween().set_loops()
+	tween.tween_property(_sprite, "modulate:a", 0.35, 0.09).set_trans(Tween.TRANS_SINE)
+	tween.tween_property(_sprite, "modulate:a", 1.0, 0.09).set_trans(Tween.TRANS_SINE)
+	_sprite.set_meta("iframe_blink_tween", tween)
+
+func _stop_invulnerability_blink() -> void:
+	var tween := _sprite.get_meta("iframe_blink_tween", null) as Tween
+	if tween and tween.is_valid():
+		tween.kill()
+	_sprite.set_meta("iframe_blink_tween", null)
+	_sprite.modulate.a = 1.0
 
 func _damage_flash() -> void:
 	var canvas_layer := CanvasLayer.new()
@@ -1091,17 +1175,17 @@ func _damage_flash() -> void:
 	tween.tween_property(flash, "color:a", 0.0, 0.25).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tween.tween_callback(canvas_layer.queue_free)
 
-func _spawn_land_dust() -> void:
+func _spawn_land_dust(impact: float = 0.0) -> void:
 	var dust := CPUParticles2D.new()
 	dust.emitting = true
 	dust.one_shot = true
-	dust.amount = 10
+	dust.amount = 8 + roundi(impact * 14.0)
 	dust.lifetime = 0.35
 	dust.explosiveness = 1.0
 	dust.direction = Vector2(0, -1)
 	dust.spread = 70.0
-	dust.initial_velocity_min = 30.0
-	dust.initial_velocity_max = 80.0
+	dust.initial_velocity_min = lerpf(30.0, 100.0, impact)
+	dust.initial_velocity_max = lerpf(80.0, 260.0, impact)
 	dust.gravity = Vector2(0, 200)
 	dust.scale_amount_min = 3.0
 	dust.scale_amount_max = 7.0
@@ -1114,6 +1198,18 @@ func _spawn_land_dust() -> void:
 	dust.global_position = global_position + Vector2(0, 10)
 	get_tree().create_timer(0.8).timeout.connect(dust.queue_free)
 
+func _squash_landing(impact: float) -> void:
+	var strength := clampf(impact, 0.0, 1.0)
+	var base_scale_y := float(_sprite.get_meta("landing_base_scale_y", _sprite.scale.y))
+	_sprite.set_meta("landing_base_scale_y", base_scale_y)
+	var old_tween := _sprite.get_meta("landing_tween", null) as Tween
+	if old_tween and old_tween.is_valid():
+		old_tween.kill()
+	var tween := _sprite.create_tween()
+	_sprite.set_meta("landing_tween", tween)
+	tween.tween_property(_sprite, "scale:y", base_scale_y * (1.0 - 0.16 * strength), 0.06).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(_sprite, "scale:y", base_scale_y, 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
 func hit_freeze(duration: float) -> void:
 	Engine.time_scale = 0.05
 	await get_tree().create_timer(duration * 0.05).timeout
@@ -1123,7 +1219,7 @@ func screen_shake(intensity: float, duration: float) -> void:
 	var camera := _shake_camera()
 	if not camera:
 		return
-	var magnitude := intensity * maxf(0.75, intensity / 10.0)
+	var magnitude := intensity * 0.2 * maxf(0.75, intensity / 10.0)
 	# The tween rides the shaken camera rather than the mole, so shakes keep
 	# running while the mole itself is frozen by a cutscene.
 	var tween := camera.create_tween()
@@ -1166,8 +1262,6 @@ func _dash_ability_strike() -> void:
 		var dmg := DASH_ABILITY_DAMAGE * ComboManager.get_damage_multiplier()
 		if enemy.has_method("take_damage"):
 			enemy.take_damage(dmg, Vector2(tunnel_direction, 0.0))
-			EnemyDamage.spawn_damage_number(enemy, dmg)
-			SFX.play("enemy_hit", enemy.global_position)
 			spawn_dirt_particles(enemy.global_position)
 		_apply_knockback(enemy, Vector2(tunnel_direction * DASH_KNOCKBACK, -300.0))
 
@@ -1359,8 +1453,6 @@ func _ground_pound_strike() -> void:
 			dir = Vector2(1.0, -0.5).normalized()
 		if enemy.has_method("take_damage"):
 			enemy.take_damage(dmg, dir)
-			EnemyDamage.spawn_damage_number(enemy, dmg)
-			SFX.play("enemy_hit", enemy.global_position)
 			spawn_dirt_particles(enemy.global_position)
 		_apply_knockback(enemy, dir * GROUND_POUND_KNOCKBACK + Vector2(0, -350.0))
 		if earthquake_boots_active and "_stun_timer" in enemy:
@@ -1620,7 +1712,6 @@ func _swing_grub_stick() -> void:
 			(enemy as CharacterBody2D).velocity = dir * 700.0
 		if "_stun_timer" in enemy:
 			enemy._stun_timer = maxf(enemy._stun_timer, 0.35)
-		SFX.play("enemy_hit", enemy.global_position)
 	for hurtbox in get_tree().get_nodes_in_group("npc_hurtbox"):
 		if not is_instance_valid(hurtbox):
 			continue
@@ -1780,7 +1871,6 @@ func _dozer_ram() -> void:
 			(collider as CharacterBody2D).velocity = Vector2(face * 850.0, -300.0)
 		if "_stun_timer" in collider:
 			collider._stun_timer = maxf(collider._stun_timer, 0.4)
-		SFX.play("enemy_hit", collider.global_position)
 		spawn_dirt_particles(collider.global_position)
 
 func _rebound_pull_coin(aim_dir: Vector2, from: Vector2) -> void:

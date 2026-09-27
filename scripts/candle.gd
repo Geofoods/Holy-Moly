@@ -16,16 +16,35 @@ const MAX_SPIN := 3.0
 const SETTLE_SPEED := 30.0
 const REFREEZE_DELAY := 0.35
 const PUSH_SPEED := 600.0
+const FLICKER_RATE := 7.0
+const FLICKER_AMOUNT := 0.08
 
 var _tilemap: TileMap = null
 var _check_timer := 0.0
 var _was_fast := false
 var _settle_timer := 0.0
+var _flicker_phase := 0.0
+var _base_light_energy := 0.6
+var _base_light_scale := Vector2.ONE
+
+@onready var _light: PointLight2D = get_node_or_null("PointLight2D") as PointLight2D
 
 func _ready() -> void:
 	freeze = true
 	add_to_group("pushable")
 	_tilemap = _find_tilemap()
+	if _light:
+		_base_light_energy = _light.energy
+		_base_light_scale = _light.scale
+		_flicker_phase = randf_range(0.0, TAU)
+
+func _process(_delta: float) -> void:
+	if _light == null or not is_instance_valid(_light):
+		return
+	_flicker_phase += _delta * FLICKER_RATE
+	var flicker := 1.0 + sin(_flicker_phase) * FLICKER_AMOUNT + randf_range(-0.025, 0.025)
+	_light.energy = _base_light_energy * flicker
+	_light.scale = _base_light_scale * Vector2(1.0 + (flicker - 1.0) * 0.35, 1.0 - (flicker - 1.0) * 0.25)
 
 func push(direction: Vector2) -> void:
 	if direction.length_squared() == 0.0:

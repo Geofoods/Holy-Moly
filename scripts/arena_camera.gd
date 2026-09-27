@@ -45,6 +45,11 @@ func _ready() -> void:
 	var waves := get_parent().get_node_or_null("WaveManager")
 	if waves and waves.has_signal("cleared"):
 		waves.cleared.connect(_on_waves_cleared)
+	# The arena is a one-time event. Once it has been cleared there is no fight
+	# to stage here, so the scripted hand-off stays off and the mole keeps its
+	# own camera while walking through - nothing would ever hand control back.
+	if Progress.is_arena_completed():
+		_done = true
 
 func _process(delta: float) -> void:
 	if _state == State.PANNING_TO_SNAIL or _state == State.PANNING_TO_BREAK or _state == State.PANNING_BACK or _state == State.PANNING_OUT:

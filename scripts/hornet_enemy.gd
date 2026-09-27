@@ -276,12 +276,16 @@ func _on_hurtbox_area_entered(area: Area2D) -> void:
 		velocity = (global_position - parent.global_position).normalized() * 500.0 + Vector2(0, -200)
 		take_damage(parent.get_damage())
 
-## Takes the hit direction the fragment-spawning enemies use for their death
-## gibs; this one just shrinks away, so it ignores it.
-func take_damage(amount: float, _direction: Vector2 = Vector2.ZERO) -> void:
+## Direction the last hit pushed this enemy, so its death fragments are blown
+## the same way (see spawn_death_fragments in enemy.gd).
+var hit_direction := Vector2.ZERO
+
+func take_damage(amount: float, hit_dir: Vector2 = Vector2.ZERO) -> void:
 	if health <= 0:
 		return
 	health -= amount
+	if hit_dir != Vector2.ZERO:
+		hit_direction = hit_dir.normalized()
 	EnemyDamage.spawn_damage_number(self, amount)
 	SFX.play("enemy_hit", global_position)
 	if _health_bar:
@@ -290,6 +294,8 @@ func take_damage(amount: float, _direction: Vector2 = Vector2.ZERO) -> void:
 	var tween := create_tween()
 	tween.tween_property(self, "modulate", Color(2, 1, 1, 1), 0.05)
 	tween.tween_property(self, "modulate", Color.WHITE, 0.15)
+	if health > 0.0:
+		EnemyDamage.play_hit_feedback(self, visual)
 
 	if health <= 0:
 		die()
@@ -324,9 +330,19 @@ func die() -> void:
 	hitbox.set_deferred("monitoring", false)
 	hurtbox.set_deferred("monitorable", false)
 
+	# A hornet killed mid-attack dies facing its charge; dropping the visual back
+	# upright first keeps the pop, and the pieces cut from it, aligned.
+	visual.offset.x = 0.0
+	visual.rotation = 0.0
+
 	var tween := create_tween()
-	tween.tween_property(self, "scale", Vector2.ZERO, 0.2).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_BACK)
+	tween.tween_property(self, "scale", scale * 1.8, 0.1).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_callback(_break_apart)
+	tween.tween_interval(0.5)
 	tween.tween_callback(queue_free)
+
+func _break_apart() -> void:
+	EnemyDamage.spawn_death_fragments(self, visual, hit_direction, scale.x)
 
 func _play_buzz(delta: float) -> void:
 	if health <= 0:

@@ -234,9 +234,49 @@ func take_damage(amount: float, hit_dir: Vector2 = Vector2.ZERO) -> void:
 	var tween := create_tween()
 	tween.tween_property(self, "modulate", Color(2, 1, 1, 1), 0.05)
 	tween.tween_property(self, "modulate", Color.WHITE, 0.15)
+	if health > 0.0:
+		play_hit_feedback(self, visual)
 
 	if health <= 0:
 		die()
+
+## Shared hit feedback keeps attacks crisp across the different enemy types.
+## The short squash and tiny spark are visual-only; damage and knockback remain
+## controlled by each enemy's combat logic.
+static func play_hit_feedback(enemy: Node2D, target_visual: Node2D) -> void:
+	if not is_instance_valid(enemy) or not is_instance_valid(target_visual):
+		return
+	var base_y := float(target_visual.get_meta("hit_feedback_base_scale_y", target_visual.scale.y))
+	target_visual.set_meta("hit_feedback_base_scale_y", base_y)
+	var old_tween := target_visual.get_meta("hit_feedback_tween", null) as Tween
+	if old_tween and old_tween.is_valid():
+		old_tween.kill()
+	var tween := target_visual.create_tween()
+	target_visual.set_meta("hit_feedback_tween", tween)
+	tween.tween_property(target_visual, "scale:y", base_y * 0.82, 0.055).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(target_visual, "scale:y", base_y, 0.13).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+	var scene := enemy.get_tree().current_scene
+	if scene == null:
+		return
+	var particles := CPUParticles2D.new()
+	particles.one_shot = true
+	particles.emitting = true
+	particles.amount = 5
+	particles.lifetime = 0.18
+	particles.explosiveness = 1.0
+	particles.direction = Vector2.UP
+	particles.spread = 180.0
+	particles.initial_velocity_min = 90.0
+	particles.initial_velocity_max = 210.0
+	particles.gravity = Vector2(0.0, 180.0)
+	particles.scale_amount_min = 2.0
+	particles.scale_amount_max = 4.0
+	particles.color = Color(1.0, 0.88, 0.48, 1.0)
+	particles.z_index = 12
+	scene.add_child(particles)
+	particles.global_position = target_visual.global_position + Vector2(0.0, -24.0)
+	enemy.get_tree().create_timer(particles.lifetime + 0.1).timeout.connect(particles.queue_free)
 
 class FloatingDamageLabel:
 	extends Label
@@ -257,7 +297,7 @@ class FloatingDamageLabel:
 
 static var _damage_font: Font = null
 
-static func spawn_damage_number(enemy: Node2D, amount: float, origin: Vector2 = Vector2.INF) -> void:
+static func spawn_damage_number(enemy: Node2D, amount: float, origin: Vector2 = Vector2.INF, boss: bool = false) -> void:
 	if not is_instance_valid(enemy) or not enemy.is_inside_tree():
 		return
 	var current := enemy.get_tree().current_scene
@@ -266,23 +306,29 @@ static func spawn_damage_number(enemy: Node2D, amount: float, origin: Vector2 = 
 
 	var label := FloatingDamageLabel.new()
 	label.text = str(int(round(amount)))
-	label.add_theme_font_size_override("font_size", 90)
+	label.add_theme_font_size_override("font_size", 112 if boss else 74)
 	label.add_theme_color_override("font_color", Color(1.0, 0.95, 0.5))
-	label.add_theme_constant_override("outline_size", 12)
+	label.add_theme_constant_override("outline_size", 12 if boss else 9)
 	label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 	if _damage_font == null:
 		_damage_font = load("res://Baby Doll.otf") as Font
 	if _damage_font:
 		label.add_theme_font_override("font", _damage_font)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	if boss:
+		label.reset_size()
+		label.pivot_offset = label.size * 0.5
 	label.z_index = 50
-	label.velocity = Vector2.from_angle(randf_range(-PI * 0.78, -PI * 0.22)) * randf_range(880.0, 960.0)
+	label.velocity = Vector2.from_angle(randf_range(-PI * 0.78, -PI * 0.22)) * randf_range(360.0, 480.0)
 	label.scale = Vector2(0.6, 0.6)
 	current.add_child(label)
 	var start := enemy.global_position
 	if origin != Vector2.INF:
 		start = origin
-	label.global_position = start + Vector2(randf_range(-16.0, 16.0), randf_range(-28.0, -6.0))
+	if boss:
+		label.global_position = start - label.size * 0.5
+	else:
+		label.global_position = start + Vector2(randf_range(-16.0, 16.0), randf_range(-28.0, -6.0))
 
 	var pop := label.create_tween()
 	pop.tween_property(label, "scale", Vector2.ONE, 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
@@ -340,6 +386,10 @@ const FRAGMENT_SPREAD := 0.9
 const FRAGMENT_LIFT := 220.0
 const FRAGMENT_LINGER := 0.55
 const FRAGMENT_FADE := 0.35
+## Total fragment lifetime: the hold plus the fade at the end. Callers can ask
+## for longer-lived debris per death - the final boss's fragments hang over its
+## collapse for ten seconds.
+const FRAGMENT_LIFE := FRAGMENT_LINGER + FRAGMENT_FADE
 
 func _break_apart() -> void:
 	spawn_death_fragments(self, visual, hit_direction, scale.x)
@@ -347,7 +397,8 @@ func _break_apart() -> void:
 ## Cuts `visual`'s current frame into a grid of gibs and throws them into the
 ## level as rigid bodies, blown away from `hit_dir` (defaults to away from the
 ## mole). `visual` can be either an AnimatedSprite2D or a plain Sprite2D.
-static func spawn_death_fragments(enemy: Node2D, visual: Node2D, hit_dir := Vector2.ZERO, pop_scale := 1.0) -> void:
+## `life` is how long each piece lasts before it has faded out and freed itself.
+static func spawn_death_fragments(enemy: Node2D, visual: Node2D, hit_dir := Vector2.ZERO, pop_scale := 1.0, life := FRAGMENT_LIFE, radial_burst := false) -> void:
 	if not is_instance_valid(enemy) or not is_instance_valid(visual):
 		return
 	var parent := enemy.get_parent()
@@ -426,12 +477,17 @@ static func spawn_death_fragments(enemy: Node2D, visual: Node2D, hit_dir := Vect
 			parent.add_child(chunk)
 			chunk.global_position = enemy.global_position + (visual_offset + offset) * exit_scale
 			chunk.rotation = randf_range(0.0, TAU)
-			chunk.linear_velocity = Vector2.from_angle(blast_angle + randf_range(-FRAGMENT_SPREAD, FRAGMENT_SPREAD)) \
-				* randf_range(FRAGMENT_SPEED_MIN, FRAGMENT_SPEED_MAX) + Vector2(0.0, -FRAGMENT_LIFT)
+			var fragment_direction := Vector2.from_angle(blast_angle + randf_range(-FRAGMENT_SPREAD, FRAGMENT_SPREAD))
+			if radial_burst:
+				fragment_direction = (offset + Vector2(randf_range(-24.0, 24.0), randf_range(-24.0, 24.0))).normalized()
+				if fragment_direction == Vector2.ZERO:
+					fragment_direction = Vector2.from_angle(randf_range(0.0, TAU))
+			var fragment_lift := Vector2(0.0, -FRAGMENT_LIFT * 0.45) if radial_burst else Vector2(0.0, -FRAGMENT_LIFT)
+			chunk.linear_velocity = fragment_direction * randf_range(FRAGMENT_SPEED_MIN, FRAGMENT_SPEED_MAX) + fragment_lift
 			chunk.angular_velocity = randf_range(-10.0, 10.0)
 
 			var fade := chunk.create_tween()
-			fade.tween_interval(FRAGMENT_LINGER)
+			fade.tween_interval(maxf(life - FRAGMENT_FADE, 0.0))
 			fade.tween_property(chunk, "modulate:a", 0.0, FRAGMENT_FADE)
 			fade.tween_callback(chunk.queue_free)
 

@@ -143,4 +143,5 @@ func load_progress() -> void:
 	queen_defeated = bool(cfg.get_value("bosses", "queen", false))
 	corrupted_defeated = bool(cfg.get_value("bosses", "corrupted", false))
 	boss_rush_cleared = bool(cfg.get_value("bosses", "rush", false))
+	arena_completed = bool(cfg.get_value("arena", "completed", false))
 	best_combo = int(cfg.get_value("meta", "best_combo", 0))

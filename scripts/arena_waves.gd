@@ -32,6 +32,9 @@ var _arena_started := false
 
 func _ready() -> void:
 	var root := get_parent()
+	if Progress.is_arena_completed():
+		_retire_arena(root)
+		return
 	for child in root.get_children():
 		var node := child as Node2D
 		if node != null and child.scene_file_path == ANTS_SCENE:
@@ -44,6 +47,22 @@ func _ready() -> void:
 	var start := root.get_node_or_null("arenastart")
 	if start is Area2D:
 		(start as Area2D).body_entered.connect(_on_arena_start_entered)
+
+## The arena is cleared for good, so nothing is staged on a revisit: the wave
+## enemies are taken out, the wall the snail was shut behind stays down, and no
+## waves are armed. `cleared` is still fired once, so anyone waiting on this
+## fight (the snail's dialogue condition) sees it as over rather than pending.
+func _retire_arena(root: Node) -> void:
+	for child in root.get_children():
+		if child.scene_file_path == ANTS_SCENE:
+			child.queue_free()
+	var wall := root.get_node_or_null("TileMap2") as TileMap
+	if wall != null:
+		wall.visible = false
+		for layer in range(wall.get_layers_count()):
+			wall.set_layer_enabled(layer, false)
+	_active = false
+	cleared.emit.call_deferred()
 
 func _track(node: Node) -> void:
 	_alive += 1
@@ -65,6 +84,7 @@ func _spawn_next_wave() -> void:
 	if _wave >= WAVE_ENEMIES.size():
 		_active = false
 		_show_wave_name("CLEARED!")
+		Progress.mark_arena_completed()
 		cleared.emit()
 		if is_inside_tree():
 			get_tree().create_timer(0.8).timeout.connect(_break_arena_blocks)

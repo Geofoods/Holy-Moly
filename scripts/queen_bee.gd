@@ -688,11 +688,21 @@ func take_damage(amount: float, direction: Vector2 = Vector2.ZERO) -> void:
 	health -= amount
 	if direction != Vector2.ZERO:
 		hit_direction = direction.normalized()
-	EnemyDamage.spawn_damage_number(self, amount, _sprite_center())
+	EnemyDamage.spawn_damage_number(self, amount, get_global_mouse_position(), true)
 	modulate = Color(2, 1.5, 1.2, 1)
 	var flash_tween := create_tween()
 	flash_tween.tween_property(self, "modulate", Color.WHITE, 0.15)
 	_animate_health_bar()
+	if health > 0.0:
+		var base_scale_y := float(anim.get_meta("hit_feedback_base_scale_y", anim.scale.y))
+		anim.set_meta("hit_feedback_base_scale_y", base_scale_y)
+		var old_tween := anim.get_meta("hit_feedback_tween", null) as Tween
+		if old_tween and old_tween.is_valid():
+			old_tween.kill()
+		var impact_tween := anim.create_tween()
+		anim.set_meta("hit_feedback_tween", impact_tween)
+		impact_tween.tween_property(anim, "scale:y", base_scale_y * 0.92, 0.06).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		impact_tween.tween_property(anim, "scale:y", base_scale_y, 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	var mole := get_tree().get_first_node_in_group("mole")
 	if mole and mole.has_method("screen_shake"):
 		mole.screen_shake(12.0, 0.2)
@@ -834,7 +844,7 @@ func _go_to_next_level() -> void:
 	transition.change_to("res://scenes/level_09.tscn")
 
 func _break_apart() -> void:
-	EnemyDamage.spawn_death_fragments(self, anim, hit_direction, scale.x)
+	EnemyDamage.spawn_death_fragments(self, anim, Vector2.ZERO, scale.x, EnemyDamage.FRAGMENT_LIFE, true)
 
 func _play_death_effect() -> void:
 	var sprite := anim

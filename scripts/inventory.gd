@@ -2,6 +2,11 @@ extends Node
 
 signal slots_changed(slot_indices: Array)
 signal selected_slot_changed(slot: int)
+## Emitted the instant the mole dies and the game over sequence begins. The HUD
+## listens for this because the mole banks player_health back to full up front
+## (so a retry starts healed), which would otherwise hide the death from the
+## health bar.
+signal player_died
 
 const MAX_SLOTS := 4
 const MAX_HEALTH := 12.0

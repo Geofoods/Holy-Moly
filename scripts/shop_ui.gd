@@ -23,6 +23,10 @@ const COL_CLOSE_HOT := Color(0.9, 0.15, 0.25, 1)
 var _font := preload("res://Baby Doll.otf")
 var _rows: VBoxContainer = null
 var _coin_label: Label = null
+## Transient line under the coin count, used for feedback that a purchase was
+## refused (a full inventory cannot be shown by the row itself).
+var _status: Label = null
+var _status_tween: Tween = null
 var _panel: PanelContainer = null
 var _dim: ColorRect = null
 var _closing := false
@@ -32,6 +36,7 @@ var _page_label: Label = null
 var _prev_btn: Button = null
 var _next_btn: Button = null
 var _pager: HBoxContainer = null
+var _button_tweens: Dictionary = {}
 
 func _ready() -> void:
 	layer = 100
@@ -113,6 +118,14 @@ func _build_ui() -> void:
 	_coin_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(_coin_label)
 
+	_status = Label.new()
+	_status.add_theme_color_override("font_color", COL_RED)
+	_status.add_theme_font_size_override("font_size", 20)
+	_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_status.custom_minimum_size.y = 26
+	_status.modulate.a = 0.0
+	vbox.add_child(_status)
+
 	var content := PanelContainer.new()
 	content.add_theme_stylebox_override("panel", _make_style_box(COL_INNER_BG, COL_INNER_BORDER, 12, 3))
 	vbox.add_child(content)
@@ -177,6 +190,9 @@ func _make_style_box(bg: Color, border: Color, radius: int, border_width: int = 
 func _make_plain_btn(text: String) -> Button:
 	var btn := Button.new()
 	btn.text = text
+	btn.mouse_entered.connect(_on_button_hover.bind(btn))
+	btn.mouse_exited.connect(_on_button_unhover.bind(btn))
+	btn.pressed.connect(_on_button_pressed.bind(btn))
 	btn.custom_minimum_size = Vector2(120, 40)
 	btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	btn.add_theme_color_override("font_color", COL_TEXT)
@@ -188,6 +204,28 @@ func _make_plain_btn(text: String) -> Button:
 	btn.add_theme_stylebox_override("focus", _make_style_box(COL_BTN_HOT, COL_BORDER, 8, 2))
 	btn.add_theme_stylebox_override("disabled", _make_style_box(COL_BTN_DISABLED, Color(0.42, 0.28, 0.14, 0.6), 8, 2))
 	return btn
+
+func _on_button_hover(button: Button) -> void:
+	if button.disabled:
+		return
+	SFX.play_ui("ui_hover", -18.0, 1.8)
+	_animate_button(button, Vector2(1.035, 1.035), 0.12, Tween.TRANS_BACK)
+
+func _on_button_unhover(button: Button) -> void:
+	_animate_button(button, Vector2.ONE, 0.1, Tween.TRANS_SINE)
+
+func _on_button_pressed(button: Button) -> void:
+	SFX.play_ui("ui_click", -10.0, 1.1)
+	_animate_button(button, Vector2(0.96, 0.96), 0.06, Tween.TRANS_QUAD)
+
+func _animate_button(button: Button, target_scale: Vector2, duration: float, transition: Tween.TransitionType) -> void:
+	var button_id := button.get_instance_id()
+	var old_tween: Tween = _button_tweens.get(button_id)
+	if old_tween and old_tween.is_valid():
+		old_tween.kill()
+	var tween := create_tween()
+	_button_tweens[button_id] = tween
+	tween.tween_property(button, "scale", target_scale, duration).set_trans(transition).set_ease(Tween.EASE_OUT)
 
 func _list() -> Array:
 	match shop_type:
@@ -328,9 +366,38 @@ func _make_item_row(item: ItemData) -> HBoxContainer:
 	btn.pressed.connect(func() -> void:
 		if Shop.buy_item(item):
 			_refresh()
+		elif not _can_carry(item):
+			_set_status("INVENTORY IS FULL - USE SOMETHING FIRST", COL_RED)
+		else:
+			_set_status("NOT ENOUGH COINS", COL_RED)
 	)
 	row.add_child(btn)
 	return row
+
+## Mirrors Inventory.add_item's slot rules so a refused purchase can say why.
+## The BUY button is only disabled on coins, so a full inventory is otherwise a
+## dead click - and buy_item deliberately charges nothing when it refuses.
+func _can_carry(item: ItemData) -> bool:
+	if Inventory.has_empty_slot():
+		return true
+	if not item.stackable:
+		return false
+	for slot in Inventory.slots:
+		if slot != null and slot.item_name == item.item_name:
+			return true
+	return false
+
+func _set_status(text: String, color: Color) -> void:
+	if _status == null:
+		return
+	_status.text = text
+	_status.add_theme_color_override("font_color", color)
+	_status.modulate.a = 1.0
+	if _status_tween != null and _status_tween.is_valid():
+		_status_tween.kill()
+	_status_tween = create_tween()
+	_status_tween.tween_interval(1.4)
+	_status_tween.tween_property(_status, "modulate:a", 0.0, 0.4)
 
 func _play_open_anim() -> void:
 	_panel.pivot_offset = _panel.size / 2.0

@@ -1,0 +1,183 @@
+[gd_scene format=3 uid="uid://b1cff4frcwoxm"]
+
+[ext_resource type="Script" uid="uid://dyelev5aiialc" path="res://scripts/credits.gd" id="1_credits"]
+[ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="2_babydoll"]
+
+[sub_resource type="Gradient" id="Gradient_bg"]
+offsets = PackedFloat32Array(0, 0.55, 1)
+colors = PackedColorArray(0.11, 0.3, 0.21, 1, 0.05, 0.12, 0.09, 1, 0.02, 0.04, 0.03, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_bg"]
+gradient = SubResource("Gradient_bg")
+width = 1024
+height = 1024
+fill = 1
+fill_from = Vector2(0.5, 0.4)
+fill_to = Vector2(1.1, 1.05)
+
+[sub_resource type="Gradient" id="Gradient_glow"]
+offsets = PackedFloat32Array(0, 0.7, 1)
+colors = PackedColorArray(0.35, 0.95, 0.55, 0.24, 0.2, 0.6, 0.38, 0.07, 0.1, 0.3, 0.2, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_glow"]
+gradient = SubResource("Gradient_glow")
+width = 512
+height = 512
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_return"]
+bg_color = Color(0.16, 0.72, 0.38, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.04, 0.12, 0.07, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0, 0, 0, 0.4)
+shadow_size = 8
+shadow_offset = Vector2(0, 5)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_return_hover"]
+bg_color = Color(0.24, 0.92, 0.5, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.04, 0.12, 0.07, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.2, 0.9, 0.45, 0.35)
+shadow_size = 14
+shadow_offset = Vector2(0, 4)
+
+[node name="CreditsScreen" type="Control" unique_id=1510498115]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_credits")
+
+[node name="Background" type="TextureRect" parent="." unique_id=1200543803]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("GradientTexture2D_bg")
+expand_mode = 1
+
+[node name="Glow" type="TextureRect" parent="." unique_id=1044369290]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -520.0
+offset_top = -430.0
+offset_right = 520.0
+offset_bottom = 250.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("GradientTexture2D_glow")
+expand_mode = 1
+
+[node name="RollClip" type="Control" parent="." unique_id=703980213]
+clip_contents = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Roll" type="VBoxContainer" parent="RollClip" unique_id=1182031901]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+grow_horizontal = 2
+theme_override_constants/separation = 0
+
+[node name="TheEnd" type="Label" parent="." unique_id=1849544249]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -400.0
+offset_top = -60.0
+offset_right = 400.0
+offset_bottom = 60.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.5, 1)
+theme_override_colors/font_outline_color = Color(0, 0.08, 0.03, 1)
+theme_override_constants/outline_size = 8
+theme_override_fonts/font = ExtResource("2_babydoll")
+theme_override_font_sizes/font_size = 64
+text = "THE END"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ReturnButton" type="Button" parent="." unique_id=934195584]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -140.0
+offset_top = -108.0
+offset_right = 140.0
+offset_bottom = -30.0
+grow_horizontal = 2
+grow_vertical = 0
+focus_mode = 0
+theme_override_colors/font_color = Color(0.98, 1, 0.98, 1)
+theme_override_colors/font_outline_color = Color(0, 0.1, 0.04, 1)
+theme_override_constants/outline_size = 6
+theme_override_fonts/font = ExtResource("2_babydoll")
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = SubResource("StyleBoxFlat_return")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_return_hover")
+theme_override_styles/hover = SubResource("StyleBoxFlat_return_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_return")
+text = "MAIN MENU"
+
+[node name="SkipHint" type="Label" parent="." unique_id=285363949]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -240.0
+offset_top = -24.0
+offset_right = 240.0
+offset_bottom = -2.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.8, 0.86, 0.8, 0.7)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.7)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("2_babydoll")
+theme_override_font_sizes/font_size = 16
+text = "ESC / CLICK TO SKIP"
+horizontal_alignment = 1
+
+[connection signal="pressed" from="ReturnButton" to="." method="_on_return_pressed"]

@@ -102,6 +102,8 @@ func take_damage(amount: float, _direction: Vector2 = Vector2.ZERO) -> void:
 	EnemyDamage.spawn_damage_number(self, amount)
 	_flash = 0.12
 	modulate = Color(2.0, 0.9, 1.2)
+	if health > 0.0:
+		EnemyDamage.play_hit_feedback(self, visual)
 	if health <= 0.0:
 		die()
 

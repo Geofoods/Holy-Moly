@@ -1,5 +1,7 @@
 extends Control
 
+var _button_tweens: Dictionary = {}
+
 func _ready():
 	LevelMusic.stop()
 	var vbox = $CenterContainer/VBoxContainer
@@ -7,23 +9,36 @@ func _ready():
 	vbox.scale = Vector2(0.85, 0.85)
 	vbox.call_deferred("set", "pivot_offset", vbox.size / 2.0)
 	_set_buttons_enabled(false)
-	for btn in [$CenterContainer/VBoxContainer/ButtonContainer/MainMenuButton, $CenterContainer/VBoxContainer/ButtonContainer/CancelButton]:
+	for btn in [$CenterContainer/VBoxContainer/ButtonContainer/MainMenuButton, $CenterContainer/VBoxContainer/ButtonContainer/CreditsButton, $CenterContainer/VBoxContainer/ButtonContainer/CancelButton]:
 		_setup_button_hover(btn)
+		btn.pressed.connect(_on_button_pressed.bind(btn))
 	_spawn_confetti()
 	animate_win()
 
 func _setup_button_hover(btn: Button) -> void:
-	btn.mouse_entered.connect(func():
-		if btn.disabled:
-			return
-		SFX.play_ui("ui_hover", -18.0, 1.8)
-		var t := create_tween()
-		t.tween_property(btn, "scale", Vector2(1.06, 1.06), 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	)
-	btn.mouse_exited.connect(func():
-		var t := create_tween()
-		t.tween_property(btn, "scale", Vector2.ONE, 0.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	)
+	btn.mouse_entered.connect(_on_button_hover.bind(btn))
+	btn.mouse_exited.connect(_on_button_unhover.bind(btn))
+
+func _on_button_hover(btn: Button) -> void:
+	if btn.disabled:
+		return
+	SFX.play_ui("ui_hover", -18.0, 1.8)
+	_animate_button(btn, Vector2(1.06, 1.06), 0.12, Tween.TRANS_BACK)
+
+func _on_button_unhover(btn: Button) -> void:
+	_animate_button(btn, Vector2.ONE, 0.1, Tween.TRANS_SINE)
+
+func _on_button_pressed(btn: Button) -> void:
+	_animate_button(btn, Vector2(0.96, 0.96), 0.06, Tween.TRANS_QUAD)
+
+func _animate_button(btn: Button, target: Vector2, duration: float, transition: Tween.TransitionType) -> void:
+	var button_id := btn.get_instance_id()
+	var old_tween: Tween = _button_tweens.get(button_id)
+	if old_tween and old_tween.is_valid():
+		old_tween.kill()
+	var tween := create_tween()
+	_button_tweens[button_id] = tween
+	tween.tween_property(btn, "scale", target, duration).set_trans(transition).set_ease(Tween.EASE_OUT)
 
 func _spawn_confetti() -> void:
 	var viewport_size: Vector2 = get_viewport_rect().size
@@ -67,11 +82,14 @@ func animate_menu_reveal() -> void:
 
 func _set_buttons_enabled(enabled: bool) -> void:
 	var main_btn = $CenterContainer/VBoxContainer/ButtonContainer/MainMenuButton
+	var credits_btn = $CenterContainer/VBoxContainer/ButtonContainer/CreditsButton
 	var cancel_btn = $CenterContainer/VBoxContainer/ButtonContainer/CancelButton
 	main_btn.disabled = not enabled
+	credits_btn.disabled = not enabled
 	cancel_btn.disabled = not enabled
 	if enabled:
 		main_btn.pivot_offset = main_btn.size / 2.0
+		credits_btn.pivot_offset = credits_btn.size / 2.0
 		cancel_btn.pivot_offset = cancel_btn.size / 2.0
 
 func _on_main_menu_pressed():
@@ -80,6 +98,12 @@ func _on_main_menu_pressed():
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 	get_tree().root.add_child(transition)
 	transition.change_to("res://scenes/level1.tscn")
+
+func _on_credits_pressed():
+	SFX.play_ui("ui_click")
+	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
+	get_tree().root.add_child(transition)
+	transition.change_to("res://scenes/credits.tscn")
 
 func _on_cancel_pressed():
 	SFX.play_ui("ui_click")

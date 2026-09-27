@@ -156,7 +156,10 @@ func _release_mushroom() -> void:
 	var mushroom = mushroom_scene.instantiate()
 	get_parent().call_deferred("add_child", mushroom)
 	mushroom.global_position = global_position + Vector2(sign(dir.x) * 30, -40)
-	mushroom.linear_velocity = dir * THROW_VELOCITY
+	# bomb.gd's _ready() zeroes linear_velocity the moment the mushroom enters the
+	# tree, which only happens after the deferred add_child above. Defer the throw
+	# too, or the mushroom loses its speed and just drops at the goblin's feet.
+	mushroom.set_deferred("linear_velocity", dir * THROW_VELOCITY)
 	mushroom.arm()
 
 func _on_hurtbox_area_entered(area: Area2D) -> void:
@@ -183,6 +186,8 @@ func take_damage(amount: float, direction: Vector2 = Vector2.ZERO) -> void:
 	SFX.play("enemy_hit", global_position)
 	if _health_bar:
 		_health_bar.queue_redraw()
+	if health > 0.0:
+		EnemyDamage.play_hit_feedback(self, visual)
 
 	var tween := create_tween()
 	tween.tween_property(self, "modulate", Color(2, 1, 1, 1), 0.05)
