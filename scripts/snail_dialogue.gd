@@ -18,7 +18,7 @@ extends RigidBody2D
 
 ## The scale the snail transforms up to for the boss fight. Everything keyed to
 ## the fight's size - the collision body, the aura, the spit spawn offset, the
-## lane the chest sweep clears - is derived from this, so this is the one knob.
+## lane the loot sails into - is derived from this, so this is the one knob.
 const TRANSFORM_SCALE := 11.0
 const EnemyDamage := preload("res://scripts/enemy.gd")
 const SNAIL_GLOW_TEXTURE := preload("res://costume3 (1).svg")
@@ -61,17 +61,20 @@ const BOSS_MINION_SCENES: Array[PackedScene] = [
 	preload("res://scenes/slimeenemy.tscn"),
 ]
 const BOSS_PROJECTILE_SCENE := preload("res://area_2d.tscn")
-## Chests rain into the fight as loot. Opening one is the player's call, but the
-## snail ploughs through any that are still in the way, so the autoscroll can
-## never jam on one and the loot is never taken away from the player.
-const BOSS_CHEST_SCENE := preload("res://chest.tscn")
-const BOSS_CHEST_GROUP := "snail_boss_chest"
-const BOSS_CHEST_SPAWN_INTERVAL := 12.0
+## Loot drops into the fight: a loose Drill or Holy Water the player grabs on the
+## move. These used to be chests, which meant stopping to open one while the
+## snail was still firing.
+const LootDrop := preload("res://scripts/loot_drop.gd")
+const BOSS_LOOT_SPAWN_INTERVAL := 12.0
 ## The first one waits longer than the rest, so the fight opens with the snail
 ## and not with loot dropping in on top of the player.
-const BOSS_CHEST_FIRST_SPAWN_DELAY := 8.0
-## How far past its nose the snail sweeps for chests that would block it.
-const BOSS_CHEST_CLEAR_AHEAD := 70.0
+const BOSS_LOOT_FIRST_SPAWN_DELAY := 8.0
+## Landed just ahead of the player rather than straight down on their head, so it
+## is something to move for instead of something that lands on them.
+const BOSS_LOOT_DROP_OFFSET := Vector2(110.0, -500.0)
+## The end of the boss laser goes off like a bomb.
+const BOSS_LASER_IMPACT_SCENE := preload("res://Retro Explosion.tscn")
+const BOSS_LASER_IMPACT_SCALE := 1.0
 ## The snail is a RigidBody2D driven entirely by script, so a bomb landing on its
 ## shell or an add walking into it must never shove it off script. Bombs, chests,
 ## coins and debris all sit on the same collision layer as the ground, so the
@@ -107,7 +110,7 @@ var _boss_laser_active := false
 var _boss_laser_lines: Array[Line2D] = []
 var _boss_aura_shield: Line2D = null
 var _boss_break_timer := 0.0
-var _boss_chest_spawn_timer := 0.0
+var _boss_loot_spawn_timer := 0.0
 var _boss_immune_timer := 0.0
 var _boss_contact_timer := 0.0
 var _boss_projectile_count := 0
@@ -217,10 +220,10 @@ func _physics_process(delta: float) -> void:
 		_spawn_boss_minion()
 		_boss_minion_spawn_timer = randf_range(BOSS_MINION_SPAWN_INTERVAL.x, BOSS_MINION_SPAWN_INTERVAL.y)
 
-	_boss_chest_spawn_timer -= delta
-	if _boss_chest_spawn_timer <= 0.0:
-		_boss_chest_spawn_timer = BOSS_CHEST_SPAWN_INTERVAL
-		_spawn_boss_chest()
+	_boss_loot_spawn_timer -= delta
+	if _boss_loot_spawn_timer <= 0.0:
+		_boss_loot_spawn_timer = BOSS_LOOT_SPAWN_INTERVAL
+		_spawn_boss_loot()
 
 	# Bombs and adds can be thrown or spawned at any moment, so this is re-checked
 	# through the fight rather than only once when the fight begins.
@@ -502,7 +505,7 @@ func _begin_boss_fight() -> void:
 	_boss_laser_active = false
 	_boss_minion_spawn_timer = 3.0
 	_boss_break_timer = 0.0
-	_boss_chest_spawn_timer = BOSS_CHEST_FIRST_SPAWN_DELAY
+	_boss_loot_spawn_timer = BOSS_LOOT_FIRST_SPAWN_DELAY
 	_boss_immune_timer = 0.0
 	linear_velocity = Vector2.ZERO
 	sleeping = false
@@ -765,6 +768,19 @@ func take_damage(_amount: float, _direction: Vector2 = Vector2.ZERO) -> void:
 
 ## The drill is the saw-like attack that can pierce the aura shield.
 func take_saw_damage(amount: float, _direction: Vector2 = Vector2.ZERO) -> void:
+	_apply_boss_damage(amount)
+
+## Bombs are not a swing for the shield to soak up: a blast that goes off against
+## the shell hurts the snail the way the drill does.
+func take_explosion_damage(amount: float, _direction: Vector2 = Vector2.ZERO) -> void:
+	_apply_boss_damage(amount)
+
+## Asked by the ice bomb before it freezes anything: a frozen snail only makes
+## sense while the fight is actually running.
+func can_be_frozen() -> bool:
+	return _boss_active and not _boss_dying
+
+func _apply_boss_damage(amount: float) -> void:
 	if not _boss_active or _boss_dying or amount <= 0.0:
 		return
 	_boss_health = maxf(_boss_health - amount, 0.0)
@@ -893,9 +909,8 @@ func _spawn_boss_minion() -> void:
 	parent.add_child(minion)
 	SFX.play("enemy_fire", to_global(spawn_offset), -8.0, 0.15, 0.85)
 
-## Drops a chest into the arena for the player to crack open. It is tracked in
-## its own group so the snail can clear it if it ends up in the way.
-func _spawn_boss_chest() -> void:
+## Drops a Drill or Holy Water into the arena for the player to grab on the move.
+func _spawn_boss_loot() -> void:
 	if not _boss_active or _boss_dying:
 		return
 	var parent := get_parent() as Node2D
@@ -904,26 +919,8 @@ func _spawn_boss_chest() -> void:
 	var mole := get_tree().get_first_node_in_group("mole") as Node2D
 	if mole == null or not is_instance_valid(mole):
 		return
-
-	var chest := BOSS_CHEST_SCENE.instantiate() as Node2D
-	if chest == null:
-		return
-	chest.add_to_group(BOSS_CHEST_GROUP)
-
-	# Aiming just ahead of the player rather than straight down on their head, so
-	# it lands somewhere to fight over instead of on top of them.
-	var drop_at := mole.global_position + Vector2(110.0, -500.0)
-	parent.add_child(chest)
-	chest.global_position = drop_at
-
-	# A short landing tell, so the chest reads as arriving rather than appearing.
-	var sprite := chest.get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
-	if sprite != null:
-		var rest_scale := sprite.scale
-		sprite.scale = rest_scale * 0.4
-		var tween := sprite.create_tween()
-		tween.tween_property(sprite, "scale", rest_scale, 0.35) \
-			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	var drop_at: Vector2 = mole.global_position + BOSS_LOOT_DROP_OFFSET
+	LootDrop.spawn_random(parent, drop_at)
 	SFX.play("coin", drop_at, -12.0, 0.12, 0.9)
 
 func _fire_boss_laser(mole: Node2D) -> void:
@@ -936,7 +933,9 @@ func _fire_boss_laser(mole: Node2D) -> void:
 	var laser_direction := (mole.global_position - laser_start).normalized()
 	if laser_direction == Vector2.ZERO:
 		laser_direction = Vector2.DOWN
-	var laser_end := laser_start + laser_direction * BOSS_LASER_LENGTH
+	# The beam burns through dirt but stops at bedrock, and that stopping point is
+	# where its impact goes off.
+	var laser_end := _trace_boss_laser(laser_start, laser_direction, laser_start + laser_direction * BOSS_LASER_LENGTH)
 	var telegraph := _create_boss_laser_lines(laser_start, laser_end, true)
 	_boss_laser_lines = telegraph
 	for line in telegraph:
@@ -971,6 +970,7 @@ func _fire_boss_laser(mole: Node2D) -> void:
 		mole.call("screen_shake", 16.0, BOSS_LASER_STRIKE_DURATION)
 	_damage_mole_in_boss_laser(mole, laser_start, laser_end)
 	_break_blocks_along_boss_laser(laser_start, laser_end)
+	_spawn_boss_laser_impact(laser_end)
 
 	var laser_time_left := BOSS_LASER_STRIKE_DURATION
 	while laser_time_left > 0.0:
@@ -1059,6 +1059,38 @@ func _break_blocks_along_boss_laser(start: Vector2, finish: Vector2) -> void:
 				continue
 			TileBreakSFX.break_tile(tilemap, cell, get_parent())
 
+## Where the beam stops: the first bedrock it runs into, or its full length when
+## it never finds any. Mirrors the corrupted heart's laser, so both boss beams
+## bite into the same kind of wall.
+func _trace_boss_laser(start: Vector2, direction: Vector2, finish: Vector2) -> Vector2:
+	var tilemap := get_parent().get_node_or_null("TileMap") as TileMap
+	if tilemap == null:
+		return finish
+	var distance := start.distance_to(finish)
+	var sample_count := maxi(1, int(ceil(distance / BOSS_LASER_TILE_SAMPLE_SPACING)))
+	for i in range(1, sample_count + 1):
+		var progress := minf(float(i) * BOSS_LASER_TILE_SAMPLE_SPACING, distance)
+		var sample := start + direction * progress
+		var cell := tilemap.local_to_map(tilemap.to_local(sample))
+		var tile_data := tilemap.get_cell_tile_data(0, cell)
+		if tile_data != null and (tile_data.get_custom_data("bedrock") as bool):
+			return sample
+	return finish
+
+## The beam's end goes off like a bomb. Without this the only blast the laser
+## left behind came from the blocks it happened to shatter on the way, so whether
+## the impact read at all depended on where it was aimed.
+func _spawn_boss_laser_impact(world_pos: Vector2) -> void:
+	var explosion = BOSS_LASER_IMPACT_SCENE.instantiate()
+	explosion.global_position = world_pos
+	explosion.scale = Vector2.ONE * BOSS_LASER_IMPACT_SCALE
+	get_parent().add_child(explosion)
+	explosion.emitting = true
+	SFX.play("explosion", world_pos, -3.0, 0.1)
+	var mole := get_tree().get_first_node_in_group("mole")
+	if is_instance_valid(mole) and mole.has_method("screen_shake"):
+		mole.call("screen_shake", 18.0, 0.4)
+
 func _spit_boss_projectile(mole: Node2D) -> void:
 	var aim := (mole.global_position - global_position).normalized()
 	if aim == Vector2.ZERO:
@@ -1093,7 +1125,6 @@ func _boss_body_size() -> Vector2:
 	return texture.get_size() * visual_scale * Vector2(0.78, 0.84)
 
 func _break_blocks_ahead(direction: float) -> void:
-	_clear_chests_in_path(direction)
 	var tilemap := get_parent().get_node_or_null("TileMap") as TileMap
 	if tilemap == null:
 		return
@@ -1133,35 +1164,6 @@ func _ignore_loose_body_pushes() -> void:
 		if not (child is PhysicsBody2D) or (child is StaticBody2D):
 			continue
 		add_collision_exception_with(child as PhysicsBody2D)
-
-## A settled chest is solid ground-level geometry, and the snail is being driven
-## forwards every frame, so one left in the lane would stall the autoscroll
-## outright. Sweep the lane ahead and smash anything still sitting in it,
-## opening unopened ones first so the player still gets the loot out of them.
-func _clear_chests_in_path(direction: float) -> void:
-	var boss_size := _boss_body_size()
-	var x_front := global_position.x + direction * (boss_size.x * 0.5 + BOSS_CHEST_CLEAR_AHEAD)
-	var y_top := global_position.y + _transform_ground_y - boss_size.y + 35.0
-	var y_bottom := global_position.y + _transform_ground_y + 20.0
-	var lane := Rect2(
-		Vector2(minf(global_position.x, x_front), y_top),
-		Vector2(absf(x_front - global_position.x), y_bottom - y_top)
-	).grow(40.0)
-
-	for chest in get_tree().get_nodes_in_group(BOSS_CHEST_GROUP):
-		if not is_instance_valid(chest) or not (chest is Node2D):
-			continue
-		if not lane.has_point((chest as Node2D).global_position):
-			continue
-		var chest_area := chest.get_node_or_null("Area2D") as Area2D
-		if chest_area == null or not chest_area.has_method("_open_chest"):
-			continue
-		# Already smashed: its body is on its way out and will not snag anything.
-		if chest_area.get("is_breaking") == true:
-			continue
-		if chest_area.get("is_open") == false:
-			chest_area.call("_open_chest")
-		chest_area.call("break_as_block")
 
 func _defeat_boss() -> void:
 	_boss_dying = true

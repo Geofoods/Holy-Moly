@@ -7,6 +7,9 @@ extends "res://scripts/bomb.gd"
 
 const FREEZE_DURATION := 5.0
 const MOLE_FREEZE_DURATION := 2.0
+## The cold snap is a hit in its own right, just a lighter one than a fire bomb:
+## freezing the target is what this bomb is really for.
+const DAMAGE_SCALE := 0.7
 
 func _process(delta: float) -> void:
 	if not fuse_active or is_flashing:
@@ -46,6 +49,7 @@ func _explode() -> void:
 	SFX.play("explosion", global_position)
 
 	_spawn_ice_burst()
+	_damage_enemies_in_blast(global_position, explosion_radius, _rolled_blast_damage() * DAMAGE_SCALE)
 	_freeze_radius()
 
 	var mole := get_tree().get_first_node_in_group("mole")
@@ -176,7 +180,14 @@ func _freeze_radius() -> void:
 		if not is_instance_valid(hurtbox):
 			continue
 		var enemy := hurtbox.get_parent()
-		if enemy and is_instance_valid(enemy) and global_position.distance_to(enemy.global_position) <= explosion_radius:
+		if enemy == null or not is_instance_valid(enemy):
+			continue
+		# A boss answers for itself: freezing the middle of its own death finale,
+		# or the snail mid-transformation before the fight has even started, would
+		# stall a scripted sequence.
+		if enemy.has_method("can_be_frozen") and not enemy.can_be_frozen():
+			continue
+		if _blast_distance_to(hurtbox, enemy, global_position) <= explosion_radius:
 			freeze_node(enemy, FREEZE_DURATION)
 
 	for bullet in get_tree().get_nodes_in_group("bullet"):
@@ -199,6 +210,11 @@ func freeze_node(node: Node2D, duration: float) -> void:
 		node.set("monitoring", false)
 	if node is CharacterBody2D:
 		node.set("velocity", Vector2.ZERO)
+	elif node is RigidBody2D:
+		# A script-driven body (the snail boss) would otherwise coast on through
+		# its own freeze, and it must not be left asleep when it thaws.
+		node.set("linear_velocity", Vector2.ZERO)
+		node.set("sleeping", false)
 	node.modulate = Color(0.55, 0.82, 1.2, 0.9)
 	node.set_physics_process(false)
 	node.set_process(false)
@@ -206,6 +222,8 @@ func freeze_node(node: Node2D, duration: float) -> void:
 		if is_instance_valid(node):
 			node.set_physics_process(node.get_meta("freeze_restore_physics", true))
 			node.set_process(node.get_meta("freeze_restore_process", true))
+			if node is RigidBody2D:
+				node.set("sleeping", false)
 			if node is Area2D:
 				node.set("monitoring", node.get_meta("freeze_restore_monitoring", true))
 			node.modulate = node.get_meta("freeze_restore_modulate", Color.WHITE)

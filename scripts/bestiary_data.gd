@@ -107,7 +107,7 @@ const ENTRIES: Array[Dictionary] = [
 		"danger_level": 2,
 		"description": "An unstable ice charge that flash-freezes anything caught in its blast radius.",
 		"behavior": "Select it from your inventory (number key) and Left-click to throw it toward your cursor. It arms and counts down before detonating in a cold snap.",
-		"attack_pattern": "About a 2.5 second fuse, then a 200px-radius ice blast that freezes every enemy inside it solid for 5 seconds. Getting caught in it freezes you for a moment too.",
+		"attack_pattern": "About a 2.5 second fuse, then a 200px-radius ice blast that damages everything inside it and freezes every enemy solid for 5 seconds. Getting caught in it freezes you for a moment too.",
 		"strategy": "Freeze a swarm, then swing through them while they're stuck still. Frozen projectiles drop dead out of the sky. Mind the splash -- standing in the blast freezes you briefly.",
 	},
 	{

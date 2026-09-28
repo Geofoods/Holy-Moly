@@ -1,0 +1,54 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/respawn_station.gd" id="1_station"]
+[ext_resource type="Script" path="res://scripts/respawn_station_art.gd" id="2_art"]
+[ext_resource type="Texture2D" path="res://costume3 (1).svg" id="3_glow"]
+[ext_resource type="FontFile" path="res://Baby Doll.otf" id="4_font"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_stand"]
+size = Vector2(300, 56)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_interact"]
+size = Vector2(520, 460)
+
+[node name="RespawnStation" type="Node2D"]
+script = ExtResource("1_station")
+spawn_offset = Vector2(0, -126)
+prompt_offset = Vector2(0, -440)
+
+[node name="Art" type="Node2D" parent="."]
+script = ExtResource("2_art")
+
+[node name="PadLight" type="PointLight2D" parent="."]
+position = Vector2(0, -262)
+scale = Vector2(4.5, 4.5)
+color = Color(0.55, 0.9, 1, 1)
+energy = 0.25
+range_item_cull_mask = 1023
+texture = ExtResource("3_glow")
+
+[node name="Stand" type="StaticBody2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Stand"]
+position = Vector2(0, -66)
+shape = SubResource("RectangleShape2D_stand")
+
+[node name="InteractionArea" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="InteractionArea"]
+position = Vector2(0, -160)
+shape = SubResource("RectangleShape2D_interact")
+
+[node name="Prompt" type="Label" parent="."]
+visible = false
+offset_left = -190.0
+offset_top = -440.0
+offset_right = 190.0
+offset_bottom = -380.0
+theme_override_colors/font_color = Color(0.75, 0.97, 1, 1)
+theme_override_colors/font_outline_color = Color(0.05, 0.1, 0.12, 1)
+theme_override_constants/outline_size = 5
+theme_override_fonts/font = ExtResource("4_font")
+theme_override_font_sizes/font_size = 40
+text = "PRESS E: SET CHECKPOINT"
+horizontal_alignment = 1

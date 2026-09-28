@@ -65,6 +65,9 @@ func _build_catalog() -> void:
 ## resources) rather than weapons. Prices are tuned against the coins enemies
 ## drop, so the cheap staples are always reachable within a couple of levels.
 func _build_item_catalog() -> void:
+	# One page worth of stocking only (see shop_ui.ITEMS_PER_PAGE): the item shop
+	# deliberately sells the four staples and nothing else, so the pager never
+	# appears and the panel stays a quick read.
 	var defs := [
 		# Healing
 		{"name": "Miner's Rations", "price": 25},
@@ -72,22 +75,6 @@ func _build_item_catalog() -> void:
 		{"name": "Holy Water", "price": 60},
 		# Explosives
 		{"name": "Bomb", "price": 80},
-		{"name": "Ice Bomb", "price": 90},
-		{"name": "Stink Bomb", "price": 65},
-		{"name": "Spark Bomb", "price": 85},
-		{"name": "Mine", "price": 70},
-		{"name": "Golden Bomb", "price": 200},
-		# Gear
-		{"name": "Drill", "price": 120},
-		{"name": "Grub Stick", "price": 75},
-		{"name": "Lantern Charm", "price": 95},
-		{"name": "Tunnel Gloves", "price": 110},
-		# Utility
-		{"name": "Shiny Lure", "price": 30},
-		{"name": "Bounce Mushroom", "price": 40},
-		{"name": "Compass Charm", "price": 50},
-		{"name": "Flare", "price": 45},
-		{"name": "Vacuum Jelly", "price": 55},
 	]
 	for def in defs:
 		var item := _find_item(def["name"])

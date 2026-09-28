@@ -187,6 +187,9 @@ func _on_play_pressed() -> void:
 	var play_btn = $CenterContainer/VBoxContainer/ButtonContainer/PlayButton
 	play_btn.disabled = true
 	Inventory.reset()
+	# A banked station belongs to the run that banked it, so a fresh game from
+	# the title screen must not inherit the last one's checkpoint.
+	Progress.clear_respawn()
 	var target := "res://scenes/molevillage.tscn"
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 	get_tree().root.add_child(transition)

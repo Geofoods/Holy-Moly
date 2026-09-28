@@ -206,6 +206,20 @@ func _ready() -> void:
 	_setup_ranged_weapon()
 	_refresh_weapon_visibility()
 	Shop.loadout_changed.connect(_refresh_weapon_visibility)
+	_play_respawn_arrival()
+
+## A death sends the mole back to the banked respawn station, which plays the
+## materialise animation. Any other way into a level is instant, so the flag is
+## read-and-cleared: only the station actually being arrived at sees it.
+##
+## Deliberately not awaited - _ready keeps setting the level up while the
+## animation plays.
+func _play_respawn_arrival() -> void:
+	if not Progress.take_respawn_pending():
+		return
+	var station := get_tree().get_first_node_in_group("respawn_station")
+	if station != null and station.has_method("spawn_mole_in"):
+		station.spawn_mole_in(self)
 
 ## Restores the position the mole had when it last left this level, if any, so
 ## re-entering a level drops the player back where they exited.
@@ -1158,7 +1172,9 @@ func _start_invulnerability_blink() -> void:
 	_sprite.set_meta("iframe_blink_tween", tween)
 
 func _stop_invulnerability_blink() -> void:
-	var tween := _sprite.get_meta("iframe_blink_tween", null) as Tween
+	var tween: Tween = null
+	if _sprite.has_meta("iframe_blink_tween"):
+		tween = _sprite.get_meta("iframe_blink_tween") as Tween
 	if tween and tween.is_valid():
 		tween.kill()
 	_sprite.set_meta("iframe_blink_tween", null)
@@ -1204,7 +1220,9 @@ func _squash_landing(impact: float) -> void:
 	var strength := clampf(impact, 0.0, 1.0)
 	var base_scale_y := float(_sprite.get_meta("landing_base_scale_y", _sprite.scale.y))
 	_sprite.set_meta("landing_base_scale_y", base_scale_y)
-	var old_tween := _sprite.get_meta("landing_tween", null) as Tween
+	var old_tween: Tween = null
+	if _sprite.has_meta("landing_tween"):
+		old_tween = _sprite.get_meta("landing_tween") as Tween
 	if old_tween and old_tween.is_valid():
 		old_tween.kill()
 	var tween := _sprite.create_tween()

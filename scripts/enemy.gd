@@ -248,7 +248,9 @@ static func play_hit_feedback(enemy: Node2D, target_visual: Node2D) -> void:
 		return
 	var base_y := float(target_visual.get_meta("hit_feedback_base_scale_y", target_visual.scale.y))
 	target_visual.set_meta("hit_feedback_base_scale_y", base_y)
-	var old_tween := target_visual.get_meta("hit_feedback_tween", null) as Tween
+	var old_tween: Tween = null
+	if target_visual.has_meta("hit_feedback_tween"):
+		old_tween = target_visual.get_meta("hit_feedback_tween") as Tween
 	if old_tween and old_tween.is_valid():
 		old_tween.kill()
 	var tween := target_visual.create_tween()

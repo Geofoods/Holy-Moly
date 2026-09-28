@@ -6,7 +6,7 @@
 [resource]
 script = ExtResource("1")
 item_name = "Ice Bomb"
-description = "Throw to freeze enemies"
+description = "Throw to chill and freeze enemies"
 icon_color = Color(0.5, 0.7, 1, 1)
 icon_text = "IB"
 icon_texture = ExtResource("2_tex")

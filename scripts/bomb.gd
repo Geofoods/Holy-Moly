@@ -53,6 +53,57 @@ func _process(delta: float) -> void:
 func arm() -> void:
 	fuse_active = true
 
+## Every enemy hurtbox the blast catches. Shared with the ice bomb, which
+## extends this script for the fuse, art and crater but detonates on its own.
+func _damage_enemies_in_blast(origin: Vector2, radius: float, damage: float) -> void:
+	for hurtbox in get_tree().get_nodes_in_group("enemy_hurtbox"):
+		if not is_instance_valid(hurtbox):
+			continue
+		var enemy := hurtbox.get_parent()
+		if enemy == null or not is_instance_valid(enemy):
+			continue
+		if _blast_distance_to(hurtbox, enemy, origin) > radius:
+			continue
+		var direction: Vector2 = (enemy.global_position - origin).normalized()
+		# Explosions are their own kind of hit: the snail boss's aura shield soaks
+		# up a swing, but a bomb going off against it still hurts.
+		if enemy.has_method("take_explosion_damage"):
+			enemy.take_explosion_damage(damage, direction)
+		elif enemy.has_method("take_damage"):
+			enemy.take_damage(damage, direction)
+		elif enemy.has_method("die"):
+			enemy.die()
+
+func _rolled_blast_damage() -> float:
+	return ENEMY_DAMAGE * DAMAGE_SCALAR * ComboManager.get_damage_multiplier() * randf_range(1.0 - DAMAGE_VARIATION, 1.0 + DAMAGE_VARIATION)
+
+## How close an explosion landed to an enemy, measured against its hurtbox
+## shape rather than its origin. Both bosses park a large hurtbox a long way from
+## where their node sits, so measuring from the origin alone leaves a blast
+## outside a radius it visibly went off inside. A shape the blast cannot measure
+## keeps the origin-based reach it always had.
+func _blast_distance_to(hurtbox: Node, enemy: Node, origin: Vector2) -> float:
+	var closest := INF
+	for child in hurtbox.get_children():
+		var shape_node := child as CollisionShape2D
+		if shape_node == null:
+			continue
+		var shape := shape_node.shape
+		var local := shape_node.global_transform.affine_inverse() * origin
+		var outside := Vector2.ZERO
+		if shape is RectangleShape2D:
+			var half := (shape as RectangleShape2D).size * 0.5
+			outside = Vector2(maxf(absf(local.x) - half.x, 0.0), maxf(absf(local.y) - half.y, 0.0))
+		elif shape is CircleShape2D:
+			outside = local.limit_length(maxf(local.length() - (shape as CircleShape2D).radius, 0.0))
+		else:
+			continue
+		closest = minf(closest, shape_node.global_transform.basis_xform(outside).length())
+	if closest == INF:
+		var enemy_node := enemy as Node2D
+		return origin.distance_to(enemy_node.global_position) if enemy_node != null else INF
+	return closest
+
 func _start_flash() -> void:
 	is_flashing = true
 	var tween := create_tween()
@@ -119,16 +170,7 @@ func _explode() -> void:
 					TileBreakSFX.break_decoration_tile(tilemap, tp, get_parent())
 		TileBreakSFX.break_opened_chests_near(get_parent(), global_position, explosion_radius)
 
-	for hurtbox in get_tree().get_nodes_in_group("enemy_hurtbox"):
-		if not is_instance_valid(hurtbox):
-			continue
-		var enemy := hurtbox.get_parent()
-		if enemy and is_instance_valid(enemy) and global_position.distance_to(enemy.global_position) <= explosion_radius:
-			if enemy.has_method("take_damage"):
-				var dmg := ENEMY_DAMAGE * DAMAGE_SCALAR * ComboManager.get_damage_multiplier() * randf_range(1.0 - DAMAGE_VARIATION, 1.0 + DAMAGE_VARIATION)
-				enemy.take_damage(dmg, (enemy.global_position - global_position).normalized())
-			elif enemy.has_method("die"):
-				enemy.die()
+	_damage_enemies_in_blast(global_position, explosion_radius, _rolled_blast_damage())
 
 	var tween := create_tween()
 	tween.tween_property(self, "scale", Vector2.ZERO, 0.2).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_BACK)

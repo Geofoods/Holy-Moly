@@ -1,6 +1,6 @@
 extends CharacterBody2D
 
-const MAX_HEALTH := 2500.0
+const MAX_HEALTH := 1250.0
 const BOSS_HEALTH_BAR_WIDTH := 592.0
 const BOSS_HEALTH_BAR_HEIGHT := 48.0
 const BOSS_HEALTH_BAR_INSET := 14.0
@@ -31,7 +31,12 @@ const LASER_DAMAGE := 2.0
 const LASER_TILE_SAMPLE_SPACING := 38.0
 const LASER_TILE_HALF_WIDTH := LASER_WIDTH * 0.5
 const LASER_IMPACT_OVERSHOOT := 24.0
-const CHEST_SPAWN_INTERVAL := 10.0
+## The heart keeps the arena stocked: a loose Drill or Holy Water drops in above
+## the mole. It used to rain chests down instead, which asked the player to stop
+## and open one in the middle of a dodge.
+const LOOT_SPAWN_INTERVAL := 10.0
+const LOOT_DROP_OFFSET := Vector2(0, -500)
+const LootDrop := preload("res://scripts/loot_drop.gd")
 const BOUNCE_FORCE := 700.0
 
 ## Boss death finale: the floor gives way under the mole and the destruction
@@ -99,8 +104,7 @@ var _last_break_tile_y := -999999
 @onready var bounce_zone: Area2D = $BounceZone
 
 var _projectile_scene: PackedScene = null
-var _chest_scene: PackedScene = null
-var _chest_spawn_timer: float = 10.0
+var _loot_spawn_timer: float = LOOT_SPAWN_INTERVAL
 
 var _health_bar_layer: CanvasLayer = null
 var _health_bar_root: Control = null
@@ -126,7 +130,6 @@ func _ready() -> void:
 	_arena_map = get_parent().get_node_or_null("TileMap2") as TileMap
 	_tile_break_script = load("res://scripts/tile_break_sfx.gd")
 	_projectile_scene = preload("res://area_2d.tscn")
-	_chest_scene = preload("res://chest.tscn")
 
 func _create_health_bar() -> void:
 	_health_bar_layer = CanvasLayer.new()
@@ -365,10 +368,10 @@ func _physics_process(delta: float) -> void:
 			_laser_attack_active = true
 			_fire_laser_attack()
 
-	_chest_spawn_timer -= delta
-	if _chest_spawn_timer <= 0.0:
-		_spawn_chest()
-		_chest_spawn_timer = CHEST_SPAWN_INTERVAL
+	_loot_spawn_timer -= delta
+	if _loot_spawn_timer <= 0.0:
+		_spawn_loot_drop()
+		_loot_spawn_timer = LOOT_SPAWN_INTERVAL
 
 	_break_tiles_in_path()
 	global_position.y += DESCENT_SPEED * delta
@@ -386,7 +389,10 @@ func _fire_laser_attack() -> void:
 	if laser_direction == Vector2.ZERO:
 		laser_direction = Vector2.DOWN
 	_laser_hit_tile = Vector2i(-1, -1)
-	var laser_end := _laser_endpoint(laser_start, laser_direction)
+	# The beam stops on bedrock, and that stopping point is what the ground
+	# firework below marks. Tracing here (instead of letting the beam run its full
+	# length) is what puts the impact somewhere the player can actually see.
+	var laser_end := _trace_laser_to_bedrock(laser_start, laser_direction, _laser_endpoint(laser_start, laser_direction))
 	var telegraph_lines := _create_laser_glow(laser_start, laser_end, true)
 	for line in telegraph_lines:
 		if not is_instance_valid(line):
@@ -415,8 +421,9 @@ func _fire_laser_attack() -> void:
 		mole.screen_shake(24.0, LASER_STRIKE_DURATION)
 	_damage_mole_in_laser(mole, laser_start, laser_end)
 	_break_tiles_along_laser(laser_start, laser_end)
-	if _laser_hit_tile != Vector2i(-1, -1):
-		_spawn_laser_ground_firework(laser_end)
+	# Unconditional: this used to be gated on the beam finding bedrock, so whether
+	# the blast showed up at all came down to the level geometry.
+	_spawn_laser_ground_firework(laser_end)
 	var laser_time_left := LASER_STRIKE_DURATION
 	while laser_time_left > 0.0:
 		var damage_interval := minf(0.1, laser_time_left)
@@ -428,11 +435,14 @@ func _fire_laser_attack() -> void:
 	_laser_cooldown = randf_range(LASER_COOLDOWN_MIN, LASER_COOLDOWN_MAX)
 
 func _laser_endpoint(start: Vector2, direction: Vector2) -> Vector2:
-	# The beam is always its full configured length, passing through terrain and
-	# other collision objects rather than stopping at the first obstruction.
+	# How far the beam would run if nothing stopped it. It burns through dirt and
+	# other collision objects rather than stopping at the first obstruction; only
+	# bedrock ends the trip (see _trace_laser_to_bedrock).
 	return start + direction * LASER_LENGTH
 
 func _trace_laser_to_bedrock(start: Vector2, direction: Vector2, finish: Vector2) -> Vector2:
+	if _tilemap == null:
+		return finish
 	var distance := start.distance_to(finish)
 	var sample_count := maxi(1, int(ceil(distance / LASER_GROUND_TRACE_STEP)))
 	for i in range(1, sample_count + 1):
@@ -720,7 +730,7 @@ func _end_cutscene() -> void:
 	_spit_cooldown = 1.0
 	_laser_cooldown = randf_range(LASER_COOLDOWN_MIN, LASER_COOLDOWN_MAX)
 	_laser_attack_active = false
-	_chest_spawn_timer = CHEST_SPAWN_INTERVAL
+	_loot_spawn_timer = LOOT_SPAWN_INTERVAL
 	anim.play("default")
 
 	var wall := get_parent().get_node_or_null("StaticBody2D") as StaticBody2D
@@ -737,13 +747,15 @@ func _end_cutscene() -> void:
 	_create_health_bar()
 	_create_offscreen_indicator()
 
-func _spawn_chest() -> void:
+## Drops a Drill or Holy Water into the arena. It lands above the mole, who has
+## to move out and collect it rather than stop and open a chest.
+func _spawn_loot_drop() -> void:
 	var mole := get_tree().get_first_node_in_group("mole") as Node2D
-	if not mole or not is_instance_valid(mole):
+	if mole == null or not is_instance_valid(mole):
 		return
-	var chest := _chest_scene.instantiate()
-	chest.global_position = mole.global_position + Vector2(0, -500)
-	get_parent().add_child(chest)
+	var drop_at: Vector2 = mole.global_position + LOOT_DROP_OFFSET
+	LootDrop.spawn_random(get_parent(), drop_at)
+	SFX.play("coin", drop_at, -12.0, 0.12, 0.9)
 
 func _on_hurtbox_area_entered(area: Area2D) -> void:
 	if not _boss_active:
@@ -782,10 +794,17 @@ func take_damage(amount: float, direction: Vector2 = Vector2.ZERO) -> void:
 	if health <= 0:
 		die()
 
+## Asked by the ice bomb before it freezes anything: the heart can be iced while
+## it is fighting, but not once the death finale has taken over.
+func can_be_frozen() -> bool:
+	return _boss_active and health > 0.0
+
 func _hit_feedback() -> void:
 	var base_scale: Vector2 = anim.get_meta("hit_feedback_base_scale", anim.scale)
 	anim.set_meta("hit_feedback_base_scale", base_scale)
-	var old_tween := anim.get_meta("hit_feedback_tween", null) as Tween
+	var old_tween: Tween = null
+	if anim.has_meta("hit_feedback_tween"):
+		old_tween = anim.get_meta("hit_feedback_tween") as Tween
 	if old_tween and old_tween.is_valid():
 		old_tween.kill()
 	var tween := anim.create_tween()

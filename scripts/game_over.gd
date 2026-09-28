@@ -120,10 +120,18 @@ func _on_play_again_pressed():
 	get_tree().root.add_child(transition)
 	transition.change_to(_retry_path())
 
-## Replays the level the mole died in. `Inventory.current_level_path` is written
-## on every level transition and again at the moment of death (mole.gd), so it
-## still points at the level we came from by the time this screen is up.
+## Replays the level the mole died in, unless a respawn station was banked - a
+## banked station wins, so dying sends the mole back to the checkpoint instead
+## of to the start of the level it was already in. `Inventory.current_level_path`
+## is written on every level transition and again at the moment of death
+## (mole.gd), so it still points at the level we came from by this point.
 func _retry_path() -> String:
+	if Progress.has_respawn():
+		# Tells the station in the scene we are about to load that this arrival
+		# is a respawn, so it plays the materialise animation.
+		Progress.respawn_pending = true
+		Inventory.current_level_path = Progress.respawn_scene
+		return Progress.respawn_scene
 	var path := Inventory.current_level_path
 	if path.is_empty() or not ResourceLoader.exists(path):
 		return DEFAULT_RETRY_PATH

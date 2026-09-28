@@ -28,6 +28,18 @@ var boss_rush_cleared := false
 var arena_completed := false
 var best_combo := 0
 
+## Banked respawn station. `respawn_scene` is the scene the station stands in
+## and `respawn_position` is where the mole stood when it activated the station.
+## The raw player position is the record; the station works out the arrival spot
+## from its own pad, so the two never have to agree.
+var respawn_scene := ""
+var respawn_position := Vector2.ZERO
+
+## Transient, never saved. Set when a death sends the mole back to the banked
+## station and consumed once by the mole on arrival, so only the station the
+## mole is actually arriving at plays the materialise animation.
+var respawn_pending := false
+
 var acorn_total := ACORN_LEVELS.size()
 
 var _hub_layer: CanvasLayer = null
@@ -119,6 +131,29 @@ func update_best_combo(value: int) -> void:
 		best_combo = value
 		save_progress()
 
+func has_respawn() -> bool:
+	return not respawn_scene.is_empty() and ResourceLoader.exists(respawn_scene)
+
+## Banks `scene_path` as the respawn station and remembers the spot the mole
+## was standing, then writes both to disk so a checkpoint survives a restart.
+func set_respawn(scene_path: String, pos: Vector2) -> void:
+	respawn_scene = scene_path
+	respawn_position = pos
+	save_progress()
+
+func clear_respawn() -> void:
+	respawn_scene = ""
+	respawn_position = Vector2.ZERO
+	respawn_pending = false
+	save_progress()
+
+## Read-and-clear, so the arrival animation fires exactly once per respawn
+## instead of replaying on every scene load afterwards.
+func take_respawn_pending() -> bool:
+	var pending := respawn_pending
+	respawn_pending = false
+	return pending
+
 func save_progress() -> void:
 	var cfg := ConfigFile.new()
 	for p in acorns:
@@ -130,18 +165,26 @@ func save_progress() -> void:
 	cfg.set_value("bosses", "rush", boss_rush_cleared)
 	cfg.set_value("arena", "completed", arena_completed)
 	cfg.set_value("meta", "best_combo", best_combo)
+	cfg.set_value("respawn", "scene", respawn_scene)
+	cfg.set_value("respawn", "position", respawn_position)
 	cfg.save(SAVE_PATH)
 
 func load_progress() -> void:
 	var cfg := ConfigFile.new()
 	if cfg.load(SAVE_PATH) != OK:
 		return
-	for k in cfg.get_section_keys("acorns"):
-		acorns[k] = true
-	for k in cfg.get_section_keys("completed"):
-		completed[k] = true
+	if cfg.has_section("acorns"):
+		for k in cfg.get_section_keys("acorns"):
+			acorns[k] = true
+	if cfg.has_section("completed"):
+		for k in cfg.get_section_keys("completed"):
+			completed[k] = true
 	queen_defeated = bool(cfg.get_value("bosses", "queen", false))
 	corrupted_defeated = bool(cfg.get_value("bosses", "corrupted", false))
 	boss_rush_cleared = bool(cfg.get_value("bosses", "rush", false))
 	arena_completed = bool(cfg.get_value("arena", "completed", false))
 	best_combo = int(cfg.get_value("meta", "best_combo", 0))
+	respawn_scene = str(cfg.get_value("respawn", "scene", ""))
+	var pos = cfg.get_value("respawn", "position", Vector2.ZERO)
+	if pos is Vector2:
+		respawn_position = pos
