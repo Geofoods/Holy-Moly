@@ -108,7 +108,11 @@ func _start_game_over_music() -> void:
 
 func _fade_out_game_over_music() -> void:
 	if _game_over_music and is_instance_valid(_game_over_music):
-		var tween := create_tween()
+		# Bound to the player rather than to this screen: the player is
+		# PROCESS_MODE_ALWAYS, so the fade still runs after the wipe pauses the
+		# tree. A tween bound to this screen would freeze mid-fade and the music
+		# would be cut off abruptly by the scene change.
+		var tween := _game_over_music.create_tween()
 		tween.tween_property(_game_over_music, "volume_db", -40.0, 0.8)
 		tween.tween_callback(_game_over_music.queue_free)
 		_game_over_music = null

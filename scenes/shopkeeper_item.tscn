@@ -13,6 +13,7 @@
 [ext_resource type="PackedScene" uid="uid://bcd57whed7bys" path="res://chest.tscn" id="12_nlvdj"]
 [ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="13_kk1nx"]
 [ext_resource type="PackedScene" uid="uid://cdxu1kg5or16d" path="res://candle.tscn" id="14_xt7jk"]
+[ext_resource type="PackedScene" uid="uid://buv33lctn53nn" path="res://scenes/respawn_station.tscn" id="16_6qlmf"]
 [ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="16_s2rbe"]
 [ext_resource type="PackedScene" path="res://scenes/shopkeeper_npc.tscn" id="17_shopkeeper"]
 
@@ -170,10 +171,13 @@ metadata/_edit_use_anchors_ = true
 [node name="candle3" parent="." unique_id=632755668 instance=ExtResource("14_xt7jk")]
 position = Vector2(2920, 352)
 
-[node name="ShopkeeperMole" parent="." instance=ExtResource("17_shopkeeper")]
+[node name="ShopkeeperMole" parent="." unique_id=741375062 instance=ExtResource("17_shopkeeper")]
 modulate = Color(0.98, 0.83, 0.45, 1)
 position = Vector2(1860, -90)
 scale = Vector2(0.25, 0.25)
+
+[node name="RespawnStation" parent="." unique_id=778143865 instance=ExtResource("16_6qlmf")]
+position = Vector2(151, 35)
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]

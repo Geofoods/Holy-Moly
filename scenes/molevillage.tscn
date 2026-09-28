@@ -12,6 +12,7 @@
 [ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="13_7uaym"]
 [ext_resource type="PackedScene" uid="uid://oucemvqovkp5" path="res://scenes/npc_mole.tscn" id="14_3j6u0"]
 [ext_resource type="PackedScene" uid="uid://cdxu1kg5or16d" path="res://candle.tscn" id="14_q0jmn"]
+[ext_resource type="PackedScene" uid="uid://buv33lctn53nn" path="res://scenes/respawn_station.tscn" id="15_3gdwk"]
 [ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="15_ijuyj"]
 [ext_resource type="PackedScene" path="res://scenes/shopkeeper_npc.tscn" id="16_shopkeeper"]
 
@@ -58,7 +59,7 @@ layer_0/tile_data = PackedInt32Array(65535, 0, 0, 0, 0, 0, 1, 0, 0, 2, 0, 0, 655
 [node name="ParallaxBackground" parent="." unique_id=211574599 instance=ExtResource("3_5717i")]
 
 [node name="CharacterBody2D2" parent="." unique_id=501808252 instance=ExtResource("4_dlwja")]
-position = Vector2(-889, -330)
+position = Vector2(-880, -339)
 scale = Vector2(0.25, 0.25)
 
 [node name="Camera2D" type="Camera2D" parent="CharacterBody2D2" unique_id=955812054]
@@ -192,10 +193,13 @@ scale = Vector2(0.25, 0.25)
 dialogue_text = "I heard you want to take on the evil corruption! I'll help teach you the ways. I'll meet you when you jump down!"
 npc_name = "Grub"
 
-[node name="ShopkeeperMole" parent="." instance=ExtResource("16_shopkeeper")]
+[node name="ShopkeeperMole" parent="." unique_id=78968926 instance=ExtResource("16_shopkeeper")]
 modulate = Color(0.98, 0.83, 0.45, 1)
 position = Vector2(1010, -90)
 scale = Vector2(0.25, 0.25)
+
+[node name="RespawnStation" parent="." unique_id=778143865 instance=ExtResource("15_3gdwk")]
+position = Vector2(-873, -200)
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]

@@ -1,9 +1,9 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene format=3 uid="uid://buv33lctn53nn"]
 
-[ext_resource type="Script" path="res://scripts/respawn_station.gd" id="1_station"]
-[ext_resource type="Script" path="res://scripts/respawn_station_art.gd" id="2_art"]
-[ext_resource type="Texture2D" path="res://costume3 (1).svg" id="3_glow"]
-[ext_resource type="FontFile" path="res://Baby Doll.otf" id="4_font"]
+[ext_resource type="Script" uid="uid://sbhhc8jy3cmx" path="res://scripts/respawn_station.gd" id="1_station"]
+[ext_resource type="Script" uid="uid://bpqewd31jsm3f" path="res://scripts/respawn_station_art.gd" id="2_art"]
+[ext_resource type="Texture2D" uid="uid://dlc4hd7f6on2v" path="res://costume3 (1).svg" id="3_glow"]
+[ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="4_font"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_stand"]
 size = Vector2(300, 56)
@@ -11,15 +11,14 @@ size = Vector2(300, 56)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_interact"]
 size = Vector2(520, 460)
 
-[node name="RespawnStation" type="Node2D"]
+[node name="RespawnStation" type="Node2D" unique_id=778143865]
 script = ExtResource("1_station")
 spawn_offset = Vector2(0, -126)
-prompt_offset = Vector2(0, -440)
 
-[node name="Art" type="Node2D" parent="."]
+[node name="Art" type="Node2D" parent="." unique_id=1005624812]
 script = ExtResource("2_art")
 
-[node name="PadLight" type="PointLight2D" parent="."]
+[node name="PadLight" type="PointLight2D" parent="." unique_id=1812109311]
 position = Vector2(0, -262)
 scale = Vector2(4.5, 4.5)
 color = Color(0.55, 0.9, 1, 1)
@@ -27,19 +26,19 @@ energy = 0.25
 range_item_cull_mask = 1023
 texture = ExtResource("3_glow")
 
-[node name="Stand" type="StaticBody2D" parent="."]
+[node name="Stand" type="StaticBody2D" parent="." unique_id=849607006]
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Stand"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Stand" unique_id=1640713886]
 position = Vector2(0, -66)
 shape = SubResource("RectangleShape2D_stand")
 
-[node name="InteractionArea" type="Area2D" parent="."]
+[node name="InteractionArea" type="Area2D" parent="." unique_id=352478287]
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="InteractionArea"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="InteractionArea" unique_id=365704046]
 position = Vector2(0, -160)
 shape = SubResource("RectangleShape2D_interact")
 
-[node name="Prompt" type="Label" parent="."]
+[node name="Prompt" type="Label" parent="." unique_id=1616992851]
 visible = false
 offset_left = -190.0
 offset_top = -440.0

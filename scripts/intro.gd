@@ -177,7 +177,11 @@ func _on_button_unhover(button: Button) -> void:
 func _fade_out_menu_music() -> void:
 	var music = get_node_or_null("MenuMusic")
 	if music:
-		var tween := create_tween()
+		# Bound to the player rather than to this screen: the player is
+		# PROCESS_MODE_ALWAYS, so the fade still runs after the wipe pauses the
+		# tree. A tween bound to this screen would freeze mid-fade and the music
+		# would be cut off abruptly by the scene change.
+		var tween := music.create_tween()
 		tween.tween_property(music, "volume_db", -40.0, 0.8)
 		tween.tween_callback(music.queue_free)
 
