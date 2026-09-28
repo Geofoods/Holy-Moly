@@ -68,6 +68,9 @@ func _explode() -> void:
 ## as stuff) and coats the remaining normal tiles in ice instead of destroying
 ## them.
 const FROST_DURATION := 6.0
+## The frost does not vanish the instant it expires - it melts, so the effect
+## winds down instead of blinking out.
+const FROST_FADE_DURATION := 1.8
 const ICE_OVERLAY_TEXTURE := preload("res://sprites/iceoverlay.png")
 
 func _freeze_tiles(tilemap: TileMap) -> void:
@@ -107,9 +110,24 @@ func _freeze_tiles(tilemap: TileMap) -> void:
 			frost_layer.add_child(overlay)
 			FrozenTiles.register(tp, FROST_DURATION)
 	if frost_layer.get_child_count() > 0:
-		get_tree().create_timer(FROST_DURATION).timeout.connect(frost_layer.queue_free)
+		get_tree().create_timer(FROST_DURATION).timeout.connect(_melt_frost.bind(frost_layer))
 	else:
 		frost_layer.queue_free()
+
+## Melts the whole patch of frost once the blast's own duration has run out. The
+## layer is held until the melt finishes, or the frost would be pulled out from
+## under itself half way through fading.
+##
+## Static on purpose: the bomb frees itself a moment after exploding, and a
+## connection to one of its own methods would be torn down with it, so the melt
+## would never be told to start.
+static func _melt_frost(frost_layer: Node2D) -> void:
+	if not is_instance_valid(frost_layer):
+		return
+	for child in frost_layer.get_children():
+		if child is IceOverlay:
+			(child as IceOverlay).fade_out(FROST_FADE_DURATION)
+	frost_layer.get_tree().create_timer(FROST_FADE_DURATION + 0.1).timeout.connect(frost_layer.queue_free)
 
 func _spawn_ice_burst() -> void:
 	var burst := CPUParticles2D.new()

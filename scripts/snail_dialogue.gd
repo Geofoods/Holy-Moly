@@ -16,9 +16,14 @@ extends RigidBody2D
 ## The artwork faces left at flip_h = false, so flipping points it right.
 @export var sprite_faces_left := true
 
-const TRANSFORM_SCALE := 7.0
+## The scale the snail transforms up to for the boss fight. Everything keyed to
+## the fight's size - the collision body, the aura, the spit spawn offset, the
+## lane the chest sweep clears - is derived from this, so this is the one knob.
+const TRANSFORM_SCALE := 11.0
 const EnemyDamage := preload("res://scripts/enemy.gd")
+const SNAIL_GLOW_TEXTURE := preload("res://costume3 (1).svg")
 const AURA_COLORS := [Color(0.72, 0.25, 1.0, 0.65), Color(0.82, 0.48, 1.0, 0.32)]
+const SNAIL_GLOW_COLOR := Color(0.62, 0.22, 1.0, 1.0)
 const AURA_SCALE_FACTORS := [1.18, 1.38]
 const TRANSFORM_DURATION := 16.0
 const BOSS_TRANSFORM_DURATION := 3.2
@@ -35,7 +40,7 @@ const BOSS_HEALTH_ROOT_WIDTH := BOSS_HEALTH_PANEL_WIDTH
 const BOSS_HEALTH_ROOT_HEIGHT := BOSS_HEALTH_NAME_HEIGHT + BOSS_HEALTH_NAME_GAP + BOSS_HEALTH_PANEL_HEIGHT
 const BOSS_HEALTH_FONT := preload("res://Baby Doll.otf")
 
-const BOSS_MAX_HEALTH := 1000.0
+const BOSS_MAX_HEALTH := 500.0
 const BOSS_CHASE_SPEED := 50.0
 const BOSS_SPIT_INTERVAL := 2.4
 const BOSS_PROJECTILE_SPEED := 620.0
@@ -56,10 +61,34 @@ const BOSS_MINION_SCENES: Array[PackedScene] = [
 	preload("res://scenes/slimeenemy.tscn"),
 ]
 const BOSS_PROJECTILE_SCENE := preload("res://area_2d.tscn")
-## The boss is enormous and summons adds, so the view pulls back for the fight.
-const BOSS_CAM_ZOOM := Vector2(0.42, 0.42)
-const BOSS_CAM_ZOOM_IN_TIME := 1.1
+## Chests rain into the fight as loot. Opening one is the player's call, but the
+## snail ploughs through any that are still in the way, so the autoscroll can
+## never jam on one and the loot is never taken away from the player.
+const BOSS_CHEST_SCENE := preload("res://chest.tscn")
+const BOSS_CHEST_GROUP := "snail_boss_chest"
+const BOSS_CHEST_SPAWN_INTERVAL := 12.0
+## The first one waits longer than the rest, so the fight opens with the snail
+## and not with loot dropping in on top of the player.
+const BOSS_CHEST_FIRST_SPAWN_DELAY := 8.0
+## How far past its nose the snail sweeps for chests that would block it.
+const BOSS_CHEST_CLEAR_AHEAD := 70.0
+## The snail is a RigidBody2D driven entirely by script, so a bomb landing on its
+## shell or an add walking into it must never shove it off script. Bombs, chests,
+## coins and debris all sit on the same collision layer as the ground, so the
+## layer mask cannot tell them apart - instead every loose body in the arena is
+## put on a collision exception with the snail, which leaves the ground solid.
+const BOSS_IMMUNE_SWEEP_INTERVAL := 0.1
+## Pull back for the large boss, then keep the encounter moving right like an autoscroller.
+const BOSS_CAM_ZOOM := Vector2(0.32, 0.32)
+const BOSS_CAM_ZOOM_IN_TIME := 2.5
+const BOSS_BRIGHTNESS_TRANSITION_TIME := 2.5
 const BOSS_CAM_ZOOM_OUT_TIME := 0.8
+const BOSS_AUTO_SCROLL_SPEED := 48.0
+const BOSS_AUTO_SCROLL_TRACK_SPEED := 260.0
+const BOSS_AUTO_SCROLL_SNAIL_SCREEN_RATIO := 0.18
+const BOSS_AUTO_SCROLL_PLAYER_SCREEN_RATIO := 0.82
+const BOSS_AUTO_SCROLL_VERTICAL_OFFSET := -300.0
+const BOSS_AUTO_SCROLL_VERTICAL_FOLLOW := 4.0
 
 var _boss_minion_spawn_timer := 0.0
 const TileBreakSFX := preload("res://scripts/tile_break_sfx.gd")
@@ -67,6 +96,7 @@ const TileBreakSFX := preload("res://scripts/tile_break_sfx.gd")
 var _original_sprite_scale := Vector2.ONE
 var _transform_ground_y := 0.0
 var _aura_sprites: Array[Sprite2D] = []
+var _transformation_light: PointLight2D = null
 var _transformed := false
 var _boss_active := false
 var _boss_dying := false
@@ -75,7 +105,10 @@ var _boss_spit_timer := 0.0
 var _boss_laser_timer := 0.0
 var _boss_laser_active := false
 var _boss_laser_lines: Array[Line2D] = []
+var _boss_aura_shield: Line2D = null
 var _boss_break_timer := 0.0
+var _boss_chest_spawn_timer := 0.0
+var _boss_immune_timer := 0.0
 var _boss_contact_timer := 0.0
 var _boss_projectile_count := 0
 var _boss_hurtbox: Area2D = null
@@ -86,6 +119,15 @@ var _boss_hit_tween: Tween = null
 var _boss_base_scale := Vector2.ONE
 var _boss_cam_zoom_tween: Tween = null
 var _boss_cam_restore_zoom := Vector2(0.65, 0.65)
+var _boss_auto_camera: Camera2D = null
+var _boss_return_camera: Camera2D = null
+var _boss_auto_camera_last_snail_x := 0.0
+var _boss_ambient_modulate: CanvasModulate = null
+var _boss_restore_ambient_color := Color.WHITE
+var _boss_vignette_rect: ColorRect = null
+var _boss_restore_vignette_material: Material = null
+var _boss_vignette_material: ShaderMaterial = null
+var _boss_brightness_tween: Tween = null
 
 const ITEM_GET := preload("res://scripts/item_get_animation.gd")
 ## Melee weapons have no artwork of their own, so - like the weapon the mole
@@ -146,12 +188,12 @@ func _physics_process(delta: float) -> void:
 	if mole == null or not is_instance_valid(mole):
 		return
 
-	var direction := signf(mole.global_position.x - global_position.x)
-	if direction == 0.0:
-		direction = -1.0 if _sprite.flip_h else 1.0
+	# Keep the fight advancing right; the player can still fall behind or catch up.
+	var direction := 1.0
 	_sprite.flip_h = (direction > 0.0) == sprite_faces_left
-	if direction != 0.0:
-		linear_velocity.x = direction * BOSS_CHASE_SPEED
+	linear_velocity.x = BOSS_AUTO_SCROLL_SPEED
+	if _boss_auto_camera == null or not is_instance_valid(_boss_auto_camera):
+		linear_velocity.x = 0.0
 	linear_velocity.y = minf(linear_velocity.y, 900.0)
 
 	_boss_break_timer -= delta
@@ -174,6 +216,18 @@ func _physics_process(delta: float) -> void:
 	if _boss_minion_spawn_timer <= 0.0:
 		_spawn_boss_minion()
 		_boss_minion_spawn_timer = randf_range(BOSS_MINION_SPAWN_INTERVAL.x, BOSS_MINION_SPAWN_INTERVAL.y)
+
+	_boss_chest_spawn_timer -= delta
+	if _boss_chest_spawn_timer <= 0.0:
+		_boss_chest_spawn_timer = BOSS_CHEST_SPAWN_INTERVAL
+		_spawn_boss_chest()
+
+	# Bombs and adds can be thrown or spawned at any moment, so this is re-checked
+	# through the fight rather than only once when the fight begins.
+	_boss_immune_timer -= delta
+	if _boss_immune_timer <= 0.0:
+		_boss_immune_timer = BOSS_IMMUNE_SWEEP_INTERVAL
+		_ignore_loose_body_pushes()
 
 	_boss_contact_timer = maxf(0.0, _boss_contact_timer - delta)
 	if _boss_contact_timer <= 0.0 and _boss_player_contact != null and _boss_player_contact.overlaps_body(mole):
@@ -200,11 +254,13 @@ func _on_condition_met() -> void:
 	if post_dialogue_text != "" and dialogue_text != post_dialogue_text:
 		dialogue_text = post_dialogue_text
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if _label:
 		_label.visible = _mole_overlapping and not _dialogue_open and not _hushed
 	_update_facing()
 	_update_transformation_aura()
+	if _boss_active and not _boss_dying:
+		_update_boss_autoscroll_camera(delta)
 
 ## Flip the sprite only - the body, collision shapes and Area2D are untouched.
 func _update_facing() -> void:
@@ -309,6 +365,7 @@ func _start_transformation() -> void:
 
 	var duration := BOSS_TRANSFORM_DURATION if boss_after_dialogue else TRANSFORM_DURATION
 	_siphon_player_aura(duration)
+	_add_transformation_light(duration)
 	for i in AURA_COLORS.size():
 		var aura := Sprite2D.new()
 		aura.texture = _current_sprite_texture()
@@ -337,8 +394,8 @@ func _start_transformation() -> void:
 	else:
 		grow_tween.tween_property(_sprite, "scale", target_scale, duration).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
-## The snail pulls visible copies of the mole's glow toward itself while the
-## mole's own light fades, making the growth feel like a gradual siphon.
+## The snail pulls visible copies of the mole's glow toward itself while keeping
+## the mole's own light intact, making the growth feel like a gradual siphon.
 func _siphon_player_aura(duration: float) -> void:
 	var mole := get_tree().get_first_node_in_group("mole") as Node2D
 	if mole == null or not is_instance_valid(mole):
@@ -346,11 +403,6 @@ func _siphon_player_aura(duration: float) -> void:
 	var mole_sprite := mole.get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
 	if mole_sprite == null:
 		return
-
-	var mole_light := mole.get_node_or_null("MoleLight") as PointLight2D
-	if mole_light != null:
-		var light_tween := mole.create_tween()
-		light_tween.tween_property(mole_light, "energy", 0.0, duration).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
 
 	var echo_count := 12
 	var interval := duration / float(echo_count)
@@ -360,6 +412,50 @@ func _siphon_player_aura(duration: float) -> void:
 		_emit_aura_echo(mole_sprite, interval * 2.5)
 		if i < echo_count - 1:
 			await get_tree().create_timer(interval).timeout
+
+func _add_transformation_light(duration: float) -> void:
+	if _sprite == null or _transformation_light != null:
+		return
+	_transformation_light = PointLight2D.new()
+	_transformation_light.name = "TransformationLight"
+	_transformation_light.position = _sprite.position
+	_transformation_light.texture = SNAIL_GLOW_TEXTURE
+	_transformation_light.texture_scale = 1.4
+	_transformation_light.color = SNAIL_GLOW_COLOR
+	_transformation_light.energy = 1.0
+	_transformation_light.range_item_cull_mask = 1023
+	_transformation_light.shadow_enabled = true
+	_transformation_light.shadow_color = Color(0.05, 0.01, 0.09, 1.0)
+	_transformation_light.shadow_filter = 2
+	_transformation_light.shadow_filter_smooth = 4.0
+	_transformation_light.shadow_item_cull_mask = 1
+	add_child(_transformation_light)
+
+	var texture := _current_sprite_texture()
+	if texture == null:
+		return
+	var half_size := texture.get_size() * 0.5
+	var occluder_shape := OccluderPolygon2D.new()
+	occluder_shape.polygon = PackedVector2Array([
+		Vector2(-half_size.x * 0.45, -half_size.y * 0.5),
+		Vector2(half_size.x * 0.1, -half_size.y * 0.5),
+		Vector2(half_size.x * 0.45, -half_size.y * 0.2),
+		Vector2(half_size.x * 0.5, half_size.y * 0.1),
+		Vector2(half_size.x * 0.3, half_size.y * 0.42),
+		Vector2(-half_size.x * 0.35, half_size.y * 0.45),
+		Vector2(-half_size.x * 0.5, half_size.y * 0.15),
+		Vector2(-half_size.x * 0.5, -half_size.y * 0.2),
+	])
+	var occluder := LightOccluder2D.new()
+	occluder.name = "TransformationLightOccluder"
+	occluder.occluder = occluder_shape
+	occluder.occluder_light_mask = 1
+	_sprite.add_child(occluder)
+
+	var light_tween := create_tween()
+	light_tween.set_parallel(true)
+	light_tween.tween_property(_transformation_light, "texture_scale", 4.2, duration).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	light_tween.tween_property(_transformation_light, "energy", 1.35, duration).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 
 func _emit_aura_echo(source: AnimatedSprite2D, travel_time: float) -> void:
 	if source.sprite_frames == null or _sprite == null:
@@ -406,6 +502,8 @@ func _begin_boss_fight() -> void:
 	_boss_laser_active = false
 	_boss_minion_spawn_timer = 3.0
 	_boss_break_timer = 0.0
+	_boss_chest_spawn_timer = BOSS_CHEST_FIRST_SPAWN_DELAY
+	_boss_immune_timer = 0.0
 	linear_velocity = Vector2.ZERO
 	sleeping = false
 	gravity_scale = 1.0
@@ -415,11 +513,13 @@ func _begin_boss_fight() -> void:
 	_boss_base_scale = _sprite.scale
 	_resize_boss_body()
 	_add_boss_hurtbox()
+	_add_boss_aura_shield()
 	_create_boss_health_bar()
+	_brighten_boss_arena()
 	_start_boss_camera_zoom()
 	SFX.play("explosion", global_position, -8.0, 0.2, 0.8)
 
-## Tweens are bound to the camera, not this node, so the zoom survives our own death.
+## Returns the camera currently showing the fight (which becomes the autoscroller camera).
 func _boss_camera() -> Camera2D:
 	if not is_inside_tree():
 		return null
@@ -430,24 +530,128 @@ func _stop_boss_camera_zoom() -> void:
 		_boss_cam_zoom_tween.kill()
 	_boss_cam_zoom_tween = null
 
-func _tween_boss_camera_zoom(camera: Camera2D, target: Vector2, duration: float) -> void:
+func _tween_boss_camera_zoom(camera: Camera2D, target: Vector2, duration: float, target_offset: Vector2) -> void:
 	_stop_boss_camera_zoom()
 	_boss_cam_zoom_tween = camera.create_tween()
-	_boss_cam_zoom_tween.tween_property(camera, "zoom", target, duration).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	_boss_cam_zoom_tween.set_parallel(true)
+	_boss_cam_zoom_tween.tween_property(camera, "zoom", target, duration).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	_boss_cam_zoom_tween.tween_property(camera, "offset", target_offset, duration).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
 
 func _start_boss_camera_zoom() -> void:
-	var camera := _boss_camera()
-	if camera == null:
+	var current_camera := _boss_camera()
+	if current_camera == null:
 		return
-	if _boss_cam_zoom_tween == null:
-		_boss_cam_restore_zoom = camera.zoom
-	_tween_boss_camera_zoom(camera, BOSS_CAM_ZOOM, BOSS_CAM_ZOOM_IN_TIME)
+	_boss_return_camera = current_camera
+	_boss_cam_restore_zoom = current_camera.zoom
+	var scene_root := get_tree().current_scene as Node2D
+	if scene_root == null:
+		return
+
+	_boss_auto_camera = Camera2D.new()
+	_boss_auto_camera.name = "SnailBossAutoscrollCamera"
+	_boss_auto_camera.process_mode = Node.PROCESS_MODE_ALWAYS
+	_boss_auto_camera.zoom = current_camera.zoom
+	_boss_auto_camera.offset = Vector2.ZERO
+	_boss_auto_camera.global_position = current_camera.global_position
+	_boss_auto_camera_last_snail_x = global_position.x
+	scene_root.add_child(_boss_auto_camera)
+	var mole := get_tree().get_first_node_in_group("mole") as Node2D
+	var target_offset := Vector2.ZERO
+	if mole != null and is_instance_valid(mole):
+		var target_camera_x := _boss_camera_target_x(_boss_auto_camera, mole, BOSS_CAM_ZOOM.x)
+		target_offset.x = (target_camera_x - _boss_auto_camera.global_position.x) * BOSS_CAM_ZOOM.x
+	current_camera.enabled = false
+	_boss_auto_camera.make_current()
+	_tween_boss_camera_zoom(_boss_auto_camera, BOSS_CAM_ZOOM, BOSS_CAM_ZOOM_IN_TIME, target_offset)
+
+func _update_boss_autoscroll_camera(delta: float) -> void:
+	if _boss_auto_camera == null or not is_instance_valid(_boss_auto_camera):
+		return
+	var mole := get_tree().get_first_node_in_group("mole") as Node2D
+	if mole == null or not is_instance_valid(mole):
+		return
+
+	var snail_delta_x := maxf(global_position.x - _boss_auto_camera_last_snail_x, 0.0)
+	_boss_auto_camera_last_snail_x = global_position.x
+	var desired_x := _boss_camera_target_x(_boss_auto_camera, mole)
+	var tracking_step := maxf(desired_x - _boss_auto_camera.global_position.x, 0.0)
+	var midpoint_y := (global_position.y + mole.global_position.y) * 0.5
+	var target_y := midpoint_y + BOSS_AUTO_SCROLL_VERTICAL_OFFSET
+	_boss_auto_camera.global_position.y = lerpf(
+		_boss_auto_camera.global_position.y, target_y,
+		clampf(BOSS_AUTO_SCROLL_VERTICAL_FOLLOW * delta, 0.0, 1.0))
+	var camera_step := minf(snail_delta_x, tracking_step)
+	_boss_auto_camera.global_position.x += camera_step
+	if _boss_cam_zoom_tween == null or not _boss_cam_zoom_tween.is_valid():
+		var target_offset_x := (_boss_camera_target_x(_boss_auto_camera, mole) - _boss_auto_camera.global_position.x) * _boss_auto_camera.zoom.x
+		_boss_auto_camera.offset.x = move_toward(
+			_boss_auto_camera.offset.x, target_offset_x, BOSS_AUTO_SCROLL_SPEED * _boss_auto_camera.zoom.x * delta)
+
+func _boss_camera_target_x(camera: Camera2D, mole: Node2D, zoom_x: float = -1.0) -> float:
+	var viewport_width: float = camera.get_viewport_rect().size.x
+	var effective_zoom := zoom_x if zoom_x > 0.0 else camera.zoom.x
+	var world_view_width := viewport_width / maxf(effective_zoom, 0.01)
+	var snail_left_target := global_position.x + world_view_width * (0.5 - BOSS_AUTO_SCROLL_SNAIL_SCREEN_RATIO)
+	var mole_right_target := mole.global_position.x - world_view_width * (BOSS_AUTO_SCROLL_PLAYER_SCREEN_RATIO - 0.5)
+	return maxf(snail_left_target, mole_right_target) - camera.offset.x / maxf(effective_zoom, 0.01)
+
+func _brighten_boss_arena() -> void:
+	var scene := get_tree().current_scene
+	if scene == null:
+		return
+	_boss_ambient_modulate = scene.get_node_or_null("AmbientModulate") as CanvasModulate
+	_boss_brightness_tween = create_tween()
+	_boss_brightness_tween.set_parallel(true)
+	if _boss_ambient_modulate != null:
+		_boss_restore_ambient_color = _boss_ambient_modulate.color
+		_boss_brightness_tween.tween_property(
+			_boss_ambient_modulate, "color", Color(0.9, 0.88, 0.94, 1.0),
+			BOSS_BRIGHTNESS_TRANSITION_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+
+	_boss_vignette_rect = scene.get_node_or_null("VignetteLayer/VignetteRect") as ColorRect
+	if _boss_vignette_rect != null:
+		var original_material := _boss_vignette_rect.material as ShaderMaterial
+		if original_material != null:
+			_boss_restore_vignette_material = _boss_vignette_rect.material
+			_boss_vignette_material = original_material.duplicate() as ShaderMaterial
+			_boss_vignette_rect.material = _boss_vignette_material
+			var original_darkness: float = float(original_material.get_shader_parameter("darkness"))
+			_boss_brightness_tween.tween_method(
+				_set_boss_vignette_darkness, original_darkness, 0.12,
+				BOSS_BRIGHTNESS_TRANSITION_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+
+func _set_boss_vignette_darkness(darkness: float) -> void:
+	if _boss_vignette_material != null and is_instance_valid(_boss_vignette_material):
+		_boss_vignette_material.set_shader_parameter("darkness", darkness)
+
+func _restore_boss_ambient() -> void:
+	if _boss_brightness_tween != null and _boss_brightness_tween.is_valid():
+		_boss_brightness_tween.kill()
+	_boss_brightness_tween = null
+	if _boss_ambient_modulate != null and is_instance_valid(_boss_ambient_modulate):
+		var ambient_tween := _boss_ambient_modulate.create_tween()
+		ambient_tween.tween_property(_boss_ambient_modulate, "color", _boss_restore_ambient_color, 0.7)
+	_boss_ambient_modulate = null
+	if _boss_vignette_rect != null and is_instance_valid(_boss_vignette_rect):
+		_boss_vignette_rect.material = _boss_restore_vignette_material
+	_boss_vignette_rect = null
+	_boss_restore_vignette_material = null
 
 func _restore_boss_camera_zoom() -> void:
-	var camera := _boss_camera()
-	if camera == null:
+	_stop_boss_camera_zoom()
+	if _boss_auto_camera == null or not is_instance_valid(_boss_auto_camera):
 		return
-	_tween_boss_camera_zoom(camera, _boss_cam_restore_zoom, BOSS_CAM_ZOOM_OUT_TIME)
+	var final_position := _boss_auto_camera.global_position
+	_boss_auto_camera.enabled = false
+	_boss_auto_camera.queue_free()
+	_boss_auto_camera = null
+	if _boss_return_camera != null and is_instance_valid(_boss_return_camera):
+
+		_boss_return_camera.global_position = final_position
+		_boss_return_camera.zoom = _boss_cam_restore_zoom
+		_boss_return_camera.enabled = true
+		_boss_return_camera.make_current()
+	_boss_return_camera = null
 
 func _resize_boss_body() -> void:
 	var body_shape := get_node_or_null("CollisionShape2D") as CollisionShape2D
@@ -494,22 +698,77 @@ func _add_boss_hurtbox() -> void:
 	contact_shape.position = shape.position
 	_boss_player_contact.add_child(contact_shape)
 
+func _add_boss_aura_shield() -> void:
+	if _sprite == null:
+		return
+	var texture := _current_sprite_texture()
+	if texture == null:
+		return
+
+	var radius := texture.get_size() * 0.62
+	var additive := CanvasItemMaterial.new()
+	additive.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	for ring_index in 2:
+		var ring := Line2D.new()
+		ring.name = "BossAuraShield" if ring_index == 0 else "BossAuraShieldInner"
+		ring.width = 14.0 if ring_index == 0 else 8.0
+		ring.default_color = Color(0.76, 0.28, 1.0, 0.85) if ring_index == 0 else Color(0.94, 0.68, 1.0, 0.75)
+		ring.z_index = 5
+		ring.z_as_relative = false
+		ring.joint_mode = Line2D.LINE_JOINT_ROUND
+		ring.begin_cap_mode = Line2D.LINE_CAP_ROUND
+		ring.end_cap_mode = Line2D.LINE_CAP_ROUND
+		ring.material = additive
+		ring.rotation = 0.22 if ring_index == 1 else 0.0
+		ring.scale = Vector2.ONE
+		var ring_radius := radius * (0.62 if ring_index == 1 else 1.0)
+		for i in range(49):
+			var angle := TAU * float(i) / 48.0
+			ring.add_point(Vector2(cos(angle) * ring_radius.x, sin(angle) * ring_radius.y))
+		_sprite.add_child(ring)
+		var pulse := ring.create_tween().set_loops()
+		pulse.tween_property(ring, "modulate:a", 0.38, 0.7).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		pulse.tween_property(ring, "modulate:a", 0.9, 0.7).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		var rotation_pulse := ring.create_tween().set_loops()
+		rotation_pulse.tween_property(ring, "rotation", TAU if ring_index == 0 else -TAU, 5.0).as_relative()
+		var scale_pulse := ring.create_tween().set_loops()
+		scale_pulse.tween_property(ring, "scale", Vector2(1.07, 1.07), 0.8).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		scale_pulse.tween_property(ring, "scale", Vector2(0.94, 0.94), 0.8).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		var width_pulse := ring.create_tween().set_loops()
+		width_pulse.tween_property(ring, "width", 20.0 if ring_index == 0 else 12.0, 0.7).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		width_pulse.tween_property(ring, "width", 11.0 if ring_index == 0 else 6.0, 0.7).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		if ring_index == 0:
+			_boss_aura_shield = ring
+
 func _on_boss_hurtbox_area_entered(area: Area2D) -> void:
 	if not _boss_active or _boss_dying:
 		return
 	var attacker := area.get_parent()
 	if attacker == null:
 		return
-	if "is_swinging" in attacker and attacker.is_swinging and attacker.has_method("get_damage"):
-		var direction: Vector2 = (global_position - attacker.global_position).normalized()
-		take_damage(float(attacker.get_damage()), direction)
+	if "is_swinging" in attacker and attacker.is_swinging:
+		_flash_boss_aura_shield()
 	elif attacker.is_in_group("bullet") and attacker.has_method("deflect"):
 		attacker.deflect(global_position)
+		_flash_boss_aura_shield()
 
-func take_damage(amount: float, _direction: Vector2 = Vector2.ZERO) -> void:
+func _flash_boss_aura_shield() -> void:
+	if _boss_aura_shield == null or not is_instance_valid(_boss_aura_shield):
+		return
+	_boss_aura_shield.default_color = Color(1.0, 0.88, 1.0, 1.0)
+	var flash := _boss_aura_shield.create_tween()
+	flash.tween_property(_boss_aura_shield, "default_color", Color(0.76, 0.28, 1.0, 0.85), 0.25)
+
+## Normal weapon and ability damage is absorbed by the aura shield.
+func take_damage(_amount: float, _direction: Vector2 = Vector2.ZERO) -> void:
+	return
+
+## The drill is the saw-like attack that can pierce the aura shield.
+func take_saw_damage(amount: float, _direction: Vector2 = Vector2.ZERO) -> void:
 	if not _boss_active or _boss_dying or amount <= 0.0:
 		return
 	_boss_health = maxf(_boss_health - amount, 0.0)
+	_flash_boss_aura_shield()
 	EnemyDamage.spawn_damage_number(self, amount, get_global_mouse_position(), true)
 	SFX.play("enemy_hit", global_position)
 	if _boss_hit_tween and _boss_hit_tween.is_valid():
@@ -527,7 +786,7 @@ func take_damage(amount: float, _direction: Vector2 = Vector2.ZERO) -> void:
 func _create_boss_health_bar() -> void:
 	_boss_health_layer = CanvasLayer.new()
 	_boss_health_layer.name = "SnailBossHealthBar"
-	_boss_health_layer.layer = 40
+	_boss_health_layer.layer = 127
 	get_parent().add_child(_boss_health_layer)
 	var root := Control.new()
 	root.set_anchors_preset(Control.PRESET_CENTER_TOP)
@@ -536,6 +795,7 @@ func _create_boss_health_bar() -> void:
 	root.offset_right = BOSS_HEALTH_ROOT_WIDTH * 0.5
 	root.offset_bottom = 18.0 + BOSS_HEALTH_ROOT_HEIGHT
 	root.custom_minimum_size = Vector2(BOSS_HEALTH_ROOT_WIDTH, BOSS_HEALTH_ROOT_HEIGHT)
+	root.z_index = 100
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_boss_health_layer.add_child(root)
 	var style := StyleBoxFlat.new()
@@ -543,7 +803,7 @@ func _create_boss_health_bar() -> void:
 	style.border_color = Color(0.42, 0.28, 0.14, 1.0)
 	style.set_border_width_all(2)
 	var name_panel := Panel.new()
-	name_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	name_panel.set_anchors_preset(Control.PRESET_TOP_WIDE)
 	name_panel.offset_left = 0.0
 	name_panel.offset_top = 0.0
 	name_panel.offset_right = 0.0
@@ -564,6 +824,8 @@ func _create_boss_health_bar() -> void:
 	title.add_theme_font_override("font", BOSS_HEALTH_FONT)
 	title.add_theme_font_size_override("font_size", 36)
 	title.add_theme_color_override("font_color", Color(0.92, 0.72, 1.0))
+	title.add_theme_color_override("font_outline_color", Color(0.08, 0.02, 0.12, 1.0))
+	title.add_theme_constant_override("outline_size", 3)
 	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	name_panel.add_child(title)
 	var panel := Panel.new()
@@ -630,6 +892,39 @@ func _spawn_boss_minion() -> void:
 	minion.position = parent.to_local(to_global(spawn_offset))
 	parent.add_child(minion)
 	SFX.play("enemy_fire", to_global(spawn_offset), -8.0, 0.15, 0.85)
+
+## Drops a chest into the arena for the player to crack open. It is tracked in
+## its own group so the snail can clear it if it ends up in the way.
+func _spawn_boss_chest() -> void:
+	if not _boss_active or _boss_dying:
+		return
+	var parent := get_parent() as Node2D
+	if parent == null:
+		return
+	var mole := get_tree().get_first_node_in_group("mole") as Node2D
+	if mole == null or not is_instance_valid(mole):
+		return
+
+	var chest := BOSS_CHEST_SCENE.instantiate() as Node2D
+	if chest == null:
+		return
+	chest.add_to_group(BOSS_CHEST_GROUP)
+
+	# Aiming just ahead of the player rather than straight down on their head, so
+	# it lands somewhere to fight over instead of on top of them.
+	var drop_at := mole.global_position + Vector2(110.0, -500.0)
+	parent.add_child(chest)
+	chest.global_position = drop_at
+
+	# A short landing tell, so the chest reads as arriving rather than appearing.
+	var sprite := chest.get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
+	if sprite != null:
+		var rest_scale := sprite.scale
+		sprite.scale = rest_scale * 0.4
+		var tween := sprite.create_tween()
+		tween.tween_property(sprite, "scale", rest_scale, 0.35) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	SFX.play("coin", drop_at, -12.0, 0.12, 0.9)
 
 func _fire_boss_laser(mole: Node2D) -> void:
 	if _boss_laser_active or not _boss_active or _boss_dying or not is_instance_valid(mole):
@@ -755,7 +1050,7 @@ func _break_blocks_along_boss_laser(start: Vector2, finish: Vector2) -> void:
 	for i in range(sample_count + 1):
 		var center := start + direction * minf(float(i) * BOSS_LASER_TILE_SAMPLE_SPACING, distance)
 		for offset in [-BOSS_LASER_WIDTH * 0.5, -BOSS_LASER_WIDTH * 0.25, 0.0, BOSS_LASER_WIDTH * 0.25, BOSS_LASER_WIDTH * 0.5]:
-			var sample := center + perpendicular * offset
+			var sample: Vector2 = center + perpendicular * float(offset)
 			var cell := tilemap.local_to_map(tilemap.to_local(sample))
 			if tilemap.get_cell_source_id(0, cell) == -1:
 				continue
@@ -798,6 +1093,7 @@ func _boss_body_size() -> Vector2:
 	return texture.get_size() * visual_scale * Vector2(0.78, 0.84)
 
 func _break_blocks_ahead(direction: float) -> void:
+	_clear_chests_in_path(direction)
 	var tilemap := get_parent().get_node_or_null("TileMap") as TileMap
 	if tilemap == null:
 		return
@@ -815,6 +1111,58 @@ func _break_blocks_ahead(direction: float) -> void:
 			elif tilemap.get_layers_count() > 1 and tilemap.get_cell_source_id(1, cell) != -1:
 				TileBreakSFX.break_decoration_tile(tilemap, cell, get_parent())
 
+## Stops bombs, adds and other loose props from shoving the snail around while it
+## is being driven along by script. Collision exceptions are checked before the
+## layer and mask rules, so this can exclude a bomb without also excluding the
+## ground the snail is standing on - which a mask change could not do, because
+## bombs and tiles share a layer.
+##
+## Only the level's direct children are swept, because everything the player
+## throws and everything the fight spawns is parented straight to the level. The
+## player is deliberately left alone: it should still be blocked by the shell.
+func _ignore_loose_body_pushes() -> void:
+	var parent := get_parent()
+	if parent == null:
+		return
+	var tilemap := parent.get_node_or_null("TileMap")
+	var mole := get_tree().get_first_node_in_group("mole")
+	for child in parent.get_children():
+		if child == self or child == tilemap or child == mole:
+			continue
+		# Static bodies cannot impart momentum, so there is nothing to ignore.
+		if not (child is PhysicsBody2D) or (child is StaticBody2D):
+			continue
+		add_collision_exception_with(child as PhysicsBody2D)
+
+## A settled chest is solid ground-level geometry, and the snail is being driven
+## forwards every frame, so one left in the lane would stall the autoscroll
+## outright. Sweep the lane ahead and smash anything still sitting in it,
+## opening unopened ones first so the player still gets the loot out of them.
+func _clear_chests_in_path(direction: float) -> void:
+	var boss_size := _boss_body_size()
+	var x_front := global_position.x + direction * (boss_size.x * 0.5 + BOSS_CHEST_CLEAR_AHEAD)
+	var y_top := global_position.y + _transform_ground_y - boss_size.y + 35.0
+	var y_bottom := global_position.y + _transform_ground_y + 20.0
+	var lane := Rect2(
+		Vector2(minf(global_position.x, x_front), y_top),
+		Vector2(absf(x_front - global_position.x), y_bottom - y_top)
+	).grow(40.0)
+
+	for chest in get_tree().get_nodes_in_group(BOSS_CHEST_GROUP):
+		if not is_instance_valid(chest) or not (chest is Node2D):
+			continue
+		if not lane.has_point((chest as Node2D).global_position):
+			continue
+		var chest_area := chest.get_node_or_null("Area2D") as Area2D
+		if chest_area == null or not chest_area.has_method("_open_chest"):
+			continue
+		# Already smashed: its body is on its way out and will not snag anything.
+		if chest_area.get("is_breaking") == true:
+			continue
+		if chest_area.get("is_open") == false:
+			chest_area.call("_open_chest")
+		chest_area.call("break_as_block")
+
 func _defeat_boss() -> void:
 	_boss_dying = true
 	_boss_active = false
@@ -825,6 +1173,7 @@ func _defeat_boss() -> void:
 	linear_velocity = Vector2.ZERO
 	gravity_scale = 0.0
 	_restore_boss_camera_zoom()
+	_restore_boss_ambient()
 	if _boss_hurtbox != null:
 		_boss_hurtbox.set_deferred("monitoring", false)
 		_boss_hurtbox.set_deferred("monitorable", false)

@@ -38,7 +38,10 @@ func _on_area_entered(area: Area2D) -> void:
 		return
 	var enemy := area.get_parent()
 	if enemy and is_instance_valid(enemy):
-		if enemy.has_method("take_damage"):
+		if enemy.has_method("take_saw_damage"):
+			var dmg := ENEMY_DAMAGE * DAMAGE_SCALAR * ComboManager.get_damage_multiplier() * randf_range(1.0 - DAMAGE_VARIATION, 1.0 + DAMAGE_VARIATION)
+			enemy.take_saw_damage(dmg, velocity.normalized())
+		elif enemy.has_method("take_damage"):
 			var dmg := ENEMY_DAMAGE * DAMAGE_SCALAR * ComboManager.get_damage_multiplier() * randf_range(1.0 - DAMAGE_VARIATION, 1.0 + DAMAGE_VARIATION)
 			enemy.take_damage(dmg, velocity.normalized())
 		elif enemy.has_method("die"):

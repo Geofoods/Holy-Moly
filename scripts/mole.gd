@@ -40,7 +40,6 @@ const GROUND_POUND_KNOCKBACK := 800.0
 const WALL_JUMP_VELOCITY := -1250.0
 const WALL_JUMP_PUSHBACK := 620.0
 const WALL_JUMP_LOCK_TIME := 0.14
-const WALL_SLIDE_MAX_FALL := 420.0
 const WALL_COYOTE_TIME := 0.12
 const GRAPPLE_MAX_RANGE := 540.0
 const GRAPPLE_PULL_SPEED := 1500.0
@@ -556,8 +555,11 @@ func _physics_process(delta: float) -> void:
 			if signf(direction) == toward_wall:
 				_wall_coyote_timer = WALL_COYOTE_TIME
 				_wall_coyote_dir = toward_wall
-				if velocity.y > 0.0 and velocity.y > WALL_SLIDE_MAX_FALL:
-					velocity.y = WALL_SLIDE_MAX_FALL
+				# Holding into the wall pins the mole to it outright instead of just
+				# slowing the fall, so a wall can be clung for as long as it is held
+				# and a jump is the only thing that gets off it again. Letting go of
+				# the direction drops you back down.
+				velocity.y = 0.0
 		else:
 			_wall_coyote_timer = maxf(0.0, _wall_coyote_timer - delta)
 
