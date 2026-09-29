@@ -53,12 +53,23 @@ func _set_crack_progress(value: float) -> void:
 	_crack_progress = value
 	queue_redraw()
 
-## The tutorial can move the hotbar at runtime; stay vertically in line with it.
-func _follow_inventory() -> void:
+## The hub scenes hide the hotbar rather than dropping the node, and a hidden
+## hotbar still reports a layout position. Treat an invisible one as absent so
+## the heart falls back to its default placement, exactly as it does in the mole
+## village where InventoryUI isn't in the scene at all. Typed as Node so the
+## hotbar's own signal and method stay dynamically accessible.
+func _hotbar() -> Node:
 	var scene := get_tree().current_scene
 	if scene == null:
-		return
+		return null
 	var inv := scene.get_node_or_null("InventoryUI")
+	if inv == null or not bool(inv.get("visible")):
+		return null
+	return inv
+
+## The tutorial can move the hotbar at runtime; stay vertically in line with it.
+func _follow_inventory() -> void:
+	var inv := _hotbar()
 	if inv != null and inv.has_signal("repositioned") and not inv.repositioned.is_connected(_reposition):
 		inv.repositioned.connect(_reposition)
 
@@ -73,11 +84,9 @@ func _reposition() -> void:
 	var box := _heart_box_size()
 	var vp := get_viewport().get_visible_rect().size
 	var cy := vp.y - MARGIN - box.y / 2.0
-	var scene := get_tree().current_scene
-	if scene != null:
-		var inv := scene.get_node_or_null("InventoryUI")
-		if inv != null and inv.has_method("hotbar_center_y"):
-			cy = inv.hotbar_center_y()
+	var inv := _hotbar()
+	if inv != null and inv.has_method("hotbar_center_y"):
+		cy = inv.hotbar_center_y()
 	position = Vector2(MARGIN + box.x / 2.0, cy)
 	queue_redraw()
 

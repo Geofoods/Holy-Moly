@@ -21,6 +21,7 @@ extends RigidBody2D
 ## lane the loot sails into - is derived from this, so this is the one knob.
 const TRANSFORM_SCALE := 11.0
 const EnemyDamage := preload("res://scripts/enemy.gd")
+const EnemySpawn := preload("res://scripts/enemy_spawn.gd")
 const SNAIL_GLOW_TEXTURE := preload("res://costume3 (1).svg")
 const AURA_COLORS := [Color(0.72, 0.25, 1.0, 0.65), Color(0.82, 0.48, 1.0, 0.32)]
 const SNAIL_GLOW_COLOR := Color(0.62, 0.22, 1.0, 1.0)
@@ -57,7 +58,6 @@ const BOSS_MINION_MAX_ALIVE := 4
 const BOSS_MINION_SCENES: Array[PackedScene] = [
 	preload("res://scenes/antenemy.tscn"),
 	preload("res://scenes/beetleenemy.tscn"),
-	preload("res://scenes/goblinenemy.tscn"),
 	preload("res://scenes/slimeenemy.tscn"),
 ]
 const BOSS_PROJECTILE_SCENE := preload("res://area_2d.tscn")
@@ -907,6 +907,10 @@ func _spawn_boss_minion() -> void:
 	)
 	minion.position = parent.to_local(to_global(spawn_offset))
 	parent.add_child(minion)
+	# Same burst-in the arena waves use: the minion is frozen, shrunk and
+	# untouchable until it has risen out of the dirt, so it can never trade a hit
+	# with the player while it is still materialising.
+	EnemySpawn.play(minion)
 	SFX.play("enemy_fire", to_global(spawn_offset), -8.0, 0.15, 0.85)
 
 ## Drops a Drill or Holy Water into the arena for the player to grab on the move.

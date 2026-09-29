@@ -116,6 +116,7 @@ theme_override_styles/focus = SubResource("StyleBoxFlat_pausebutton_hover")
 text = "?"
 
 [node name="InventoryUI" parent="." unique_id=126326489 instance=ExtResource("8_6r41h")]
+visible = false
 
 [node name="InfoPopup" parent="." unique_id=778241011 instance=ExtResource("9_sn4is")]
 

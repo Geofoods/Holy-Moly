@@ -53,6 +53,14 @@ const CANDLE_LAYER_BIT := 8
 const TileBreakSFX := preload("res://scripts/tile_break_sfx.gd")
 const GAME_SPEED := 1.2
 
+## Peaceful hub scenes. The mole never carries its shovel in these and cannot
+## break blocks, matching the mole village. Set in code so editor re-saves of a
+## scene can't re-enable it.
+const PEACEFUL_SCENES := [
+	"res://scenes/molevillage.tscn",
+	"res://scenes/shopkeeper_item.tscn",
+]
+
 @export var can_break := true
 
 var mole_hole_scene := preload("res://scenes/molehole.tscn")
@@ -169,10 +177,8 @@ func _ready() -> void:
 	_setup_input_actions()
 	_normal_collision_mask = collision_mask
 	_restore_level_position()
-	# The mole village is a peaceful hub, so the mole never carries its shovel
-	# there and cannot break blocks. Set in code so editor re-saves of the
-	# scene can't re-enable it.
-	if str(get_tree().current_scene.scene_file_path).ends_with("molevillage.tscn"):
+	# Peaceful hubs: no shovel, no block breaking. See PEACEFUL_SCENES.
+	if PEACEFUL_SCENES.has(str(get_tree().current_scene.scene_file_path)):
 		can_break = false
 	await get_tree().process_frame
 	_restoring_health = true
