@@ -20,6 +20,7 @@ var _flash := 0.0
 @onready var visual: AnimatedSprite2D = $Visual
 @onready var hurtbox: Area2D = $Hurtbox
 @onready var hitbox: Area2D = $Hitbox
+var _health_bar: Node2D = null
 
 func _ready() -> void:
 	hurtbox.add_to_group("enemy_hurtbox")
@@ -27,13 +28,20 @@ func _ready() -> void:
 	hitbox.body_entered.connect(_on_hitbox_body_entered)
 	hitbox.body_exited.connect(_on_hitbox_body_exited)
 	_build_visual()
+	_health_bar = Node2D.new()
+	_health_bar.name = "HealthBar"
+	_health_bar.z_index = 10
+	_health_bar.draw.connect(_draw_health_bar)
+	add_child(_health_bar)
+
+func _draw_health_bar() -> void:
+	EnemyDamage.draw_health_bar(_health_bar, health, HP_MAX, -92.0)
 
 func _process(delta: float) -> void:
 	if _flash > 0.0:
 		_flash -= delta
 		if _flash <= 0.0 and modulate != Color.WHITE:
 			modulate = Color.WHITE
-	queue_redraw()
 
 func _physics_process(delta: float) -> void:
 	match _state:
@@ -98,6 +106,8 @@ func _on_hitbox_body_exited(body: Node) -> void:
 ## gibs; this one just shrinks away, so it ignores it.
 func take_damage(amount: float, _direction: Vector2 = Vector2.ZERO) -> void:
 	health -= amount
+	if _health_bar != null:
+		_health_bar.queue_redraw()
 	ComboManager.increment()
 	EnemyDamage.spawn_damage_number(self, amount)
 	_flash = 0.12
@@ -118,15 +128,6 @@ func die() -> void:
 	var tw := create_tween()
 	tw.tween_property(self, "modulate:a", 0.0, 0.5)
 	tw.tween_callback(queue_free)
-
-func _draw() -> void:
-	if health >= HP_MAX:
-		return
-	var w := 54.0
-	var frac := clampf(health / HP_MAX, 0.0, 1.0)
-	var p := Vector2(-w / 2.0, -92)
-	draw_rect(Rect2(p.x - 1, p.y - 1, w + 2, 9), Color(0, 0, 0, 0.85))
-	draw_rect(Rect2(p.x, p.y, w * frac, 7), Color(0.55, 0.9, 0.35))
 
 func _build_visual() -> void:
 	var img := Image.create(128, 128, false, Image.FORMAT_RGBA8)

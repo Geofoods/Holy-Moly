@@ -14,12 +14,16 @@ lifetime_randomness = 0.46
 emission_shape = 1
 emission_sphere_radius = 128.0
 gravity = Vector3(0, -200, 0)
-scale_min = 0.0
-scale_max = 0.0
+scale_min = 0.55
+scale_max = 1.0
 color_ramp = SubResource("3")
 
 [node name="Retro Explosion" type="GPUParticles2D" unique_id=1082202212]
 emitting = false
+one_shot = true
+z_index = 30
+z_as_relative = false
+visibility_rect = Rect2(-500, -500, 1000, 1000)
 amount = 25
 texture = ExtResource("1")
 lifetime = 0.5

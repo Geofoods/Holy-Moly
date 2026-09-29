@@ -6,6 +6,27 @@ var _pool_ui: Array[AudioStreamPlayer] = []
 
 const POOL_SIZE := 16
 
+## The dry, near-silent reverb every level starts from, and the state anything
+## outside a level falls back to.
+##
+## The effect itself is a master-bus effect, so it is global and outlives the
+## scene that set it - without a reset, the echo of a deep cave level follows the
+## player out to the menu and every other front end.
+const REVERB_BASE_WET := 0.0
+const REVERB_BASE_ROOM_SIZE := 0.1
+
+## Puts the global bus reverb back to the dry baseline. Called on every scene
+## change; a level going to another level re-tunes it for its own depth as soon
+## as its mole is ready.
+func reset_reverb() -> void:
+	if AudioServer.get_bus_effect_count(0) == 0:
+		return
+	var reverb := AudioServer.get_bus_effect(0, 0) as AudioEffectReverb
+	if reverb == null:
+		return
+	reverb.wet = REVERB_BASE_WET
+	reverb.room_size = REVERB_BASE_ROOM_SIZE
+
 func _ready() -> void:
 	_load("swing", ["res://sounds/swing_1.wav", "res://sounds/swing_2.wav", "res://sounds/swing_3.wav"])
 	_load("hurt", ["res://sounds/hurt_1.ogg", "res://sounds/hurt_2.ogg"])

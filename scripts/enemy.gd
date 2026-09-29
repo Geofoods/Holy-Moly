@@ -9,6 +9,12 @@ const CLIMB_DURATION = 0.6
 const DETECT_RANGE := 300.0
 const CLIMB_CHANCE = 0.4
 const MAX_HEALTH := 30.0
+const HEALTH_BAR_WIDTH := 96.0
+const HEALTH_BAR_HEIGHT := 10.0
+const HEALTH_BAR_BG_COLOR := Color(0.15, 0.15, 0.15, 0.95)
+const HEALTH_BAR_BORDER_COLOR := Color(0.05, 0.05, 0.06, 1.0)
+const HEALTH_BAR_LOW_COLOR := Color(0.95, 0.25, 0.2, 1.0)
+const HEALTH_BAR_FULL_COLOR := Color(0.3, 0.85, 0.3, 1.0)
 const SHOOT_INTERVAL := 5.0
 
 var direction := 1.0
@@ -343,18 +349,24 @@ func _setup_health_bar() -> void:
 	add_child(_health_bar)
 
 func _draw_health_bar() -> void:
-	if health <= 0 or health >= MAX_HEALTH:
-		return
-	if not is_instance_valid(_health_bar):
-		return
-	var bar_w := 96.0
-	var bar_h := 12.0
-	var offset := Vector2(-bar_w / 2, -100)
-	var ratio := health / MAX_HEALTH
+	draw_health_bar(_health_bar, health, MAX_HEALTH, -100.0)
 
-	_health_bar.draw_rect(Rect2(offset, Vector2(bar_w, bar_h)), Color(0.15, 0.15, 0.15, 0.9))
-	var fill := Color(1.0 * (1.0 - ratio) + 0.2 * ratio, 0.2 * (1.0 - ratio) + 0.8 * ratio, 0.2, 0.95)
-	_health_bar.draw_rect(Rect2(offset, Vector2(bar_w * ratio, bar_h)), fill)
+static func draw_health_bar(bar: Node2D, current_health: float, max_health: float, offset_y: float) -> void:
+	if not is_instance_valid(bar) or max_health <= 0.0 or current_health <= 0.0 or current_health >= max_health:
+		return
+	var ratio := clampf(current_health / max_health, 0.0, 1.0)
+	var offset := Vector2(-HEALTH_BAR_WIDTH * 0.5, offset_y)
+	var inner_size := Vector2(HEALTH_BAR_WIDTH - 2.0, HEALTH_BAR_HEIGHT - 2.0)
+	bar.draw_rect(Rect2(offset, Vector2(HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT)), HEALTH_BAR_BORDER_COLOR)
+	bar.draw_rect(Rect2(offset + Vector2.ONE, inner_size), HEALTH_BAR_BG_COLOR)
+	if ratio > 0.0:
+		bar.draw_rect(Rect2(offset + Vector2.ONE, Vector2(inner_size.x * ratio, inner_size.y)), health_bar_color(ratio))
+
+static func health_bar_color(ratio: float) -> Color:
+	return HEALTH_BAR_LOW_COLOR.lerp(HEALTH_BAR_FULL_COLOR, clampf(ratio, 0.0, 1.0))
+
+static func health_bar_background_color() -> Color:
+	return HEALTH_BAR_BG_COLOR
 
 func die() -> void:
 	died.emit()

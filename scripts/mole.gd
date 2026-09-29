@@ -26,6 +26,7 @@ const DIRT_PARTICLE_AMOUNT = 18
 const DASH_ABILITY_DAMAGE := 10.0
 const DASH_KNOCKBACK := 900.0
 const DASH_HIT_RADIUS := 95.0
+const KNOCKBACK_LOCKED_GROUP := &"knockback_locked"
 const GROUND_POUND_SPEED := 1800.0
 const GROUND_POUND_BOUNCE := -500.0
 const GROUND_POUND_MIN_FALL := 80.0
@@ -41,6 +42,10 @@ const WALL_JUMP_VELOCITY := -1250.0
 const WALL_JUMP_PUSHBACK := 620.0
 const WALL_JUMP_LOCK_TIME := 0.14
 const WALL_COYOTE_TIME := 0.12
+## How fast a held wall lets the mole descend. Gravity keeps accumulating every
+## frame and this caps it, so holding into a wall is a slow slide rather than a
+## free fall - and never a full stop, so there is always a way back down.
+const WALL_SLIDE_MAX_FALL := 420.0
 const GRAPPLE_MAX_RANGE := 540.0
 const GRAPPLE_PULL_SPEED := 1500.0
 const GRAPPLE_ACCEL := 4200.0
@@ -466,8 +471,8 @@ func _setup_level_reverb() -> void:
 	var info := LevelData.get_info(path)
 	var level := info.get("number", 1) as int
 	var t := clampf((level - 1) / 8.0, 0.0, 1.0)
-	_reverb.wet = t * 0.5
-	_reverb.room_size = 0.1 + t * 0.7
+	_reverb.wet = SFX.REVERB_BASE_WET + t * 0.5
+	_reverb.room_size = SFX.REVERB_BASE_ROOM_SIZE + t * 0.7
 
 func _physics_process(delta: float) -> void:
 	collision_mask = _normal_collision_mask
@@ -575,11 +580,12 @@ func _physics_process(delta: float) -> void:
 			if signf(direction) == toward_wall:
 				_wall_coyote_timer = WALL_COYOTE_TIME
 				_wall_coyote_dir = toward_wall
-				# Holding into the wall pins the mole to it outright instead of just
-				# slowing the fall, so a wall can be clung for as long as it is held
-				# and a jump is the only thing that gets off it again. Letting go of
-				# the direction drops you back down.
-				velocity.y = 0.0
+				# Holding into the wall slides the mole down it at a crawl instead of
+				# pinning it in place, so you can ride a wall down safely and a wall
+				# is never a place to get stranded. The downward guard keeps a wall
+				# jump's own upward kick from being cancelled out on the way off.
+				if velocity.y > 0.0:
+					velocity.y = minf(velocity.y, WALL_SLIDE_MAX_FALL)
 		else:
 			_wall_coyote_timer = maxf(0.0, _wall_coyote_timer - delta)
 
@@ -1291,7 +1297,12 @@ func _dash_ability_strike() -> void:
 			spawn_dirt_particles(enemy.global_position)
 		_apply_knockback(enemy, Vector2(tunnel_direction * DASH_KNOCKBACK, -300.0))
 
+## Script-driven bodies opt out of being displaced. The boss snail is moved by
+## script each frame, so a dash into it must deal damage without shoving it off
+## its autoscroll path. It still takes damage; only the push is skipped.
 func _apply_knockback(enemy: Node, knock_velocity: Vector2) -> void:
+	if enemy.is_in_group(KNOCKBACK_LOCKED_GROUP):
+		return
 	if enemy is CharacterBody2D:
 		(enemy as CharacterBody2D).velocity = knock_velocity
 	if "_stun_timer" in enemy:

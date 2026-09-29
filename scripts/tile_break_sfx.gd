@@ -303,7 +303,7 @@ static func is_stalactite(atlas_coords: Vector2i) -> bool:
 			return true
 	return false
 
-static func break_tile(tilemap: TileMap, tile_pos: Vector2i, parent: Node, force: bool = false) -> void:
+static func break_tile(tilemap: TileMap, tile_pos: Vector2i, parent: Node, force: bool = false, debris_z: int = DEBRIS_Z) -> void:
 	var world_pos := tilemap.to_global(tilemap.map_to_local(tile_pos))
 	var source_id := tilemap.get_cell_source_id(0, tile_pos)
 	if source_id == -1:
@@ -311,8 +311,8 @@ static func break_tile(tilemap: TileMap, tile_pos: Vector2i, parent: Node, force
 		return
 	var atlas_coords := tilemap.get_cell_atlas_coords(0, tile_pos)
 
-	_break_single_tile(tilemap, tile_pos, atlas_coords, parent, force)
-	_collapse_unsupported_sides(tilemap, tile_pos, parent)
+	_break_single_tile(tilemap, tile_pos, atlas_coords, parent, force, debris_z)
+	_collapse_unsupported_sides(tilemap, tile_pos, parent, debris_z)
 	_break_opened_chests_near(parent, world_pos)
 
 	var tree := parent.get_tree()
@@ -321,7 +321,7 @@ static func break_tile(tilemap: TileMap, tile_pos: Vector2i, parent: Node, force
 		if mole and mole.has_method("screen_shake"):
 			mole.screen_shake(4.0, 0.1)
 
-	_break_decoration_tile(tilemap, tile_pos, parent)
+	_break_decoration_tile(tilemap, tile_pos, parent, debris_z)
 
 	if is_stalactite(atlas_coords):
 		var below_tiles: Array[Vector2i] = []
@@ -335,12 +335,12 @@ static func break_tile(tilemap: TileMap, tile_pos: Vector2i, parent: Node, force
 				break
 			below_tiles.append(below)
 		if below_tiles.size() > 0:
-			_cascade_break(tilemap, below_tiles, parent, 0)
+			_cascade_break(tilemap, below_tiles, parent, 0, debris_z)
 
-	_break_stuff_above(tilemap, tile_pos, parent)
+	_break_stuff_above(tilemap, tile_pos, parent, debris_z)
 
-static func break_decoration_tile(tilemap: TileMap, tile_pos: Vector2i, parent: Node) -> void:
-	_break_decoration_tile(tilemap, tile_pos, parent)
+static func break_decoration_tile(tilemap: TileMap, tile_pos: Vector2i, parent: Node, debris_z: int = DEBRIS_Z) -> void:
+	_break_decoration_tile(tilemap, tile_pos, parent, debris_z)
 	var world_pos := tilemap.to_global(tilemap.map_to_local(tile_pos))
 	_break_opened_chests_near(parent, world_pos)
 
@@ -373,16 +373,16 @@ static func break_opened_chest_from_node(node: Node) -> bool:
 static func break_opened_chests_near(parent: Node, world_pos: Vector2, radius: float = 120.0) -> void:
 	_break_opened_chests_near(parent, world_pos, radius)
 
-static func _break_decoration_tile(tilemap: TileMap, tile_pos: Vector2i, parent: Node) -> void:
+static func _break_decoration_tile(tilemap: TileMap, tile_pos: Vector2i, parent: Node, debris_z: int = DEBRIS_Z) -> void:
 	if tilemap.get_layers_count() < 2:
 		return
 	var source_id := tilemap.get_cell_source_id(1, tile_pos)
 	if source_id == -1:
 		return
 	var atlas_coords := tilemap.get_cell_atlas_coords(1, tile_pos)
-	_break_single_decoration_tile(tilemap, tile_pos, atlas_coords, parent)
+	_break_single_decoration_tile(tilemap, tile_pos, atlas_coords, parent, debris_z)
 
-static func _break_single_decoration_tile(tilemap: TileMap, tile_pos: Vector2i, atlas_coords: Vector2i, parent: Node) -> void:
+static func _break_single_decoration_tile(tilemap: TileMap, tile_pos: Vector2i, atlas_coords: Vector2i, parent: Node, debris_z: int = DEBRIS_Z) -> void:
 	var source_id := tilemap.get_cell_source_id(1, tile_pos)
 	if source_id == -1:
 		return
@@ -400,26 +400,26 @@ static func _break_single_decoration_tile(tilemap: TileMap, tile_pos: Vector2i, 
 	player.global_position = world_pos
 	player.play()
 
-	spawn_break_particles(tilemap, tile_pos, atlas_coords, parent)
+	spawn_break_particles(tilemap, tile_pos, atlas_coords, parent, debris_z)
 	tilemap.erase_cell(1, tile_pos)
 
-static func _cascade_break(tilemap: TileMap, tiles: Array[Vector2i], parent: Node, index: int) -> void:
+static func _cascade_break(tilemap: TileMap, tiles: Array[Vector2i], parent: Node, index: int, debris_z: int = DEBRIS_Z) -> void:
 	if index >= tiles.size():
 		return
 	if not is_instance_valid(parent) or parent.get_tree() == null:
 		return
 	var pos := tiles[index]
-	_break_cascade_cell(tilemap, pos, parent)
-	parent.get_tree().create_timer(0.06).timeout.connect(_cascade_break.bind(tilemap, tiles, parent, index + 1))
+	_break_cascade_cell(tilemap, pos, parent, debris_z)
+	parent.get_tree().create_timer(0.06).timeout.connect(_cascade_break.bind(tilemap, tiles, parent, index + 1, debris_z))
 
-static func _break_cascade_cell(tilemap: TileMap, pos: Vector2i, parent: Node) -> void:
+static func _break_cascade_cell(tilemap: TileMap, pos: Vector2i, parent: Node, debris_z: int = DEBRIS_Z) -> void:
 	var s := tilemap.get_cell_source_id(0, pos)
 	if s != -1:
 		var a := tilemap.get_cell_atlas_coords(0, pos)
 		_break_single_tile(tilemap, pos, a, parent)
-	_break_decoration_tile(tilemap, pos, parent)
+	_break_decoration_tile(tilemap, pos, parent, debris_z)
 
-static func _collapse_unsupported_sides(tilemap: TileMap, origin: Vector2i, parent: Node) -> void:
+static func _collapse_unsupported_sides(tilemap: TileMap, origin: Vector2i, parent: Node, debris_z: int = DEBRIS_Z) -> void:
 	var pending: Array[Vector2i] = [origin]
 	while not pending.is_empty():
 		var pos: Vector2i = pending.pop_back()
@@ -433,10 +433,10 @@ static func _collapse_unsupported_sides(tilemap: TileMap, origin: Vector2i, pare
 			if tilemap.get_cell_source_id(0, neighbor + Vector2i.LEFT) != -1 or tilemap.get_cell_source_id(0, neighbor + Vector2i.RIGHT) != -1:
 				continue
 			var atlas := tilemap.get_cell_atlas_coords(0, neighbor)
-			_break_single_tile(tilemap, neighbor, atlas, parent)
+			_break_single_tile(tilemap, neighbor, atlas, parent, false, debris_z)
 			pending.append(neighbor)
 
-static func _break_stuff_above(tilemap: TileMap, tile_pos: Vector2i, parent: Node) -> void:
+static func _break_stuff_above(tilemap: TileMap, tile_pos: Vector2i, parent: Node, debris_z: int = DEBRIS_Z) -> void:
 	var stuff_tiles: Array[Vector2i] = []
 	for dy in range(1, 20):
 		var above := Vector2i(tile_pos.x, tile_pos.y - dy)
@@ -444,7 +444,7 @@ static func _break_stuff_above(tilemap: TileMap, tile_pos: Vector2i, parent: Nod
 			break
 		stuff_tiles.append(above)
 	if stuff_tiles.size() > 0:
-		_cascade_break(tilemap, stuff_tiles, parent, 0)
+		_cascade_break(tilemap, stuff_tiles, parent, 0, debris_z)
 
 static func _cell_has_stuff(tilemap: TileMap, cell: Vector2i) -> bool:
 	var td := tilemap.get_cell_tile_data(0, cell)
@@ -456,7 +456,7 @@ static func _cell_has_stuff(tilemap: TileMap, cell: Vector2i) -> bool:
 			return true
 	return false
 
-static func _break_single_tile(tilemap: TileMap, tile_pos: Vector2i, atlas_coords: Vector2i, parent: Node, force: bool = false) -> void:
+static func _break_single_tile(tilemap: TileMap, tile_pos: Vector2i, atlas_coords: Vector2i, parent: Node, force: bool = false, debris_z: int = DEBRIS_Z) -> void:
 	var source_id := tilemap.get_cell_source_id(0, tile_pos)
 	if source_id == -1:
 		return
@@ -479,11 +479,20 @@ static func _break_single_tile(tilemap: TileMap, tile_pos: Vector2i, atlas_coord
 	player.global_position = world_pos
 	player.play()
 
-	spawn_break_particles(tilemap, tile_pos, atlas_coords, parent)
+	spawn_break_particles(tilemap, tile_pos, atlas_coords, parent, debris_z)
 	tilemap.erase_cell(0, tile_pos)
 
 const MAX_POOLED := 12
 const DEBRIS_COUNT := 4
+
+## Where a tile's chunks fly. Kept low so debris tumbles behind the actors, which
+## sit at z 1, and their health bars at z 10.
+const DEBRIS_Z := 3
+## Raised for debris thrown by a beam. The boss lasers draw at z 20 (corrupted
+## heart) and z 25 (snail), so chunks broken by one have to clear that or the
+## beam swallows them the instant they appear.
+const DEBRIS_Z_OVER_BEAM := 30
+
 static var _pool: Array[AudioStreamPlayer2D] = []
 
 static func _acquire_player(parent: Node) -> AudioStreamPlayer2D:
@@ -510,7 +519,7 @@ static func _release_player(p: AudioStreamPlayer2D) -> void:
 	else:
 		p.queue_free()
 
-static func spawn_break_particles(tilemap: TileMap, tile_pos: Vector2i, atlas_coords: Vector2i, parent: Node) -> void:
+static func spawn_break_particles(tilemap: TileMap, tile_pos: Vector2i, atlas_coords: Vector2i, parent: Node, debris_z: int = DEBRIS_Z) -> void:
 	var world_pos := tilemap.to_global(tilemap.map_to_local(tile_pos))
 
 	var piece_tex: Texture2D = null
@@ -522,11 +531,11 @@ static func spawn_break_particles(tilemap: TileMap, tile_pos: Vector2i, atlas_co
 
 	if piece_tex != null and basis.x > 0.0 and basis.y > 0.0:
 		var origin := Vector2(atlas_coords) * basis
-		spawn_texture_break_particles(piece_tex, Rect2(origin, basis), world_pos, parent, DEBRIS_COUNT)
+		spawn_texture_break_particles(piece_tex, Rect2(origin, basis), world_pos, parent, DEBRIS_COUNT, 18.0, 34.0, debris_z)
 	else:
-		spawn_texture_break_particles(null, Rect2(), world_pos, parent, DEBRIS_COUNT)
+		spawn_texture_break_particles(null, Rect2(), world_pos, parent, DEBRIS_COUNT, 18.0, 34.0, debris_z)
 
-static func spawn_texture_break_particles(texture: Texture2D, region: Rect2, world_pos: Vector2, parent: Node, count: int = 4, min_size: float = 18.0, max_size: float = 34.0) -> void:
+static func spawn_texture_break_particles(texture: Texture2D, region: Rect2, world_pos: Vector2, parent: Node, count: int = 4, min_size: float = 18.0, max_size: float = 34.0, z_index: int = DEBRIS_Z) -> void:
 	if not is_instance_valid(parent):
 		return
 	for i in range(count):
@@ -535,7 +544,7 @@ static func spawn_texture_break_particles(texture: Texture2D, region: Rect2, wor
 		chunk.gravity_scale = 3.2
 		chunk.linear_damp = 3.5
 		chunk.angular_damp = 2.0
-		chunk.z_index = 3
+		chunk.z_index = z_index
 		parent.call_deferred("add_child", chunk)
 		chunk.global_position = world_pos
 		chunk.rotation = randf_range(0.0, TAU)

@@ -9,6 +9,10 @@ extends RigidBody2D
 @export var unlock_ability := ""
 @export var unlock_text := ""
 @export var face_player := true
+## After the dialogue closes, the player is put this far to the right of the snail
+## so the encounter ends with them standing clear of it rather than inside it.
+## Negative x moves them left instead.
+@export var post_dialogue_clearance := Vector2(500.0, 0.0)
 ## Some story snails visibly transform after their dialogue is dismissed.
 @export var transform_after_dialogue := false
 ## Starts a boss fight after the transformation finishes; used by the level 10 snail.
@@ -72,9 +76,8 @@ const BOSS_LOOT_FIRST_SPAWN_DELAY := 8.0
 ## Landed just ahead of the player rather than straight down on their head, so it
 ## is something to move for instead of something that lands on them.
 const BOSS_LOOT_DROP_OFFSET := Vector2(110.0, -500.0)
-## The end of the boss laser goes off like a bomb.
-const BOSS_LASER_IMPACT_SCENE := preload("res://Retro Explosion.tscn")
-const BOSS_LASER_IMPACT_SCALE := 1.0
+## Purple fireworks burst at the end of each boss laser.
+const BOSS_LASER_FIREWORK_Z := 40
 ## The snail is a RigidBody2D driven entirely by script, so a bomb landing on its
 ## shell or an add walking into it must never shove it off script. Bombs, chests,
 ## coins and debris all sit on the same collision layer as the ground, so the
@@ -340,6 +343,7 @@ func _apply_portrait_blink() -> void:
 func _on_dialogue_done() -> void:
 	_start_transformation()
 	_grant_unlock()
+	_move_player_clear_of_snail()
 	# This story encounter becomes a boss, not an interactable NPC, after its scene.
 	_hushed = true if boss_after_dialogue else _refresh_hushed()
 	if _dialogue_box == null or not is_instance_valid(_dialogue_box):
@@ -360,6 +364,19 @@ func _on_dialogue_done() -> void:
 	)
 	_dialogue_open = false
 	dialogue_closed.emit()
+
+## Puts the player on the far side of the snail once its dialogue is out of the
+## way, so they are never left standing inside it. The momentum is cleared too,
+## otherwise a fast fall carries straight on through the new spot.
+func _move_player_clear_of_snail() -> void:
+	if post_dialogue_clearance == Vector2.ZERO:
+		return
+	var mole := get_tree().get_first_node_in_group("mole") as Node2D
+	if mole == null or not is_instance_valid(mole):
+		return
+	mole.global_position = to_global(post_dialogue_clearance)
+	if mole is CharacterBody2D:
+		(mole as CharacterBody2D).velocity = Vector2.ZERO
 
 func _start_transformation() -> void:
 	if not transform_after_dialogue or _transformed or _sprite == null:
@@ -494,6 +511,9 @@ func _begin_boss_fight() -> void:
 		return
 	_boss_active = true
 	_boss_health = BOSS_MAX_HEALTH
+	# The fight drives this snail's position by script, so the dash must not be
+	# able to shove it off its autoscroll path. It still takes the hit damage.
+	add_to_group(&"knockback_locked")
 	if _label != null:
 		_label.visible = false
 	var interaction_area := get_node_or_null("Area2D") as Area2D
@@ -860,7 +880,7 @@ func _create_boss_health_bar() -> void:
 	bg.offset_top = BOSS_HEALTH_BAR_INSET
 	bg.offset_right = -BOSS_HEALTH_BAR_INSET
 	bg.offset_bottom = -BOSS_HEALTH_BAR_INSET
-	bg.color = Color(0.12, 0.08, 0.05, 0.85)
+	bg.color = EnemyDamage.health_bar_background_color()
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(bg)
 	_boss_health_fill = ColorRect.new()
@@ -869,7 +889,7 @@ func _create_boss_health_bar() -> void:
 	_boss_health_fill.offset_top = BOSS_HEALTH_FILL_INSET
 	_boss_health_fill.offset_right = -BOSS_HEALTH_FILL_INSET
 	_boss_health_fill.offset_bottom = -BOSS_HEALTH_FILL_INSET
-	_boss_health_fill.color = Color(0.85, 0.25, 0.25, 1.0)
+	_boss_health_fill.color = EnemyDamage.health_bar_color(1.0)
 	_boss_health_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bg.add_child(_boss_health_fill)
 	_update_boss_health_bar()
@@ -879,7 +899,7 @@ func _update_boss_health_bar() -> void:
 		return
 	var ratio := clampf(_boss_health / BOSS_MAX_HEALTH, 0.0, 1.0)
 	_boss_health_fill.offset_right = -(BOSS_HEALTH_FILL_INSET + BOSS_HEALTH_BAR_INNER * (1.0 - ratio))
-	_boss_health_fill.color = Color(0.85, 0.25, 0.25, 1.0) if ratio > 0.35 else Color(0.95, 0.6, 0.15, 1.0)
+	_boss_health_fill.color = EnemyDamage.health_bar_color(ratio)
 
 func _spawn_boss_minion() -> void:
 	if not _boss_active or _boss_dying or BOSS_MINION_SCENES.is_empty():
@@ -940,6 +960,7 @@ func _fire_boss_laser(mole: Node2D) -> void:
 	# The beam burns through dirt but stops at bedrock, and that stopping point is
 	# where its impact goes off.
 	var laser_end := _trace_boss_laser(laser_start, laser_direction, laser_start + laser_direction * BOSS_LASER_LENGTH)
+	laser_end = _clip_boss_laser_to_view(laser_start, laser_end)
 	var telegraph := _create_boss_laser_lines(laser_start, laser_end, true)
 	_boss_laser_lines = telegraph
 	for line in telegraph:
@@ -1061,7 +1082,35 @@ func _break_blocks_along_boss_laser(start: Vector2, finish: Vector2) -> void:
 			var tile_data := tilemap.get_cell_tile_data(0, cell)
 			if tile_data != null and (tile_data.get_custom_data("bedrock") as bool):
 				continue
-			TileBreakSFX.break_tile(tilemap, cell, get_parent())
+			TileBreakSFX.break_tile(tilemap, cell, get_parent(), false, TileBreakSFX.DEBRIS_Z_OVER_BEAM)
+
+## Keep the beam's endpoint and impact on-screen when the full-range shot would
+## run beyond the camera. Leave room for the explosion particles near the edge.
+func _clip_boss_laser_to_view(start: Vector2, finish: Vector2) -> Vector2:
+	var camera := get_viewport().get_camera_2d()
+	if camera == null:
+		return finish
+	var direction := (finish - start).normalized()
+	if direction == Vector2.ZERO:
+		return finish
+	var zoom := camera.zoom
+	var half_view := camera.get_viewport_rect().size / zoom * 0.5
+	var center := camera.get_screen_center_position()
+	var margin := Vector2.ONE * 240.0
+	var left := center.x - half_view.x + margin.x
+	var right := center.x + half_view.x - margin.x
+	var top := center.y - half_view.y + margin.y
+	var bottom := center.y + half_view.y - margin.y
+	var max_distance := start.distance_to(finish)
+	if direction.x > 0.0001:
+		max_distance = minf(max_distance, (right - start.x) / direction.x)
+	elif direction.x < -0.0001:
+		max_distance = minf(max_distance, (left - start.x) / direction.x)
+	if direction.y > 0.0001:
+		max_distance = minf(max_distance, (bottom - start.y) / direction.y)
+	elif direction.y < -0.0001:
+		max_distance = minf(max_distance, (top - start.y) / direction.y)
+	return start + direction * maxf(max_distance, 0.0)
 
 ## Where the beam stops: the first bedrock it runs into, or its full length when
 ## it never finds any. Mirrors the corrupted heart's laser, so both boss beams
@@ -1081,19 +1130,94 @@ func _trace_boss_laser(start: Vector2, direction: Vector2, finish: Vector2) -> V
 			return sample
 	return finish
 
-## The beam's end goes off like a bomb. Without this the only blast the laser
-## left behind came from the blocks it happened to shatter on the way, so whether
-## the impact read at all depended on where it was aimed.
+## A laser impact is a bright expanding purple ring with two layered bursts of
+## round sparks, rather than the shared orange bomb explosion.
 func _spawn_boss_laser_impact(world_pos: Vector2) -> void:
-	var explosion = BOSS_LASER_IMPACT_SCENE.instantiate()
-	explosion.global_position = world_pos
-	explosion.scale = Vector2.ONE * BOSS_LASER_IMPACT_SCALE
-	get_parent().add_child(explosion)
-	explosion.emitting = true
+	var scene_root := get_tree().current_scene as Node2D
+	if scene_root == null:
+		return
+	var firework := Node2D.new()
+	firework.name = "SnailLaserFirework"
+	firework.z_index = BOSS_LASER_FIREWORK_Z
+	firework.z_as_relative = false
+	scene_root.add_child(firework)
+	firework.global_position = world_pos
+
+	var spark_texture := _make_firework_spark_texture()
+	_spawn_laser_firework_burst(firework, spark_texture, 120, 1.5, 480.0, 980.0, Color(0.72, 0.18, 1.0, 1.0))
+	get_tree().create_timer(0.16).timeout.connect(func():
+		if is_instance_valid(firework):
+			_spawn_laser_firework_burst(firework, spark_texture, 72, 1.25, 260.0, 620.0, Color(0.92, 0.62, 1.0, 1.0))
+	)
+
+	var ring := Line2D.new()
+	ring.width = 9.0
+	ring.default_color = Color(0.85, 0.38, 1.0, 0.95)
+	ring.z_index = 2
+	ring.joint_mode = Line2D.LINE_JOINT_ROUND
+	ring.begin_cap_mode = Line2D.LINE_CAP_ROUND
+	ring.end_cap_mode = Line2D.LINE_CAP_ROUND
+	for i in range(49):
+		var angle := TAU * float(i) / 48.0
+		ring.add_point(Vector2(cos(angle), sin(angle)) * 72.0)
+	firework.add_child(ring)
+	ring.scale = Vector2.ONE * 0.12
+	var ring_tween := ring.create_tween().set_parallel(true)
+	ring_tween.tween_property(ring, "scale", Vector2.ONE * 3.4, 0.55).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	ring_tween.tween_property(ring, "modulate:a", 0.0, 0.55)
+	ring_tween.chain().tween_callback(ring.queue_free)
+
+	var flash := Sprite2D.new()
+	flash.texture = spark_texture
+	flash.modulate = Color(0.82, 0.35, 1.0, 0.9)
+	flash.scale = Vector2.ONE * 1.4
+	firework.add_child(flash)
+	var flash_tween := flash.create_tween().set_parallel(true)
+	flash_tween.tween_property(flash, "scale", Vector2.ONE * 9.0, 0.32).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	flash_tween.tween_property(flash, "modulate:a", 0.0, 0.32)
+	flash_tween.chain().tween_callback(flash.queue_free)
+
+	get_tree().create_timer(2.0).timeout.connect(firework.queue_free)
 	SFX.play("explosion", world_pos, -3.0, 0.1)
 	var mole := get_tree().get_first_node_in_group("mole")
 	if is_instance_valid(mole) and mole.has_method("screen_shake"):
-		mole.call("screen_shake", 18.0, 0.4)
+		mole.call("screen_shake", 22.0, 0.45)
+
+func _spawn_laser_firework_burst(parent: Node2D, spark_texture: Texture2D, amount: int, lifetime: float, min_speed: float, max_speed: float, tint: Color) -> void:
+	var particles := CPUParticles2D.new()
+	particles.one_shot = true
+	particles.amount = amount
+	particles.lifetime = lifetime
+	particles.explosiveness = 1.0
+	particles.direction = Vector2.UP
+	particles.spread = 180.0
+	particles.initial_velocity_min = min_speed
+	particles.initial_velocity_max = max_speed
+	particles.gravity = Vector2(0.0, 280.0)
+	particles.damping_min = 24.0
+	particles.damping_max = 72.0
+	particles.scale_amount_min = 0.16
+	particles.scale_amount_max = 0.42
+	particles.texture = spark_texture
+	var gradient := Gradient.new()
+	gradient.set_color(0, Color(1.0, 0.94, 1.0, 1.0))
+	gradient.set_color(0.18, tint)
+	gradient.set_color(1, Color(tint.r * 0.5, tint.g * 0.3, tint.b, 0.0))
+	particles.color_ramp = gradient
+	particles.z_index = 1
+	parent.add_child(particles)
+	particles.emitting = true
+
+func _make_firework_spark_texture() -> Texture2D:
+	const TEXTURE_SIZE := 32
+	var image := Image.create(TEXTURE_SIZE, TEXTURE_SIZE, false, Image.FORMAT_RGBA8)
+	var center := Vector2(TEXTURE_SIZE - 1, TEXTURE_SIZE - 1) * 0.5
+	for y in TEXTURE_SIZE:
+		for x in TEXTURE_SIZE:
+			var distance := Vector2(x, y).distance_to(center) / (TEXTURE_SIZE * 0.5)
+			var alpha := pow(clampf(1.0 - distance, 0.0, 1.0), 2.0)
+			image.set_pixel(x, y, Color(1.0, 1.0, 1.0, alpha))
+	return ImageTexture.create_from_image(image)
 
 func _spit_boss_projectile(mole: Node2D) -> void:
 	var aim := (mole.global_position - global_position).normalized()

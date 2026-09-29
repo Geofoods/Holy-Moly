@@ -32,6 +32,12 @@ func change_to(path: String) -> void:
 	var tween := create_tween()
 	tween.tween_method(_set_progress, 0.0, 1.0, WIPE_TIME).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_CUBIC)
 	await tween.finished
+	# The reverb rides on the master bus, so whatever a cave level set on it
+	# outlives that level. Every scene change goes through here, so this is the
+	# one place that has to clear it - a level that follows re-tunes it for its
+	# own depth in the mole's _ready, and the menu and other front ends have no
+	# mole, so they would otherwise keep echoing.
+	SFX.reset_reverb()
 	if path.begins_with("res://scenes/level") or path == "res://scenes/tutorial.tscn" or path == "res://scenes/map.tscn":
 		Inventory.current_level_path = path
 	get_tree().change_scene_to_file(path)

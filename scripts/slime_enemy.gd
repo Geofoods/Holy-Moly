@@ -161,17 +161,7 @@ func _setup_health_bar() -> void:
 	add_child(_health_bar)
 
 func _draw_health_bar() -> void:
-	if health <= 0 or health >= max_health:
-		return
-	if not is_instance_valid(_health_bar):
-		return
-	var bar_w := 48.0
-	var bar_h := 5.0
-	var offset := Vector2(-bar_w / 2, -100)
-	var ratio := health / max_health
-	_health_bar.draw_rect(Rect2(offset, Vector2(bar_w, bar_h)), Color(0.15, 0.15, 0.15, 0.9))
-	var fill := Color(0.3 + 0.7 * ratio, 0.8, 0.3, 0.95)
-	_health_bar.draw_rect(Rect2(offset, Vector2(bar_w * ratio, bar_h)), fill)
+	EnemyDamage.draw_health_bar(_health_bar, health, max_health, -100.0)
 
 func die() -> void:
 	SFX.play("enemy_death", global_position)

@@ -197,7 +197,7 @@ func _create_health_bar() -> void:
 	_health_bar_bg.offset_top = BOSS_HEALTH_BAR_INSET
 	_health_bar_bg.offset_right = -BOSS_HEALTH_BAR_INSET
 	_health_bar_bg.offset_bottom = -BOSS_HEALTH_BAR_INSET
-	_health_bar_bg.color = Color(0.12, 0.08, 0.05, 0.85)
+	_health_bar_bg.color = EnemyDamage.health_bar_background_color()
 	_health_bar_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(_health_bar_bg)
 
@@ -207,7 +207,7 @@ func _create_health_bar() -> void:
 	_health_bar_fill.offset_top = BOSS_HEALTH_FILL_INSET
 	_health_bar_fill.offset_right = -BOSS_HEALTH_FILL_INSET
 	_health_bar_fill.offset_bottom = -BOSS_HEALTH_FILL_INSET
-	_health_bar_fill.color = Color(0.85, 0.25, 0.25, 1.0)
+	_health_bar_fill.color = EnemyDamage.health_bar_color(1.0)
 	_health_bar_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_health_bar_bg.add_child(_health_bar_fill)
 
@@ -228,7 +228,7 @@ func _update_health_bar_instant() -> void:
 	_set_health_bar_ratio(_displayed_health / MAX_HEALTH)
 
 func _health_color(ratio: float) -> Color:
-	return Color(0.85, 0.25, 0.25, 1.0) if ratio > 0.35 else Color(0.95, 0.6, 0.15, 1.0)
+	return EnemyDamage.health_bar_color(ratio)
 
 func _animate_health_bar() -> void:
 	if _health_bar_fill == null:
@@ -510,7 +510,7 @@ func _break_tiles_along_laser(start: Vector2, finish: Vector2) -> void:
 	if _tilemap == null or _tile_break_script == null:
 		return
 	if _laser_hit_tile != Vector2i(-1, -1) and not _is_bedrock(_laser_hit_tile):
-		_tile_break_script.break_tile(_tilemap, _laser_hit_tile, get_parent())
+		_tile_break_script.break_tile(_tilemap, _laser_hit_tile, get_parent(), false, _tile_break_script.DEBRIS_Z_OVER_BEAM)
 	var direction := (finish - start).normalized()
 	var perpendicular := Vector2(-direction.y, direction.x)
 	var sample_count := maxi(1, int(ceil(start.distance_to(finish) / LASER_TILE_SAMPLE_SPACING)))
@@ -521,7 +521,7 @@ func _break_tiles_along_laser(start: Vector2, finish: Vector2) -> void:
 			var cell := _tilemap.local_to_map(_tilemap.to_local(sample))
 			if _tilemap.get_cell_source_id(0, cell) == -1 or _is_bedrock(cell):
 				continue
-			_tile_break_script.break_tile(_tilemap, cell, get_parent())
+			_tile_break_script.break_tile(_tilemap, cell, get_parent(), false, _tile_break_script.DEBRIS_Z_OVER_BEAM)
 
 func _spawn_laser_ground_firework(world_pos: Vector2) -> void:
 	_spawn_firework_burst(world_pos, 180, Color(0.72, 0.12, 1.0, 1.0), 1100.0, 1.8)
