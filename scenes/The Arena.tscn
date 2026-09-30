@@ -20,6 +20,7 @@
 [ext_resource type="Script" uid="uid://bpssnrahfivt5" path="res://scripts/arena_waves.gd" id="17_waves"]
 [ext_resource type="Script" uid="uid://bqbn6fn0mx5x1" path="res://scripts/arena_camera.gd" id="18_cam"]
 [ext_resource type="PackedScene" uid="uid://dg6omg8f4xhgx" path="res://scenes/snail.tscn" id="20_434ko"]
+[ext_resource type="PackedScene" uid="uid://buv33lctn53nn" path="res://scenes/respawn_station.tscn" id="99_station"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.8, 0.68, 0.46, 1)
@@ -263,5 +264,7 @@ condition_wave_path = NodePath("../WaveManager")
 unlock_ability = "gold_shovel"
 unlock_text = "GOLDEN SHOVEL"
 
+[node name="RespawnStation" parent="." instance=ExtResource("99_station")]
+position = Vector2(10208, -263)
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]

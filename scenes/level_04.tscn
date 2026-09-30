@@ -18,6 +18,7 @@
 [ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
 [ext_resource type="PackedScene" uid="uid://3wwhicdeo8hl" path="res://scenes/info_popup.tscn" id="info_popup_res"]
 [ext_resource type="PackedScene" path="res://scenes/level_intro_banner.tscn" id="level_banner_res"]
+[ext_resource type="PackedScene" uid="uid://buv33lctn53nn" path="res://scenes/respawn_station.tscn" id="99_station"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.8, 0.68, 0.46, 1)
@@ -253,5 +254,7 @@ position = Vector2(99, -825)
 [node name="Enemy8" parent="." unique_id=83011454 instance=ExtResource("18_r73c0")]
 position = Vector2(1644, 554)
 
+[node name="RespawnStation" parent="." instance=ExtResource("99_station")]
+position = Vector2(-856, 470)
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]

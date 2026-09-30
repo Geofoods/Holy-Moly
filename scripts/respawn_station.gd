@@ -226,6 +226,9 @@ func _bank() -> void:
 	_pad_particles.emitting = true
 	SFX.play_ui("parry_activate", -10.0, 1.4)
 	SFX.play("item_pickup", spawn_point(), -8.0, 0.1)
+	# The pad becomes a usable travel portal on the map once it has been banked.
+	if checkpoints:
+		Progress.mark_portal_active(_scene_path(), spawn_point())
 
 func _nearest_mole() -> Node2D:
 	for body in _area.get_overlapping_bodies():

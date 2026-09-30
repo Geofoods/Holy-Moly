@@ -183,7 +183,7 @@ npc_name = "Scoop"
 modulate = Color(0.4108, 0.79, 0.61304003, 1)
 position = Vector2(3435, -145)
 scale = Vector2(0.25, 0.25)
-dialogue_text = "If you're heading down, remember: the honeycombs might just save your skin."
+dialogue_text = "Me and my mole friends discovered a new technique called wall jumping! Press jump when you are on a wall and you can jump from the wall!"
 npc_name = "Burrow"
 
 [node name="NpcMole4" parent="." unique_id=680839888 instance=ExtResource("14_3j6u0")]
@@ -198,6 +198,7 @@ position = Vector2(-873, -200)
 
 [node name="Snail" parent="." unique_id=1260151595 instance=ExtResource("15_bj43u")]
 position = Vector2(1864, -463)
+dialogue_text = "Hey, I am the friendly snail! I might not be a mole but I'm still a resident here! Please don't deport me!"
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]

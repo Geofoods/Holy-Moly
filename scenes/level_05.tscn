@@ -21,6 +21,7 @@
 [ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
 [ext_resource type="PackedScene" uid="uid://3wwhicdeo8hl" path="res://scenes/info_popup.tscn" id="info_popup_res"]
 [ext_resource type="PackedScene" path="res://scenes/level_intro_banner.tscn" id="level_banner_res"]
+[ext_resource type="PackedScene" uid="uid://buv33lctn53nn" path="res://scenes/respawn_station.tscn" id="99_station"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.8, 0.68, 0.46, 1)
@@ -348,6 +349,8 @@ rotation = 3.1415927
 mouse_filter = 2
 color = Color(0, 0, 0, 1)
 
+[node name="RespawnStation" parent="." instance=ExtResource("99_station")]
+position = Vector2(-650, -1919)
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]
 [connection signal="area_entered" from="nextlevel" to="DeathPlane" method="_on_nextlevel_area_entered"]

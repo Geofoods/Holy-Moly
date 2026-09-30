@@ -42,6 +42,11 @@ var respawn_pending := false
 
 var acorn_total := ACORN_LEVELS.size()
 
+## Activated teleport portals: scene path -> spawn point on that scene's
+## respawn station pad. Banking a checkpoint at a station records it here; the
+## map overlay reads this to build the fast-travel list.
+var portals := {}
+
 var _hub_layer: CanvasLayer = null
 var _hub_label: Label = null
 
@@ -134,6 +139,23 @@ func update_best_combo(value: int) -> void:
 func has_respawn() -> bool:
 	return not respawn_scene.is_empty() and ResourceLoader.exists(respawn_scene)
 
+## Remembers this scene as an available travel destination, storing the spot the
+## mole will materialise on if it travels here. Idempotent - re-banking a portal
+## just refreshes the stored position.
+func mark_portal_active(scene_path: String, spawn_pos: Vector2) -> void:
+	if scene_path.is_empty():
+		return
+	portals[scene_path] = spawn_pos
+	save_progress()
+
+func is_portal_active(scene_path: String) -> bool:
+	return portals.has(scene_path)
+
+## All travel destinations, keyed by scene path. Live reference - also update it
+## directly if a caller needs to mutate, but reading is all the map needs.
+func get_active_portals() -> Dictionary:
+	return portals
+
 ## Banks `scene_path` as the respawn station and remembers the spot the mole
 ## was standing, then writes both to disk so a checkpoint survives a restart.
 func set_respawn(scene_path: String, pos: Vector2) -> void:
@@ -160,6 +182,8 @@ func save_progress() -> void:
 		cfg.set_value("acorns", p, true)
 	for p in completed:
 		cfg.set_value("completed", p, true)
+	for p in portals:
+		cfg.set_value("portals", p, portals[p])
 	cfg.set_value("bosses", "queen", queen_defeated)
 	cfg.set_value("bosses", "corrupted", corrupted_defeated)
 	cfg.set_value("bosses", "rush", boss_rush_cleared)
@@ -179,6 +203,9 @@ func load_progress() -> void:
 	if cfg.has_section("completed"):
 		for k in cfg.get_section_keys("completed"):
 			completed[k] = true
+	if cfg.has_section("portals"):
+		for k in cfg.get_section_keys("portals"):
+			portals[k] = cfg.get_value("portals", k, Vector2.ZERO)
 	queen_defeated = bool(cfg.get_value("bosses", "queen", false))
 	corrupted_defeated = bool(cfg.get_value("bosses", "corrupted", false))
 	boss_rush_cleared = bool(cfg.get_value("bosses", "rush", false))

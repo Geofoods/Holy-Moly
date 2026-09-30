@@ -18,6 +18,7 @@
 [ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="19_ybsq2"]
 [ext_resource type="PackedScene" uid="uid://iuqjuk37ur0d" path="res://scenes/slimeenemy.tscn" id="20_rtnhj"]
 [ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="22_vih1m"]
+[ext_resource type="PackedScene" uid="uid://buv33lctn53nn" path="res://scenes/respawn_station.tscn" id="99_station"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.8, 0.68, 0.46, 1)
@@ -275,5 +276,7 @@ position = Vector2(3975, -3248)
 [node name="chest6" parent="." unique_id=1541135602 instance=ExtResource("14_d061c")]
 position = Vector2(4405, -1002)
 
+[node name="RespawnStation" parent="." instance=ExtResource("99_station")]
+position = Vector2(6311, -3564)
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]

@@ -12,7 +12,7 @@ extends RigidBody2D
 ## After the dialogue closes, the player is put this far to the right of the snail
 ## so the encounter ends with them standing clear of it rather than inside it.
 ## Negative x moves them left instead.
-@export var post_dialogue_clearance := Vector2(500.0, 0.0)
+@export var post_dialogue_clearance := Vector2.ZERO
 ## Some story snails visibly transform after their dialogue is dismissed.
 @export var transform_after_dialogue := false
 ## Starts a boss fight after the transformation finishes; used by the level 10 snail.
