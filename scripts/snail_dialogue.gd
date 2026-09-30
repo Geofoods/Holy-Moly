@@ -147,6 +147,8 @@ var _boss_vignette_rect: ColorRect = null
 var _boss_restore_vignette_material: Material = null
 var _boss_vignette_material: ShaderMaterial = null
 var _boss_brightness_tween: Tween = null
+var _death_box: CanvasLayer = null
+var _death_finale_started := false
 
 const ITEM_GET := preload("res://scripts/item_get_animation.gd")
 ## Melee weapons have no artwork of their own, so - like the weapon the mole
@@ -154,6 +156,28 @@ const ITEM_GET := preload("res://scripts/item_get_animation.gd")
 const MELEE_ICON := preload("res://sprites/shovel.png")
 ## Roughly the dialogue box's slide-away, so the fanfare lands once it is gone.
 const FANFARE_DELAY := 0.35
+## The grand death: the snail defies the mole one last time, then bursts like a
+## firework show while the box is on screen, and the finale blast frees it.
+const DEATH_CURSE_TEXT := "AHHHH! I SWEAR WHEN I GO TO HELL I WILL DESTROY ALL MOLES"
+## Mirrors dialogue_box.gd's TYPE_SPEED, so the skip-typing timer matches typing.
+const DIALOGUE_TYPE_SPEED := 0.018
+## The idle fireworks bookending each of the two word bursts.
+const DEATH_IDLE_FIREWORK_INTERVAL := 0.45
+const DEATH_IDLE_FIREWORKS_PER_BURST := 4
+## Gap between the first and second bursts of the curse; the show quiets down
+## for it so the words carry.
+const DEATH_CURSE_GAP := 2.8
+const DEATH_FINALE_DELAY := 1.6
+## Firework bursts explode inside this radius of the shell rather than on one
+## fixed point, so the show reads as coming from him.
+const DEATH_FIREWORK_RADIUS_SCALE := 0.42
+const DEATH_FIREWORK_COLORS: Array[Color] = [
+	Color(0.72, 0.18, 1.0, 1.0), Color(1.0, 0.78, 0.26, 1.0),
+	Color(0.35, 0.85, 1.0, 1.0), Color(1.0, 0.32, 0.48, 1.0),
+]
+const DEATH_SHAKE_STRENGTH := 14.0
+const DEATH_SHAKE_DURATION := 0.3
+const DEATH_FADE_TIME := 0.8
 
 var _mole_overlapping := false
 var _dialogue_open := false
@@ -327,13 +351,13 @@ func _open_dialogue() -> void:
 	_dialogue_box.next_pressed.connect(_on_dialogue_done)
 	_dialogue_box.set_portrait(portrait_texture)
 	_dialogue_box.set_npc_name(npc_name)
-	_apply_portrait_blink()
+	_apply_portrait_blink_to(_dialogue_box)
 	_dialogue_box.show_text(dialogue_text, 0, 0, true, false)
 
-## Mirror the NPC's own blink cycle onto the dialogue portrait, if it has one.
-func _apply_portrait_blink() -> void:
+## Mirror the NPC's own blink cycle onto a dialogue portrait, if it has one.
+func _apply_portrait_blink_to(box: CanvasLayer) -> void:
 	var sprite := get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
-	if sprite == null or sprite.sprite_frames == null:
+	if box == null or sprite == null or sprite.sprite_frames == null:
 		return
 	var anim := "blink"
 	var rest := 0
@@ -351,7 +375,7 @@ func _apply_portrait_blink() -> void:
 		frames.append(sprite.sprite_frames.get_frame_texture(anim, i))
 	if frames.size() < 2:
 		return
-	_dialogue_box.set_portrait_animation(frames, lo, hi, rest, sprite.sprite_frames.get_animation_speed(anim))
+	box.set_portrait_animation(frames, lo, hi, rest, sprite.sprite_frames.get_animation_speed(anim))
 
 func _on_dialogue_done() -> void:
 	_start_transformation()
@@ -1387,35 +1411,182 @@ func _defeat_boss() -> void:
 		body_shape.set_deferred("disabled", true)
 	if _boss_health_layer != null:
 		var fade := create_tween()
-		fade.tween_property(_boss_health_layer, "modulate:a", 0.0, 0.6)
+		# CanvasLayer has no modulate - the fade belongs to the bar's root control.
+		var bar_root := _boss_health_layer.get_child(0) as CanvasItem
+		if bar_root != null:
+			fade.tween_property(bar_root, "modulate:a", 0.0, 0.6)
 		fade.tween_callback(_boss_health_layer.queue_free)
 		_boss_health_layer = null
+	_start_grand_death()
+
+## The grand death: the snail defies the mole one last time, fireworks burst
+## off its shell the whole time the curse is up, and then it goes out in one
+## giant blast - gibs, coins, screen shake - instead of quietly deflating.
+func _start_grand_death() -> void:
 	SFX.play("enemy_death", global_position)
+	_show_death_dialogue()
+	_spawn_firework_ring()
+
+	var show := create_tween()
+	show.tween_interval(DEATH_CURSE_GAP)
+	show.tween_callback(_burst_fireworks.bind(1))
+	show.tween_callback(_spawn_firework_ring)
+	show.tween_callback(_shake_camera)
+	show.tween_interval(DEATH_CURSE_GAP)
+	show.tween_callback(_burst_fireworks.bind(2))
+	show.tween_callback(_spawn_firework_ring)
+	show.tween_callback(_shake_camera)
+	show.tween_interval(DEATH_FINALE_DELAY)
+	show.tween_callback(_death_finale)
+
+## The dialogue box stays up for the whole show; typing the full text usually
+## finishes before the finale, but the timer is what ends the scene - the box
+## is slid away with the finale, since its buttons would dangle over an empty
+## snail. Like _open_dialogue, the box is configured only once it is inside the
+## tree, because its labels come alive in _ready.
+func _show_death_dialogue() -> void:
+	if _death_box != null:
+		return
+	_death_box = preload("res://scenes/dialogue_box.tscn").instantiate()
+	_death_box.process_mode = PROCESS_MODE_ALWAYS
+	get_tree().root.add_child.call_deferred(_death_box)
+	_setup_death_box.call_deferred()
+
+func _setup_death_box() -> void:
+	if _death_box == null or not is_instance_valid(_death_box):
+		return
+	_death_box.set_npc_name(npc_name)
+	_death_box.set_portrait(portrait_texture)
+	_apply_portrait_blink_to(_death_box)
+	_death_box.show_text(DEATH_CURSE_TEXT, 0, 0, false, false)
+	var type_duration := DEATH_CURSE_TEXT.length() * DIALOGUE_TYPE_SPEED
+	get_tree().create_timer(type_duration + 0.2).timeout.connect(func():
+		if is_instance_valid(_death_box):
+			_death_box.skip_typing())
+
+func _dismiss_death_box() -> void:
+	if _death_box == null or not is_instance_valid(_death_box):
+		return
+	var box := _death_box
+	box.hide_box()
+	get_tree().create_timer(0.4).timeout.connect(func():
+		if is_instance_valid(box):
+			box.queue_free())
+	_death_box = null
+
+## A quick volley of fireworks from random spots on the shell, between the
+## bookend bursts that ring the body.
+func _burst_fireworks(kind: int) -> void:
+	var count := DEATH_IDLE_FIREWORKS_PER_BURST
+	for i in count:
+		get_tree().create_timer(i * DEATH_IDLE_FIREWORK_INTERVAL).timeout.connect(
+			_spawn_death_firework)
+	if kind == 2:
+		for i in count:
+			get_tree().create_timer(i * DEATH_IDLE_FIREWORK_INTERVAL + DEATH_IDLE_FIREWORK_INTERVAL * 0.5).timeout.connect(
+				_spawn_death_firework)
+
+## One firework exploding at a random point on the snail's shell.
+func _spawn_death_firework() -> void:
+	if not is_instance_valid(self) or not is_inside_tree():
+		return
+	var body_size := _boss_body_size()
+	var radius := maxf(body_size.x, body_size.y) * DEATH_FIREWORK_RADIUS_SCALE
+	var offset := Vector2.from_angle(randf_range(0.0, TAU)) * randf_range(radius * 0.3, radius)
+	_spawn_death_firework_burst(global_position + offset)
+
+## A ring of fireworks around the shell, all bursting at once.
+func _spawn_firework_ring() -> void:
+	if not is_instance_valid(self) or not is_inside_tree():
+		return
+	var body_size := _boss_body_size()
+	var radius := maxf(body_size.x, body_size.y) * DEATH_FIREWORK_RADIUS_SCALE
+	for i in DEATH_IDLE_FIREWORKS_PER_BURST:
+		var angle := TAU * float(i) / float(DEATH_IDLE_FIREWORKS_PER_BURST)
+		_spawn_death_firework_burst(global_position + Vector2.from_angle(angle) * radius)
+
+## A layered firework explosion: two colored spark bursts inside an expanding
+## ring, sized to the boss so the blasts read at the fight's camera zoom.
+func _spawn_death_firework_burst(world_pos: Vector2) -> void:
+	var scene_root := get_tree().current_scene as Node2D
+	if scene_root == null:
+		return
+	var body_size := _boss_body_size()
+	var blast_scale := maxf(body_size.x, body_size.y) / 460.0
+	var firework := Node2D.new()
+	firework.z_index = BOSS_LASER_FIREWORK_Z
+	firework.z_as_relative = false
+	scene_root.add_child(firework)
+	firework.global_position = world_pos
+
+	var spark_texture := _make_firework_spark_texture()
+	var tint: Color = DEATH_FIREWORK_COLORS.pick_random()
+	_spawn_laser_firework_burst(firework, spark_texture, int(96 * blast_scale), 1.3, 420.0, 860.0 * blast_scale, tint)
+	_spawn_laser_firework_burst(firework, spark_texture, int(48 * blast_scale), 1.0, 200.0, 540.0 * blast_scale, Color(1.0, 0.94, 1.0, 1.0))
+
+	var ring := Line2D.new()
+	ring.width = 9.0 * blast_scale
+	ring.default_color = Color(tint.r, tint.g, tint.b, 0.95)
+	ring.z_index = 2
+	ring.joint_mode = Line2D.LINE_JOINT_ROUND
+	ring.begin_cap_mode = Line2D.LINE_CAP_ROUND
+	ring.end_cap_mode = Line2D.LINE_CAP_ROUND
+	for i in range(49):
+		var angle := TAU * float(i) / 48.0
+		ring.add_point(Vector2(cos(angle), sin(angle)) * 64.0 * blast_scale)
+	firework.add_child(ring)
+	ring.scale = Vector2.ONE * 0.12
+	var ring_tween := ring.create_tween().set_parallel(true)
+	ring_tween.tween_property(ring, "scale", Vector2.ONE * 3.2, 0.5).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	ring_tween.tween_property(ring, "modulate:a", 0.0, 0.5)
+	ring_tween.chain().tween_callback(ring.queue_free)
+
+	var flash := Sprite2D.new()
+	flash.texture = spark_texture
+	flash.modulate = Color(1.0, 0.92, 0.75, 0.9)
+	flash.scale = Vector2.ONE * 1.4 * blast_scale
+	firework.add_child(flash)
+	var flash_tween := flash.create_tween().set_parallel(true)
+	flash_tween.tween_property(flash, "scale", Vector2.ONE * 8.0 * blast_scale, 0.3).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	flash_tween.tween_property(flash, "modulate:a", 0.0, 0.3)
+	flash_tween.chain().tween_callback(flash.queue_free)
+
+	get_tree().create_timer(2.2).timeout.connect(firework.queue_free)
+	SFX.play("explosion", world_pos, -4.0, 0.1)
+
+## The shell finally gives out: an enormous blast, the body shattering into gibs
+## that tumble away from the explosion, the coin drop - and only then, gone.
+func _death_finale() -> void:
+	if _death_finale_started:
+		return
+	_death_finale_started = true
+	var body_size := _boss_body_size()
+	var blast_scale := maxf(body_size.x, body_size.y) / 460.0
+
+	for i in 10:
+		var offset := Vector2(randf_range(-body_size.x, body_size.x) * 0.5, randf_range(-body_size.y, body_size.y) * 0.5)
+		get_tree().create_timer(randf_range(0.0, 0.4)).timeout.connect(_spawn_death_firework_burst.bind(global_position + offset))
+
+	var center := global_position
+	_spawn_death_firework_burst(center)
+	_spawn_death_firework_burst(center + Vector2(-body_size.x * 0.35, -body_size.y * 0.3))
+	_spawn_death_firework_burst(center + Vector2(body_size.x * 0.35, -body_size.y * 0.25))
+	_shake_camera(2.2)
 	if _sprite != null and is_instance_valid(_sprite):
-		EnemyDamage.spawn_death_fragments(self, _sprite, Vector2.ZERO, maxf(scale.x * _sprite.scale.x, 0.0), 2.0, true)
-	var burst := CPUParticles2D.new()
-	burst.one_shot = true
-	burst.emitting = true
-	burst.amount = 64
-	burst.lifetime = 0.8
-	burst.explosiveness = 1.0
-	burst.direction = Vector2.ZERO
-	burst.spread = 180.0
-	burst.initial_velocity_min = 100.0
-	burst.initial_velocity_max = 460.0
-	burst.gravity = Vector2(0.0, 260.0)
-	burst.scale_amount_min = 5.0
-	burst.scale_amount_max = 15.0
-	burst.color = Color(0.78, 0.35, 1.0, 1.0)
-	burst.z_index = 8
-	get_parent().add_child(burst)
-	burst.global_position = global_position
-	get_tree().create_timer(burst.lifetime + 0.2).timeout.connect(burst.queue_free)
+		EnemyDamage.spawn_death_fragments(self, _sprite, Vector2.ZERO, maxf(scale.x * _sprite.scale.x, 0.0), 2.5, true)
 	Shop.drop_coins(global_position, 40, 10)
-	var defeat := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
-	defeat.tween_property(_sprite, "scale", _sprite.scale * 0.75, 0.25)
-	defeat.tween_property(_sprite, "modulate:a", 0.0, 0.6)
-	defeat.tween_callback(queue_free)
+	_dismiss_death_box()
+
+	var fade := create_tween()
+	fade.tween_interval(0.9)
+	fade.tween_property(_sprite, "modulate:a", 0.0, DEATH_FADE_TIME)
+	fade.tween_interval(0.4)
+	fade.tween_callback(queue_free)
+
+func _shake_camera(strength_multiplier: float = 1.0) -> void:
+	var mole := get_tree().get_first_node_in_group("mole")
+	if is_instance_valid(mole) and mole.has_method("screen_shake"):
+		mole.call("screen_shake", DEATH_SHAKE_STRENGTH * strength_multiplier, DEATH_SHAKE_DURATION)
 
 func _update_transformation_aura() -> void:
 	if not _transformed or _sprite == null:

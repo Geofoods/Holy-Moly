@@ -169,7 +169,7 @@ color = Color(0, 0, 0, 1)
 modulate = Color(1, 0.52, 0.52, 1)
 position = Vector2(121, -190)
 scale = Vector2(0.25, 0.25)
-dialogue_text = "I once heard in my dreams that you could press M to open the map. What does that even mean, press M? Does M stand for Mole?"
+dialogue_text = "I once heard in my dreams that you could press M to open the map. What does that even mean, press M? Does M stand for Mole? In the map you can also fast travel and teleport? Crazy stuff in my head."
 npc_name = "Duggy"
 
 [node name="NpcMole2" parent="." unique_id=2043288762 instance=ExtResource("14_3j6u0")]

@@ -22,30 +22,31 @@ const ACORN_LEVELS: Array[String] = [
 
 var acorns := {}
 var completed := {}
+## Scenes the mole has actually stood in at least once. Gates the map's travel
+## list, so a destination cannot be teleported to until it has been walked to.
+## Kept apart from `completed`, which means a level was finished - the hub
+## scenes have no results screen and so would never appear in it, which would
+## leave both travel destinations locked forever.
+var visited := {}
 var queen_defeated := false
 var corrupted_defeated := false
 var boss_rush_cleared := false
 var arena_completed := false
 var best_combo := 0
 
-## Banked respawn station. `respawn_scene` is the scene the station stands in
-## and `respawn_position` is where the mole stood when it activated the station.
-## The raw player position is the record; the station works out the arrival spot
-## from its own pad, so the two never have to agree.
+## Banked respawn station. `respawn_scene` is the scene the mole is set to
+## arrive in, and the station in that scene works out the arrival spot from its
+## own pad. `respawn_position` is where the mole stood when it banked the pad,
+## kept as a record of the banking rather than used to place the arrival.
 var respawn_scene := ""
 var respawn_position := Vector2.ZERO
 
-## Transient, never saved. Set when a death sends the mole back to the banked
-## station and consumed once by the mole on arrival, so only the station the
-## mole is actually arriving at plays the materialise animation.
+## Transient, never saved. Set when a death or a map teleport sends the mole back
+## to the banked station and consumed once by the mole on arrival, so only the
+## station the mole is actually arriving at plays the materialise animation.
 var respawn_pending := false
 
 var acorn_total := ACORN_LEVELS.size()
-
-## Activated teleport portals: scene path -> spawn point on that scene's
-## respawn station pad. Banking a checkpoint at a station records it here; the
-## map overlay reads this to build the fast-travel list.
-var portals := {}
 
 var _hub_layer: CanvasLayer = null
 var _hub_label: Label = null
@@ -53,6 +54,17 @@ var _hub_label: Label = null
 func _ready() -> void:
 	load_progress()
 	_build_hub_layer()
+	get_tree().scene_changed.connect(_on_scene_changed)
+
+## Records arrivals so the travel list can tell a place the mole has been from one
+## it has not. Driven off the tree rather than off individual level scripts, so a
+## scene cannot be reached by a route that forgets to announce itself. `current_scene`
+## is already the incoming one by the time this fires.
+func _on_scene_changed() -> void:
+	var scene := get_tree().current_scene
+	if scene == null:
+		return
+	mark_visited(str(scene.scene_file_path))
 
 func _process(_delta: float) -> void:
 	var cs = get_tree().current_scene
@@ -108,6 +120,19 @@ func mark_level_complete(path: String) -> void:
 func is_level_complete(path: String) -> bool:
 	return completed.has(path)
 
+## Notes that the mole has stood in `path`. Idempotent, and only writes to disk
+## the first time a scene is seen so arrivals do not rewrite the save each time.
+func mark_visited(path: String) -> void:
+	if path.is_empty() or visited.has(path):
+		return
+	visited[path] = true
+	save_progress()
+
+## Whether the mole has been to `path` yet, which is what makes it a legal
+## teleport destination.
+func has_visited(path: String) -> bool:
+	return visited.has(path)
+
 func mark_queen_defeated() -> void:
 	if not queen_defeated:
 		queen_defeated = true
@@ -139,23 +164,6 @@ func update_best_combo(value: int) -> void:
 func has_respawn() -> bool:
 	return not respawn_scene.is_empty() and ResourceLoader.exists(respawn_scene)
 
-## Remembers this scene as an available travel destination, storing the spot the
-## mole will materialise on if it travels here. Idempotent - re-banking a portal
-## just refreshes the stored position.
-func mark_portal_active(scene_path: String, spawn_pos: Vector2) -> void:
-	if scene_path.is_empty():
-		return
-	portals[scene_path] = spawn_pos
-	save_progress()
-
-func is_portal_active(scene_path: String) -> bool:
-	return portals.has(scene_path)
-
-## All travel destinations, keyed by scene path. Live reference - also update it
-## directly if a caller needs to mutate, but reading is all the map needs.
-func get_active_portals() -> Dictionary:
-	return portals
-
 ## Banks `scene_path` as the respawn station and remembers the spot the mole
 ## was standing, then writes both to disk so a checkpoint survives a restart.
 func set_respawn(scene_path: String, pos: Vector2) -> void:
@@ -182,8 +190,8 @@ func save_progress() -> void:
 		cfg.set_value("acorns", p, true)
 	for p in completed:
 		cfg.set_value("completed", p, true)
-	for p in portals:
-		cfg.set_value("portals", p, portals[p])
+	for p in visited:
+		cfg.set_value("visited", p, true)
 	cfg.set_value("bosses", "queen", queen_defeated)
 	cfg.set_value("bosses", "corrupted", corrupted_defeated)
 	cfg.set_value("bosses", "rush", boss_rush_cleared)
@@ -203,9 +211,9 @@ func load_progress() -> void:
 	if cfg.has_section("completed"):
 		for k in cfg.get_section_keys("completed"):
 			completed[k] = true
-	if cfg.has_section("portals"):
-		for k in cfg.get_section_keys("portals"):
-			portals[k] = cfg.get_value("portals", k, Vector2.ZERO)
+	if cfg.has_section("visited"):
+		for k in cfg.get_section_keys("visited"):
+			visited[k] = true
 	queen_defeated = bool(cfg.get_value("bosses", "queen", false))
 	corrupted_defeated = bool(cfg.get_value("bosses", "corrupted", false))
 	boss_rush_cleared = bool(cfg.get_value("bosses", "rush", false))

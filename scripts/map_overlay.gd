@@ -7,16 +7,35 @@ extends CanvasLayer
 ## Art is looked up per scene so each place shows its own map. A scene with no
 ## art of its own falls back to the design image rather than showing nothing.
 ##
-## Under the art is a travel list: every respawn station the mole has banked
-## becomes a portal that can be selected here, and picking one plays a
-## teleportation and hands off to the normal circle wipe. The set of portals
-## lives in Progress; this menu only reads it.
-
-## Shown when a scene has no banked station yet, so the panel is never a blank box.
-const NO_PORTALS_HINT := "BANK A RESPAWN STATION TO UNLOCK TRAVEL"
+## Under the art is a travel list: the two hub scenes can each be selected here,
+## and picking one plays a teleportation and hands off to the normal circle
+## wipe. Both are available from the first frame - there is nothing to unlock -
+## and each hub owns a respawn station, so arriving drops the mole onto its pad
+## and plays the same arrival animation a death retry does.
 
 ## Width of the travel panel, fixed so every button lines up under the title.
 const PORTAL_PANEL_WIDTH := 300
+
+## The travel destinations, in the order they are listed. `path` is the scene to
+## load; `label` is what the button says. The labels are written out rather than
+## derived from the file names because neither hub has a LevelData entry, which
+## used to fall back to tidied file names and render them as "Molevillage" and
+## "Shopkeeper Item".
+const TRAVEL_HUBS: Array[Dictionary] = [
+	{"path": "res://scenes/molevillage.tscn", "label": "Mole Village"},
+	{"path": "res://scenes/shopkeeper_item.tscn", "label": "Mole Shopkeeper"},
+]
+
+## Where the mole has been, the mole has to have got there on foot first, so a
+## destination is only offered once Progress records a visit. Both hubs own a
+## respawn station, so arriving drops the mole onto its pad.
+const LOCKED_SUFFIX := "  ·  NOT VISITED"
+
+## Button states. A destination the mole is standing in reads as a status line
+## rather than a target, and one it has never reached reads as still out there.
+const STATE_OPEN := 0
+const STATE_HERE := 1
+const STATE_LOCKED := 2
 
 ## How long the departure flash sits on screen before the wipe starts.
 const TELEPORT_FLASH := 0.28
@@ -53,7 +72,7 @@ var _open := false
 ## True while the fade-out is playing. The overlay is still on screen and the
 ## tree is still paused, so it must not be treated as closed yet.
 var _closing := false
-## True once a portal has been picked and travel is underway, so the close
+## True once a destination has been picked and travel is underway, so the close
 ## paths and M cannot interrupt a teleport already committed to.
 var _traveling := false
 var _root: Control = null
@@ -157,16 +176,16 @@ func _open_map() -> void:
 	var tween := create_tween()
 	tween.tween_property(_root, "modulate:a", 1.0, MAP_FADE_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 
-## The travel list. Every station the mole has banked shows up as a button; the
-## scene you are already standing in is marked and disabled so it cannot send
-## you where you are.
+## The travel list. Both hubs are always listed, but one the mole has never
+## reached is shown locked; the scene the mole is already standing in is marked
+## and disabled so it cannot send you where you are.
 func _build_portal_panel() -> Control:
 	var panel := PanelContainer.new()
 	panel.add_theme_stylebox_override("panel", _make_portal_style())
 
 	# The list is a fixed-width column; the scene currently in view is
 	# highlighted and disabled rather than hidden, so the player can see where
-	# they are in the set of unlocked portals.
+	# they are in the set of destinations.
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 6)
 	panel.add_child(vbox)
@@ -178,95 +197,86 @@ func _build_portal_panel() -> Control:
 	vbox.add_child(title)
 
 	var current := _current_scene_path()
-	var portals := Progress.get_active_portals()
-	if portals.is_empty():
-		var empty := Label.new()
-		empty.text = NO_PORTALS_HINT
-		empty.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		empty.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		empty.custom_minimum_size = Vector2(PORTAL_PANEL_WIDTH, 0)
-		_style_label(empty, 18, Color(0.72, 0.72, 0.72, 0.9))
-		vbox.add_child(empty)
-		return panel
-
-	# Longest name first would look ragged, so the list is ordered by level
-	# number where one exists and by scene name where it does not.
-	var paths := portals.keys()
-	paths.sort_custom(_compare_portal_paths)
-
-	for path in paths:
-		vbox.add_child(_make_portal_button(str(path), str(path) == current))
+	for hub in TRAVEL_HUBS:
+		var path := str(hub["path"])
+		vbox.add_child(_make_portal_button(path, str(hub["label"]), _portal_state(path, current)))
 
 	return panel
 
-func _compare_portal_paths(a: Variant, b: Variant) -> bool:
-	var info_a := LevelData.get_info(str(a))
-	var info_b := LevelData.get_info(str(b))
-	var number_a := int(info_a.get("number", 999))
-	var number_b := int(info_b.get("number", 999))
-	if number_a != number_b:
-		return number_a < number_b
-	return _portal_label(str(a)) < _portal_label(str(b))
+## Where a destination sits in the three states. Being the current scene wins
+## over everything, so standing in an unvisited hub still shows as HERE.
+func _portal_state(scene_path: String, current: String) -> int:
+	if scene_path == current:
+		return STATE_HERE
+	if Progress.has_visited(scene_path):
+		return STATE_OPEN
+	return STATE_LOCKED
 
-## Button for one unlocked destination.
-func _make_portal_button(scene_path: String, is_current: bool) -> Button:
+## Button for one travel destination.
+func _make_portal_button(scene_path: String, label: String, state: int) -> Button:
 	var button := Button.new()
-	button.text = ("HERE  -  " if is_current else "") + _portal_label(scene_path)
+	button.text = _portal_button_text(label, state)
 	button.custom_minimum_size = Vector2(PORTAL_PANEL_WIDTH, 44)
 	button.add_theme_font_override("font", load(FONT_PATH) as Font)
 	button.add_theme_font_size_override("font_size", 19)
-	button.add_theme_color_override("font_color", Color(0.72, 0.66, 0.58, 1) if is_current else Color(0.98, 0.94, 0.86, 1))
+	button.add_theme_color_override("font_color", _portal_text_color(state))
 	button.add_theme_color_override("font_hover_color", Color(1, 1, 1, 1))
-	button.add_theme_stylebox_override("normal", _make_portal_button_style(is_current))
-	button.add_theme_stylebox_override("hover", _make_portal_button_style(false))
-	button.add_theme_stylebox_override("pressed", _make_portal_button_style(false))
-	button.add_theme_stylebox_override("focus", _make_portal_button_style(false))
-	button.add_theme_stylebox_override("disabled", _make_portal_button_style(true))
-	button.disabled = is_current
+	# HERE and LOCKED are both disabled, and a disabled Button reads this slot
+	# rather than font_color, so it has to be set for the states to look right.
+	button.add_theme_color_override("font_disabled_color", _portal_text_color(state))
+	button.add_theme_stylebox_override("normal", _make_portal_button_style(state))
+	button.add_theme_stylebox_override("hover", _make_portal_button_style(STATE_OPEN))
+	button.add_theme_stylebox_override("pressed", _make_portal_button_style(STATE_OPEN))
+	button.add_theme_stylebox_override("focus", _make_portal_button_style(STATE_OPEN))
+	button.add_theme_stylebox_override("disabled", _make_portal_button_style(state))
+	button.disabled = state != STATE_OPEN
 	button.mouse_entered.connect(_on_portal_hovered)
-	if not is_current:
+	if state == STATE_OPEN:
 		button.pressed.connect(_travel_to.bind(scene_path))
 	return button
 
-## Human-readable name for a destination. LevelData covers the numbered levels;
-## the hub scenes fall back to a tidied-up file name. "The Arena" and
-## "Slime Valley" keep their capitalisation - `capitalize()` would flatten the
-## interior words to lowercase, which is wrong for these proper nouns.
-func _portal_label(scene_path: String) -> String:
-	var info := LevelData.get_info(scene_path)
-	if info.has("name"):
-		return str(info["name"])
-	var file := scene_path.get_file()
-	if file.ends_with(".tscn"):
-		file = file.trim_suffix(".tscn")
-	return _title_words(file.replace("_", " "))
+## Button caption for one state. The locked suffix says why it is locked, so a
+## greyed-out destination reads as somewhere still to find rather than a bug.
+func _portal_button_text(label: String, state: int) -> String:
+	match state:
+		STATE_HERE:
+			return "HERE  -  " + label
+		STATE_LOCKED:
+			return label + LOCKED_SUFFIX
+		_:
+			return label
 
-## Uppercases the first letter of each space-separated word, leaving the rest
-## of the word as it was written.
-func _title_words(text: String) -> String:
-	var words := text.split(" ", false)
-	for i in words.size():
-		words[i] = words[i].substr(0, 1).to_upper() + words[i].substr(1)
-	return " ".join(words)
+func _portal_text_color(state: int) -> Color:
+	match state:
+		STATE_HERE:
+			return Color(0.72, 0.66, 0.58, 1)
+		STATE_LOCKED:
+			return Color(0.48, 0.5, 0.54, 1)
+		_:
+			return Color(0.98, 0.94, 0.86, 1)
 
 func _on_portal_hovered() -> void:
 	SFX.play_ui("ui_hover", -18.0, 1.8)
 
-## Arrives the mole on this scene's station pad. The station plays the
+## Arrives the mole on the destination hub's station pad. The station plays the
 ## materialise animation, so travel and a death retry read identically.
 func _travel_to(scene_path: String) -> void:
 	if _traveling or scene_path.is_empty():
 		return
-	if not Progress.is_portal_active(scene_path):
+	# Re-checked here as well as on the button, so a locked destination cannot be
+	# reached by anything that presses it without going through the list.
+	if not Progress.has_visited(scene_path):
 		return
 	if not ResourceLoader.exists(scene_path):
 		return
 	_traveling = true
 	SFX.play_ui("ui_click")
-	# Bank the destination as the respawn so a death here also returns to the
-	# pad the mole was just sent to, and set the flag that tells the station to
-	# play its arrival animation.
-	Progress.set_respawn(scene_path, _portal_spawn(scene_path))
+	# Bank the destination as the respawn so a death there also returns to the
+	# hub, and set the flag that tells the station to play its arrival
+	# animation. No position is recorded: both hubs have a single station, and
+	# the one in the destination scene works the arrival spot out from its own
+	# pad, so there is nothing here that has to agree with it.
+	Progress.set_respawn(scene_path, Vector2.ZERO)
 	Progress.respawn_pending = true
 	Inventory.current_level_path = scene_path
 	_play_teleport_flash()
@@ -276,12 +286,6 @@ func _travel_to(scene_path: String) -> void:
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 	get_tree().root.add_child(transition)
 	transition.change_to(scene_path)
-
-## The stored pad position for a destination, or the origin if the record is
-## missing (which only happens if a scene was removed after being banked).
-func _portal_spawn(scene_path: String) -> Vector2:
-	var pos = Progress.get_active_portals().get(scene_path, Vector2.ZERO)
-	return pos if pos is Vector2 else Vector2.ZERO
 
 ## A quick bloom where the mole stood, so leaving reads as a teleport rather
 ## than a hard cut into the circle wipe. Bound to the map layer, which is
@@ -414,12 +418,21 @@ func _make_portal_style() -> StyleBoxFlat:
 	sb.content_margin_bottom = 10.0
 	return sb
 
-## Button face for the travel list. `dimmed` marks the destination the mole is
-## already standing in, so it reads as a status line rather than a target.
-func _make_portal_button_style(dimmed: bool) -> StyleBoxFlat:
+## Button face for the travel list, one per state. HERE reads as a status line
+## rather than a target; LOCKED sits dimmer than that, so a place still to find
+## is quieter than the place the mole is standing in.
+func _make_portal_button_style(state: int) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.1, 0.12, 0.15, 1) if dimmed else Color(0.2, 0.29, 0.34, 1)
-	sb.border_color = Color(0.28, 0.32, 0.36, 1) if dimmed else Color(0.55, 0.82, 0.95, 1)
+	match state:
+		STATE_HERE:
+			sb.bg_color = Color(0.1, 0.12, 0.15, 1)
+			sb.border_color = Color(0.28, 0.32, 0.36, 1)
+		STATE_LOCKED:
+			sb.bg_color = Color(0.08, 0.08, 0.1, 1)
+			sb.border_color = Color(0.22, 0.23, 0.26, 1)
+		_:
+			sb.bg_color = Color(0.2, 0.29, 0.34, 1)
+			sb.border_color = Color(0.55, 0.82, 0.95, 1)
 	sb.set_border_width_all(2)
 	sb.set_corner_radius_all(8)
 	sb.content_margin_left = 8.0

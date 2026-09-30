@@ -15,7 +15,6 @@
 [ext_resource type="PackedScene" uid="uid://bcd57whed7bys" path="res://chest.tscn" id="chest_res"]
 [ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
 [ext_resource type="PackedScene" uid="uid://3wwhicdeo8hl" path="res://scenes/info_popup.tscn" id="info_popup_res"]
-[ext_resource type="PackedScene" uid="uid://buv33lctn53nn" path="res://scenes/respawn_station.tscn" id="99_station"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_skipbutton"]
 bg_color = Color(0.8, 0.68, 0.46, 1)
@@ -254,8 +253,6 @@ position = Vector2(3310, -1564)
 [node name="chest4" parent="." unique_id=991442522 instance=ExtResource("chest_res")]
 position = Vector2(4040, -1591)
 
-[node name="RespawnStation" parent="." instance=ExtResource("99_station")]
-position = Vector2(549, -5435)
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]
 [connection signal="body_entered" from="greeting area" to="NpcMole4" method="on_greeting_area_entered"]
 [connection signal="body_entered" from="chest area" to="NpcMole4" method="on_secondary_area_entered"]

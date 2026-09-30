@@ -13,7 +13,6 @@
 [ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="11_firefly"]
 [ext_resource type="PackedScene" path="res://scenes/level_intro_banner.tscn" id="13_banner"]
 [ext_resource type="PackedScene" uid="uid://c0pwtkklnyw5s" path="res://scenes/hornet_enemy.tscn" id="13_uirdw"]
-[ext_resource type="PackedScene" uid="uid://buv33lctn53nn" path="res://scenes/respawn_station.tscn" id="99_station"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ground"]
 size = Vector2(2400, 90)
@@ -199,7 +198,5 @@ position = Vector2(2099, 1129)
 [node name="HornetEnemy" parent="." unique_id=937617817 instance=ExtResource("13_uirdw")]
 position = Vector2(729, 866)
 
-[node name="RespawnStation" parent="." instance=ExtResource("99_station")]
-position = Vector2(527, 1319)
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]

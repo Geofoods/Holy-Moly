@@ -165,27 +165,18 @@ func pulse() -> float:
 func cycle() -> float:
 	return fposmod(_phase, TAU) / TAU
 
-## True when this pad is the one the mole will come back to.
+## Whether this pad is the one the mole is currently set to arrive at, which is
+## what lights it up.
 ##
-## The record stores the mole's own position, not this station's id, so the test
-## is geometric: the saved spot is inside my interaction box. The mole can only
-## bank from inside that box, so the match is exact and needs no id plumbing.
-## The pad's own world-space footprint, i.e. the interaction box. Derived from
-## the CollisionShape2D rather than from the area, because that is what actually
-## decides who can bank here.
-func banked_area() -> Rect2:
-	var shape := _area.get_node_or_null("CollisionShape2D") as CollisionShape2D
-	if shape == null or shape.shape == null:
-		return Rect2(global_position, Vector2.ZERO)
-	var rect: Rect2 = shape.shape.get_rect()
-	return Rect2(shape.global_position - rect.size * 0.5, rect.size)
-
+## Matched on the scene alone, not on a recorded point inside the pad. Travel
+## from the map has no pad position to record - it only knows the scene - and
+## every scene with a station has exactly one, so there is nothing to tell two
+## pads apart. Adding a second station to a scene would need the point test
+## back.
 func is_checkpoint_active() -> bool:
 	if not checkpoints:
 		return false
-	if Progress.respawn_scene != _scene_path():
-		return false
-	return banked_area().has_point(Progress.respawn_position)
+	return Progress.respawn_scene == _scene_path()
 
 ## Where the mole materialises: on the pad, clear of the station's frame.
 func spawn_point() -> Vector2:
@@ -226,9 +217,6 @@ func _bank() -> void:
 	_pad_particles.emitting = true
 	SFX.play_ui("parry_activate", -10.0, 1.4)
 	SFX.play("item_pickup", spawn_point(), -8.0, 0.1)
-	# The pad becomes a usable travel portal on the map once it has been banked.
-	if checkpoints:
-		Progress.mark_portal_active(_scene_path(), spawn_point())
 
 func _nearest_mole() -> Node2D:
 	for body in _area.get_overlapping_bodies():

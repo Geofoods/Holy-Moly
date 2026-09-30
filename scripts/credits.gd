@@ -13,22 +13,25 @@ const LOGO_PATH := "res://holymolylogo.png"
 const RETURN_PATH := "res://scenes/intro.tscn"
 const MUSIC_PATH := "res://soundreality-crystal-cave-136472.mp3"
 
-## The ending is timed to a fixed four minutes forty-five seconds rather than
-## derived from the layout, so the run time is identical on every screen size
-## and the credit list below can be as long as it likes without changing it.
-const ROLL_TIME := 285.0
+## The ending is timed to a fixed eighty seconds rather than derived from the
+## layout, so the run time is identical on every screen size and the credit
+## list below can be as long as it likes without changing it. Kept short enough
+## that the crawl is unambiguously moving - the list works out to roughly nine
+## thousand pixels, so this is about a hundred pixels a second, which is fast
+## enough to read as scrolling and slow enough to follow a name.
+const ROLL_TIME := 80.0
 ## Crawl speed the roll works out to, pixels per second. Kept only as a sanity
 ## band: however big the window or the credit list gets, the crawl never moves
 ## faster than this, so a long list stretches the roll instead of blurring past.
-const MAX_SCROLL_SPEED := 90.0
+const MAX_SCROLL_SPEED := 160.0
 ## Blank space the roll waits below the screen before its first entry, and the
 ## space it keeps travelling after the last one so it exits cleanly. Kept short
-## relative to a four-minute roll so there is no long dead air at either end.
-const LEAD_IN := 200.0
-const TAIL := 300.0
+## relative to an eighty second roll so there is no dead air at either end.
+const LEAD_IN := 60.0
+const TAIL := 120.0
 ## Space between one credit and the next. Generous, because at the crawl speed
 ## above a hundred pixels is a readable pause between names.
-const CREDIT_GAP := 150.0
+const CREDIT_GAP := 110.0
 ## Skip input is ignored for this long after the crawl starts, so the click that
 ## arrives with the scene does not count as a skip.
 const SKIP_GRACE := 0.8
@@ -51,9 +54,7 @@ const COL_MUTED := Color(0.6, 0.7, 0.62, 1.0)
 ## and a half minutes instead of reading as one flat wall of text.
 const CREDITS: Array[Dictionary] = [
 	{"section": "Lead Design"},
-	{"role": "Programming · Level Design · Writing", "name": "Nimansh Chauhan"},
 	{"role": "Programming · Level Design · VFX · Abilities", "name": "George Sun"},
-	{"role": "Programming · VFX · SFX · Game Design", "name": "Javis Tsai"},
 	{"role": "Art · Programming · Game Design", "name": "Bryan Tang", "tag": "GOAT 🐐"},
 
 	{"section": "Code & Systems"},
@@ -100,6 +101,10 @@ var _roll_elapsed := 0.0
 var _leaving := false
 
 func _ready() -> void:
+	# The wipe out of the win screen holds the tree paused while this scene
+	# loads, so without this the crawl's tween is born paused and the roll
+	# only starts moving once the opening wipe hands the tree back.
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	LevelMusic.stop()
 	_start_music()
 	_the_end.modulate.a = 0.0
@@ -112,9 +117,9 @@ func _ready() -> void:
 
 func _build_roll() -> void:
 	_add_logo()
-	_add_spacer(140.0)
+	_add_spacer(90.0)
 	_add_label("A GAME BY", 30, COL_MUTED, 4)
-	_add_spacer(170.0)
+	_add_spacer(110.0)
 	for entry in CREDITS:
 		var section := str(entry.get("section", ""))
 		if not section.is_empty():
@@ -123,11 +128,11 @@ func _build_roll() -> void:
 			_add_credit(str(entry["role"]), str(entry["name"]), str(entry.get("tag", "")))
 			_add_spacer(CREDIT_GAP)
 	_add_label("THANK YOU FOR PLAYING", 46, COL_TITLE, 6)
-	_add_spacer(150.0)
+	_add_spacer(100.0)
 	_add_label("HOLY MOLEY  ·  v0.2beta", 24, COL_MUTED, 4)
-	_add_spacer(36.0)
+	_add_spacer(30.0)
 	_add_label("Made with Godot", 22, COL_MUTED, 4)
-	_add_spacer(220.0)
+	_add_spacer(120.0)
 	_add_label("THE END", 72, COL_TITLE, 8)
 	_add_spacer(TAIL)
 
