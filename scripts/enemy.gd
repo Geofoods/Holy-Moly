@@ -13,8 +13,9 @@ const HEALTH_BAR_WIDTH := 96.0
 const HEALTH_BAR_HEIGHT := 10.0
 const HEALTH_BAR_BG_COLOR := Color(0.15, 0.15, 0.15, 0.95)
 const HEALTH_BAR_BORDER_COLOR := Color(0.05, 0.05, 0.06, 1.0)
-const HEALTH_BAR_LOW_COLOR := Color(0.95, 0.25, 0.2, 1.0)
-const HEALTH_BAR_FULL_COLOR := Color(0.3, 0.85, 0.3, 1.0)
+const HEALTH_BAR_LOW_COLOR := Color(0.95, 0.22, 0.18, 1.0)
+const HEALTH_BAR_MID_COLOR := Color(1.0, 0.82, 0.16, 1.0)
+const HEALTH_BAR_FULL_COLOR := Color(0.24, 0.82, 0.28, 1.0)
 const SHOOT_INTERVAL := 5.0
 
 var direction := 1.0
@@ -363,7 +364,10 @@ static func draw_health_bar(bar: Node2D, current_health: float, max_health: floa
 		bar.draw_rect(Rect2(offset + Vector2.ONE, Vector2(inner_size.x * ratio, inner_size.y)), health_bar_color(ratio))
 
 static func health_bar_color(ratio: float) -> Color:
-	return HEALTH_BAR_LOW_COLOR.lerp(HEALTH_BAR_FULL_COLOR, clampf(ratio, 0.0, 1.0))
+	var health_ratio := clampf(ratio, 0.0, 1.0)
+	if health_ratio < 0.5:
+		return HEALTH_BAR_LOW_COLOR.lerp(HEALTH_BAR_MID_COLOR, health_ratio * 2.0)
+	return HEALTH_BAR_MID_COLOR.lerp(HEALTH_BAR_FULL_COLOR, (health_ratio - 0.5) * 2.0)
 
 static func health_bar_background_color() -> Color:
 	return HEALTH_BAR_BG_COLOR

@@ -13,8 +13,8 @@
 [ext_resource type="PackedScene" uid="uid://oucemvqovkp5" path="res://scenes/npc_mole.tscn" id="14_3j6u0"]
 [ext_resource type="PackedScene" uid="uid://cdxu1kg5or16d" path="res://candle.tscn" id="14_q0jmn"]
 [ext_resource type="PackedScene" uid="uid://buv33lctn53nn" path="res://scenes/respawn_station.tscn" id="15_3gdwk"]
+[ext_resource type="PackedScene" uid="uid://dg6omg8f4xhgx" path="res://scenes/snail.tscn" id="15_bj43u"]
 [ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="15_ijuyj"]
-[ext_resource type="PackedScene" path="res://scenes/shopkeeper_npc.tscn" id="16_shopkeeper"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.8, 0.68, 0.46, 1)
@@ -169,7 +169,7 @@ color = Color(0, 0, 0, 1)
 modulate = Color(1, 0.52, 0.52, 1)
 position = Vector2(121, -190)
 scale = Vector2(0.25, 0.25)
-dialogue_text = "Welcome to Mole Village! The tunnels go deeper than you think. Stay sharp out there."
+dialogue_text = "I once heard in my dreams that you could press M to open the map. What does that even mean, press M? Does M stand for Mole?"
 npc_name = "Duggy"
 
 [node name="NpcMole2" parent="." unique_id=2043288762 instance=ExtResource("14_3j6u0")]
@@ -193,13 +193,11 @@ scale = Vector2(0.25, 0.25)
 dialogue_text = "I heard you want to take on the evil corruption! I'll help teach you the ways. I'll meet you when you jump down!"
 npc_name = "Grub"
 
-[node name="ShopkeeperMole" parent="." unique_id=78968926 instance=ExtResource("16_shopkeeper")]
-modulate = Color(0.98, 0.83, 0.45, 1)
-position = Vector2(1010, -90)
-scale = Vector2(0.25, 0.25)
-
 [node name="RespawnStation" parent="." unique_id=778143865 instance=ExtResource("15_3gdwk")]
 position = Vector2(-873, -200)
+
+[node name="Snail" parent="." unique_id=1260151595 instance=ExtResource("15_bj43u")]
+position = Vector2(1864, -463)
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]

@@ -45,6 +45,15 @@ const BOSS_HEALTH_ROOT_WIDTH := BOSS_HEALTH_PANEL_WIDTH
 const BOSS_HEALTH_ROOT_HEIGHT := BOSS_HEALTH_NAME_HEIGHT + BOSS_HEALTH_NAME_GAP + BOSS_HEALTH_PANEL_HEIGHT
 const BOSS_HEALTH_FONT := preload("res://Baby Doll.otf")
 
+## The real fill snaps to the new total over a short beat so a chunk of damage
+## reads as motion instead of a jump. The paler trail bar behind it waits out
+## BOSS_HEALTH_TRAIL_DELAY, then slides down to the same total, which shows how
+## much a single hit took.
+const BOSS_HEALTH_FILL_TWEEN_TIME := 0.12
+const BOSS_HEALTH_TRAIL_DELAY := 0.35
+const BOSS_HEALTH_TRAIL_TWEEN_TIME := 0.45
+const BOSS_HEALTH_TRAIL_COLOR := Color(0.96, 0.82, 0.42, 0.9)
+
 const BOSS_MAX_HEALTH := 500.0
 const BOSS_CHASE_SPEED := 50.0
 const BOSS_SPIT_INTERVAL := 2.4
@@ -52,6 +61,7 @@ const BOSS_PROJECTILE_SPEED := 620.0
 const BOSS_LASER_COOLDOWN := 9.0
 const BOSS_LASER_CHARGE_TIME := 1.5
 const BOSS_LASER_STRIKE_DURATION := 1.25
+const BOSS_LASER_FADE_TIME := 0.55
 const BOSS_LASER_LENGTH := 3000.0
 const BOSS_LASER_WIDTH := 136.0
 const BOSS_LASER_TILE_SAMPLE_SPACING := 38.0
@@ -121,6 +131,9 @@ var _boss_hurtbox: Area2D = null
 var _boss_player_contact: Area2D = null
 var _boss_health_layer: CanvasLayer = null
 var _boss_health_fill: ColorRect = null
+var _boss_health_trail: ColorRect = null
+var _boss_health_bar_tween: Tween = null
+var _boss_health_trail_tween: Tween = null
 var _boss_hit_tween: Tween = null
 var _boss_base_scale := Vector2.ONE
 var _boss_cam_zoom_tween: Tween = null
@@ -883,6 +896,15 @@ func _create_boss_health_bar() -> void:
 	bg.color = EnemyDamage.health_bar_background_color()
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(bg)
+	_boss_health_trail = ColorRect.new()
+	_boss_health_trail.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_boss_health_trail.offset_left = BOSS_HEALTH_FILL_INSET
+	_boss_health_trail.offset_top = BOSS_HEALTH_FILL_INSET
+	_boss_health_trail.offset_right = -BOSS_HEALTH_FILL_INSET
+	_boss_health_trail.offset_bottom = -BOSS_HEALTH_FILL_INSET
+	_boss_health_trail.color = BOSS_HEALTH_TRAIL_COLOR
+	_boss_health_trail.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bg.add_child(_boss_health_trail)
 	_boss_health_fill = ColorRect.new()
 	_boss_health_fill.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_boss_health_fill.offset_left = BOSS_HEALTH_FILL_INSET
@@ -894,12 +916,45 @@ func _create_boss_health_bar() -> void:
 	bg.add_child(_boss_health_fill)
 	_update_boss_health_bar()
 
+## Width of a bar held at a given fraction of the track, measured from the right
+## edge so the bar drains toward the left.
+func _boss_health_bar_right(ratio: float) -> float:
+	return -(BOSS_HEALTH_FILL_INSET + BOSS_HEALTH_BAR_INNER * (1.0 - ratio))
+
+## The fill eases to the new total. The trail is deliberately left where it is,
+## so it keeps showing the pre-hit amount until its delay runs out and it slides
+## down to meet the fill.
 func _update_boss_health_bar() -> void:
 	if _boss_health_fill == null:
 		return
 	var ratio := clampf(_boss_health / BOSS_MAX_HEALTH, 0.0, 1.0)
-	_boss_health_fill.offset_right = -(BOSS_HEALTH_FILL_INSET + BOSS_HEALTH_BAR_INNER * (1.0 - ratio))
 	_boss_health_fill.color = EnemyDamage.health_bar_color(ratio)
+	var target := _boss_health_bar_right(ratio)
+
+	if _boss_health_bar_tween != null and _boss_health_bar_tween.is_valid():
+		_boss_health_bar_tween.kill()
+	_boss_health_bar_tween = create_tween()
+	_boss_health_bar_tween.tween_method(
+		_set_boss_health_fill_right, _boss_health_fill.offset_right, target,
+		BOSS_HEALTH_FILL_TWEEN_TIME).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+	if _boss_health_trail == null:
+		return
+	if _boss_health_trail_tween != null and _boss_health_trail_tween.is_valid():
+		_boss_health_trail_tween.kill()
+	_boss_health_trail_tween = create_tween()
+	_boss_health_trail_tween.tween_interval(BOSS_HEALTH_TRAIL_DELAY)
+	_boss_health_trail_tween.tween_method(
+		_set_boss_health_trail_right, _boss_health_trail.offset_right, target,
+		BOSS_HEALTH_TRAIL_TWEEN_TIME).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
+
+func _set_boss_health_fill_right(offset: float) -> void:
+	if _boss_health_fill != null and is_instance_valid(_boss_health_fill):
+		_boss_health_fill.offset_right = offset
+
+func _set_boss_health_trail_right(offset: float) -> void:
+	if _boss_health_trail != null and is_instance_valid(_boss_health_trail):
+		_boss_health_trail.offset_right = offset
 
 func _spawn_boss_minion() -> void:
 	if not _boss_active or _boss_dying or BOSS_MINION_SCENES.is_empty():
@@ -1003,6 +1058,11 @@ func _fire_boss_laser(mole: Node2D) -> void:
 		await get_tree().create_timer(damage_interval).timeout
 		laser_time_left -= damage_interval
 		_damage_mole_in_boss_laser(mole, laser_start, laser_end)
+	for line in beam:
+		if is_instance_valid(line):
+			var fade := line.create_tween()
+			fade.tween_property(line, "modulate:a", 0.0, BOSS_LASER_FADE_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	await get_tree().create_timer(BOSS_LASER_FADE_TIME).timeout
 	_clear_boss_laser_lines(beam)
 	_boss_laser_lines.clear()
 	if is_inside_tree():

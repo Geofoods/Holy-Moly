@@ -13,6 +13,10 @@ const BOSS_HEALTH_NAME_GAP := 12.0
 const BOSS_HEALTH_ROOT_WIDTH := BOSS_HEALTH_PANEL_WIDTH
 const BOSS_HEALTH_ROOT_HEIGHT := BOSS_HEALTH_NAME_HEIGHT + BOSS_HEALTH_NAME_GAP + BOSS_HEALTH_PANEL_HEIGHT
 const BOSS_HEALTH_FONT := preload("res://Baby Doll.otf")
+const BOSS_HEALTH_FILL_TWEEN_TIME := 0.12
+const BOSS_HEALTH_TRAIL_DELAY := 0.35
+const BOSS_HEALTH_TRAIL_TWEEN_TIME := 0.45
+const BOSS_HEALTH_TRAIL_COLOR := Color(0.96, 0.82, 0.42, 0.9)
 const PAN_DURATION := 0.75
 const DESCENT_SPEED := 20.0
 const SPIT_INTERVAL := 3.0
@@ -23,6 +27,7 @@ const LASER_COOLDOWN_MIN := 5.5
 const LASER_COOLDOWN_MAX := 8.5
 const LASER_CHARGE_TIME := 1.6
 const LASER_STRIKE_DURATION := 1.25
+const LASER_FADE_TIME := 0.55
 const LASER_LENGTH := 3000.0
 const LASER_GROUND_TRACE_STEP := 16.0
 const LASER_WIDTH := 156.0
@@ -47,6 +52,7 @@ const COLLAPSE_RIDE_OFFSET := 40.0
 const COLLAPSE_CAM_OFFSET := -60.0
 const COLLAPSE_LAND_DELAY := 0.8
 const COLLAPSE_MOVE_SPEED := 320.0
+const COLLAPSE_TELEPORT_BELOW_BOSS := 500.0
 const HEART_FIREWORK_HOLD := 2.3
 
 ## The heart's debris outlives a normal enemy's gibs by a long way, so the
@@ -109,10 +115,11 @@ var _loot_spawn_timer: float = LOOT_SPAWN_INTERVAL
 var _health_bar_layer: CanvasLayer = null
 var _health_bar_root: Control = null
 var _health_bar_bg: ColorRect = null
+var _health_bar_trail: ColorRect = null
 var _health_bar_fill: ColorRect = null
 var _health_bar_name: Label = null
 var _health_bar_tween: Tween = null
-var _displayed_health: float = 0.0
+var _health_bar_trail_tween: Tween = null
 
 const INDICATOR_SCREEN_MARGIN := 70.0
 var _indicator_layer: CanvasLayer = null
@@ -201,6 +208,16 @@ func _create_health_bar() -> void:
 	_health_bar_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(_health_bar_bg)
 
+	_health_bar_trail = ColorRect.new()
+	_health_bar_trail.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_health_bar_trail.offset_left = BOSS_HEALTH_FILL_INSET
+	_health_bar_trail.offset_top = BOSS_HEALTH_FILL_INSET
+	_health_bar_trail.offset_right = -BOSS_HEALTH_FILL_INSET
+	_health_bar_trail.offset_bottom = -BOSS_HEALTH_FILL_INSET
+	_health_bar_trail.color = BOSS_HEALTH_TRAIL_COLOR
+	_health_bar_trail.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_health_bar_bg.add_child(_health_bar_trail)
+
 	_health_bar_fill = ColorRect.new()
 	_health_bar_fill.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_health_bar_fill.offset_left = BOSS_HEALTH_FILL_INSET
@@ -211,21 +228,34 @@ func _create_health_bar() -> void:
 	_health_bar_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_health_bar_bg.add_child(_health_bar_fill)
 
-	_displayed_health = health
 	_update_health_bar_instant()
 
 	var slide_tween := create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
 	slide_tween.tween_property(root, "position:y", 18.0, 0.5)
 
+func _health_bar_right(ratio: float) -> float:
+	return -(BOSS_HEALTH_FILL_INSET + BOSS_HEALTH_BAR_INNER * (1.0 - clampf(ratio, 0.0, 1.0)))
+
 func _set_health_bar_ratio(ratio: float) -> void:
 	if _health_bar_fill == null:
 		return
 	var clamped := clampf(ratio, 0.0, 1.0)
-	_health_bar_fill.offset_right = -(BOSS_HEALTH_FILL_INSET + BOSS_HEALTH_BAR_INNER * (1.0 - clamped))
+	_health_bar_fill.offset_right = _health_bar_right(clamped)
 	_health_bar_fill.color = _health_color(clamped)
 
+func _set_health_bar_fill_right(offset: float) -> void:
+	if _health_bar_fill != null and is_instance_valid(_health_bar_fill):
+		_health_bar_fill.offset_right = offset
+
+func _set_health_bar_trail_right(offset: float) -> void:
+	if _health_bar_trail != null and is_instance_valid(_health_bar_trail):
+		_health_bar_trail.offset_right = offset
+
 func _update_health_bar_instant() -> void:
-	_set_health_bar_ratio(_displayed_health / MAX_HEALTH)
+	var ratio := health / MAX_HEALTH
+	_set_health_bar_ratio(ratio)
+	if _health_bar_trail != null:
+		_health_bar_trail.offset_right = _health_bar_right(ratio)
 
 func _health_color(ratio: float) -> Color:
 	return EnemyDamage.health_bar_color(ratio)
@@ -233,16 +263,29 @@ func _health_color(ratio: float) -> Color:
 func _animate_health_bar() -> void:
 	if _health_bar_fill == null:
 		return
-	if _health_bar_tween and _health_bar_tween.is_valid():
+	if _health_bar_tween != null and _health_bar_tween.is_valid():
 		_health_bar_tween.kill()
-	_health_bar_tween = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_SINE)
-	var start_ratio := _displayed_health / MAX_HEALTH
-	_displayed_health = health
-	_health_bar_tween.tween_method(_set_health_bar_ratio, start_ratio, health / MAX_HEALTH, 0.3)
+	var target := _health_bar_right(health / MAX_HEALTH)
+	_health_bar_fill.color = _health_color(health / MAX_HEALTH)
+	_health_bar_tween = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_health_bar_tween.tween_method(
+		_set_health_bar_fill_right, _health_bar_fill.offset_right, target,
+		BOSS_HEALTH_FILL_TWEEN_TIME)
+
+	if _health_bar_trail != null:
+		if _health_bar_trail_tween != null and _health_bar_trail_tween.is_valid():
+			_health_bar_trail_tween.kill()
+		_health_bar_trail_tween = create_tween()
+		_health_bar_trail_tween.tween_interval(BOSS_HEALTH_TRAIL_DELAY)
+		_health_bar_trail_tween.tween_method(
+			_set_health_bar_trail_right, _health_bar_trail.offset_right, target,
+			BOSS_HEALTH_TRAIL_TWEEN_TIME).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
 
 func _destroy_health_bar() -> void:
-	if _health_bar_tween and _health_bar_tween.is_valid():
+	if _health_bar_tween != null and _health_bar_tween.is_valid():
 		_health_bar_tween.kill()
+	if _health_bar_trail_tween != null and _health_bar_trail_tween.is_valid():
+		_health_bar_trail_tween.kill()
 	if not _health_bar_layer:
 		return
 	var panel := _health_bar_root
@@ -430,6 +473,11 @@ func _fire_laser_attack() -> void:
 		await get_tree().create_timer(damage_interval).timeout
 		laser_time_left -= damage_interval
 		_damage_mole_in_laser(mole, laser_start, laser_end)
+	for line in beam_lines:
+		if is_instance_valid(line):
+			var fade := line.create_tween()
+			fade.tween_property(line, "modulate:a", 0.0, LASER_FADE_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	await get_tree().create_timer(LASER_FADE_TIME).timeout
 	_clear_laser_lines(beam_lines)
 	_laser_attack_active = false
 	_laser_cooldown = randf_range(LASER_COOLDOWN_MIN, LASER_COOLDOWN_MAX)
@@ -1029,6 +1077,15 @@ func _start_collapse() -> void:
 	_run_collapse(mole)
 
 func _run_collapse(mole: Node2D) -> void:
+	if _tilemap == null or not is_instance_valid(mole):
+		_finish_death_cutscene()
+		return
+
+	# Drop the mole below the heart, then begin the existing block-breaking ride.
+	mole.global_position = global_position + Vector2(0.0, COLLAPSE_TELEPORT_BELOW_BOSS)
+	if _cutscene_cam and is_instance_valid(_cutscene_cam):
+		_cutscene_cam.global_position = mole.global_position + Vector2(0.0, COLLAPSE_CAM_OFFSET)
+
 	# Keep the descent playable: the tree stays unpaused so break particles and
 	# sounds run, and the mole keeps sideways control while the floor falls away.
 	var body := mole as CollisionObject2D

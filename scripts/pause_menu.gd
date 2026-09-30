@@ -31,6 +31,10 @@ func _ready() -> void:
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed:
 		if event.physical_keycode == KEY_PAUSE:
+			# The map overlay pauses the tree as well. Toggling here too would
+			# leave this menu's own flag out of step with the tree's.
+			if MapOverlay.is_map_open():
+				return
 			toggle_pause()
 			get_tree().root.set_input_as_handled()
 
