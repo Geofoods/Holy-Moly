@@ -173,7 +173,6 @@ metadata/_edit_use_anchors_ = true
 position = Vector2(2920, 352)
 
 [node name="ShopkeeperMole" parent="." unique_id=741375062 instance=ExtResource("17_shopkeeper")]
-modulate = Color(0.98, 0.83, 0.45, 1)
 position = Vector2(1860, -90)
 scale = Vector2(0.25, 0.25)
 

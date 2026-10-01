@@ -1,51 +1,37 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://dsn8kk2u1nx7s"]
 
-[ext_resource type="Texture2D" uid="uid://blp357sqm6m5c" path="res://sprites/moleacharacterwalk.png" id="1_walk"]
-[ext_resource type="Script" path="res://scripts/shopkeeper_npc.gd" id="2_script"]
-[ext_resource type="Script" path="res://scripts/shop_stall.gd" id="3_stall"]
+[ext_resource type="Texture2D" uid="uid://c650v2mbkas7d" path="res://sprites/shopt.png" id="1_shop"]
+[ext_resource type="Script" uid="uid://cdyxio0ioy6vj" path="res://scripts/shopkeeper_npc.gd" id="2_script"]
 [ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="4_font"]
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_walk1"]
-atlas = ExtResource("1_walk")
-region = Rect2(0, 0, 600, 600)
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle"]
+atlas = ExtResource("1_shop")
+region = Rect2(0, 0, 560, 560)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_walk2"]
-atlas = ExtResource("1_walk")
-region = Rect2(600, 0, 600, 600)
+[sub_resource type="AtlasTexture" id="AtlasTexture_talk"]
+atlas = ExtResource("1_shop")
+region = Rect2(560, 0, 560, 560)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_walk3"]
-atlas = ExtResource("1_walk")
-region = Rect2(1200, 0, 600, 600)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_walk4"]
-atlas = ExtResource("1_walk")
-region = Rect2(1800, 0, 600, 600)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_walk5"]
-atlas = ExtResource("1_walk")
-region = Rect2(2400, 0, 600, 600)
-
-[sub_resource type="SpriteFrames" id="SpriteFrames_walk"]
+[sub_resource type="SpriteFrames" id="SpriteFrames_shop"]
 animations = [{
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_walk1")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_walk2")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_walk3")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_walk4")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_walk5")
+"texture": SubResource("AtlasTexture_idle")
 }],
 "loop": true,
-"name": &"walk",
-"speed": 8.0
+"name": &"idle",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_talk")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle")
+}],
+"loop": true,
+"name": &"talking",
+"speed": 6.0
 }]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_npc"]
@@ -55,43 +41,36 @@ height = 368.12317
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_interact"]
 size = Vector2(900, 900)
 
-[sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_8n2qc"]
-polygon = PackedVector2Array(-176, 20, -201, -67, -152, -154, -35, -165, 115, -129, 189, -42, 201, 41, 35, 76, -92, 67, -164, 62)
-
-[node name="ShopkeeperMole" type="CharacterBody2D"]
-z_index = 1
+[node name="ShopkeeperMole" type="CharacterBody2D" unique_id=1821904010]
+collision_layer = 0
 script = ExtResource("2_script")
 
-[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1609994387]
 light_mask = 2
-sprite_frames = SubResource("SpriteFrames_walk")
-animation = &"walk"
-autoplay = "walk"
-flip_h = true
+position = Vector2(19.2, -441.2)
+scale = Vector2(2.4, 2.4)
+sprite_frames = SubResource("SpriteFrames_shop")
+animation = &"idle"
+autoplay = "idle"
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=551529701]
 position = Vector2(6, 14.000008)
 rotation = 1.5707964
 shape = SubResource("CapsuleShape2D_npc")
 
-[node name="InteractionArea" type="Area2D" parent="."]
+[node name="InteractionArea" type="Area2D" parent="." unique_id=1453374294]
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="InteractionArea"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="InteractionArea" unique_id=578534185]
 shape = SubResource("RectangleShape2D_interact")
 
-[node name="Hurtbox" type="Area2D" parent="."]
-groups = ["npc_hurtbox"]
+[node name="Hurtbox" type="Area2D" parent="." unique_id=871650765]
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox" unique_id=870134475]
 position = Vector2(6, 14.000008)
 rotation = 1.5707964
 shape = SubResource("CapsuleShape2D_npc")
 
-[node name="Stall" type="Node2D" parent="."]
-z_index = 1
-script = ExtResource("3_stall")
-
-[node name="Prompt" type="Label" parent="."]
+[node name="Prompt" type="Label" parent="." unique_id=1956399537]
 visible = false
 offset_left = -190.0
 offset_top = -180.0
@@ -104,6 +83,3 @@ theme_override_fonts/font = ExtResource("4_font")
 theme_override_font_sizes/font_size = 40
 text = "PRESS E: SHOP"
 horizontal_alignment = 1
-
-[node name="LightOccluder2D" type="LightOccluder2D" parent="."]
-occluder = SubResource("OccluderPolygon2D_8n2qc")

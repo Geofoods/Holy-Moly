@@ -282,7 +282,6 @@ offset_right = 5427.0
 offset_bottom = -1598.0
 
 [node name="ShopkeeperMole" parent="." instance=ExtResource("20_shopkeeper")]
-modulate = Color(0.98, 0.83, 0.45, 1)
 position = Vector2(470, -160)
 scale = Vector2(0.25, 0.25)
 
