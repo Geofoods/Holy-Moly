@@ -27,6 +27,18 @@ const ENTRIES: Array[Dictionary] = [
 		"strategy": "Don't get caught flat-footed by its longer detection range. Swing early or dodge sideways as it closes in. Takes 4 hits to defeat.",
 	},
 	{
+		"id": "ice_goblin",
+		"name": "Ice Goblin",
+		"icon": "res://golblin.webp",
+		"icon_region": Rect2(0, 0, 620, 414),
+		"category": "Enemy",
+		"danger_level": 4,
+		"description": "A frost-charged goblin raider from the deeper caves, with an icy sheen and a colder throwing arm.",
+		"behavior": "Behaves like a Goblin: it spots you from far away and lobs a mushroom your direction every few seconds. But its mushroom is charged with frost rather than fire.",
+		"attack_pattern": "Throws an arcing frost mushroom that detonates on impact or after its fuse. The blast freezes you solid for a moment if it catches you and freezes every nearby block into slippery ice instead of breaking them.",
+		"strategy": "Dodge or parry the frost mushroom the same way you would a goblin's. The ice it leaves behind melts in a few seconds, so either route around it or cross carefully - slipping into a follow-up throw hurts. Takes 4 hits to defeat.",
+	},
+	{
 		"id": "ant",
 		"name": "Ant",
 		"icon": "res://scenes/ant_walk.webp",

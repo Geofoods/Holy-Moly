@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://b7f6jh4ubvuyj"
+path="res://.godot/imported/Spirited Away - The Name of Life (Slowed + Reverb).mp3-2b84ccf3c0820561d2fbd44aae8e2495.mp3str"
+
+[deps]
+
+source_file="res://Spirited Away - The Name of Life (Slowed + Reverb).mp3"
+dest_files=["res://.godot/imported/Spirited Away - The Name of Life (Slowed + Reverb).mp3-2b84ccf3c0820561d2fbd44aae8e2495.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

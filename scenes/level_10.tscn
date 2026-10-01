@@ -14,6 +14,7 @@
 [ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="12_av4wb"]
 [ext_resource type="TileSet" uid="uid://d07lidnoim34q" path="res://tileset.tres" id="13_3kbcw"]
 [ext_resource type="PackedScene" uid="uid://k06dbe7sq1ph" path="res://scenes/goblinenemy.tscn" id="16_l6je1"]
+[ext_resource type="PackedScene" path="res://ice_goblinenemy.tscn" id="26_icegob"]
 [ext_resource type="PackedScene" uid="uid://bcd57whed7bys" path="res://chest.tscn" id="17_cin7o"]
 [ext_resource type="PackedScene" uid="uid://u77s8ew4xenh" path="res://scenes/beetleenemy.tscn" id="18_fe7ll"]
 [ext_resource type="PackedScene" uid="uid://cdxu1kg5or16d" path="res://candle.tscn" id="19_jhdh4"]
@@ -66,7 +67,7 @@ position = Vector2(0, -7)
 
 [node name="CharacterBody2D2" parent="." unique_id=501808252 instance=ExtResource("3_cg1jc")]
 z_index = 0
-position = Vector2(5664, 3869)
+position = Vector2(-1717, 2332)
 scale = Vector2(0.25, 0.25)
 
 [node name="Camera2D" type="Camera2D" parent="CharacterBody2D2" unique_id=955812054]
@@ -237,6 +238,12 @@ position = Vector2(1280, 1621)
 
 [node name="Enemy3" parent="." unique_id=551767529 instance=ExtResource("16_l6je1")]
 position = Vector2(1630, 922)
+
+[node name="IceGoblin1" parent="." instance=ExtResource("26_icegob")]
+position = Vector2(1830, 922)
+
+[node name="IceGoblin2" parent="." instance=ExtResource("26_icegob")]
+position = Vector2(2312, 451)
 
 [node name="Enemy4" parent="." unique_id=1283612352 instance=ExtResource("16_l6je1")]
 position = Vector2(2512, 451)

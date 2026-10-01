@@ -4,10 +4,10 @@ extends RigidBody2D
 ## them is dug away. This avoids rigidbody jitter/ejection glitches entirely;
 ## when support disappears they fall once, settle, and freeze again.
 ##
-## They do NOT collide with the mole: the mole's collision mask omits the candle
-## layer, so you can walk straight through a candle and dig out the tile beneath
-## it. Candles still collide with the tilemap (their mask keeps layer 1), so
-## gravity rests them on the terrain once they topple.
+## They do NOT collide with the mole: the candle adds a collision exception for
+## the player, so you can walk straight through a candle and dig out the tile
+## beneath it. They sit on the ordinary world collision layer, so the terrain
+## still catches them and gravity rests them on the tiles once they topple.
 
 const TILE_CHECK_INTERVAL := 0.25
 const BOTTOM_LOCAL_Y := 40.0  # collision rect bottom edge in local space (25.25 + 29.5/2)
@@ -19,9 +19,9 @@ const REFREEZE_DELAY := 0.35
 const PUSH_SPEED := 600.0
 const FLICKER_RATE := 7.0
 const FLICKER_AMOUNT := 0.08
-const CANDLE_LAYER_BIT := 8  # matches candle.tscn collision_layer
 
 var _tilemap: TileMap = null
+var _excluded_mole: Node = null
 var _check_timer := 0.0
 var _was_fast := false
 var _settle_timer := 0.0
@@ -35,12 +35,7 @@ func _ready() -> void:
 	freeze = true
 	add_to_group("pushable")
 	_tilemap = _find_tilemap()
-	if _tilemap != null:
-		# The terrain must also detect the candle layer. Godot only resolves a
-		# collision when both bodies mask each other, and every TileMap here uses
-		# the default mask (1), so without this a toppling candle drops straight
-		# through the floor instead of landing on the tile below.
-		_tilemap.collision_mask |= CANDLE_LAYER_BIT
+	_exclude_player()
 	if _light:
 		_base_light_energy = _light.energy
 		_base_light_scale = _light.scale
@@ -63,6 +58,15 @@ func push(direction: Vector2) -> void:
 		freeze = false
 	linear_velocity = direction * PUSH_SPEED + linear_velocity * Vector2(0.0, 1.0)
 
+func _exclude_player() -> void:
+	var mole := get_tree().get_first_node_in_group("mole")
+	if mole == null or mole == _excluded_mole:
+		return
+	if _excluded_mole != null and is_instance_valid(_excluded_mole):
+		remove_collision_exception_with(_excluded_mole)
+	add_collision_exception_with(mole)
+	_excluded_mole = mole
+
 func _find_tilemap() -> TileMap:
 	var root := get_tree().current_scene
 	if root == null:
@@ -83,6 +87,7 @@ func _find_any_tilemap(node: Node) -> Node:
 	return null
 
 func _physics_process(delta: float) -> void:
+	_exclude_player()
 	if _tilemap == null or not is_instance_valid(_tilemap):
 		return
 

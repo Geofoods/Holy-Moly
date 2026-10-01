@@ -1,95 +1,88 @@
 extends Control
 
 ## Rolling end-credits crawl. The credit list is built in code so the roll can be
-## measured and timed from its own layout, then scrolled from below the screen to
-## above it. A return button is always available and the roll can be
-## fast-forwarded with ESC / Enter / Space or a click, so nobody gets stuck
-## watching the whole thing. Skipping is held off for the first fraction of a
-## second so a click made while the scene is still fading in cannot wipe the
-## crawl out before it has been seen.
+## measured and timed from its own layout, then scrolled from below the screen up
+## through the credits to the studio cards at the end. Each entry fades up as it
+## rises into view, the crawl stops on the end cards long enough to read them, and
+## the last stop is THE END: it sits in the middle of the screen for a beat, the
+## whole screen fades slowly to black, and the game returns to the main menu.
+## A return button is always available and the roll can be fast-forwarded with
+## ESC / Enter / Space or a click, so nobody gets stuck watching the whole thing.
+## Skipping is held off for the first fraction of a second so a click made while
+## the scene is still fading in cannot wipe the crawl out before it has been seen.
 
 const FONT_PATH := "res://Baby Doll.otf"
 const LOGO_PATH := "res://holymolylogo.png"
 const RETURN_PATH := "res://scenes/intro.tscn"
-const MUSIC_PATH := "res://soundreality-crystal-cave-136472.mp3"
+const MUSIC_PATH := "res://Spirited Away - The Name of Life (Slowed + Reverb).mp3"
 
-## The ending is timed to a fixed eighty seconds rather than derived from the
-## layout, so the run time is identical on every screen size and the credit
-## list below can be as long as it likes without changing it. Kept short enough
-## that the crawl is unambiguously moving - the list works out to roughly nine
-## thousand pixels, so this is about a hundred pixels a second, which is fast
-## enough to read as scrolling and slow enough to follow a name.
-const ROLL_TIME := 80.0
-## Crawl speed the roll works out to, pixels per second. Kept only as a sanity
-## band: however big the window or the credit list gets, the crawl never moves
-## faster than this, so a long list stretches the roll instead of blurring past.
-const MAX_SCROLL_SPEED := 160.0
+const STUDIO := "Holy Moly"
+const VERSION := "v0.2beta"
+const COPYRIGHT_YEAR := 2026
+
+## Crawl speed in pixels per second, and the one timing control for the whole
+## roll. Slow enough that a name is still readable as it passes. Because the roll
+## is measured from its own layout, a longer credit list makes the crawl last
+## longer rather than rushing past it.
+const CRAWL_SPEED := 55.0
+## Beat of silence once THE END has the middle of the screen, before the fade.
+## The one and only pause in the roll: everything above it scrolls straight past.
+const END_HOLD := 3.5
+## Time for that slow fade to black before the hand-off to the main menu.
+const END_FADE := 2.5
+## Time for one entry to fade up once it arrives, and how high up the screen that
+## happens as a fraction of the height.
+const ENTRY_FADE := 0.7
+const ENTRY_FADE_LINE := 0.9
 ## Blank space the roll waits below the screen before its first entry, and the
-## space it keeps travelling after the last one so it exits cleanly. Kept short
-## relative to an eighty second roll so there is no dead air at either end.
-const LEAD_IN := 60.0
-const TAIL := 120.0
-## Space between one credit and the next. Generous, because at the crawl speed
-## above a hundred pixels is a readable pause between names.
-const CREDIT_GAP := 110.0
+## space it keeps travelling after the last one so it exits cleanly.
+const LEAD_IN := 40.0
+const TAIL := 80.0
+## Space under one credit row, and how far in from the screen edge the role and
+## name columns start and end.
+const ROW_GAP := 24.0
+const SIDE_MARGIN := 220
 ## Skip input is ignored for this long after the crawl starts, so the click that
 ## arrives with the scene does not count as a skip.
 const SKIP_GRACE := 0.8
-## Beat of silence between the crawl carrying its own THE END off the top of the
-## screen and the centred hold card fading in.
-const END_CARD_DELAY := 0.9
-## How long the centred THE END sticks before it fades back out.
-const END_CARD_HOLD := 3.0
-## Fade time for the hold card, both in and out.
-const END_CARD_FADE := 0.8
 
 const COL_TITLE := Color(1.0, 0.88, 0.45, 1.0)
 const COL_ROLE := Color(0.74, 0.85, 0.76, 1.0)
 const COL_NAME := Color(0.98, 1.0, 0.98, 1.0)
-const COL_TAG := Color(1.0, 0.82, 0.3, 1.0)
 const COL_MUTED := Color(0.6, 0.7, 0.62, 1.0)
 
-## Roles and names in roll order. `tag` is an optional extra line under a name,
-## and `section` starts a new headed group, so the list stays readable over four
-## and a half minutes instead of reading as one flat wall of text.
+## Roles and names in roll order. `section` starts a new headed group, and every
+## credit is one row with the role on the left and the name on the right, which
+## is how a credit roll is read rather than as a flat wall of text.
 const CREDITS: Array[Dictionary] = [
 	{"section": "Lead Design"},
-	{"role": "Programming · Level Design · VFX · Abilities", "name": "George Sun"},
-	{"role": "Art · Programming · Game Design", "name": "Bryan Tang", "tag": "GOAT 🐐"},
+	{"role": "Lead Designer & Programmer", "name": "George Sun"},
+	{"role": "Art Director & Designer", "name": "Bryan Tang"},
 
-	{"section": "Code & Systems"},
-	{"role": "Core Loop · The Dig · The Stomp", "name": "George Sun"},
-	{"role": "Tiling & Chunking · Allegedly Efficient", "name": "George Sun"},
-	{"role": "Enemy Spawn Director · Ruthless", "name": "George Sun"},
-	{"role": "Physics Tuning · Iteratively · Patiently", "name": "George Sun"},
-	{"role": "Shaders, Particles & Premature Optimisation", "name": "George Sun"},
-	{"role": "Save System · Reluctantly", "name": "George Sun"},
-	{"role": "Debugging · Mostly Other People's Code", "name": "George Sun"},
-	{"role": "Feel Engineering · Juice · Screen Shake", "name": "George Sun"},
-	{"role": "Game Feel · How To Stop It Feeling Sludgy", "name": "Bryan Tang"},
+	{"section": "Engineering"},
+	{"role": "Gameplay & Physics", "name": "George Sun"},
+	{"role": "Level Design & Tilemaps", "name": "George Sun"},
+	{"role": "Enemy Behaviour & AI", "name": "George Sun"},
+	{"role": "Shaders, Particles & VFX", "name": "George Sun"},
+	{"role": "Save System & Progression", "name": "George Sun"},
+	{"role": "Tools & Debugging", "name": "George Sun"},
 
-	{"section": "Art, Pixels & Dirt"},
-	{"role": "Every Pixel · Placed By Hand · At 2am", "name": "Bryan Tang"},
-	{"role": "The Mole · Modelled, Cursed, Beloved", "name": "Bryan Tang"},
-	{"role": "Stalactite Composition", "name": "Bryan Tang"},
-	{"role": "Mushroom Taxonomy", "name": "Bryan Tang"},
-	{"role": "Ore Distribution · Uneven On Purpose", "name": "Bryan Tang"},
-	{"role": "Tile Smoothing Disputes · Resolved", "name": "Bryan Tang"},
-	{"role": "Debris, Dust & Unnecessary Confetti", "name": "Bryan Tang"},
-	{"role": "Colour Palette · Yes It Is Blue", "name": "Bryan Tang"},
-	{"role": "Grave, Potion & Gem Placement", "name": "Bryan Tang"},
+	{"section": "Art & Animation"},
+	{"role": "Character Art & Animation", "name": "Bryan Tang"},
+	{"role": "Tiles, Terrain & Props", "name": "Bryan Tang"},
+	{"role": "Environment & Lighting", "name": "Bryan Tang"},
+	{"role": "Interface Art & Icons", "name": "Bryan Tang"},
 
-	{"section": "Audio & Chaos"},
-	{"role": "SFX Placement · Centimetre Accurate", "name": "Bryan Tang"},
-	{"role": "Audio Mixing · Loud On Purpose", "name": "George Sun"},
-	{"role": "Music Choice & Volume Disputes", "name": "Bryan Tang"},
-	{"role": "Level Pacing · Arguing", "name": "Bryan Tang"},
-	{"role": "QA · Found The Bugs · Made The Others", "name": "George Sun"},
-	{"role": "Playtesting · Reluctant", "name": "Bryan Tang"},
+	{"section": "Audio"},
+	{"role": "Music & Sound Design", "name": "Bryan Tang"},
+	{"role": "Sound Implementation & Mixing", "name": "George Sun"},
+
+	{"section": "Quality Assurance"},
+	{"role": "Playtesting & Bug Reports", "name": "Bryan Tang"},
+	{"role": "Compatibility & Regression", "name": "George Sun"},
 ]
 
 @onready var _roll: VBoxContainer = $RollClip/Roll
-@onready var _the_end: Label = $TheEnd
 @onready var _return_button: Button = $ReturnButton
 @onready var _skip_hint: Label = $SkipHint
 
@@ -97,8 +90,13 @@ var _music: AudioStreamPlayer = null
 var _tween: Tween = null
 var _rolling := false
 var _roll_end_y := 0.0
+var _roll_stop_y := 0.0
 var _roll_elapsed := 0.0
 var _leaving := false
+var _the_end_roll: Label = null
+var _fade_rect: ColorRect = null
+## Roll entries waiting to fade up as they arrive.
+var _entries: Array[Control] = []
 
 func _ready() -> void:
 	# The wipe out of the win screen holds the tree paused while this scene
@@ -107,7 +105,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	LevelMusic.stop()
 	_start_music()
-	_the_end.modulate.a = 0.0
+	_add_fade_rect()
 	_build_roll()
 	_return_button.mouse_entered.connect(_on_return_hover)
 	_return_button.mouse_exited.connect(_on_return_unhover)
@@ -117,26 +115,48 @@ func _ready() -> void:
 
 func _build_roll() -> void:
 	_add_logo()
-	_add_spacer(90.0)
-	_add_label("A GAME BY", 30, COL_MUTED, 4)
-	_add_spacer(110.0)
+	_add_spacer(60.0)
+	_add_label("A " + STUDIO.to_upper() + " GAME", 26, COL_MUTED, 4)
+	_add_spacer(70.0)
 	for entry in CREDITS:
 		var section := str(entry.get("section", ""))
 		if not section.is_empty():
 			_add_section(section)
 		if entry.has("role") and entry.has("name"):
-			_add_credit(str(entry["role"]), str(entry["name"]), str(entry.get("tag", "")))
-			_add_spacer(CREDIT_GAP)
-	_add_label("THANK YOU FOR PLAYING", 46, COL_TITLE, 6)
-	_add_spacer(100.0)
-	_add_label("HOLY MOLEY  ·  v0.2beta", 24, COL_MUTED, 4)
-	_add_spacer(30.0)
-	_add_label("Made with Godot", 22, COL_MUTED, 4)
-	_add_spacer(120.0)
-	_add_label("THE END", 72, COL_TITLE, 8)
+			_add_row(str(entry["role"]), str(entry["name"]))
+			_add_spacer(ROW_GAP)
+	_add_spacer(80.0)
+	_add_label("THANK YOU FOR PLAYING", 52, COL_TITLE, 6)
+	_add_spacer(60.0)
+	_add_label("PUBLISHED BY", 22, COL_MUTED, 4)
+	_add_spacer(12.0)
+	_add_label(STUDIO, 40, COL_NAME, 6)
+	_add_spacer(60.0)
+	_add_label("© %d %s. All rights reserved." % [COPYRIGHT_YEAR, STUDIO], 20, COL_MUTED, 4)
+	_add_spacer(10.0)
+	_add_label("Made with Godot · " + VERSION, 20, COL_MUTED, 4)
+	_add_spacer(70.0)
+	_the_end_roll = _add_label("THE END", 72, COL_TITLE, 8)
 	_add_spacer(TAIL)
 
-func _add_logo() -> void:
+## Black curtain the ending fades down behind. Input passes straight through it
+## so the return button stays usable while it closes.
+func _add_fade_rect() -> void:
+	_fade_rect = ColorRect.new()
+	_fade_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_fade_rect.color = Color(0, 0, 0, 0)
+	_fade_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_fade_rect)
+
+## Marks an entry for the arrival fade. Everything visible in the roll goes
+## through here, so the crawl opens on an empty frame instead of a wall of text
+## sitting there waiting to scroll.
+func _register(node: Control) -> Control:
+	node.modulate.a = 0.0
+	_entries.append(node)
+	return node
+
+func _add_logo() -> TextureRect:
 	var logo := TextureRect.new()
 	logo.texture = load(LOGO_PATH) as Texture2D
 	logo.custom_minimum_size = Vector2(720, 300)
@@ -144,14 +164,27 @@ func _add_logo() -> void:
 	logo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	_roll.add_child(logo)
+	_register(logo)
+	return logo
 
-func _add_credit(role: String, credit_name: String, tag: String) -> void:
-	_add_label(role, 24, COL_ROLE, 4)
-	_add_spacer(6.0)
-	_add_label(credit_name, 42, COL_NAME, 6)
-	if not tag.is_empty():
-		_add_spacer(4.0)
-		_add_label(tag, 26, COL_TAG, 5)
+## One credit: the role on the left, the name on the right, both sharing the row
+## so the name lines up down the whole roll regardless of role length.
+func _add_row(role: String, credit_name: String) -> void:
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", SIDE_MARGIN)
+	margin.add_theme_constant_override("margin_right", SIDE_MARGIN)
+	var row := HBoxContainer.new()
+	var role_label := _make_label(role, 22, COL_ROLE, 4)
+	role_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	role_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var name_label := _make_label(credit_name, 30, COL_NAME, 6)
+	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(role_label)
+	row.add_child(name_label)
+	margin.add_child(row)
+	_roll.add_child(margin)
+	_register(margin)
 
 ## Breaks a long roll into headed groups. The rule and the extra air either side
 ## are what make the difference between credits and a wall of text.
@@ -165,6 +198,12 @@ func _add_section(title: String) -> void:
 	_add_spacer(40.0)
 
 func _add_label(text: String, font_size: int, color: Color, outline: int = 4) -> Label:
+	var label := _make_label(text, font_size, color, outline)
+	_roll.add_child(label)
+	_register(label)
+	return label
+
+func _make_label(text: String, font_size: int, color: Color, outline: int) -> Label:
 	var label := Label.new()
 	label.text = text
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -176,7 +215,6 @@ func _add_label(text: String, font_size: int, color: Color, outline: int = 4) ->
 	var font := load(FONT_PATH) as Font
 	if font != null:
 		label.add_theme_font_override("font", font)
-	_roll.add_child(label)
 	return label
 
 func _add_spacer(height: float) -> void:
@@ -184,6 +222,11 @@ func _add_spacer(height: float) -> void:
 	spacer.custom_minimum_size = Vector2(0, height)
 	_roll.add_child(spacer)
 
+## Scrolls the roll from below the screen at a constant speed until THE END sits
+## in the middle of it, holds there, then closes out. There is deliberately no
+## other stop in the crawl: the credits scroll straight through and only the last
+## line pauses. The stop is measured after layout, so adding entries to CREDITS
+## cannot knock THE END off centre.
 func _start_roll() -> void:
 	var viewport_h: float = size.y
 	if viewport_h <= 0.0:
@@ -191,42 +234,56 @@ func _start_roll() -> void:
 	_return_button.pivot_offset = _return_button.size / 2.0
 
 	var content_h: float = _roll.get_combined_minimum_size().y
-	var start_y: float = viewport_h + LEAD_IN
-	_roll.position = Vector2(0.0, start_y)
+	_roll.position = Vector2(0.0, viewport_h + LEAD_IN)
 	_roll_end_y = -(content_h + TAIL)
+	_roll_stop_y = maxf(viewport_h * 0.5 - (_the_end_roll.position.y + _the_end_roll.size.y * 0.5), _roll_end_y)
 
-	var travel: float = start_y - _roll_end_y
-	var duration: float = maxf(ROLL_TIME, travel / MAX_SCROLL_SPEED)
 	_roll_elapsed = 0.0
 	_rolling = true
 	_tween = create_tween()
-	_tween.tween_property(_roll, "position:y", _roll_end_y, duration).set_trans(Tween.TRANS_LINEAR)
-	_tween.finished.connect(_finish_roll)
+	_tween.tween_property(_roll, "position:y", _roll_stop_y, (_roll.position.y - _roll_stop_y) / CRAWL_SPEED).set_trans(Tween.TRANS_LINEAR)
+	_tween.tween_interval(END_HOLD)
+	_tween.tween_callback(_close_out)
 
-## Jumps the crawl to its end, either because it finished on its own or because
-## the player asked to skip it. Either way the ending plays out the same: the
-## crawl clears, the centred THE END fades in and sticks, fades back out, and
-## the game returns to the main menu on its own.
+## Jumps the crawl to THE END, because the player asked to skip it rather than
+## because it ran out. The ending that follows is exactly the one the roll plays
+## on its own.
 func _finish_roll() -> void:
 	if not _rolling:
 		return
 	_rolling = false
 	if _tween != null and _tween.is_valid():
 		_tween.kill()
-	_roll.position.y = _roll_end_y
+	_roll.position.y = _roll_stop_y
+	var tween := create_tween()
+	tween.tween_interval(END_HOLD)
+	tween.tween_callback(_close_out)
+
+## Slow fade to black, then the hand-off to the main menu. Split out so the skip
+## path and the natural end of the roll close out identically.
+func _close_out() -> void:
 	_skip_hint.visible = false
 	var tween := create_tween()
-	# Let the crawl's own THE END clear the top of the screen before the centred
-	# hold card fades in, so the two do not read as one flash.
-	tween.tween_interval(END_CARD_DELAY)
-	tween.tween_property(_the_end, "modulate:a", 1.0, END_CARD_FADE).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tween.tween_interval(END_CARD_HOLD)
-	tween.tween_property(_the_end, "modulate:a", 0.0, END_CARD_FADE).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	tween.tween_property(_fade_rect, "color:a", 1.0, END_FADE).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	tween.tween_callback(_go_to_menu)
 
 func _process(delta: float) -> void:
+	_fade_entries()
 	if _rolling:
 		_roll_elapsed += delta
+
+## Fades up each roll entry as it rises past the line near the bottom of the
+## screen, so a credit arrives instead of simply being already there.
+func _fade_entries() -> void:
+	var line: float = size.y * ENTRY_FADE_LINE
+	for entry in _entries:
+		if entry.get_meta("faded", false):
+			continue
+		if entry.global_position.y >= line:
+			continue
+		entry.set_meta("faded", true)
+		var tween := create_tween()
+		tween.tween_property(entry, "modulate:a", 1.0, ENTRY_FADE).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not _rolling or _roll_elapsed < SKIP_GRACE:

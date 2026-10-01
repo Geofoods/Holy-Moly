@@ -366,7 +366,7 @@ func _make_item_row(item: ItemData) -> HBoxContainer:
 	btn.pressed.connect(func() -> void:
 		if Shop.buy_item(item):
 			_refresh()
-		elif not _can_carry(item):
+		elif not _can_carry():
 			_set_status("INVENTORY IS FULL - USE SOMETHING FIRST", COL_RED)
 		else:
 			_set_status("NOT ENOUGH COINS", COL_RED)
@@ -377,15 +377,8 @@ func _make_item_row(item: ItemData) -> HBoxContainer:
 ## Mirrors Inventory.add_item's slot rules so a refused purchase can say why.
 ## The BUY button is only disabled on coins, so a full inventory is otherwise a
 ## dead click - and buy_item deliberately charges nothing when it refuses.
-func _can_carry(item: ItemData) -> bool:
-	if Inventory.has_empty_slot():
-		return true
-	if not item.stackable:
-		return false
-	for slot in Inventory.slots:
-		if slot != null and slot.item_name == item.item_name:
-			return true
-	return false
+func _can_carry() -> bool:
+	return Inventory.has_empty_slot()
 
 func _set_status(text: String, color: Color) -> void:
 	if _status == null:
