@@ -20,6 +20,14 @@ const ACORN_LEVELS: Array[String] = [
 	"res://scenes/level_12.tscn",
 ]
 
+## Scenes the title screen must never offer as "Play Last Level".
+const _NON_LEVEL_SCENES: Array[String] = [
+	"res://scenes/intro.tscn",
+	"res://scenes/game_over.tscn",
+	"res://scenes/win_screen.tscn",
+	"res://scenes/credits.tscn",
+]
+
 var acorns := {}
 var completed := {}
 ## Scenes the mole has actually stood in at least once. Gates the map's travel
@@ -40,6 +48,12 @@ var best_combo := 0
 ## kept as a record of the banking rather than used to place the arrival.
 var respawn_scene := ""
 var respawn_position := Vector2.ZERO
+
+## Last non-menu scene the mole stood in, updated on every scene change and
+## persisted, so the title screen can offer "Play Last Level" after a quit.
+## Deliberately separate from `respawn_scene`: the checkpoint is where the game
+## wants to return you, this is simply where you were.
+var last_level_scene := ""
 
 ## Transient, never saved. Set when a death or a map teleport sends the mole back
 ## to the banked station and consumed once by the mole on arrival, so only the
@@ -64,7 +78,13 @@ func _on_scene_changed() -> void:
 	var scene := get_tree().current_scene
 	if scene == null:
 		return
-	mark_visited(str(scene.scene_file_path))
+	var path := str(scene.scene_file_path)
+	mark_visited(path)
+	if path in _NON_LEVEL_SCENES:
+		return
+	if path != last_level_scene:
+		last_level_scene = path
+		save_progress()
 
 func _process(_delta: float) -> void:
 	var cs = get_tree().current_scene
@@ -164,6 +184,14 @@ func update_best_combo(value: int) -> void:
 func has_respawn() -> bool:
 	return not respawn_scene.is_empty() and ResourceLoader.exists(respawn_scene)
 
+## Whether the title screen has a "Play Last Level" to offer: a recorded scene
+## that still exists and is not a front-end screen (a stale save may point at a
+## deleted or renamed scene).
+func has_last_level() -> bool:
+	return not last_level_scene.is_empty() \
+		and not last_level_scene in _NON_LEVEL_SCENES \
+		and ResourceLoader.exists(last_level_scene)
+
 ## Banks `scene_path` as the respawn station and remembers the spot the mole
 ## was standing, then writes both to disk so a checkpoint survives a restart.
 func set_respawn(scene_path: String, pos: Vector2) -> void:
@@ -199,6 +227,7 @@ func save_progress() -> void:
 	cfg.set_value("meta", "best_combo", best_combo)
 	cfg.set_value("respawn", "scene", respawn_scene)
 	cfg.set_value("respawn", "position", respawn_position)
+	cfg.set_value("meta", "last_level_scene", last_level_scene)
 	cfg.save(SAVE_PATH)
 
 func load_progress() -> void:
@@ -223,3 +252,4 @@ func load_progress() -> void:
 	var pos = cfg.get_value("respawn", "position", Vector2.ZERO)
 	if pos is Vector2:
 		respawn_position = pos
+	last_level_scene = str(cfg.get_value("meta", "last_level_scene", ""))

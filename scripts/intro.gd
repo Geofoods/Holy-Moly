@@ -23,15 +23,20 @@ func _ready():
 	vbox.scale = Vector2(0.85, 0.85)
 	vbox.call_deferred("set", "pivot_offset", vbox.size / 2.0)
 	_set_buttons_enabled(false)
-
 	$MoleShadow.hide()
 
 	var play_btn = $CenterContainer/VBoxContainer/ButtonContainer/PlayButton
+	var last_level_btn = $CenterContainer/VBoxContainer/ButtonContainer/LastLevelButton
 	var field_guide_btn = $CenterContainer/VBoxContainer/ButtonContainer/FieldGuideButton
 	play_btn.mouse_entered.connect(_on_button_hover.bind(play_btn))
 	play_btn.mouse_exited.connect(_on_button_unhover.bind(play_btn))
+	last_level_btn.mouse_entered.connect(_on_button_hover.bind(last_level_btn))
+	last_level_btn.mouse_exited.connect(_on_button_unhover.bind(last_level_btn))
 	field_guide_btn.mouse_entered.connect(_on_button_hover.bind(field_guide_btn))
 	field_guide_btn.mouse_exited.connect(_on_button_unhover.bind(field_guide_btn))
+	# The "Play Last Level" shortcut only makes sense when there is a level to
+	# go back to, so a first launch shows just the plain Play button.
+	last_level_btn.visible = Progress.has_last_level()
 	
 	_add_version_label()
 
@@ -154,11 +159,14 @@ func animate_menu_reveal() -> void:
 
 func _set_buttons_enabled(enabled: bool) -> void:
 	var play_btn = $CenterContainer/VBoxContainer/ButtonContainer/PlayButton
+	var last_level_btn = $CenterContainer/VBoxContainer/ButtonContainer/LastLevelButton
 	var field_guide_btn = $CenterContainer/VBoxContainer/ButtonContainer/FieldGuideButton
 	play_btn.disabled = not enabled
+	last_level_btn.disabled = not enabled
 	field_guide_btn.disabled = not enabled
 	if enabled:
 		play_btn.pivot_offset = play_btn.size / 2.0
+		last_level_btn.pivot_offset = last_level_btn.size / 2.0
 		field_guide_btn.pivot_offset = field_guide_btn.size / 2.0
 
 func _on_button_hover(button: Button) -> void:
@@ -195,6 +203,22 @@ func _on_play_pressed() -> void:
 	# the title screen must not inherit the last one's checkpoint.
 	Progress.clear_respawn()
 	var target := "res://scenes/molevillage.tscn"
+	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
+	get_tree().root.add_child(transition)
+	transition.change_to(target)
+
+## Drops the mole back into the scene it was last standing in. Unlike a fresh
+## Play, this keeps the run's inventory, checkpoint and health: it is "resume
+## where I left off", not "start over".
+func _on_last_level_pressed() -> void:
+	SFX.play_ui("ui_click", -6.0, 1.2)
+	_fade_out_menu_music()
+	var last_level_btn = $CenterContainer/VBoxContainer/ButtonContainer/LastLevelButton
+	last_level_btn.disabled = true
+	var target := Progress.last_level_scene
+	# Keep the resume-aware bookkeeping in step with a normal level entry, so
+	# pause->restart and the game-over retry land back in this same scene.
+	Inventory.current_level_path = target
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 	get_tree().root.add_child(transition)
 	transition.change_to(target)

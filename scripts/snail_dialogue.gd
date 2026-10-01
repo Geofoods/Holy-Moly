@@ -134,6 +134,7 @@ var _boss_loot_spawn_timer := 0.0
 var _boss_immune_timer := 0.0
 var _boss_contact_timer := 0.0
 var _boss_projectile_count := 0
+var _boss_ground_y := 0.0
 var _boss_hurtbox: Area2D = null
 var _boss_player_contact: Area2D = null
 var _boss_health_layer: CanvasLayer = null
@@ -156,6 +157,11 @@ var _boss_vignette_material: ShaderMaterial = null
 var _boss_brightness_tween: Tween = null
 var _death_box: CanvasLayer = null
 var _death_finale_started := false
+var _death_black_hole: Node2D = null
+var _death_player: Node2D = null
+var _death_credits_started := false
+var _death_pull_start := Vector2.ZERO
+var _death_pull_center := Vector2.ZERO
 
 const ITEM_GET := preload("res://scripts/item_get_animation.gd")
 ## Melee weapons have no artwork of their own, so - like the weapon the mole
@@ -187,118 +193,6 @@ const DEATH_BLACK_HOLE_GROW_TIME := 0.9
 const DEATH_BLACK_HOLE_PULL_TIME := 2.8
 const DEATH_BLACK_HOLE_RADIUS_SCALE := 0.38
 const DEATH_CREDITS_PATH := "res://scenes/credits.tscn"
-
-var _death_black_hole: Node2D = null
-var _death_player: Node2D = null
-var _death_credits_started := false
-
-func _open_black_hole(center: Vector2, body_size: Vector2) -> void:
-	if not is_inside_tree() or _death_credits_started:
-		return
-	var scene_root := get_tree().current_scene as Node2D
-	if scene_root == null:
-		_go_to_credits()
-		return
-
-	_death_black_hole = Node2D.new()
-	_death_black_hole.name = "CorruptedSnailBlackHole"
-	_death_black_hole.process_mode = Node.PROCESS_MODE_ALWAYS
-	_death_black_hole.z_index = 30
-	_death_black_hole.z_as_relative = false
-	_death_black_hole.global_position = center
-	scene_root.add_child(_death_black_hole)
-	_death_black_hole.scale = Vector2(0.04, 0.04)
-	var radius := maxf(body_size.x, body_size.y) * DEATH_BLACK_HOLE_RADIUS_SCALE
-
-	var halo := Polygon2D.new()
-	halo.polygon = _black_hole_circle(radius * 0.9)
-	halo.color = Color(0.24, 0.025, 0.42, 0.82)
-	halo.z_index = -1
-	_death_black_hole.add_child(halo)
-	var core := Polygon2D.new()
-	core.polygon = _black_hole_circle(radius * 0.53)
-	core.color = Color(0.005, 0.0, 0.012, 1.0)
-	core.z_index = 1
-	_death_black_hole.add_child(core)
-	_add_black_hole_ring(_death_black_hole, radius * 0.58, 18.0, Color(0.93, 0.42, 1.0, 0.95))
-	_add_black_hole_ring(_death_black_hole, radius * 0.72, 11.0, Color(0.48, 0.12, 0.92, 0.82))
-	_add_black_hole_ring(_death_black_hole, radius * 0.91, 6.0, Color(0.22, 0.08, 0.44, 0.62))
-
-	var growth := _death_black_hole.create_tween()
-	growth.tween_property(_death_black_hole, "scale", Vector2.ONE, DEATH_BLACK_HOLE_GROW_TIME).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	growth.tween_callback(_suck_player_into_black_hole.bind(center))
-
-func _black_hole_circle(radius: float) -> PackedVector2Array:
-	var points := PackedVector2Array()
-	for i in 65:
-		var angle := TAU * float(i) / 64.0
-		points.append(Vector2(cos(angle), sin(angle)) * radius)
-	return points
-
-func _add_black_hole_ring(parent: Node2D, radius: float, width: float, color: Color) -> void:
-	var ring := Line2D.new()
-	ring.width = width
-	ring.default_color = color
-	ring.joint_mode = Line2D.LINE_JOINT_ROUND
-	ring.begin_cap_mode = Line2D.LINE_CAP_ROUND
-	ring.end_cap_mode = Line2D.LINE_CAP_ROUND
-	for point in _black_hole_circle(radius):
-		ring.add_point(point)
-	parent.add_child(ring)
-	var spin := ring.create_tween().set_loops()
-	spin.tween_property(ring, "rotation", TAU, randf_range(2.4, 4.0)).as_relative()
-
-func _suck_player_into_black_hole(center: Vector2) -> void:
-	var mole := get_tree().get_first_node_in_group("mole") as Node2D
-	if mole == null or not is_instance_valid(mole):
-		get_tree().create_timer(0.6).timeout.connect(_go_to_credits)
-		return
-	_death_player = mole
-	mole.set_process(false)
-	mole.set_physics_process(false)
-	mole.set_process_input(false)
-	mole.set_process_unhandled_input(false)
-	mole.set_process_unhandled_key_input(false)
-	if mole is CharacterBody2D:
-		(mole as CharacterBody2D).velocity = Vector2.ZERO
-	var pull := _death_black_hole.create_tween()
-	pull.set_parallel(true)
-	pull.tween_property(mole, "global_position", center, DEATH_BLACK_HOLE_PULL_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
-	pull.tween_property(mole, "global_scale", Vector2.ZERO, DEATH_BLACK_HOLE_PULL_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
-	pull.tween_property(mole, "rotation", TAU * 2.0, DEATH_BLACK_HOLE_PULL_TIME).as_relative()
-	pull.chain().tween_callback(_finish_player_suction)
-
-func _finish_player_suction() -> void:
-	if _death_player != null and is_instance_valid(_death_player):
-		_death_player.visible = false
-	get_tree().create_timer(0.6).timeout.connect(_go_to_credits)
-
-func _go_to_credits() -> void:
-	if _death_credits_started:
-		return
-	_death_credits_started = true
-	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
-	get_tree().root.add_child(transition)
-	transition.change_to(DEATH_CREDITS_PATH)
-
-func _begin_black_hole_after_explosion(center: Vector2, body_size: Vector2) -> void:
-	get_tree().create_timer(DEATH_BLACK_HOLE_DELAY).timeout.connect(_open_black_hole.bind(center, body_size))
-
-func _keep_death_camera_on_snail() -> void:
-	# The finale camera is the shot of the black hole and the mole being pulled in;
-	# it must not hand control back to the player's camera when the box closes.
-	_dialogue_return_camera = null
-	_dialogue_return_camera_was_enabled = false
-
-
-var _mole_overlapping := false
-var _dialogue_open := false
-var _condition_met := false
-var _label: Label = null
-var _dialogue_box: CanvasLayer = null
-var _dialogue_focus_camera: Camera2D = null
-var _dialogue_return_camera: Camera2D = null
-var _dialogue_return_camera_was_enabled := false
 
 var _mole_overlapping := false
 var _dialogue_open := false
@@ -358,22 +252,25 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if not _boss_active or _boss_dying:
 		return
-	var mole := get_tree().get_first_node_in_group("mole") as Node2D
-	if mole == null or not is_instance_valid(mole):
-		return
 
-	# Keep the fight advancing right; the player can still fall behind or catch up.
+	# Movement and tunnel clearing are independent of the player and camera. If
+	# either is temporarily unavailable, the scripted autoscroller still advances.
 	var direction := 1.0
 	_sprite.flip_h = (direction > 0.0) == sprite_faces_left
+	# This is a scripted autoscroller, not a terrain-bound walker. Keep its
+	# altitude and movement deterministic so a seam, slope, or missing camera
+	# cannot pin the rigid body in a particular section of the level.
+	global_position.y = _boss_ground_y
 	linear_velocity.x = BOSS_AUTO_SCROLL_SPEED
-	if _boss_auto_camera == null or not is_instance_valid(_boss_auto_camera):
-		linear_velocity.x = 0.0
-	linear_velocity.y = minf(linear_velocity.y, 900.0)
-
+	linear_velocity.y = 0.0
 	_boss_break_timer -= delta
 	if _boss_break_timer <= 0.0:
 		_boss_break_timer = BOSS_TILE_BREAK_INTERVAL
 		_break_blocks_ahead(direction)
+
+	var mole := get_tree().get_first_node_in_group("mole") as Node2D
+	if mole == null or not is_instance_valid(mole):
+		return
 
 	if not _boss_laser_active:
 		_boss_spit_timer -= delta
@@ -754,9 +651,12 @@ func _begin_boss_fight() -> void:
 	_boss_immune_timer = 0.0
 	linear_velocity = Vector2.ZERO
 	sleeping = false
-	gravity_scale = 1.0
+	_boss_ground_y = global_position.y
+	gravity_scale = 0.0
 	collision_layer = 4
-	collision_mask = 1
+	# Boss progress is scripted; the separate hurt/contact areas handle combat,
+	# so terrain collisions must not be able to halt the rightward autoscroll.
+	collision_mask = 0
 	lock_rotation = true
 	_boss_base_scale = _sprite.scale
 	_resize_boss_body()
@@ -1513,21 +1413,13 @@ func _make_firework_spark_texture() -> Texture2D:
 	return ImageTexture.create_from_image(image)
 
 func _spit_boss_projectile(mole: Node2D) -> void:
-	var aim := (mole.global_position - global_position).normalized()
+	# Spawn at the visual center of the corrupted snail, not offset toward its
+	# mouth or pushed outside its shell. The projectile's spawn grace lets it
+	# travel out from inside the boss before terrain collisions can explode it.
+	var spawn_pos := _sprite.global_position
+	var aim := (mole.global_position - spawn_pos).normalized()
 	if aim == Vector2.ZERO:
 		aim = Vector2.RIGHT if not _sprite.flip_h else Vector2.LEFT
-	var texture := _current_sprite_texture()
-	var texture_size := texture.get_size() if texture != null else Vector2(585.0, 442.0)
-	var visual_scale := _boss_base_scale if _boss_active else _sprite.scale
-	var mouth_offset := _sprite.position + Vector2(
-		(signf(aim.x) if aim.x != 0.0 else (1.0 if not _sprite.flip_h else -1.0)) * texture_size.x * visual_scale.x * 0.32,
-		-texture_size.y * visual_scale.y * 0.06
-	)
-	var spawn_pos := to_global(mouth_offset)
-	# The shell is still overlapping this point, and the shell is buried in tiles,
-	# so carry the spawn point out along the aim until it is past the body.
-	var body := _boss_body_size()
-	spawn_pos += aim * (maxf(body.x, body.y) * 0.5 + 40.0)
 	var spread := deg_to_rad(14.0)
 	var angles: Array[float] = [0.0]
 	_boss_projectile_count += 1
@@ -1560,8 +1452,12 @@ func _break_blocks_ahead(direction: float) -> void:
 	var x_front := global_position.x + direction * (boss_size.x * 0.5 + 35.0)
 	var y_top := global_position.y + _transform_ground_y - boss_size.y + 35.0
 	var y_bottom := global_position.y + _transform_ground_y - 20.0
+	# Clear more than one tile column ahead: the level 10 tilemap is scaled,
+	# and the narrow old probe could leave a solid seam directly in the shell's path.
+	var tile_width := tilemap.tile_set.tile_size.x * absf(tilemap.global_scale.x)
+	var clear_distance := maxf(tile_width * 2.0, 160.0)
 	var start := tilemap.local_to_map(tilemap.to_local(Vector2(x_front - 34.0, y_top)))
-	var finish := tilemap.local_to_map(tilemap.to_local(Vector2(x_front + 34.0, y_bottom)))
+	var finish := tilemap.local_to_map(tilemap.to_local(Vector2(x_front + clear_distance, y_bottom)))
 	for x in range(mini(start.x, finish.x), maxi(start.x, finish.x) + 1):
 		for y in range(mini(start.y, finish.y), maxi(start.y, finish.y) + 1):
 			var cell := Vector2i(x, y)
@@ -1689,7 +1585,7 @@ func _on_death_dialogue_next() -> void:
 
 func _dismiss_death_box() -> void:
 	if _death_box == null or not is_instance_valid(_death_box):
-		_restore_dialogue_camera()
+		_keep_death_camera_on_snail()
 		return
 	var box := _death_box
 	box.hide_box()
@@ -1787,6 +1683,122 @@ func _shake_camera(strength_multiplier: float = 1.0) -> void:
 	var mole := get_tree().get_first_node_in_group("mole")
 	if is_instance_valid(mole) and mole.has_method("screen_shake"):
 		mole.call("screen_shake", DEATH_SHAKE_STRENGTH * strength_multiplier, DEATH_SHAKE_DURATION)
+
+func _open_black_hole(center: Vector2, body_size: Vector2) -> void:
+	if not is_inside_tree() or _death_credits_started:
+		return
+	var scene_root := get_tree().current_scene as Node2D
+	if scene_root == null:
+		_go_to_credits()
+		return
+
+	_death_black_hole = Node2D.new()
+	_death_black_hole.name = "CorruptedSnailBlackHole"
+	_death_black_hole.process_mode = Node.PROCESS_MODE_ALWAYS
+	_death_black_hole.z_index = 30
+	_death_black_hole.z_as_relative = false
+	scene_root.add_child(_death_black_hole)
+	_death_black_hole.global_position = center
+	_death_black_hole.scale = Vector2(0.04, 0.04)
+	var radius := maxf(body_size.x, body_size.y) * DEATH_BLACK_HOLE_RADIUS_SCALE
+
+	var halo := Polygon2D.new()
+	halo.polygon = _black_hole_circle(radius * 0.9)
+	halo.color = Color(0.24, 0.025, 0.42, 0.82)
+	halo.z_index = -1
+	_death_black_hole.add_child(halo)
+	var core := Polygon2D.new()
+	core.polygon = _black_hole_circle(radius * 0.53)
+	core.color = Color(0.005, 0.0, 0.012, 1.0)
+	core.z_index = 1
+	_death_black_hole.add_child(core)
+	_add_black_hole_ring(_death_black_hole, radius * 0.58, 18.0, Color(0.93, 0.42, 1.0, 0.95))
+	_add_black_hole_ring(_death_black_hole, radius * 0.72, 11.0, Color(0.48, 0.12, 0.92, 0.82))
+	_add_black_hole_ring(_death_black_hole, radius * 0.91, 6.0, Color(0.22, 0.08, 0.44, 0.62))
+
+	var growth := _death_black_hole.create_tween()
+	growth.tween_property(_death_black_hole, "scale", Vector2.ONE, DEATH_BLACK_HOLE_GROW_TIME).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	growth.tween_callback(_suck_player_into_black_hole.bind(center))
+
+func _black_hole_circle(radius: float) -> PackedVector2Array:
+	var points := PackedVector2Array()
+	for i in 65:
+		var angle := TAU * float(i) / 64.0
+		points.append(Vector2(cos(angle), sin(angle)) * radius)
+	return points
+
+func _add_black_hole_ring(parent: Node2D, radius: float, width: float, color: Color) -> void:
+	var ring := Line2D.new()
+	ring.width = width
+	ring.default_color = color
+	ring.joint_mode = Line2D.LINE_JOINT_ROUND
+	ring.begin_cap_mode = Line2D.LINE_CAP_ROUND
+	ring.end_cap_mode = Line2D.LINE_CAP_ROUND
+	for point in _black_hole_circle(radius):
+		ring.add_point(point)
+	parent.add_child(ring)
+	var spin := ring.create_tween().set_loops()
+	spin.tween_property(ring, "rotation", TAU, randf_range(2.4, 4.0)).as_relative()
+
+func _suck_player_into_black_hole(center: Vector2) -> void:
+	var mole := get_tree().get_first_node_in_group("mole") as Node2D
+	if mole == null or not is_instance_valid(mole):
+		get_tree().create_timer(0.6).timeout.connect(_go_to_credits)
+		return
+	_death_player = mole
+	_death_pull_start = mole.global_position
+	_death_pull_center = center
+	_frame_black_hole_suction(mole)
+	mole.set_process(false)
+	mole.set_physics_process(false)
+	mole.set_process_input(false)
+	mole.set_process_unhandled_input(false)
+	mole.set_process_unhandled_key_input(false)
+	if mole is CharacterBody2D:
+		(mole as CharacterBody2D).velocity = Vector2.ZERO
+	var pull := _death_black_hole.create_tween()
+	pull.set_parallel(true)
+	pull.tween_method(_update_black_hole_pull, 0.0, 1.0, DEATH_BLACK_HOLE_PULL_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	pull.tween_property(mole, "global_scale", Vector2.ZERO, DEATH_BLACK_HOLE_PULL_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	pull.tween_property(mole, "rotation", TAU * 2.0, DEATH_BLACK_HOLE_PULL_TIME).as_relative()
+	pull.chain().tween_callback(_finish_player_suction)
+
+func _frame_black_hole_suction(mole: Node2D) -> void:
+	if _dialogue_focus_camera == null or not is_instance_valid(_dialogue_focus_camera):
+		return
+	var camera_target := _death_pull_center.lerp(mole.global_position, 0.5)
+	var framing := _dialogue_focus_camera.create_tween().set_parallel(true)
+	framing.tween_property(_dialogue_focus_camera, "global_position", camera_target, DEATH_BLACK_HOLE_PULL_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	framing.tween_property(_dialogue_focus_camera, "zoom", Vector2(0.22, 0.22), 0.8).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+
+func _update_black_hole_pull(progress: float) -> void:
+	if _death_player == null or not is_instance_valid(_death_player):
+		return
+	var remaining := 1.0 - progress
+	var orbit := _death_pull_start - _death_pull_center
+	_death_player.global_position = _death_pull_center + orbit.rotated(TAU * 1.4 * progress) * pow(remaining, 1.8)
+
+func _finish_player_suction() -> void:
+	if _death_player != null and is_instance_valid(_death_player):
+		_death_player.visible = false
+	get_tree().create_timer(0.6).timeout.connect(_go_to_credits)
+
+func _go_to_credits() -> void:
+	if _death_credits_started:
+		return
+	_death_credits_started = true
+	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
+	get_tree().root.add_child(transition)
+	transition.change_to(DEATH_CREDITS_PATH)
+
+func _begin_black_hole_after_explosion(center: Vector2, body_size: Vector2) -> void:
+	get_tree().create_timer(DEATH_BLACK_HOLE_DELAY).timeout.connect(_open_black_hole.bind(center, body_size))
+
+func _keep_death_camera_on_snail() -> void:
+	# Hold the snail's cutscene camera for the black-hole shot instead of restoring
+	# the player's camera as soon as the final dialogue closes.
+	_dialogue_return_camera = null
+	_dialogue_return_camera_was_enabled = false
 
 func _update_transformation_aura() -> void:
 	if not _transformed or _sprite == null:
