@@ -476,10 +476,6 @@ func _setup_level_reverb() -> void:
 
 func _physics_process(delta: float) -> void:
 	collision_mask = _normal_collision_mask
-	if is_digging or is_tunneling or is_ground_pounding:
-		collision_mask &= ~DEBRIS_LAYER_BIT
-	if is_digging or is_tunneling:
-		collision_mask &= ~CANDLE_LAYER_BIT
 
 	if _dying:
 		_death_fall(delta)
