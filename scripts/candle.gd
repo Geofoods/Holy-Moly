@@ -4,9 +4,10 @@ extends RigidBody2D
 ## them is dug away. This avoids rigidbody jitter/ejection glitches entirely;
 ## when support disappears they fall once, settle, and freeze again.
 ##
-## They collide with the mole like any world object, but carry almost no mass
-## (mass = 0.01), so a mole bumping into one shoves it aside instead of being
-## held up by candle-weight.
+## They do NOT collide with the mole: the mole's collision mask omits the candle
+## layer, so you can walk straight through a candle and dig out the tile beneath
+## it. Candles still collide with the tilemap (their mask keeps layer 1), so
+## gravity rests them on the terrain once they topple.
 
 const TILE_CHECK_INTERVAL := 0.25
 const BOTTOM_LOCAL_Y := 40.0  # collision rect bottom edge in local space (25.25 + 29.5/2)
@@ -18,6 +19,7 @@ const REFREEZE_DELAY := 0.35
 const PUSH_SPEED := 600.0
 const FLICKER_RATE := 7.0
 const FLICKER_AMOUNT := 0.08
+const CANDLE_LAYER_BIT := 8  # matches candle.tscn collision_layer
 
 var _tilemap: TileMap = null
 var _check_timer := 0.0
@@ -33,6 +35,12 @@ func _ready() -> void:
 	freeze = true
 	add_to_group("pushable")
 	_tilemap = _find_tilemap()
+	if _tilemap != null:
+		# The terrain must also detect the candle layer. Godot only resolves a
+		# collision when both bodies mask each other, and every TileMap here uses
+		# the default mask (1), so without this a toppling candle drops straight
+		# through the floor instead of landing on the tile below.
+		_tilemap.collision_mask |= CANDLE_LAYER_BIT
 	if _light:
 		_base_light_energy = _light.energy
 		_base_light_scale = _light.scale

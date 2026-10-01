@@ -53,8 +53,6 @@ const GRAPPLE_LATCH_DIST := 42.0
 const GRAPPLE_ROPE_COLOR := Color(0.85, 0.65, 0.3, 1.0)
 const GRAPPLE_ROPE_WIDTH := 6.0
 const GRAPPLE_ITEM := preload("res://resources/grappling_hook.tres")
-const DEBRIS_LAYER_BIT := 2
-const CANDLE_LAYER_BIT := 8
 const TileBreakSFX := preload("res://scripts/tile_break_sfx.gd")
 const GAME_SPEED := 1.2
 
