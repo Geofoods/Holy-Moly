@@ -48,48 +48,50 @@ animations = [{
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_2e1qt"]
-size = Vector2(325, 81)
+size = Vector2(260, 65)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_interact"]
-size = Vector2(520, 460)
+size = Vector2(416, 368)
 
 [node name="RespawnStation" type="Node2D" unique_id=778143865]
 script = ExtResource("1_station")
-spawn_offset = Vector2(0, -126)
+spawn_offset = Vector2(0, -105)
+prompt_offset = Vector2(0, -350)
 
 [node name="Art" type="AnimatedSprite2D" parent="." unique_id=1005624812]
-position = Vector2(11.5, -189)
-scale = Vector2(1.1, 1.1)
+position = Vector2(9.2, -149.3)
+scale = Vector2(0.88, 0.88)
 sprite_frames = SubResource("SpriteFrames_station")
 autoplay = "default"
 script = ExtResource("2_art")
 
 [node name="PadLight" type="PointLight2D" parent="." unique_id=1812109311]
-position = Vector2(0, -262)
-scale = Vector2(4.5, 4.5)
+visible = false
+position = Vector2(-4, -198)
+scale = Vector2(3.6, 3.6)
 color = Color(0.55, 0.9, 1, 1)
-energy = 0.25
+energy = 0.0
 range_item_cull_mask = 1023
 texture = ExtResource("3_glow")
 
 [node name="Stand" type="StaticBody2D" parent="." unique_id=849607006]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Stand" unique_id=1640713886]
-position = Vector2(-1, -53.5)
+position = Vector2(-0.8, -40.8)
 shape = SubResource("RectangleShape2D_2e1qt")
 
 [node name="InteractionArea" type="Area2D" parent="." unique_id=352478287]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="InteractionArea" unique_id=365704046]
-position = Vector2(0, -160)
+position = Vector2(0, -126)
 shape = SubResource("RectangleShape2D_interact")
 
 [node name="Prompt" type="Label" parent="." unique_id=1616992851]
 visible = false
 offset_left = -190.0
-offset_top = -440.0
+offset_top = -350.0
 offset_right = 190.0
-offset_bottom = -380.0
+offset_bottom = -290.0
 theme_override_colors/font_color = Color(0.75, 0.97, 1, 1)
 theme_override_colors/font_outline_color = Color(0.05, 0.1, 0.12, 1)
 theme_override_constants/outline_size = 5
