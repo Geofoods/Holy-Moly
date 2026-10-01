@@ -37,7 +37,7 @@ const ARRIVE_FLASH := 0.4
 ## Pad light, in energy units. Fully off until the station is banked, then only
 ## a faint glow so the sprite's own lamp does the work.
 const LIGHT_IDLE := 0.0
-const LIGHT_ACTIVE := 0.1
+const LIGHT_ACTIVE := 0.06
 const LIGHT_FLASH_DECAY := 3.4
 const PULSE_RATE := 2.2
 
@@ -90,9 +90,9 @@ func _setup_particles() -> void:
 	_orb_particles.gravity = Vector2(0.0, -40.0)
 	_orb_particles.initial_velocity_min = 20.0
 	_orb_particles.initial_velocity_max = 55.0
-	_orb_particles.scale_amount_min = 2.0
-	_orb_particles.scale_amount_max = 5.0
-	_orb_particles.color_ramp = _ramp(Color(0.40, 0.92, 1.0, 0.9), Color(0.40, 0.92, 1.0, 0.0))
+	_orb_particles.scale_amount_min = 1.4
+	_orb_particles.scale_amount_max = 3.2
+	_orb_particles.color_ramp = _ramp(Color(0.40, 0.92, 1.0, 0.45), Color(0.40, 0.92, 1.0, 0.0))
 	add_child(_orb_particles)
 
 	_pad_particles = _make_particles("PadParticles", 26, 0.7, true)
@@ -166,18 +166,22 @@ func pulse() -> float:
 func cycle() -> float:
 	return fposmod(_phase, TAU) / TAU
 
-## Whether this pad is the one the mole is currently set to arrive at, which is
-## what lights it up.
+## Whether this pad is the one the mole banked, which is what lights it up.
 ##
 ## Matched on the scene alone, not on a recorded point inside the pad. Travel
 ## from the map has no pad position to record - it only knows the scene - and
 ## every scene with a station has exactly one, so there is nothing to tell two
 ## pads apart. Adding a second station to a scene would need the point test
 ## back.
+##
+## Reads the activation record rather than the respawn record on purpose. Both
+## name the scene the mole is set to arrive at, but the respawn record is also
+## written by map travel and by a death, so testing it would light a pad the
+## player has walked past without ever using.
 func is_checkpoint_active() -> bool:
 	if not checkpoints:
 		return false
-	return Progress.respawn_scene == _scene_path()
+	return Progress.respawn_activated == _scene_path()
 
 ## Where the mole materialises: on the pad, clear of the station's frame.
 func spawn_point() -> Vector2:
@@ -213,7 +217,7 @@ func _bank() -> void:
 	# way out of a level. The pad decides where the mole actually reappears.
 	var mole := _nearest_mole()
 	var pos := mole.global_position if mole != null else spawn_point()
-	Progress.set_respawn(scene, pos)
+	Progress.activate_respawn(scene, pos)
 	_flash = ARRIVE_FLASH
 	_pad_particles.emitting = true
 	SFX.play_ui("parry_activate", -10.0, 1.4)

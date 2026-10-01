@@ -49,6 +49,13 @@ var best_combo := 0
 var respawn_scene := ""
 var respawn_position := Vector2.ZERO
 
+## Which station the mole has actually banked, if any. Deliberately separate from
+## `respawn_scene`: travel and a death both set that record so the mole has
+## somewhere to come back to, but they are not the player activating a pad. A
+## station lights up only once this names its scene, so arriving somewhere does
+## not light a checkpoint the player has never used.
+var respawn_activated := ""
+
 ## Last non-menu scene the mole stood in, updated on every scene change and
 ## persisted, so the title screen can offer "Play Last Level" after a quit.
 ## Deliberately separate from `respawn_scene`: the checkpoint is where the game
@@ -199,9 +206,17 @@ func set_respawn(scene_path: String, pos: Vector2) -> void:
 	respawn_position = pos
 	save_progress()
 
+## Banks a station for real: the player stood on the pad and activated it. This
+## is the only path that lights a checkpoint, so travel's plain set_respawn cannot
+## leave a pad glowing that nobody has touched.
+func activate_respawn(scene_path: String, pos: Vector2) -> void:
+	respawn_activated = scene_path
+	set_respawn(scene_path, pos)
+
 func clear_respawn() -> void:
 	respawn_scene = ""
 	respawn_position = Vector2.ZERO
+	respawn_activated = ""
 	respawn_pending = false
 	save_progress()
 
@@ -227,6 +242,7 @@ func save_progress() -> void:
 	cfg.set_value("meta", "best_combo", best_combo)
 	cfg.set_value("respawn", "scene", respawn_scene)
 	cfg.set_value("respawn", "position", respawn_position)
+	cfg.set_value("respawn", "activated", respawn_activated)
 	cfg.set_value("meta", "last_level_scene", last_level_scene)
 	cfg.save(SAVE_PATH)
 
@@ -252,4 +268,5 @@ func load_progress() -> void:
 	var pos = cfg.get_value("respawn", "position", Vector2.ZERO)
 	if pos is Vector2:
 		respawn_position = pos
+	respawn_activated = str(cfg.get_value("respawn", "activated", ""))
 	last_level_scene = str(cfg.get_value("meta", "last_level_scene", ""))

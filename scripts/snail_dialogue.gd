@@ -1323,8 +1323,9 @@ func _trace_boss_laser(start: Vector2, direction: Vector2, finish: Vector2) -> V
 			return sample
 	return finish
 
-## A laser impact is a bright expanding purple ring with two layered bursts of
-## round sparks, rather than the shared orange bomb explosion.
+## A laser impact is a radial spray of purple sparks rather than an expanding
+## ring, so the hit reads as debris thrown off the ground instead of a drawn
+## circle scaling up and fading out over the top of it.
 func _spawn_boss_laser_impact(world_pos: Vector2) -> void:
 	var scene_root := get_tree().current_scene as Node2D
 	if scene_root == null:
@@ -1343,38 +1344,75 @@ func _spawn_boss_laser_impact(world_pos: Vector2) -> void:
 			_spawn_laser_firework_burst(firework, spark_texture, 72, 1.25, 260.0, 620.0, Color(0.92, 0.62, 1.0, 1.0))
 	)
 
-	var ring := Line2D.new()
-	ring.width = 9.0
-	ring.default_color = Color(0.85, 0.38, 1.0, 0.95)
-	ring.z_index = 2
-	ring.joint_mode = Line2D.LINE_JOINT_ROUND
-	ring.begin_cap_mode = Line2D.LINE_CAP_ROUND
-	ring.end_cap_mode = Line2D.LINE_CAP_ROUND
-	for i in range(49):
-		var angle := TAU * float(i) / 48.0
-		ring.add_point(Vector2(cos(angle), sin(angle)) * 72.0)
-	firework.add_child(ring)
-	ring.scale = Vector2.ONE * 0.12
-	var ring_tween := ring.create_tween().set_parallel(true)
-	ring_tween.tween_property(ring, "scale", Vector2.ONE * 3.4, 0.55).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	ring_tween.tween_property(ring, "modulate:a", 0.0, 0.55)
-	ring_tween.chain().tween_callback(ring.queue_free)
-
-	var flash := Sprite2D.new()
-	flash.texture = spark_texture
-	flash.modulate = Color(0.82, 0.35, 1.0, 0.9)
-	flash.scale = Vector2.ONE * 1.4
-	firework.add_child(flash)
-	var flash_tween := flash.create_tween().set_parallel(true)
-	flash_tween.tween_property(flash, "scale", Vector2.ONE * 9.0, 0.32).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	flash_tween.tween_property(flash, "modulate:a", 0.0, 0.32)
-	flash_tween.chain().tween_callback(flash.queue_free)
+	# The ground spray: sparks hugging the surface at a shallow angle, so they fan
+	# outward along the floor the beam landed on rather than filling a sphere.
+	_spawn_laser_ground_spray(firework, spark_texture)
+	# The hot core, a tight fast burst straight up through the impact point.
+	_spawn_laser_impact_column(firework, spark_texture)
 
 	get_tree().create_timer(2.0).timeout.connect(firework.queue_free)
 	SFX.play("explosion", world_pos, -3.0, 0.1)
 	var mole := get_tree().get_first_node_in_group("mole")
 	if is_instance_valid(mole) and mole.has_method("screen_shake"):
 		mole.call("screen_shake", 22.0, 0.45)
+
+## Wide, flat fan of sparks thrown sideways along the ground. `spread` is measured
+## from `direction`, so aiming UP with a near-180 spread keeps everything close to
+## the horizontal, and the low gravity lets the spray settle rather than arc.
+func _spawn_laser_ground_spray(parent: Node2D, spark_texture: Texture2D) -> void:
+	var particles := CPUParticles2D.new()
+	particles.one_shot = true
+	particles.amount = 88
+	particles.lifetime = 0.85
+	particles.explosiveness = 1.0
+	particles.direction = Vector2.UP
+	particles.spread = 165.0
+	particles.initial_velocity_min = 320.0
+	particles.initial_velocity_max = 860.0
+	particles.gravity = Vector2(0.0, 620.0)
+	particles.damping_min = 40.0
+	particles.damping_max = 130.0
+	particles.scale_amount_min = 0.22
+	particles.scale_amount_max = 0.6
+	particles.texture = spark_texture
+	var gradient := Gradient.new()
+	gradient.set_color(0, Color(1.0, 0.96, 1.0, 1.0))
+	gradient.set_color(0.12, Color(0.86, 0.42, 1.0, 1.0))
+	gradient.set_color(1, Color(0.4, 0.08, 0.72, 0.0))
+	particles.color_ramp = gradient
+	particles.z_index = 1
+	parent.add_child(particles)
+	particles.emitting = true
+
+## The narrow bright plume off the exact hit point, replacing the old expanding
+## sprite flash: fast, short-lived, and tight enough to read as the beam's contact
+## point rather than a glow swelling over the whole impact.
+func _spawn_laser_impact_column(parent: Node2D, spark_texture: Texture2D) -> void:
+	var particles := CPUParticles2D.new()
+	particles.one_shot = true
+	particles.amount = 46
+	particles.lifetime = 0.42
+	particles.explosiveness = 1.0
+	particles.emission_shape = CPUParticles2D.EMISSION_SHAPE_SPHERE
+	particles.emission_sphere_radius = 18.0
+	particles.direction = Vector2.UP
+	particles.spread = 34.0
+	particles.initial_velocity_min = 420.0
+	particles.initial_velocity_max = 1150.0
+	particles.gravity = Vector2(0.0, 900.0)
+	particles.damping_min = 60.0
+	particles.damping_max = 150.0
+	particles.scale_amount_min = 0.3
+	particles.scale_amount_max = 0.85
+	particles.texture = spark_texture
+	var gradient := Gradient.new()
+	gradient.set_color(0, Color(1.0, 1.0, 1.0, 1.0))
+	gradient.set_color(0.3, Color(0.94, 0.66, 1.0, 1.0))
+	gradient.set_color(1, Color(0.55, 0.12, 0.95, 0.0))
+	particles.color_ramp = gradient
+	particles.z_index = 2
+	parent.add_child(particles)
+	particles.emitting = true
 
 func _spawn_laser_firework_burst(parent: Node2D, spark_texture: Texture2D, amount: int, lifetime: float, min_speed: float, max_speed: float, tint: Color) -> void:
 	var particles := CPUParticles2D.new()
