@@ -103,6 +103,11 @@ const BOSS_AUTO_SCROLL_SPEED := 48.0
 const BOSS_AUTO_SCROLL_TRACK_SPEED := 260.0
 const BOSS_AUTO_SCROLL_SNAIL_SCREEN_RATIO := 0.18
 const BOSS_AUTO_SCROLL_PLAYER_SCREEN_RATIO := 0.82
+## Extra world space revealed to the right of the framing the two screen ratios
+## ask for, as a fraction of the visible width. The autoscroller parks the shell
+## left of centre, so without this the right half of the screen is dead space and
+## the player has no warning about what is coming at them.
+const BOSS_AUTO_SCROLL_HORIZONTAL_LEAD := 0.30
 const BOSS_AUTO_SCROLL_VERTICAL_OFFSET := -300.0
 const BOSS_AUTO_SCROLL_VERTICAL_FOLLOW := 4.0
 
@@ -110,6 +115,8 @@ var _boss_minion_spawn_timer := 0.0
 const TileBreakSFX := preload("res://scripts/tile_break_sfx.gd")
 
 var _original_sprite_scale := Vector2.ONE
+## The shell collider's size as authored, before any transformation scaling.
+var _base_body_size := Vector2(114, 56)
 var _transform_ground_y := 0.0
 var _aura_sprites: Array[Sprite2D] = []
 var _transformation_light: PointLight2D = null
@@ -161,13 +168,10 @@ const FANFARE_DELAY := 0.35
 const DEATH_CURSE_TEXT := "AHHHH! I SWEAR WHEN I GO TO HELL I WILL DESTROY ALL MOLES"
 ## Mirrors dialogue_box.gd's TYPE_SPEED, so the skip-typing timer matches typing.
 const DIALOGUE_TYPE_SPEED := 0.018
-## The idle fireworks bookending each of the two word bursts.
-const DEATH_IDLE_FIREWORK_INTERVAL := 0.45
-const DEATH_IDLE_FIREWORKS_PER_BURST := 4
-## Gap between the first and second bursts of the curse; the show quiets down
-## for it so the words carry.
-const DEATH_CURSE_GAP := 2.8
-const DEATH_FINALE_DELAY := 1.6
+## Continuous particle bursts while the final dialogue is open.
+const DEATH_FIREWORK_LOOP_INTERVAL := 0.45
+const DEATH_FIREWORK_CLUSTER_COUNT := 6
+const DEATH_FIREWORK_PARTICLE_COUNT := 360
 ## Firework bursts explode inside this radius of the shell rather than on one
 ## fixed point, so the show reads as coming from him.
 const DEATH_FIREWORK_RADIUS_SCALE := 0.42
@@ -178,12 +182,134 @@ const DEATH_FIREWORK_COLORS: Array[Color] = [
 const DEATH_SHAKE_STRENGTH := 14.0
 const DEATH_SHAKE_DURATION := 0.3
 const DEATH_FADE_TIME := 0.8
+const DEATH_BLACK_HOLE_DELAY := 0.75
+const DEATH_BLACK_HOLE_GROW_TIME := 0.9
+const DEATH_BLACK_HOLE_PULL_TIME := 2.8
+const DEATH_BLACK_HOLE_RADIUS_SCALE := 0.38
+const DEATH_CREDITS_PATH := "res://scenes/credits.tscn"
+
+var _death_black_hole: Node2D = null
+var _death_player: Node2D = null
+var _death_credits_started := false
+
+func _open_black_hole(center: Vector2, body_size: Vector2) -> void:
+	if not is_inside_tree() or _death_credits_started:
+		return
+	var scene_root := get_tree().current_scene as Node2D
+	if scene_root == null:
+		_go_to_credits()
+		return
+
+	_death_black_hole = Node2D.new()
+	_death_black_hole.name = "CorruptedSnailBlackHole"
+	_death_black_hole.process_mode = Node.PROCESS_MODE_ALWAYS
+	_death_black_hole.z_index = 30
+	_death_black_hole.z_as_relative = false
+	_death_black_hole.global_position = center
+	scene_root.add_child(_death_black_hole)
+	_death_black_hole.scale = Vector2(0.04, 0.04)
+	var radius := maxf(body_size.x, body_size.y) * DEATH_BLACK_HOLE_RADIUS_SCALE
+
+	var halo := Polygon2D.new()
+	halo.polygon = _black_hole_circle(radius * 0.9)
+	halo.color = Color(0.24, 0.025, 0.42, 0.82)
+	halo.z_index = -1
+	_death_black_hole.add_child(halo)
+	var core := Polygon2D.new()
+	core.polygon = _black_hole_circle(radius * 0.53)
+	core.color = Color(0.005, 0.0, 0.012, 1.0)
+	core.z_index = 1
+	_death_black_hole.add_child(core)
+	_add_black_hole_ring(_death_black_hole, radius * 0.58, 18.0, Color(0.93, 0.42, 1.0, 0.95))
+	_add_black_hole_ring(_death_black_hole, radius * 0.72, 11.0, Color(0.48, 0.12, 0.92, 0.82))
+	_add_black_hole_ring(_death_black_hole, radius * 0.91, 6.0, Color(0.22, 0.08, 0.44, 0.62))
+
+	var growth := _death_black_hole.create_tween()
+	growth.tween_property(_death_black_hole, "scale", Vector2.ONE, DEATH_BLACK_HOLE_GROW_TIME).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	growth.tween_callback(_suck_player_into_black_hole.bind(center))
+
+func _black_hole_circle(radius: float) -> PackedVector2Array:
+	var points := PackedVector2Array()
+	for i in 65:
+		var angle := TAU * float(i) / 64.0
+		points.append(Vector2(cos(angle), sin(angle)) * radius)
+	return points
+
+func _add_black_hole_ring(parent: Node2D, radius: float, width: float, color: Color) -> void:
+	var ring := Line2D.new()
+	ring.width = width
+	ring.default_color = color
+	ring.joint_mode = Line2D.LINE_JOINT_ROUND
+	ring.begin_cap_mode = Line2D.LINE_CAP_ROUND
+	ring.end_cap_mode = Line2D.LINE_CAP_ROUND
+	for point in _black_hole_circle(radius):
+		ring.add_point(point)
+	parent.add_child(ring)
+	var spin := ring.create_tween().set_loops()
+	spin.tween_property(ring, "rotation", TAU, randf_range(2.4, 4.0)).as_relative()
+
+func _suck_player_into_black_hole(center: Vector2) -> void:
+	var mole := get_tree().get_first_node_in_group("mole") as Node2D
+	if mole == null or not is_instance_valid(mole):
+		get_tree().create_timer(0.6).timeout.connect(_go_to_credits)
+		return
+	_death_player = mole
+	mole.set_process(false)
+	mole.set_physics_process(false)
+	mole.set_process_input(false)
+	mole.set_process_unhandled_input(false)
+	mole.set_process_unhandled_key_input(false)
+	if mole is CharacterBody2D:
+		(mole as CharacterBody2D).velocity = Vector2.ZERO
+	var pull := _death_black_hole.create_tween()
+	pull.set_parallel(true)
+	pull.tween_property(mole, "global_position", center, DEATH_BLACK_HOLE_PULL_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	pull.tween_property(mole, "global_scale", Vector2.ZERO, DEATH_BLACK_HOLE_PULL_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	pull.tween_property(mole, "rotation", TAU * 2.0, DEATH_BLACK_HOLE_PULL_TIME).as_relative()
+	pull.chain().tween_callback(_finish_player_suction)
+
+func _finish_player_suction() -> void:
+	if _death_player != null and is_instance_valid(_death_player):
+		_death_player.visible = false
+	get_tree().create_timer(0.6).timeout.connect(_go_to_credits)
+
+func _go_to_credits() -> void:
+	if _death_credits_started:
+		return
+	_death_credits_started = true
+	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
+	get_tree().root.add_child(transition)
+	transition.change_to(DEATH_CREDITS_PATH)
+
+func _begin_black_hole_after_explosion(center: Vector2, body_size: Vector2) -> void:
+	get_tree().create_timer(DEATH_BLACK_HOLE_DELAY).timeout.connect(_open_black_hole.bind(center, body_size))
+
+func _keep_death_camera_on_snail() -> void:
+	# The finale camera is the shot of the black hole and the mole being pulled in;
+	# it must not hand control back to the player's camera when the box closes.
+	_dialogue_return_camera = null
+	_dialogue_return_camera_was_enabled = false
+
 
 var _mole_overlapping := false
 var _dialogue_open := false
 var _condition_met := false
 var _label: Label = null
 var _dialogue_box: CanvasLayer = null
+var _dialogue_focus_camera: Camera2D = null
+var _dialogue_return_camera: Camera2D = null
+var _dialogue_return_camera_was_enabled := false
+
+var _mole_overlapping := false
+var _dialogue_open := false
+var _condition_met := false
+var _label: Label = null
+var _dialogue_box: CanvasLayer = null
+var _dialogue_focus_camera: Camera2D = null
+var _dialogue_return_camera: Camera2D = null
+var _dialogue_return_camera_was_enabled := false
+var _dialogue_pause_restore_pending := false
+var _dialogue_was_paused := false
 var _sprite: AnimatedSprite2D = null
 var _player: Node2D = null
 ## Set once this NPC has said everything that matters - it has already handed
@@ -212,6 +338,11 @@ func _ready() -> void:
 			_transform_ground_y = _sprite.position.y + sprite_texture.get_size().y * _original_sprite_scale.y * 0.5
 		else:
 			_transform_ground_y = _sprite.position.y
+	var body_shape := get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if body_shape:
+		var body_rect := body_shape.shape as RectangleShape2D
+		if body_rect:
+			_base_body_size = body_rect.size
 	_label = get_node_or_null("Area2D/Prompt") as Label
 	if _label:
 		if prompt_text != "":
@@ -345,6 +476,13 @@ func show_dialogue() -> void:
 
 func _open_dialogue() -> void:
 	_dialogue_open = true
+	if boss_after_dialogue:
+		# Keep the level running so any active explosions and particles continue
+		# under the dialogue. The camera stays on the player for this line; the
+		# snail only takes over the framing for the death curse, after the fight.
+		_dialogue_was_paused = get_tree().paused
+		_dialogue_pause_restore_pending = true
+		get_tree().paused = false
 	_dialogue_box = preload("res://scenes/dialogue_box.tscn").instantiate()
 	_dialogue_box.process_mode = PROCESS_MODE_ALWAYS
 	get_tree().root.add_child(_dialogue_box)
@@ -353,6 +491,46 @@ func _open_dialogue() -> void:
 	_dialogue_box.set_npc_name(npc_name)
 	_apply_portrait_blink_to(_dialogue_box)
 	_dialogue_box.show_text(dialogue_text, 0, 0, true, false)
+
+## Takes the camera off the player and frames the snail for the death curse,
+## pulling back to the boss zoom so the whole shell and its fireworks fit on
+## screen. The pre-fight line deliberately leaves the camera alone.
+func _focus_dialogue_camera_on_snail() -> void:
+	if _dialogue_focus_camera != null and is_instance_valid(_dialogue_focus_camera):
+		return
+	var scene_root := get_tree().current_scene
+	var current_camera := get_viewport().get_camera_2d() as Camera2D
+	if scene_root == null or current_camera == null:
+		return
+	_dialogue_return_camera = current_camera
+	_dialogue_return_camera_was_enabled = current_camera.enabled
+	current_camera.enabled = false
+	_dialogue_focus_camera = Camera2D.new()
+	_dialogue_focus_camera.name = "SnailDialogueCamera"
+	_dialogue_focus_camera.process_mode = Node.PROCESS_MODE_ALWAYS
+	_dialogue_focus_camera.zoom = current_camera.zoom
+	_dialogue_focus_camera.global_position = current_camera.global_position
+	scene_root.add_child(_dialogue_focus_camera)
+	_dialogue_focus_camera.make_current()
+	var focus_position := _sprite.global_position if _sprite != null else global_position
+	var focus_tween := _dialogue_focus_camera.create_tween()
+	focus_tween.set_parallel(true)
+	focus_tween.tween_property(_dialogue_focus_camera, "global_position", focus_position, 0.8).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	focus_tween.tween_property(_dialogue_focus_camera, "zoom", BOSS_CAM_ZOOM, 0.8).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+
+func _restore_dialogue_camera() -> void:
+	if _dialogue_focus_camera != null and is_instance_valid(_dialogue_focus_camera):
+		_dialogue_focus_camera.enabled = false
+		_dialogue_focus_camera.queue_free()
+		_dialogue_focus_camera = null
+	if _dialogue_pause_restore_pending:
+		_dialogue_pause_restore_pending = false
+		get_tree().paused = _dialogue_was_paused
+	if _dialogue_return_camera != null and is_instance_valid(_dialogue_return_camera):
+		_dialogue_return_camera.enabled = _dialogue_return_camera_was_enabled
+		if _dialogue_return_camera_was_enabled:
+			_dialogue_return_camera.make_current()
+	_dialogue_return_camera = null
 
 ## Mirror the NPC's own blink cycle onto a dialogue portrait, if it has one.
 func _apply_portrait_blink_to(box: CanvasLayer) -> void:
@@ -386,6 +564,7 @@ func _on_dialogue_done() -> void:
 	if _dialogue_box == null or not is_instance_valid(_dialogue_box):
 		_dialogue_box = null
 		_dialogue_open = false
+		_restore_dialogue_camera()
 		dialogue_closed.emit()
 		_show_reward()
 		return
@@ -397,6 +576,7 @@ func _on_dialogue_done() -> void:
 	get_tree().create_timer(FANFARE_DELAY).timeout.connect(func():
 		if is_instance_valid(box):
 			box.queue_free()
+		_restore_dialogue_camera()
 		_show_reward()
 	)
 	_dialogue_open = false
@@ -450,6 +630,10 @@ func _start_transformation() -> void:
 		grow_tween.tween_callback(_begin_boss_fight)
 	else:
 		grow_tween.tween_property(_sprite, "scale", target_scale, duration).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		# The boss resizes its own body when the fight starts, but an NPC snail
+		# has no such beat, so its collider has to follow the growth here or the
+		# shell ends up 11x bigger than the thing the player can stand on.
+		grow_tween.tween_method(_resize_boss_body, 0.0, 1.0, duration)
 
 ## The snail pulls visible copies of the mole's glow toward itself while keeping
 ## the mole's own light intact, making the growth feel like a gradual siphon.
@@ -551,6 +735,10 @@ func _begin_boss_fight() -> void:
 	# The fight drives this snail's position by script, so the dash must not be
 	# able to shove it off its autoscroll path. It still takes the hit damage.
 	add_to_group(&"knockback_locked")
+	# Walking into the shell must not shove it either. The mole's collision mask
+	# never matched the boss layer, so it was never blocked by the shell to begin
+	# with - the solver just used the contact to drag a 500hp boss down a cliff.
+	_ignore_mole_pushes()
 	if _label != null:
 		_label.visible = false
 	var interaction_area := get_node_or_null("Area2D") as Area2D
@@ -619,6 +807,7 @@ func _start_boss_camera_zoom() -> void:
 	var target_offset := Vector2.ZERO
 	if mole != null and is_instance_valid(mole):
 		var target_camera_x := _boss_camera_target_x(_boss_auto_camera, mole, BOSS_CAM_ZOOM.x)
+		target_camera_x += _boss_camera_lead_x(_boss_auto_camera, BOSS_CAM_ZOOM.x)
 		target_offset.x = (target_camera_x - _boss_auto_camera.global_position.x) * BOSS_CAM_ZOOM.x
 	current_camera.enabled = false
 	_boss_auto_camera.make_current()
@@ -643,7 +832,7 @@ func _update_boss_autoscroll_camera(delta: float) -> void:
 	var camera_step := minf(snail_delta_x, tracking_step)
 	_boss_auto_camera.global_position.x += camera_step
 	if _boss_cam_zoom_tween == null or not _boss_cam_zoom_tween.is_valid():
-		var target_offset_x := (_boss_camera_target_x(_boss_auto_camera, mole) - _boss_auto_camera.global_position.x) * _boss_auto_camera.zoom.x
+		var target_offset_x := (_boss_camera_target_x(_boss_auto_camera, mole) + _boss_camera_lead_x(_boss_auto_camera) - _boss_auto_camera.global_position.x) * _boss_auto_camera.zoom.x
 		_boss_auto_camera.offset.x = move_toward(
 			_boss_auto_camera.offset.x, target_offset_x, BOSS_AUTO_SCROLL_SPEED * _boss_auto_camera.zoom.x * delta)
 
@@ -654,6 +843,17 @@ func _boss_camera_target_x(camera: Camera2D, mole: Node2D, zoom_x: float = -1.0)
 	var snail_left_target := global_position.x + world_view_width * (0.5 - BOSS_AUTO_SCROLL_SNAIL_SCREEN_RATIO)
 	var mole_right_target := mole.global_position.x - world_view_width * (BOSS_AUTO_SCROLL_PLAYER_SCREEN_RATIO - 0.5)
 	return maxf(snail_left_target, mole_right_target) - camera.offset.x / maxf(effective_zoom, 0.01)
+
+func _boss_camera_lead_x(camera: Camera2D, zoom_x: float = -1.0) -> float:
+	## Rightward framing bias, in world units.
+	##
+	## This has to be applied to the finished camera offset rather than folded into
+	## _boss_camera_target_x: the target already subtracts offset.x, and the
+	## autoscroller then eases offset.x toward that target, so a lead added there
+	## cancels itself out and the framing never actually moves.
+	var effective_zoom := zoom_x if zoom_x > 0.0 else camera.zoom.x
+	var viewport_width: float = camera.get_viewport_rect().size.x
+	return viewport_width / maxf(effective_zoom, 0.01) * BOSS_AUTO_SCROLL_HORIZONTAL_LEAD
 
 func _brighten_boss_arena() -> void:
 	var scene := get_tree().current_scene
@@ -713,16 +913,25 @@ func _restore_boss_camera_zoom() -> void:
 		_boss_return_camera.make_current()
 	_boss_return_camera = null
 
+## Rescales the shell's collider to whatever the sprite currently is, so the
+## body never drifts out of sync with the art. The rectangle keeps its original
+## proportions and is grown by the same multiple as the sprite, and its base
+## stays planted on the ground line so a growing snail does not float.
 func _resize_boss_body() -> void:
 	var body_shape := get_node_or_null("CollisionShape2D") as CollisionShape2D
-	if body_shape == null:
+	if body_shape == null or _sprite == null:
 		return
 	var body_rect := body_shape.shape as RectangleShape2D
 	if body_rect == null:
 		return
-	body_rect = body_rect.duplicate() as RectangleShape2D
-	body_rect.size = _boss_body_size()
-	body_shape.shape = body_rect
+	var visual_scale := _boss_base_scale if _boss_active else _sprite.scale
+	var grow := Vector2.ONE
+	if _original_sprite_scale.x > 0.0 and _original_sprite_scale.y > 0.0:
+		grow = visual_scale / _original_sprite_scale
+	if not is_equal_approx(grow.x, 1.0) or not is_equal_approx(grow.y, 1.0):
+		body_rect = body_rect.duplicate() as RectangleShape2D
+		body_rect.size = _base_body_size * grow
+		body_shape.shape = body_rect
 	body_shape.position = Vector2(0.0, _transform_ground_y - body_rect.size.y * 0.5)
 
 func _add_boss_hurtbox() -> void:
@@ -1315,6 +1524,10 @@ func _spit_boss_projectile(mole: Node2D) -> void:
 		-texture_size.y * visual_scale.y * 0.06
 	)
 	var spawn_pos := to_global(mouth_offset)
+	# The shell is still overlapping this point, and the shell is buried in tiles,
+	# so carry the spawn point out along the aim until it is past the body.
+	var body := _boss_body_size()
+	spawn_pos += aim * (maxf(body.x, body.y) * 0.5 + 40.0)
 	var spread := deg_to_rad(14.0)
 	var angles: Array[float] = [0.0]
 	_boss_projectile_count += 1
@@ -1329,6 +1542,9 @@ func _spit_boss_projectile(mole: Node2D) -> void:
 		projectile.rotation = direction.angle()
 	SFX.play("enemy_fire", spawn_pos, -4.0, 0.2, 0.8)
 
+## The shell's collider, measured in the sprite's own scale space. Kept as a
+## ratio of the texture so it grows by exactly the same multiple as the sprite
+## no matter how far the transformation takes it.
 func _boss_body_size() -> Vector2:
 	var texture := _current_sprite_texture()
 	if texture == null:
@@ -1362,7 +1578,7 @@ func _break_blocks_ahead(direction: float) -> void:
 ##
 ## Only the level's direct children are swept, because everything the player
 ## throws and everything the fight spawns is parented straight to the level. The
-## player is deliberately left alone: it should still be blocked by the shell.
+## player is handled by _ignore_mole_pushes instead.
 func _ignore_loose_body_pushes() -> void:
 	var parent := get_parent()
 	if parent == null:
@@ -1376,6 +1592,20 @@ func _ignore_loose_body_pushes() -> void:
 		if not (child is PhysicsBody2D) or (child is StaticBody2D):
 			continue
 		add_collision_exception_with(child as PhysicsBody2D)
+	_ignore_mole_pushes()
+
+## Keeps the player from dragging the boss around. The contact is dropped from
+## the solver rather than answered with a counter-force, so the shell still
+## collides with tiles and with everything else that drives the fight.
+func _ignore_mole_pushes() -> void:
+	var mole := get_tree().get_first_node_in_group("mole")
+	if mole == null or not is_instance_valid(mole):
+		return
+	if not (mole is PhysicsBody2D):
+		return
+	add_collision_exception_with(mole as PhysicsBody2D)
+	# Contact damage during the fight runs off a separate Area2D, so losing the
+	# physical contact does not cost the player their hit.
 
 func _defeat_boss() -> void:
 	_boss_dying = true
@@ -1426,27 +1656,15 @@ func _start_grand_death() -> void:
 	SFX.play("enemy_death", global_position)
 	_show_death_dialogue()
 	_spawn_firework_ring()
+	_run_death_firework_loop()
 
-	var show := create_tween()
-	show.tween_interval(DEATH_CURSE_GAP)
-	show.tween_callback(_burst_fireworks.bind(1))
-	show.tween_callback(_spawn_firework_ring)
-	show.tween_callback(_shake_camera)
-	show.tween_interval(DEATH_CURSE_GAP)
-	show.tween_callback(_burst_fireworks.bind(2))
-	show.tween_callback(_spawn_firework_ring)
-	show.tween_callback(_shake_camera)
-	show.tween_interval(DEATH_FINALE_DELAY)
-	show.tween_callback(_death_finale)
-
-## The dialogue box stays up for the whole show; typing the full text usually
-## finishes before the finale, but the timer is what ends the scene - the box
-## is slid away with the finale, since its buttons would dangle over an empty
-## snail. Like _open_dialogue, the box is configured only once it is inside the
-## tree, because its labels come alive in _ready.
+## The player dismisses the final dialogue to trigger the finale. Like
+## _open_dialogue, the box is configured once it is inside the tree so its
+## labels are ready.
 func _show_death_dialogue() -> void:
 	if _death_box != null:
 		return
+	_focus_dialogue_camera_on_snail()
 	_death_box = preload("res://scenes/dialogue_box.tscn").instantiate()
 	_death_box.process_mode = PROCESS_MODE_ALWAYS
 	get_tree().root.add_child.call_deferred(_death_box)
@@ -1458,55 +1676,58 @@ func _setup_death_box() -> void:
 	_death_box.set_npc_name(npc_name)
 	_death_box.set_portrait(portrait_texture)
 	_apply_portrait_blink_to(_death_box)
-	_death_box.show_text(DEATH_CURSE_TEXT, 0, 0, false, false)
+	_death_box.next_pressed.connect(_on_death_dialogue_next)
+	_death_box.show_text(DEATH_CURSE_TEXT, 0, 0, true, false)
+	_death_box.next_button.text = "FINISH"
 	var type_duration := DEATH_CURSE_TEXT.length() * DIALOGUE_TYPE_SPEED
 	get_tree().create_timer(type_duration + 0.2).timeout.connect(func():
 		if is_instance_valid(_death_box):
 			_death_box.skip_typing())
 
+func _on_death_dialogue_next() -> void:
+	_death_finale()
+
 func _dismiss_death_box() -> void:
 	if _death_box == null or not is_instance_valid(_death_box):
+		_restore_dialogue_camera()
 		return
 	var box := _death_box
 	box.hide_box()
 	get_tree().create_timer(0.4).timeout.connect(func():
 		if is_instance_valid(box):
-			box.queue_free())
-	_death_box = null
+			box.queue_free()
+		if _death_box == box:
+			_death_box = null
+		_keep_death_camera_on_snail())
 
-## A quick volley of fireworks from random spots on the shell, between the
-## bookend bursts that ring the body.
-func _burst_fireworks(kind: int) -> void:
-	var count := DEATH_IDLE_FIREWORKS_PER_BURST
-	for i in count:
-		get_tree().create_timer(i * DEATH_IDLE_FIREWORK_INTERVAL).timeout.connect(
-			_spawn_death_firework)
-	if kind == 2:
-		for i in count:
-			get_tree().create_timer(i * DEATH_IDLE_FIREWORK_INTERVAL + DEATH_IDLE_FIREWORK_INTERVAL * 0.5).timeout.connect(
-				_spawn_death_firework)
+func _run_death_firework_loop() -> void:
+
+	while is_inside_tree() and _death_box != null and is_instance_valid(_death_box):
+		await get_tree().create_timer(DEATH_FIREWORK_LOOP_INTERVAL).timeout
+		if is_inside_tree() and _death_box != null and is_instance_valid(_death_box):
+			for burst in 3:
+				_spawn_death_firework()
 
 ## One firework exploding at a random point on the snail's shell.
 func _spawn_death_firework() -> void:
-	if not is_instance_valid(self) or not is_inside_tree():
+	if _death_finale_started or not is_instance_valid(self) or not is_inside_tree():
 		return
 	var body_size := _boss_body_size()
 	var radius := maxf(body_size.x, body_size.y) * DEATH_FIREWORK_RADIUS_SCALE
 	var offset := Vector2.from_angle(randf_range(0.0, TAU)) * randf_range(radius * 0.3, radius)
 	_spawn_death_firework_burst(global_position + offset)
 
-## A ring of fireworks around the shell, all bursting at once.
+## A cluster of particle bursts around the shell.
 func _spawn_firework_ring() -> void:
 	if not is_instance_valid(self) or not is_inside_tree():
 		return
 	var body_size := _boss_body_size()
 	var radius := maxf(body_size.x, body_size.y) * DEATH_FIREWORK_RADIUS_SCALE
-	for i in DEATH_IDLE_FIREWORKS_PER_BURST:
-		var angle := TAU * float(i) / float(DEATH_IDLE_FIREWORKS_PER_BURST)
+	for i in DEATH_FIREWORK_CLUSTER_COUNT:
+		var angle := TAU * float(i) / float(DEATH_FIREWORK_CLUSTER_COUNT)
 		_spawn_death_firework_burst(global_position + Vector2.from_angle(angle) * radius)
 
-## A layered firework explosion: two colored spark bursts inside an expanding
-## ring, sized to the boss so the blasts read at the fight's camera zoom.
+## A dense, layered particle burst sized to read at the boss camera's zoom.
 func _spawn_death_firework_burst(world_pos: Vector2) -> void:
 	var scene_root := get_tree().current_scene as Node2D
 	if scene_root == null:
@@ -1521,35 +1742,12 @@ func _spawn_death_firework_burst(world_pos: Vector2) -> void:
 
 	var spark_texture := _make_firework_spark_texture()
 	var tint: Color = DEATH_FIREWORK_COLORS.pick_random()
-	_spawn_laser_firework_burst(firework, spark_texture, int(96 * blast_scale), 1.3, 420.0, 860.0 * blast_scale, tint)
-	_spawn_laser_firework_burst(firework, spark_texture, int(48 * blast_scale), 1.0, 200.0, 540.0 * blast_scale, Color(1.0, 0.94, 1.0, 1.0))
-
-	var ring := Line2D.new()
-	ring.width = 9.0 * blast_scale
-	ring.default_color = Color(tint.r, tint.g, tint.b, 0.95)
-	ring.z_index = 2
-	ring.joint_mode = Line2D.LINE_JOINT_ROUND
-	ring.begin_cap_mode = Line2D.LINE_CAP_ROUND
-	ring.end_cap_mode = Line2D.LINE_CAP_ROUND
-	for i in range(49):
-		var angle := TAU * float(i) / 48.0
-		ring.add_point(Vector2(cos(angle), sin(angle)) * 64.0 * blast_scale)
-	firework.add_child(ring)
-	ring.scale = Vector2.ONE * 0.12
-	var ring_tween := ring.create_tween().set_parallel(true)
-	ring_tween.tween_property(ring, "scale", Vector2.ONE * 3.2, 0.5).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	ring_tween.tween_property(ring, "modulate:a", 0.0, 0.5)
-	ring_tween.chain().tween_callback(ring.queue_free)
-
-	var flash := Sprite2D.new()
-	flash.texture = spark_texture
-	flash.modulate = Color(1.0, 0.92, 0.75, 0.9)
-	flash.scale = Vector2.ONE * 1.4 * blast_scale
-	firework.add_child(flash)
-	var flash_tween := flash.create_tween().set_parallel(true)
-	flash_tween.tween_property(flash, "scale", Vector2.ONE * 8.0 * blast_scale, 0.3).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	flash_tween.tween_property(flash, "modulate:a", 0.0, 0.3)
-	flash_tween.chain().tween_callback(flash.queue_free)
+	# Each particle node holds one burst while the central finale waits on input.
+	# The dense loops below trade a few extra spread-out pulses for the larger
+	# sprites/particle counts needed to read clearly at the distant camera scale.
+	_spawn_laser_firework_burst(firework, spark_texture, int(DEATH_FIREWORK_PARTICLE_COUNT * blast_scale), 1.3, 420.0, 860.0 * blast_scale, tint)
+	_spawn_laser_firework_burst(firework, spark_texture, int(DEATH_FIREWORK_PARTICLE_COUNT * 0.55 * blast_scale), 1.0, 200.0, 540.0 * blast_scale, Color(1.0, 0.94, 1.0, 1.0))
+	_spawn_laser_firework_burst(firework, spark_texture, int(DEATH_FIREWORK_PARTICLE_COUNT * 0.35 * blast_scale), 0.8, 100.0, 300.0 * blast_scale, Color(1.0, 0.78, 0.26, 1.0))
 
 	get_tree().create_timer(2.2).timeout.connect(firework.queue_free)
 	SFX.play("explosion", world_pos, -4.0, 0.1)
@@ -1558,6 +1756,8 @@ func _spawn_death_firework_burst(world_pos: Vector2) -> void:
 ## that tumble away from the explosion, the coin drop - and only then, gone.
 func _death_finale() -> void:
 	if _death_finale_started:
+		return
+	if _death_box == null or not is_instance_valid(_death_box):
 		return
 	_death_finale_started = true
 	var body_size := _boss_body_size()
@@ -1576,12 +1776,12 @@ func _death_finale() -> void:
 		EnemyDamage.spawn_death_fragments(self, _sprite, Vector2.ZERO, maxf(scale.x * _sprite.scale.x, 0.0), 2.5, true)
 	Shop.drop_coins(global_position, 40, 10)
 	_dismiss_death_box()
+	_begin_black_hole_after_explosion(center, body_size)
 
 	var fade := create_tween()
 	fade.tween_interval(0.9)
 	fade.tween_property(_sprite, "modulate:a", 0.0, DEATH_FADE_TIME)
-	fade.tween_interval(0.4)
-	fade.tween_callback(queue_free)
+	# Keep this controller alive until the black-hole pull hands off to credits.
 
 func _shake_camera(strength_multiplier: float = 1.0) -> void:
 	var mole := get_tree().get_first_node_in_group("mole")

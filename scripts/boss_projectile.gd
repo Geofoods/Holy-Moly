@@ -2,15 +2,21 @@ extends Area2D
 
 const LIFETIME := 2.0
 const EXPLOSION_TILE_RADIUS := 1
+## Muzzle clearance: bosses spit from inside their own collider, which is often
+## buried in tiles, so without this the shell detonates on the tile it was born
+## in and never flies. Long enough to travel clear of the boss plus its own hitbox.
+const SPAWN_GRACE := 0.2
 
 var velocity := Vector2.ZERO
 var deflected := false
 var _pulse_phase := randf() * TAU
+var _spawn_grace := 0.0
 
 func setup(vel: Vector2) -> void:
 	velocity = vel
 
 func _ready() -> void:
+	_spawn_grace = SPAWN_GRACE
 	add_to_group("bullet")
 	body_entered.connect(_on_body_entered)
 	area_entered.connect(_on_area_entered)
@@ -25,6 +31,7 @@ func _process(delta: float) -> void:
 	scale = Vector2(0.3, 0.3) * pulse
 
 func _physics_process(delta: float) -> void:
+	_spawn_grace = maxf(0.0, _spawn_grace - delta)
 	position += velocity * delta
 
 func deflect(target_pos: Vector2) -> void:
@@ -53,6 +60,10 @@ func _on_body_entered(body: Node) -> void:
 		elif body is StaticBody2D:
 			queue_free()
 			return
+	# Still inside the shooter's own collider, so blowing up here would eat the
+	# shot before it ever leaves the muzzle.
+	if _spawn_grace > 0.0:
+		return
 	if body.is_in_group("mole") and body.has_method("take_damage"):
 		body.take_damage(1, global_position, true, true)
 	_explode()

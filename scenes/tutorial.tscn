@@ -123,6 +123,7 @@ dialogue_text_3 = "Left click and point to attack enemies!"
 dialogue_text_4 = "Press the number keys to change item slots in the inventory. Use the item by pressing left click!"
 dialogue_text_5 = "Press shift while on the ground to tunnel and dash!"
 dialogue_text_6 = "Press shift in the air to do a groundpound!"
+dialogue_text_7 = "That's everything you need to know! Keep going right and step into the glowing exit to head to the next level. Good luck down there!"
 npc_name = "Grub"
 
 [node name="greeting area" type="Area2D" parent="." unique_id=548195668]
@@ -152,13 +153,6 @@ shape = SubResource("RectangleShape2D_g2equ")
 position = Vector2(5401, -205)
 shape = SubResource("RectangleShape2D_g2equ")
 
-[node name="set area" type="Area2D" parent="." unique_id=496319109]
-position = Vector2(3678, 79)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="set area" unique_id=1358894752]
-position = Vector2(5408, -301)
-shape = SubResource("RectangleShape2D_g2equ")
-
 [node name="groundpound area" type="Area2D" parent="." unique_id=172977355]
 position = Vector2(2394, -10)
 
@@ -171,6 +165,13 @@ position = Vector2(1212, -35)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="dig dash area" unique_id=671790355]
 position = Vector2(5401, -205)
+shape = SubResource("RectangleShape2D_g2equ")
+
+[node name="set area" type="Area2D" parent="." unique_id=496319109]
+position = Vector2(3678, 79)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="set area" unique_id=1358894752]
+position = Vector2(5408, -301)
 shape = SubResource("RectangleShape2D_g2equ")
 
 [node name="Enemy" parent="." unique_id=866104770 instance=ExtResource("12_tbcdj")]
@@ -258,6 +259,6 @@ position = Vector2(4040, -1591)
 [connection signal="body_entered" from="chest area" to="NpcMole4" method="on_secondary_area_entered"]
 [connection signal="body_entered" from="attack area" to="NpcMole4" method="on_tertiary_area_entered"]
 [connection signal="body_entered" from="item area" to="NpcMole4" method="on_quaternary_area_entered"]
-[connection signal="body_entered" from="set area" to="NpcMole4" method="on_quinary_area_entered"]
 [connection signal="body_entered" from="groundpound area" to="NpcMole4" method="on_senary_area_entered"]
 [connection signal="body_entered" from="dig dash area" to="NpcMole4" method="on_quinary_area_entered"]
+[connection signal="body_entered" from="set area" to="NpcMole4" method="on_septenary_area_entered"]

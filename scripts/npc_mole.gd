@@ -32,6 +32,7 @@ const TileBreakSFX := preload("res://scripts/tile_break_sfx.gd")
 @export_multiline var dialogue_text_4 := ""
 @export_multiline var dialogue_text_5 := ""
 @export_multiline var dialogue_text_6 := ""
+@export_multiline var dialogue_text_7 := ""
 @export var npc_name := "Mole"
 @export var portrait_texture: Texture2D = null
 @export var prompt_offset := Vector2(0, -90)
@@ -53,6 +54,7 @@ var _third_triggered := false
 var _fourth_triggered := false
 var _fifth_triggered := false
 var _sixth_triggered := false
+var _seventh_triggered := false
 var _active_area := 0
 var _jump_cooldown := 0.0
 var _knockback_velocity := Vector2.ZERO
@@ -376,6 +378,19 @@ func on_senary_area_entered(body: Node) -> void:
 	_active_area = 6
 	_open_dialogue(dialogue_text_6)
 
+## Final send-off line: there is no tutorial task to complete here, so the box
+## only closes when the player dismisses it themselves.
+func on_septenary_area_entered(body: Node) -> void:
+	if _seventh_triggered or _dialogue_open:
+		return
+	if not body.is_in_group("mole"):
+		return
+	if dialogue_text_7.is_empty():
+		return
+	_seventh_triggered = true
+	_active_area = 7
+	_open_dialogue(dialogue_text_7)
+
 func _face_player() -> void:
 	_face_target(_player)
 
@@ -399,6 +414,8 @@ func _text_for_area() -> String:
 			return dialogue_text_5 if not dialogue_text_5.is_empty() else dialogue_text
 		6:
 			return dialogue_text_6 if not dialogue_text_6.is_empty() else dialogue_text
+		7:
+			return dialogue_text_7 if not dialogue_text_7.is_empty() else dialogue_text
 	return dialogue_text
 
 func _open_dialogue(text: String = "") -> void:
