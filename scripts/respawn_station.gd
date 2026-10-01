@@ -32,12 +32,12 @@ const ARRIVE_LEAD_IN := 0.12
 const ARRIVE_RISE := 0.34
 const ARRIVE_FADE := 0.22
 const ARRIVE_POP := 0.2
-const ARRIVE_FLASH := 1.9
+const ARRIVE_FLASH := 0.4
 
-## Pad light, in energy units. Kept low when idle so an unbanked station reads
-## as off rather than as a working device.
-const LIGHT_IDLE := 0.25
-const LIGHT_ACTIVE := 1.0
+## Pad light, in energy units. Fully off until the station is banked, then only
+## a faint glow so the sprite's own lamp does the work.
+const LIGHT_IDLE := 0.0
+const LIGHT_ACTIVE := 0.1
 const LIGHT_FLASH_DECAY := 3.4
 const PULSE_RATE := 2.2
 
@@ -82,7 +82,7 @@ func _setup_particles() -> void:
 	# Built in code rather than in the scene file, matching how the rest of the
 	# project makes particles (mole.gd, enemy.gd) and keeping the ramps inline.
 	_orb_particles = _make_particles("OrbParticles", 8, 0.9, false)
-	_orb_particles.position = Vector2(0.0, -262.0)
+	_orb_particles.position = Vector2(-4.0, -198.0)
 	_orb_particles.emission_shape = CPUParticles2D.EMISSION_SHAPE_SPHERE
 	_orb_particles.emission_sphere_radius = 34.0
 	_orb_particles.direction = Vector2(0.0, -1.0)
@@ -135,6 +135,7 @@ func _process(delta: float) -> void:
 	_flash = maxf(0.0, _flash - delta * LIGHT_FLASH_DECAY)
 	var lit := is_checkpoint_active()
 	if _light:
+		_light.visible = lit
 		_light.energy = ((LIGHT_ACTIVE if lit else LIGHT_IDLE) + _flash) * (0.93 + 0.07 * sin(_phase))
 	if _orb_particles:
 		_orb_particles.emitting = lit

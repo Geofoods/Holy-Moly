@@ -4,9 +4,51 @@
 [ext_resource type="Script" uid="uid://bpqewd31jsm3f" path="res://scripts/respawn_station_art.gd" id="2_art"]
 [ext_resource type="Texture2D" uid="uid://dlc4hd7f6on2v" path="res://costume3 (1).svg" id="3_glow"]
 [ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="4_font"]
+[ext_resource type="Texture2D" uid="uid://bcoi0d31h16dg" path="res://sprites/checkpoint.png" id="5_sheet"]
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_stand"]
-size = Vector2(300, 56)
+[sub_resource type="AtlasTexture" id="AtlasTexture_f0"]
+atlas = ExtResource("5_sheet")
+region = Rect2(0, 0, 560, 560)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_f1"]
+atlas = ExtResource("5_sheet")
+region = Rect2(560, 0, 560, 560)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_f2"]
+atlas = ExtResource("5_sheet")
+region = Rect2(1120, 0, 560, 560)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_f3"]
+atlas = ExtResource("5_sheet")
+region = Rect2(1680, 0, 560, 560)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_station"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_f0")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_f1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_f2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_f3")
+}],
+"loop": true,
+"name": &"lit",
+"speed": 6.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_2e1qt"]
+size = Vector2(325, 81)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_interact"]
 size = Vector2(520, 460)
@@ -15,7 +57,11 @@ size = Vector2(520, 460)
 script = ExtResource("1_station")
 spawn_offset = Vector2(0, -126)
 
-[node name="Art" type="Node2D" parent="." unique_id=1005624812]
+[node name="Art" type="AnimatedSprite2D" parent="." unique_id=1005624812]
+position = Vector2(11.5, -189)
+scale = Vector2(1.1, 1.1)
+sprite_frames = SubResource("SpriteFrames_station")
+autoplay = "default"
 script = ExtResource("2_art")
 
 [node name="PadLight" type="PointLight2D" parent="." unique_id=1812109311]
@@ -29,8 +75,8 @@ texture = ExtResource("3_glow")
 [node name="Stand" type="StaticBody2D" parent="." unique_id=849607006]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Stand" unique_id=1640713886]
-position = Vector2(0, -66)
-shape = SubResource("RectangleShape2D_stand")
+position = Vector2(-1, -53.5)
+shape = SubResource("RectangleShape2D_2e1qt")
 
 [node name="InteractionArea" type="Area2D" parent="." unique_id=352478287]
 
