@@ -290,6 +290,23 @@ rotation = 3.1415927
 mouse_filter = 2
 color = Color(0, 0, 0, 1)
 
+[node name="Costume11" type="Sprite2D" parent="." unique_id=442655149]
+z_index = 99
+position = Vector2(2853, 1750.999)
+rotation = 3.1391454
+scale = Vector2(27.443565, 1.717514)
+texture = ExtResource("21_o5381")
+
+[node name="ColorRect3" type="ColorRect" parent="Costume11" unique_id=937619798]
+z_index = 99
+offset_left = 222.78905
+offset_top = 1592.0105
+offset_right = 676.18976
+offset_bottom = 3008.5244
+rotation = 3.1415927
+mouse_filter = 2
+color = Color(0, 0, 0, 1)
+
 [node name="nextlevel3" type="Area2D" parent="." unique_id=493675538]
 position = Vector2(-2600, 9073)
 script = ExtResource("22_qnxt5")

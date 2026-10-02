@@ -350,13 +350,18 @@ func _setup_health_bar() -> void:
 	add_child(_health_bar)
 
 func _draw_health_bar() -> void:
-	draw_health_bar(_health_bar, health, MAX_HEALTH, -100.0)
+	draw_health_bar(_health_bar, visual, health, MAX_HEALTH, -100.0)
 
-static func draw_health_bar(bar: Node2D, current_health: float, max_health: float, offset_y: float) -> void:
+## Centres the bar on the sprite rather than the body origin, because enemies
+## author their Visual at an x offset that would otherwise skew the bar sideways.
+static func draw_health_bar(bar: Node2D, visual: Node2D, current_health: float, max_health: float, offset_y: float) -> void:
 	if not is_instance_valid(bar) or max_health <= 0.0 or current_health <= 0.0 or current_health >= max_health:
-		return
+		return  # only draws when < max_health and > 0
 	var ratio := clampf(current_health / max_health, 0.0, 1.0)
-	var offset := Vector2(-HEALTH_BAR_WIDTH * 0.5, offset_y)
+	var anchor_x := 0.0
+	if is_instance_valid(visual) and visual.is_inside_tree():
+		anchor_x = bar.get_parent().to_local(visual.global_position).x
+	var offset := Vector2(anchor_x - HEALTH_BAR_WIDTH * 0.5, offset_y)
 	var inner_size := Vector2(HEALTH_BAR_WIDTH - 2.0, HEALTH_BAR_HEIGHT - 2.0)
 	bar.draw_rect(Rect2(offset, Vector2(HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT)), HEALTH_BAR_BORDER_COLOR)
 	bar.draw_rect(Rect2(offset + Vector2.ONE, inner_size), HEALTH_BAR_BG_COLOR)

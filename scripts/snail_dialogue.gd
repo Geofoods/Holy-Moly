@@ -73,8 +73,14 @@ const BOSS_MINION_SCENES: Array[PackedScene] = [
 	preload("res://scenes/antenemy.tscn"),
 	preload("res://scenes/beetleenemy.tscn"),
 	preload("res://scenes/slimeenemy.tscn"),
+	# The goblins are the ranged entries. They only throw when they are on screen
+	# and have line of sight to the mole, so the fight camera clamping the player
+	# into frame is what keeps them actually engaging instead of idling.
+	preload("res://scenes/goblinenemy.tscn"),
+	preload("res://ice_goblinenemy.tscn"),
 ]
 const BOSS_PROJECTILE_SCENE := preload("res://area_2d.tscn")
+const BOSS_LASER_LIGHT_TEXTURE := preload("res://costume3 (1).svg")
 ## Loot drops into the fight: a loose Drill or Holy Water the player grabs on the
 ## move. These used to be chests, which meant stopping to open one while the
 ## snail was still firing.
@@ -110,6 +116,10 @@ const BOSS_AUTO_SCROLL_PLAYER_SCREEN_RATIO := 0.82
 const BOSS_AUTO_SCROLL_HORIZONTAL_LEAD := 0.30
 const BOSS_AUTO_SCROLL_VERTICAL_OFFSET := -300.0
 const BOSS_AUTO_SCROLL_VERTICAL_FOLLOW := 4.0
+## Inset from the fight camera's edge that still counts as on screen. The mole
+## is drawn at a quarter scale here, so this is only a little padding - just
+## enough that it is never clipped by the edge of the frame.
+const BOSS_CAM_CLAMP_MARGIN := Vector2(64.0, 64.0)
 
 var _boss_minion_spawn_timer := 0.0
 const TileBreakSFX := preload("res://scripts/tile_break_sfx.gd")
@@ -332,6 +342,7 @@ func _process(delta: float) -> void:
 	_update_transformation_aura()
 	if _boss_active and not _boss_dying:
 		_update_boss_autoscroll_camera(delta)
+		_confine_mole_to_boss_camera()
 
 ## Flip the sprite only - the body, collision shapes and Area2D are untouched.
 func _update_facing() -> void:
@@ -632,6 +643,9 @@ func _begin_boss_fight() -> void:
 	# The fight drives this snail's position by script, so the dash must not be
 	# able to shove it off its autoscroll path. It still takes the hit damage.
 	add_to_group(&"knockback_locked")
+	# Lets the boss's own spawns recognise it - the ice goblin's frost mushroom
+	# uses this to leave the shell alone instead of chipping away at the fight.
+	add_to_group(&"snail_boss")
 	# Walking into the shell must not shove it either. The mole's collision mask
 	# never matched the boss layer, so it was never blocked by the shell to begin
 	# with - the solver just used the contact to drag a 500hp boss down a cliff.
@@ -754,6 +768,25 @@ func _boss_camera_lead_x(camera: Camera2D, zoom_x: float = -1.0) -> float:
 	var effective_zoom := zoom_x if zoom_x > 0.0 else camera.zoom.x
 	var viewport_width: float = camera.get_viewport_rect().size.x
 	return viewport_width / maxf(effective_zoom, 0.01) * BOSS_AUTO_SCROLL_HORIZONTAL_LEAD
+
+## Holds the player inside the fight framing. The autoscroller leads the camera
+## rather than following it, so nothing else stops the mole running off the side
+## of the screen and continuing through terrain the fight cannot be seen from.
+func _confine_mole_to_boss_camera() -> void:
+	var camera := get_viewport().get_camera_2d()
+	if camera == null:
+		return
+	var mole := get_tree().get_first_node_in_group("mole") as Node2D
+	if mole == null or not is_instance_valid(mole):
+		return
+	var half_view := camera.get_viewport_rect().size / camera.zoom * 0.5
+	var center := camera.get_screen_center_position()
+	var limit_min := center - half_view + BOSS_CAM_CLAMP_MARGIN
+	var limit_max := center + half_view - BOSS_CAM_CLAMP_MARGIN
+	mole.global_position = Vector2(
+		clampf(mole.global_position.x, limit_min.x, limit_max.x),
+		clampf(mole.global_position.y, limit_min.y, limit_max.y)
+	)
 
 func _brighten_boss_arena() -> void:
 	var scene := get_tree().current_scene
@@ -1226,7 +1259,24 @@ func _create_boss_laser_lines(start: Vector2, finish: Vector2, telegraph: bool) 
 		line.add_point(scene_root.to_local(finish))
 		scene_root.add_child(line)
 		lines.append(line)
+	_attach_boss_laser_lights(lines, scene_root.to_local(start), scene_root.to_local(finish), telegraph)
 	return lines
+
+func _attach_boss_laser_lights(lines: Array[Line2D], local_start: Vector2, local_finish: Vector2, telegraph: bool) -> void:
+	if lines.is_empty() or not is_instance_valid(lines[0]):
+		return
+	var beam_line := lines[0]
+	for fraction in [0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875]:
+		var light := PointLight2D.new()
+		light.name = "BossLaserPurpleLight"
+		light.position = local_start.lerp(local_finish, fraction)
+		light.texture = BOSS_LASER_LIGHT_TEXTURE
+		light.texture_scale = 3.0
+		light.color = Color(0.62, 0.2, 1.0, 1.0)
+		light.energy = 0.55 if telegraph else 1.0
+		light.range_item_cull_mask = 1023
+		light.shadow_enabled = false
+		beam_line.add_child(light)
 
 func _animate_boss_laser(lines: Array[Line2D]) -> void:
 	for line in lines:
@@ -1825,6 +1875,10 @@ func _go_to_credits() -> void:
 	if _death_credits_started:
 		return
 	_death_credits_started = true
+	# Beating the final boss is what unlocks Boss Rush on the title screen, and
+	# it is recorded here rather than in the credits roll so that quitting
+	# straight out of the fight still counts.
+	Progress.mark_game_completed()
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 	get_tree().root.add_child(transition)
 	transition.change_to(DEATH_CREDITS_PATH)

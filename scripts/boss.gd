@@ -60,6 +60,8 @@ const HEART_FIREWORK_HOLD := 2.3
 const DEATH_FRAGMENT_LIFE := 10.0
 
 const EnemyDamage := preload("res://scripts/enemy.gd")
+const HEART_GLOW_TEXTURE := preload("res://costume3 (1).svg")
+const LASER_LIGHT_TEXTURE := preload("res://costume3 (1).svg")
 
 const INTRO_LINES := [
 	"hello there little mole,",
@@ -74,6 +76,7 @@ var _spit_cooldown := 0.0
 var _laser_cooldown := 0.0
 var _laser_attack_active := false
 var _laser_hit_tile := Vector2i(-1, -1)
+var _heart_glow: PointLight2D = null
 
 var _cutscene_mole: Node = null
 var _cutscene_cam: Camera2D = null
@@ -126,6 +129,7 @@ var _indicator_layer: CanvasLayer = null
 var _indicator_arrow: Polygon2D = null
 
 func _ready() -> void:
+	_create_heart_glow()
 	anim.stop()
 	anim.frame = 0
 	trigger.body_entered.connect(_on_trigger_entered)
@@ -137,6 +141,22 @@ func _ready() -> void:
 	_arena_map = get_parent().get_node_or_null("TileMap2") as TileMap
 	_tile_break_script = load("res://scripts/tile_break_sfx.gd")
 	_projectile_scene = preload("res://area_2d.tscn")
+
+func _create_heart_glow() -> void:
+	_heart_glow = PointLight2D.new()
+	_heart_glow.name = "CorruptedHeartGlow"
+	_heart_glow.position = anim.position
+	_heart_glow.texture = HEART_GLOW_TEXTURE
+	_heart_glow.texture_scale = 2.8
+	_heart_glow.color = Color(0.62, 0.2, 1.0, 1.0)
+	_heart_glow.energy = 1.0
+	_heart_glow.range_item_cull_mask = 1023
+	_heart_glow.shadow_enabled = false
+	add_child(_heart_glow)
+
+	var pulse := _heart_glow.create_tween().set_loops()
+	pulse.tween_property(_heart_glow, "energy", 1.45, 1.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	pulse.tween_property(_heart_glow, "energy", 0.85, 1.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 func _create_health_bar() -> void:
 	_health_bar_layer = CanvasLayer.new()
@@ -512,7 +532,29 @@ func _create_laser_glow(start: Vector2, finish: Vector2, is_preview: bool) -> Ar
 		lines.append(_create_laser_line(start, finish, Color(0.62, 0.06, 1.0, 0.62), LASER_WIDTH + 28.0))
 		lines.append(_create_laser_line(start, finish, Color(0.88, 0.42, 1.0, 0.95), LASER_WIDTH))
 		lines.append(_create_laser_line(start, finish, Color(0.98, 0.82, 1.0, 1.0), 30.0))
+	_attach_laser_lights(lines, start, finish, is_preview)
 	return lines
+
+func _attach_laser_lights(lines: Array[Line2D], start: Vector2, finish: Vector2, is_preview: bool) -> void:
+	if lines.is_empty() or not is_instance_valid(lines[0]):
+		return
+	var scene_root := get_tree().current_scene as Node2D
+	if scene_root == null:
+		return
+	var local_start := scene_root.to_local(start)
+	var local_end := scene_root.to_local(finish)
+	var beam_line := lines[0]
+	for fraction in [0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875]:
+		var light := PointLight2D.new()
+		light.name = "LaserPurpleLight"
+		light.position = local_start.lerp(local_end, fraction)
+		light.texture = LASER_LIGHT_TEXTURE
+		light.texture_scale = 3.0
+		light.color = Color(0.62, 0.2, 1.0, 1.0)
+		light.energy = 0.55 if is_preview else 1.0
+		light.range_item_cull_mask = 1023
+		light.shadow_enabled = false
+		beam_line.add_child(light)
 
 func _animate_laser_beam(lines: Array[Line2D]) -> void:
 	for line in lines:
@@ -709,6 +751,9 @@ func _on_intro_dialogue_next() -> void:
 				box.queue_free()
 		)
 		_dialogue_finished = true
+		# The bed is already silent by the time the player gets here, so the
+		# theme fades up into the gap the dialogue leaves rather than under it.
+		LevelMusic.play_boss_track()
 		return
 	_dialogue_line_index += 1
 	_show_intro_dialogue_line()
@@ -867,6 +912,11 @@ func die() -> void:
 	hurtbox.set_deferred("monitorable", false)
 	_destroy_health_bar()
 	_destroy_offscreen_indicator()
+	# The fight is over the moment the heart goes down, and the theme recedes
+	# under the collapse rather than being cut off. Torn down here because the
+	# level does not end with the boss: the mole walks out to the exit and would
+	# otherwise carry the theme the rest of the way.
+	LevelMusic.stop_boss_track(LevelMusic.BOSS_DEATH_FADE)
 	_start_death_cutscene()
 
 	modulate = Color(3.0, 2.4, 2.4, 1.0)

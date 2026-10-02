@@ -161,7 +161,7 @@ func _setup_health_bar() -> void:
 	add_child(_health_bar)
 
 func _draw_health_bar() -> void:
-	EnemyDamage.draw_health_bar(_health_bar, health, max_health, -100.0)
+	EnemyDamage.draw_health_bar(_health_bar, visual, health, max_health, -100.0)
 
 func die() -> void:
 	SFX.play("enemy_death", global_position)

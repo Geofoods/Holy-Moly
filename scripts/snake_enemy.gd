@@ -226,7 +226,7 @@ func _setup_health_bar() -> void:
 	add_child(_health_bar)
 
 func _draw_health_bar() -> void:
-	EnemyDamage.draw_health_bar(_health_bar, health, MAX_HEALTH, -104.0)
+	EnemyDamage.draw_health_bar(_health_bar, visual, health, MAX_HEALTH, -104.0)
 
 func die() -> void:
 	died.emit()

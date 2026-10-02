@@ -119,6 +119,52 @@ corner_radius_bottom_left = 8
 shadow_color = Color(0, 0, 0, 0.4)
 shadow_size = 6
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bossrushbutton"]
+bg_color = Color(0.72, 0.1, 0.18, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.3, 0.4, 0.4)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0.9, 0.1, 0.2, 0.35)
+shadow_size = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bossrushbutton_hover"]
+bg_color = Color(1, 0.2, 0.3, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.5, 0.6, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0.9, 0.1, 0.2, 0.5)
+shadow_size = 12
+
+## The locked Boss Rush. A disabled Button reads the disabled stylebox and
+## font_disabled_color rather than the normal ones, so both have to be authored
+## here - without them the locked button falls back to the theme default instead
+## of reading as deliberately greyed out.
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bossrushbutton_locked"]
+bg_color = Color(0.24, 0.25, 0.28, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.48, 0.5, 0.54, 0.6)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.3)
+shadow_size = 8
+
 [node name="IntroScreen" type="Control" unique_id=1091680018]
 layout_mode = 3
 anchors_preset = 0
@@ -214,6 +260,23 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_lastlevelbutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_lastlevelbutton_hover")
 text = "LAST LEVEL"
 
+[node name="BossRushButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer" unique_id=1148290357]
+custom_minimum_size = Vector2(180, 70)
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_colors/font_color = Color(1, 0.88, 0.88, 1)
+theme_override_colors/font_disabled_color = Color(0.55, 0.57, 0.6, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("6_es01l")
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBoxFlat_bossrushbutton")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_bossrushbutton_hover")
+theme_override_styles/hover = SubResource("StyleBoxFlat_bossrushbutton_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_bossrushbutton_hover")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_bossrushbutton_locked")
+tooltip_text = "Boss Rush - unlocked once you beat the final boss"
+text = "BOSS RUSH"
+
 [node name="FieldGuideButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer" unique_id=223072365]
 custom_minimum_size = Vector2(180, 70)
 layout_mode = 2
@@ -249,4 +312,5 @@ horizontal_alignment = 1
 
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/PlayButton" to="." method="_on_play_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/LastLevelButton" to="." method="_on_last_level_pressed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/BossRushButton" to="." method="_on_boss_rush_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/FieldGuideButton" to="." method="_on_field_guide_pressed"]

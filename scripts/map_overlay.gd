@@ -164,6 +164,12 @@ func _open_map() -> void:
 	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_holder.add_child(art)
 
+	var checkpoint := Label.new()
+	checkpoint.text = _checkpoint_status_text()
+	checkpoint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_style_label(checkpoint, 22, Color(0.55, 0.9, 1.0, 1.0) if not Progress.respawn_activated.is_empty() else Color(0.68, 0.68, 0.72, 1.0))
+	vbox.add_child(checkpoint)
+
 	var hint := Label.new()
 	hint.text = "PRESS M TO CLOSE"
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -315,6 +321,15 @@ func _teardown_overlay() -> void:
 func _current_scene_path() -> String:
 	var current := get_tree().current_scene as Node
 	return "" if current == null else str(current.scene_file_path)
+
+## Reports the saved checkpoint on the map so activation is visible outside the
+## level where the station itself is glowing.
+func _checkpoint_status_text() -> String:
+	var checkpoint_scene := Progress.respawn_activated
+	if checkpoint_scene.is_empty():
+		return "NO CHECKPOINT SET"
+	var checkpoint_name := checkpoint_scene.get_file().get_basename().replace("_", " ").capitalize()
+	return "CHECKPOINT ACTIVE: " + checkpoint_name
 
 ## The art for the scene the player is standing in. Looks the path up rather
 ## than reading a level number, so hub scenes and the arena can have art too.

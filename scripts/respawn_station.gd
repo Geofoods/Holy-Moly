@@ -34,10 +34,10 @@ const ARRIVE_FADE := 0.22
 const ARRIVE_POP := 0.2
 const ARRIVE_FLASH := 0.4
 
-## Pad light, in energy units. Fully off until the station is banked, then only
-## a faint glow so the sprite's own lamp does the work.
+## Pad light, in energy units. Fully off until the station is banked, then a
+## visible cyan glow that marks the active checkpoint.
 const LIGHT_IDLE := 0.0
-const LIGHT_ACTIVE := 0.06
+const LIGHT_ACTIVE := 0.9
 const LIGHT_FLASH_DECAY := 3.4
 const PULSE_RATE := 2.2
 

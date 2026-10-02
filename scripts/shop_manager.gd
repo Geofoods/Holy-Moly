@@ -69,12 +69,13 @@ func _build_item_catalog() -> void:
 	# deliberately sells the four staples and nothing else, so the pager never
 	# appears and the panel stays a quick read.
 	var defs := [
-		# Healing
-		{"name": "Miner's Rations", "price": 25},
-		{"name": "Potted Honeycomb", "price": 35},
-		{"name": "Holy Water", "price": 60},
+		# Tools
+		{"name": "Drill", "price": 70},
 		# Explosives
 		{"name": "Bomb", "price": 80},
+		{"name": "Ice Bomb", "price": 95},
+		# Healing
+		{"name": "Holy Water", "price": 60},
 	]
 	for def in defs:
 		var item := _find_item(def["name"])

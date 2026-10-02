@@ -50,6 +50,7 @@ const LEVELS: Dictionary = {
 		"number": 9,
 		"name": "The Corrupted Core",
 		"tip": "Every enemy from your journey can appear here. Stay sharp and don't get surrounded.",
+		"starts_silent": true,
 	},
 	"res://scenes/level_10.tscn": {
 		"number": 10,
@@ -70,3 +71,9 @@ const LEVELS: Dictionary = {
 
 func get_info(scene_path: String) -> Dictionary:
 	return LEVELS.get(scene_path, {})
+
+## Whether a level arrives without the level bed under it. Level 09 opens
+## silent and only scores itself once the Corrupted Heart has finished talking,
+## so the bed is faded out on the way in rather than ducked during the fight.
+func starts_silent(scene_path: String) -> bool:
+	return bool(get_info(scene_path).get("starts_silent", false))

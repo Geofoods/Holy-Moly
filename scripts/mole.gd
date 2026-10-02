@@ -198,7 +198,16 @@ func _ready() -> void:
 	if _mole_light:
 		_mole_light_base_energy = _mole_light.energy
 		_mole_light_base_scale = _mole_light.texture_scale
-	LevelMusic.start()
+	# A level that arrives silent is faded out rather than started, and the gate
+	# lives here rather than on something in the scene: the await above pushes
+	# this past every scene node's _ready, so a stop issued from one would already
+	# have been undone by the start that follows it here. Also stops the bed
+	# carried over from the previous level, which start() would otherwise skip
+	# because it reuses an existing player.
+	if LevelData.starts_silent(str(get_tree().current_scene.scene_file_path)):
+		LevelMusic.stop()
+	else:
+		LevelMusic.start()
 	Inventory.initialize()
 	Inventory.selected_slot_changed.connect(_on_selected_slot_changed)
 	Inventory.selected_slot = 0

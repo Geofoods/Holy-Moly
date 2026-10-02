@@ -6,6 +6,10 @@ const HOP_HEIGHT := 90.0
 const HOP_DURATION := 1.7
 const GROUND_RATIO := 0.72
 const VERSION := "v0.2beta"
+## Where Boss Rush drops the mole. Level 09 is the Corrupted Core, which already
+## throws every enemy type the journey has met at the player alongside the
+## Corrupted Heart, so it reads as a rush without needing a scene of its own.
+const BOSS_RUSH_SCENE := "res://scenes/level_09.tscn"
 
 var _last_hop_index := -1
 var _intro_music: AudioStreamPlayer = null
@@ -28,10 +32,13 @@ func _ready():
 	var play_btn = $CenterContainer/VBoxContainer/ButtonContainer/PlayButton
 	var last_level_btn = $CenterContainer/VBoxContainer/ButtonContainer/LastLevelButton
 	var field_guide_btn = $CenterContainer/VBoxContainer/ButtonContainer/FieldGuideButton
+	var boss_rush_btn = $CenterContainer/VBoxContainer/ButtonContainer/BossRushButton
 	play_btn.mouse_entered.connect(_on_button_hover.bind(play_btn))
 	play_btn.mouse_exited.connect(_on_button_unhover.bind(play_btn))
 	last_level_btn.mouse_entered.connect(_on_button_hover.bind(last_level_btn))
 	last_level_btn.mouse_exited.connect(_on_button_unhover.bind(last_level_btn))
+	boss_rush_btn.mouse_entered.connect(_on_button_hover.bind(boss_rush_btn))
+	boss_rush_btn.mouse_exited.connect(_on_button_unhover.bind(boss_rush_btn))
 	field_guide_btn.mouse_entered.connect(_on_button_hover.bind(field_guide_btn))
 	field_guide_btn.mouse_exited.connect(_on_button_unhover.bind(field_guide_btn))
 	# The "Play Last Level" shortcut only makes sense when there is a level to
@@ -161,12 +168,18 @@ func _set_buttons_enabled(enabled: bool) -> void:
 	var play_btn = $CenterContainer/VBoxContainer/ButtonContainer/PlayButton
 	var last_level_btn = $CenterContainer/VBoxContainer/ButtonContainer/LastLevelButton
 	var field_guide_btn = $CenterContainer/VBoxContainer/ButtonContainer/FieldGuideButton
+	var boss_rush_btn = $CenterContainer/VBoxContainer/ButtonContainer/BossRushButton
 	play_btn.disabled = not enabled
 	last_level_btn.disabled = not enabled
 	field_guide_btn.disabled = not enabled
+	# Boss Rush carries its own save-flag gate on top of the intro reveal, so it
+	# has to be re-derived here rather than simply flipped with the others -
+	# otherwise the reveal pass would unlock it on a fresh save.
+	boss_rush_btn.disabled = not enabled or not Progress.is_game_completed()
 	if enabled:
 		play_btn.pivot_offset = play_btn.size / 2.0
 		last_level_btn.pivot_offset = last_level_btn.size / 2.0
+		boss_rush_btn.pivot_offset = boss_rush_btn.size / 2.0
 		field_guide_btn.pivot_offset = field_guide_btn.size / 2.0
 
 func _on_button_hover(button: Button) -> void:
@@ -216,6 +229,26 @@ func _on_last_level_pressed() -> void:
 	var last_level_btn = $CenterContainer/VBoxContainer/ButtonContainer/LastLevelButton
 	last_level_btn.disabled = true
 	var target := Progress.last_level_scene
+	# Keep the resume-aware bookkeeping in step with a normal level entry, so
+	# pause->restart and the game-over retry land back in this same scene.
+	Inventory.current_level_path = target
+	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
+	get_tree().root.add_child(transition)
+	transition.change_to(target)
+
+## Drops straight into the Boss Rush. Like "Play Last Level" this is a resume
+## rather than a fresh Play: the mole keeps the gear it finished the game with,
+## because that gear is what the rush is unlocked for.
+func _on_boss_rush_pressed() -> void:
+	# Re-checked here as well as on the button, so a locked mode cannot be
+	# entered by anything that presses it without going through the menu.
+	if not Progress.is_game_completed():
+		return
+	SFX.play_ui("ui_click", -6.0, 1.2)
+	_fade_out_menu_music()
+	var boss_rush_btn = $CenterContainer/VBoxContainer/ButtonContainer/BossRushButton
+	boss_rush_btn.disabled = true
+	var target := BOSS_RUSH_SCENE
 	# Keep the resume-aware bookkeeping in step with a normal level entry, so
 	# pause->restart and the game-over retry land back in this same scene.
 	Inventory.current_level_path = target
