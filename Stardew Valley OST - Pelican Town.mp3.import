@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://mn0wruhs4sq8"
+path="res://.godot/imported/Stardew Valley OST - Pelican Town.mp3-8e3313ad1e2b2ee3c154745e571d8d16.mp3str"
+
+[deps]
+
+source_file="res://Stardew Valley OST - Pelican Town.mp3"
+dest_files=["res://.godot/imported/Stardew Valley OST - Pelican Town.mp3-8e3313ad1e2b2ee3c154745e571d8d16.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

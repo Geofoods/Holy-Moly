@@ -17,6 +17,11 @@ extends RigidBody2D
 @export var transform_after_dialogue := false
 ## Starts a boss fight after the transformation finishes; used by the level 10 snail.
 @export var boss_after_dialogue := false
+## Set only on the snail that stands between the Corrupted Heart and its own
+## fight: its dialogue interrupts the walk's music, and what follows the
+## conversation picks that music up further along. Off everywhere else, so the
+## other snails in the game say nothing to the soundtrack.
+@export var post_heart_music := false
 ## The artwork faces left at flip_h = false, so flipping points it right.
 @export var sprite_faces_left := true
 
@@ -61,6 +66,7 @@ const BOSS_PROJECTILE_SPEED := 620.0
 const BOSS_LASER_COOLDOWN := 9.0
 const BOSS_LASER_CHARGE_TIME := 1.5
 const BOSS_LASER_STRIKE_DURATION := 1.25
+const BOSS_LASER_TRAVEL_TIME := 0.35
 const BOSS_LASER_FADE_TIME := 0.55
 const BOSS_LASER_LENGTH := 3000.0
 const BOSS_LASER_WIDTH := 136.0
@@ -384,6 +390,10 @@ func show_dialogue() -> void:
 
 func _open_dialogue() -> void:
 	_dialogue_open = true
+	# The walk out of the heart's arena is still scored by its loop. The dialogue
+	# opens on top of it, so the loop is let go before the box starts talking.
+	if post_heart_music:
+		LevelMusic.stop_vessel()
 	if boss_after_dialogue:
 		# Keep the level running so any active explosions and particles continue
 		# under the dialogue. The camera stays on the player for this line; the
@@ -467,6 +477,10 @@ func _on_dialogue_done() -> void:
 	_start_transformation()
 	_grant_unlock()
 	_move_player_clear_of_snail()
+	# Whatever the dialogue interrupted picks up past it, on the far side of the
+	# conversation rather than where the loop left off.
+	if post_heart_music:
+		LevelMusic.play_vessel_after_snail()
 	# This story encounter becomes a boss, not an interactable NPC, after its scene.
 	_hushed = true if boss_after_dialogue else _refresh_hushed()
 	if _dialogue_box == null or not is_instance_valid(_dialogue_box):
@@ -984,6 +998,7 @@ func _apply_boss_damage(amount: float) -> void:
 		return
 	_boss_health = maxf(_boss_health - amount, 0.0)
 	_flash_boss_aura_shield()
+	_spawn_damage_hit_particles()
 	EnemyDamage.spawn_damage_number(self, amount, get_global_mouse_position(), true)
 	SFX.play("enemy_hit", global_position)
 	if _boss_hit_tween and _boss_hit_tween.is_valid():
@@ -997,6 +1012,43 @@ func _apply_boss_damage(amount: float) -> void:
 		mole.screen_shake(8.0, 0.16)
 	if _boss_health <= 0.0:
 		_defeat_boss()
+
+func _spawn_damage_hit_particles() -> void:
+	var scene_root := get_tree().current_scene as Node2D
+	if scene_root == null or _sprite == null:
+		return
+	var texture := _current_sprite_texture()
+	var sprite_size := texture.get_size() if texture != null else Vector2(585.0, 442.0)
+	var world_half_size := sprite_size * _sprite.global_scale.abs() * 0.5
+	var impact_center := _sprite.global_position
+	var spark_texture := _make_firework_spark_texture()
+	for burst_index in 2:
+		var particles := CPUParticles2D.new()
+		particles.one_shot = true
+		particles.emitting = true
+		particles.explosiveness = 1.0
+		particles.amount = 64 if burst_index == 0 else 42
+		particles.lifetime = 0.85 if burst_index == 0 else 0.6
+		particles.direction = Vector2.ZERO
+		particles.spread = 180.0
+		particles.initial_velocity_min = 320.0 if burst_index == 0 else 180.0
+		particles.initial_velocity_max = 980.0 if burst_index == 0 else 640.0
+		particles.gravity = Vector2(0.0, 520.0)
+		particles.damping_min = 36.0
+		particles.damping_max = 100.0
+		particles.scale_amount_min = 1.1 if burst_index == 0 else 1.8
+		particles.scale_amount_max = 2.8 if burst_index == 0 else 4.0
+		particles.texture = spark_texture
+		var gradient := Gradient.new()
+		gradient.set_color(0, Color(1.0, 0.96, 1.0, 1.0))
+		gradient.set_color(0.2, Color(0.72, 0.22, 1.0, 1.0) if burst_index == 0 else Color(0.96, 0.58, 1.0, 1.0))
+		gradient.set_color(1, Color(0.35, 0.04, 0.72, 0.0))
+		particles.color_ramp = gradient
+		particles.z_index = BOSS_LASER_FIREWORK_Z + 1
+		particles.z_as_relative = false
+		scene_root.add_child(particles)
+		particles.global_position = impact_center + Vector2(randf_range(-world_half_size.x, world_half_size.x), randf_range(-world_half_size.y, world_half_size.y))
+		get_tree().create_timer(particles.lifetime + 0.25).timeout.connect(particles.queue_free)
 
 func _create_boss_health_bar() -> void:
 	_boss_health_layer = CanvasLayer.new()
@@ -1214,20 +1266,32 @@ func _fire_boss_laser(mole: Node2D) -> void:
 	SFX.play("explosion", laser_start, -3.0, 0.12)
 	if is_instance_valid(mole) and mole.has_method("screen_shake"):
 		mole.call("screen_shake", 16.0, BOSS_LASER_STRIKE_DURATION)
-	_damage_mole_in_boss_laser(mole, laser_start, laser_end)
+	var reached_laser_tip: bool = await _extend_boss_laser_to_tip(beam, laser_start, laser_end, mole)
+	if not reached_laser_tip:
+		_clear_boss_laser_lines(beam)
+		_boss_laser_lines.clear()
+		if is_inside_tree():
+			_boss_laser_active = false
+			_boss_laser_timer = BOSS_LASER_COOLDOWN
+		return
 	_break_blocks_along_boss_laser(laser_start, laser_end)
+	# Detonate the purple impact only once the beam's animated tip arrives.
 	_spawn_boss_laser_impact(laser_end)
 
 	var laser_time_left := BOSS_LASER_STRIKE_DURATION
 	while laser_time_left > 0.0:
 		var damage_interval := minf(0.1, laser_time_left)
 		await get_tree().create_timer(damage_interval).timeout
+		await get_tree().physics_frame
 		laser_time_left -= damage_interval
 		_damage_mole_in_boss_laser(mole, laser_start, laser_end)
 	for line in beam:
 		if is_instance_valid(line):
-			var fade := line.create_tween()
+			var fade := line.create_tween().set_parallel(true)
 			fade.tween_property(line, "modulate:a", 0.0, BOSS_LASER_FADE_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+			for child in line.get_children():
+				if child is PointLight2D:
+					fade.tween_property(child, "energy", 0.0, BOSS_LASER_FADE_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	await get_tree().create_timer(BOSS_LASER_FADE_TIME).timeout
 	_clear_boss_laser_lines(beam)
 	_boss_laser_lines.clear()
@@ -1270,6 +1334,7 @@ func _attach_boss_laser_lights(lines: Array[Line2D], local_start: Vector2, local
 		var light := PointLight2D.new()
 		light.name = "BossLaserPurpleLight"
 		light.position = local_start.lerp(local_finish, fraction)
+		light.set_meta("laser_fraction", fraction)
 		light.texture = BOSS_LASER_LIGHT_TEXTURE
 		light.texture_scale = 3.0
 		light.color = Color(0.62, 0.2, 1.0, 1.0)
@@ -1277,6 +1342,41 @@ func _attach_boss_laser_lights(lines: Array[Line2D], local_start: Vector2, local
 		light.range_item_cull_mask = 1023
 		light.shadow_enabled = false
 		beam_line.add_child(light)
+
+func _extend_boss_laser_to_tip(lines: Array[Line2D], start: Vector2, finish: Vector2, mole: Node2D) -> bool:
+	var scene_root := get_tree().current_scene as Node2D
+	if scene_root == null:
+		return false
+	var local_start := scene_root.to_local(start)
+	var local_finish := scene_root.to_local(finish)
+	var elapsed := 0.0
+	var last_damage_time := 0.0
+	var physics_step := 1.0 / float(Engine.physics_ticks_per_second)
+	_set_boss_laser_progress(lines, local_start, local_finish, 0.0)
+	while elapsed < BOSS_LASER_TRAVEL_TIME:
+		await get_tree().physics_frame
+		if not is_inside_tree() or not _boss_active or _boss_dying:
+			return false
+		elapsed += physics_step
+		var progress := clampf(elapsed / BOSS_LASER_TRAVEL_TIME, 0.0, 1.0)
+		var current_tip := start.lerp(finish, progress)
+		_set_boss_laser_progress(lines, local_start, local_finish, progress)
+		if elapsed - last_damage_time >= 0.1:
+			_damage_mole_in_boss_laser(mole, start, current_tip)
+			last_damage_time = elapsed
+	_set_boss_laser_progress(lines, local_start, local_finish, 1.0)
+	return true
+
+func _set_boss_laser_progress(lines: Array[Line2D], local_start: Vector2, local_finish: Vector2, progress: float) -> void:
+	var current_tip := local_start.lerp(local_finish, progress)
+	for line in lines:
+		if not is_instance_valid(line) or line.get_point_count() < 2:
+			continue
+		line.set_point_position(1, current_tip)
+		for child in line.get_children():
+			if child is PointLight2D and child.has_meta("laser_fraction"):
+				var light_fraction := float(child.get_meta("laser_fraction"))
+				(child as PointLight2D).position = local_start.lerp(local_finish, light_fraction * progress)
 
 func _animate_boss_laser(lines: Array[Line2D]) -> void:
 	for line in lines:
@@ -1294,15 +1394,24 @@ func _clear_boss_laser_lines(lines: Array[Line2D]) -> void:
 			line.queue_free()
 
 func _damage_mole_in_boss_laser(mole: Node2D, start: Vector2, finish: Vector2) -> void:
-	if not is_instance_valid(mole) or not mole.has_method("take_damage"):
+	if not is_instance_valid(mole) or not mole.is_in_group("mole") or not mole.has_method("take_damage") or not (mole is CollisionObject2D):
 		return
+	var mole_body := mole as CollisionObject2D
 	var segment := finish - start
 	if segment.length_squared() <= 0.0:
 		return
-	var progress := clampf((mole.global_position - start).dot(segment) / segment.length_squared(), 0.0, 1.0)
-	var closest := start + segment * progress
-	if mole.global_position.distance_to(closest) <= BOSS_LASER_WIDTH * 0.5 + 28.0:
-		mole.call("take_damage", BOSS_LASER_DAMAGE, start, true, true)
+	var beam_shape := RectangleShape2D.new()
+	beam_shape.size = Vector2(maxf(segment.length(), 1.0), BOSS_LASER_WIDTH + 56.0)
+	var query := PhysicsShapeQueryParameters2D.new()
+	query.shape = beam_shape
+	query.transform = Transform2D(segment.angle(), (start + finish) * 0.5)
+	query.collision_mask = mole_body.collision_layer
+	query.collide_with_bodies = true
+	query.collide_with_areas = false
+	for hit in get_world_2d().direct_space_state.intersect_shape(query, 32):
+		if hit.get("collider") == mole_body:
+			mole.call("take_damage", BOSS_LASER_DAMAGE, start, true, true)
+			return
 
 func _break_blocks_along_boss_laser(start: Vector2, finish: Vector2) -> void:
 	var tilemap := get_parent().get_node_or_null("TileMap") as TileMap
@@ -1380,6 +1489,20 @@ func _spawn_boss_laser_impact(world_pos: Vector2) -> void:
 	var scene_root := get_tree().current_scene as Node2D
 	if scene_root == null:
 		return
+	var impact_light := PointLight2D.new()
+	impact_light.name = "BossLaserTipPurpleFlash"
+	impact_light.texture = BOSS_LASER_LIGHT_TEXTURE
+	impact_light.texture_scale = 0.8
+	impact_light.color = Color(0.64, 0.18, 1.0, 1.0)
+	impact_light.energy = 3.0
+	impact_light.shadow_enabled = false
+	scene_root.add_child(impact_light)
+	impact_light.global_position = world_pos
+	var light_tween := impact_light.create_tween().set_parallel(true)
+	light_tween.tween_property(impact_light, "texture_scale", 6.0, 0.3).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	light_tween.tween_property(impact_light, "energy", 0.0, 0.3).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	light_tween.chain().tween_callback(impact_light.queue_free)
+
 	var firework := Node2D.new()
 	firework.name = "SnailLaserFirework"
 	firework.z_index = BOSS_LASER_FIREWORK_Z
@@ -1477,8 +1600,8 @@ func _spawn_laser_firework_burst(parent: Node2D, spark_texture: Texture2D, amoun
 	particles.gravity = Vector2(0.0, 280.0)
 	particles.damping_min = 24.0
 	particles.damping_max = 72.0
-	particles.scale_amount_min = 0.16
-	particles.scale_amount_max = 0.42
+	particles.scale_amount_min = 1.0
+	particles.scale_amount_max = 2.4
 	particles.texture = spark_texture
 	var gradient := Gradient.new()
 	gradient.set_color(0, Color(1.0, 0.94, 1.0, 1.0))
@@ -1601,7 +1724,8 @@ func _defeat_boss() -> void:
 	linear_velocity = Vector2.ZERO
 	gravity_scale = 0.0
 	_restore_boss_camera_zoom()
-	_restore_boss_ambient()
+	# Keep the boss-fight lighting through the death sequence; restoring it here
+	# made the finale and its effects much darker than the fight.
 	if _boss_hurtbox != null:
 		_boss_hurtbox.set_deferred("monitoring", false)
 		_boss_hurtbox.set_deferred("monitorable", false)
@@ -1727,8 +1851,8 @@ func _spawn_death_firework_burst(world_pos: Vector2) -> void:
 	var spark_texture := _make_firework_spark_texture()
 	var tint: Color = DEATH_FIREWORK_COLORS.pick_random()
 	# Each particle node holds one burst while the central finale waits on input.
-	# The dense loops below trade a few extra spread-out pulses for the larger
-	# sprites/particle counts needed to read clearly at the distant camera scale.
+	# Large sparks stay legible at the distant camera scale; the old subpixel
+	# particle sizes made every shell explosion effectively invisible.
 	_spawn_laser_firework_burst(firework, spark_texture, int(DEATH_FIREWORK_PARTICLE_COUNT * blast_scale), 1.3, 420.0, 860.0 * blast_scale, tint)
 	_spawn_laser_firework_burst(firework, spark_texture, int(DEATH_FIREWORK_PARTICLE_COUNT * 0.55 * blast_scale), 1.0, 200.0, 540.0 * blast_scale, Color(1.0, 0.94, 1.0, 1.0))
 	_spawn_laser_firework_burst(firework, spark_texture, int(DEATH_FIREWORK_PARTICLE_COUNT * 0.35 * blast_scale), 0.8, 100.0, 300.0 * blast_scale, Color(1.0, 0.78, 0.26, 1.0))
@@ -1790,6 +1914,19 @@ func _open_black_hole(center: Vector2, body_size: Vector2) -> void:
 	_death_black_hole.scale = Vector2(0.04, 0.04)
 	var radius := maxf(body_size.x, body_size.y) * DEATH_BLACK_HOLE_RADIUS_SCALE
 
+	var aura := PointLight2D.new()
+	aura.name = "BlackHolePurpleAura"
+	aura.texture = SNAIL_GLOW_TEXTURE
+	aura.texture_scale = maxf(radius / 150.0, 1.0)
+	aura.color = Color(0.58, 0.12, 1.0, 1.0)
+	aura.energy = 1.8
+	aura.range_item_cull_mask = 1023
+	aura.shadow_enabled = false
+	aura.z_index = -2
+	_death_black_hole.add_child(aura)
+	var aura_pulse := aura.create_tween().set_loops()
+	aura_pulse.tween_property(aura, "energy", 2.4, 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	aura_pulse.tween_property(aura, "energy", 1.4, 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	var halo := Polygon2D.new()
 	halo.polygon = _black_hole_circle(radius * 0.9)
 	halo.color = Color(0.24, 0.025, 0.42, 0.82)

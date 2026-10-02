@@ -174,7 +174,10 @@ func _set_buttons_enabled(enabled: bool) -> void:
 	field_guide_btn.disabled = not enabled
 	# Boss Rush carries its own save-flag gate on top of the intro reveal, so it
 	# has to be re-derived here rather than simply flipped with the others -
-	# otherwise the reveal pass would unlock it on a fresh save.
+	# otherwise the reveal pass would unlock it on a fresh save. A disabled Button
+	# reads the disabled stylebox and font_disabled_color rather than the normal
+	# ones, so the locked look lives in intro.tscn as its own set - note that
+	# .tscn files cannot carry comments, which is why this lives here.
 	boss_rush_btn.disabled = not enabled or not Progress.is_game_completed()
 	if enabled:
 		play_btn.pivot_offset = play_btn.size / 2.0

@@ -18,6 +18,7 @@
 [ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="20_sucws"]
 [ext_resource type="PackedScene" uid="uid://c0pwtkklnyw5s" path="res://scenes/hornet_enemy.tscn" id="22_07gfx"]
 [ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="22_nfrlo"]
+[ext_resource type="PackedScene" path="res://ice_goblinenemy.tscn" id="23_07gfx"]
 [ext_resource type="Script" uid="uid://dpsujuff7o60j" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
 [ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
 [ext_resource type="PackedScene" uid="uid://3wwhicdeo8hl" path="res://scenes/info_popup.tscn" id="info_popup_res"]
@@ -389,6 +390,15 @@ position = Vector2(4483, 1530)
 
 [node name="HornetEnemy4" parent="." unique_id=1396304321 instance=ExtResource("22_07gfx")]
 position = Vector2(4943, 1540)
+
+[node name="IceGoblin" parent="." unique_id=1286929122 instance=ExtResource("23_07gfx")]
+position = Vector2(-910, -877)
+
+[node name="IceGoblin2" parent="." unique_id=77354183 instance=ExtResource("23_07gfx")]
+position = Vector2(-1601, 9)
+
+[node name="IceGoblin3" parent="." unique_id=902790884 instance=ExtResource("23_07gfx")]
+position = Vector2(3295, 4024)
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]

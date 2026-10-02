@@ -294,6 +294,7 @@ dialogue_text = "Thanks for defeating the Corrupted Heart. I will take its power
 post_dialogue_clearance = Vector2(500, 0)
 transform_after_dialogue = true
 boss_after_dialogue = true
+post_heart_music = true
 
 [node name="HornetEnemy" parent="." unique_id=937617817 instance=ExtResource("21_rap3s")]
 position = Vector2(121, 2377)

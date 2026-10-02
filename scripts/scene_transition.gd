@@ -28,6 +28,11 @@ func change_to(path: String) -> void:
 		queue_free()
 		return
 	get_tree().paused = true
+	# Whatever the scene being left carried for itself is let go here rather than
+	# on arrival, so a track like the village's fades out under the closing circle
+	# instead of trailing into the level that comes next. The pause does not hold
+	# this up: the fade lives on an autoload that always processes.
+	LevelMusic.stop_region()
 	_shader_material.set_shader_parameter("progress", 0.0)
 	var tween := create_tween()
 	tween.tween_method(_set_progress, 0.0, 1.0, WIPE_TIME).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_CUBIC)
