@@ -21,8 +21,8 @@
 [ext_resource type="Script" uid="uid://dpsujuff7o60j" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
 [ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
 [ext_resource type="PackedScene" uid="uid://3wwhicdeo8hl" path="res://scenes/info_popup.tscn" id="info_popup_res"]
+[ext_resource type="Script" uid="uid://dt8p0aswaem2b" path="res://scripts/level_05_intro.gd" id="level5_intro"]
 [ext_resource type="PackedScene" path="res://scenes/level_intro_banner.tscn" id="level_banner_res"]
-[ext_resource type="Script" path="res://scripts/level_05_intro.gd" id="level5_intro"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.8, 0.68, 0.46, 1)
@@ -245,9 +245,6 @@ position = Vector2(3181, -858)
 
 [node name="Enemy12" parent="." unique_id=463146960 instance=ExtResource("16_eceou")]
 position = Vector2(2162, -1915)
-
-[node name="Enemy15" parent="." unique_id=339862022 instance=ExtResource("16_eceou")]
-position = Vector2(3063, -382)
 
 [node name="Enemy14" parent="." unique_id=383233866 instance=ExtResource("16_eceou")]
 position = Vector2(2039, 178)

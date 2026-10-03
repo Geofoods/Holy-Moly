@@ -36,6 +36,7 @@ Lighting="*res://scripts/scene_lighting.gd"
 
 [display]
 
+window/size/mode=4
 window/stretch/mode="viewport"
 
 [editor_plugins]
