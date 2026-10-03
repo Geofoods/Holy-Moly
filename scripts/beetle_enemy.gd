@@ -209,7 +209,7 @@ func _on_hurtbox_area_entered(area: Area2D) -> void:
 			var dir = (global_position - mole.global_position).normalized()
 			velocity = dir * 600.0 + Vector2(0, -250)
 			_stun_timer = 0.25
-		take_damage(parent.get_damage())
+		take_damage(parent.get_damage(self))
 
 func _on_body_entered(body: Node) -> void:
 	if body.is_in_group("mole") and not _mole_in_contact:

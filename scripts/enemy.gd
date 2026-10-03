@@ -225,7 +225,7 @@ func _on_hurtbox_area_entered(area: Area2D) -> void:
 			swing_dir = (global_position - mole.global_position).normalized()
 			velocity = swing_dir * 600.0 + Vector2(0, -250)
 			_stun_timer = 0.25
-		take_damage(parent.get_damage(), swing_dir)
+		take_damage(parent.get_damage(self), swing_dir)
 
 func take_damage(amount: float, hit_dir: Vector2 = Vector2.ZERO) -> void:
 	if hit_dir != Vector2.ZERO:

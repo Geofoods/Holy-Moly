@@ -310,3 +310,4 @@ horizontal_alignment = 1
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/LastLevelButton" to="." method="_on_last_level_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/BossRushButton" to="." method="_on_boss_rush_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/FieldGuideButton" to="." method="_on_field_guide_pressed"]
+

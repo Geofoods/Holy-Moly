@@ -289,7 +289,7 @@ position = Vector2(5239, 1811)
 
 [node name="Snail" parent="." unique_id=1260151595 instance=ExtResource("20_uv3yh")]
 position = Vector2(5091, 4064)
-npc_name = "Corrupted Snail"
+npc_name = "Snail"
 dialogue_text = "Thanks for defeating the Corrupted Heart. I will take its power and use it for good!"
 post_dialogue_clearance = Vector2(500, 0)
 transform_after_dialogue = true

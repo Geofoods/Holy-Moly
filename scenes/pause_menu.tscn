@@ -135,7 +135,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="PausePanel" type="PanelContainer" parent="CenterContainer" unique_id=1329555518]
-custom_minimum_size = Vector2(500, 510)
+custom_minimum_size = Vector2(500, 610)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_pausebg")
 
@@ -198,6 +198,21 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_fieldguidebutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_fieldguidebutton_hover")
 text = " FIELD GUIDE "
 
+[node name="MapButton" type="Button" parent="CenterContainer/PausePanel/VBoxContainer/ButtonContainer"]
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.32, 0.2, 0.08, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("2_myx47")
+theme_override_font_sizes/font_size = 32
+theme_override_styles/normal = SubResource("StyleBoxFlat_fieldguidebutton")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_fieldguidebutton_hover")
+theme_override_styles/hover = SubResource("StyleBoxFlat_fieldguidebutton_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_fieldguidebutton_hover")
+tooltip_text = "Map and travel"
+text = " MAP "
+
 [node name="MainMenuButton" type="Button" parent="CenterContainer/PausePanel/VBoxContainer/ButtonContainer" unique_id=726517987]
 custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
@@ -215,4 +230,5 @@ text = "  MENU   "
 [connection signal="pressed" from="CenterContainer/PausePanel/VBoxContainer/ButtonContainer/ResumeButton" to="." method="_on_resume_pressed"]
 [connection signal="pressed" from="CenterContainer/PausePanel/VBoxContainer/ButtonContainer/RestartButton" to="." method="_on_restart_pressed"]
 [connection signal="pressed" from="CenterContainer/PausePanel/VBoxContainer/ButtonContainer/FieldGuideButton" to="." method="_on_field_guide_pressed"]
+[connection signal="pressed" from="CenterContainer/PausePanel/VBoxContainer/ButtonContainer/MapButton" to="." method="_on_map_pressed"]
 [connection signal="pressed" from="CenterContainer/PausePanel/VBoxContainer/ButtonContainer/MainMenuButton" to="." method="_on_main_menu_pressed"]

@@ -303,7 +303,7 @@ static func is_stalactite(atlas_coords: Vector2i) -> bool:
 			return true
 	return false
 
-static func break_tile(tilemap: TileMap, tile_pos: Vector2i, parent: Node, force: bool = false, debris_z: int = DEBRIS_Z) -> void:
+static func break_tile(tilemap: TileMap, tile_pos: Vector2i, parent: Node, force: bool = false, debris_z: int = DEBRIS_Z, suction_center: Vector2 = Vector2.ZERO, suction: bool = false) -> void:
 	var world_pos := tilemap.to_global(tilemap.map_to_local(tile_pos))
 	var source_id := tilemap.get_cell_source_id(0, tile_pos)
 	if source_id == -1:
@@ -311,7 +311,10 @@ static func break_tile(tilemap: TileMap, tile_pos: Vector2i, parent: Node, force
 		return
 	var atlas_coords := tilemap.get_cell_atlas_coords(0, tile_pos)
 
-	_break_single_tile(tilemap, tile_pos, atlas_coords, parent, force, debris_z)
+	_break_single_tile(tilemap, tile_pos, atlas_coords, parent, force, debris_z, suction_center, suction)
+	if suction:
+		_break_decoration_tile(tilemap, tile_pos, parent, debris_z, suction_center, true)
+		return
 	_collapse_unsupported_sides(tilemap, tile_pos, parent, debris_z)
 	_break_opened_chests_near(parent, world_pos)
 
@@ -321,7 +324,7 @@ static func break_tile(tilemap: TileMap, tile_pos: Vector2i, parent: Node, force
 		if mole and mole.has_method("screen_shake"):
 			mole.screen_shake(4.0, 0.1)
 
-	_break_decoration_tile(tilemap, tile_pos, parent, debris_z)
+	_break_decoration_tile(tilemap, tile_pos, parent, debris_z, suction_center, suction)
 
 	if is_stalactite(atlas_coords):
 		var below_tiles: Array[Vector2i] = []
@@ -339,8 +342,8 @@ static func break_tile(tilemap: TileMap, tile_pos: Vector2i, parent: Node, force
 
 	_break_stuff_above(tilemap, tile_pos, parent, debris_z)
 
-static func break_decoration_tile(tilemap: TileMap, tile_pos: Vector2i, parent: Node, debris_z: int = DEBRIS_Z) -> void:
-	_break_decoration_tile(tilemap, tile_pos, parent, debris_z)
+static func break_decoration_tile(tilemap: TileMap, tile_pos: Vector2i, parent: Node, debris_z: int = DEBRIS_Z, suction_center: Vector2 = Vector2.ZERO, suction: bool = false, layer_index: int = 1) -> void:
+	_break_decoration_tile(tilemap, tile_pos, parent, debris_z, suction_center, suction, layer_index)
 	var world_pos := tilemap.to_global(tilemap.map_to_local(tile_pos))
 	_break_opened_chests_near(parent, world_pos)
 
@@ -373,17 +376,17 @@ static func break_opened_chest_from_node(node: Node) -> bool:
 static func break_opened_chests_near(parent: Node, world_pos: Vector2, radius: float = 120.0) -> void:
 	_break_opened_chests_near(parent, world_pos, radius)
 
-static func _break_decoration_tile(tilemap: TileMap, tile_pos: Vector2i, parent: Node, debris_z: int = DEBRIS_Z) -> void:
-	if tilemap.get_layers_count() < 2:
+static func _break_decoration_tile(tilemap: TileMap, tile_pos: Vector2i, parent: Node, debris_z: int = DEBRIS_Z, suction_center: Vector2 = Vector2.ZERO, suction: bool = false, layer_index: int = 1) -> void:
+	if layer_index < 1 or tilemap.get_layers_count() <= layer_index:
 		return
-	var source_id := tilemap.get_cell_source_id(1, tile_pos)
+	var source_id := tilemap.get_cell_source_id(layer_index, tile_pos)
 	if source_id == -1:
 		return
-	var atlas_coords := tilemap.get_cell_atlas_coords(1, tile_pos)
-	_break_single_decoration_tile(tilemap, tile_pos, atlas_coords, parent, debris_z)
+	var atlas_coords := tilemap.get_cell_atlas_coords(layer_index, tile_pos)
+	_break_single_decoration_tile(tilemap, tile_pos, atlas_coords, parent, debris_z, suction_center, suction, layer_index)
 
-static func _break_single_decoration_tile(tilemap: TileMap, tile_pos: Vector2i, atlas_coords: Vector2i, parent: Node, debris_z: int = DEBRIS_Z) -> void:
-	var source_id := tilemap.get_cell_source_id(1, tile_pos)
+static func _break_single_decoration_tile(tilemap: TileMap, tile_pos: Vector2i, atlas_coords: Vector2i, parent: Node, debris_z: int = DEBRIS_Z, suction_center: Vector2 = Vector2.ZERO, suction: bool = false, layer_index: int = 1) -> void:
+	var source_id := tilemap.get_cell_source_id(layer_index, tile_pos)
 	if source_id == -1:
 		return
 
@@ -400,8 +403,8 @@ static func _break_single_decoration_tile(tilemap: TileMap, tile_pos: Vector2i, 
 	player.global_position = world_pos
 	player.play()
 
-	spawn_break_particles(tilemap, tile_pos, atlas_coords, parent, debris_z)
-	tilemap.erase_cell(1, tile_pos)
+	spawn_break_particles(tilemap, tile_pos, atlas_coords, parent, debris_z, suction_center, suction)
+	tilemap.erase_cell(layer_index, tile_pos)
 
 static func _cascade_break(tilemap: TileMap, tiles: Array[Vector2i], parent: Node, index: int, debris_z: int = DEBRIS_Z) -> void:
 	if index >= tiles.size():
@@ -456,7 +459,7 @@ static func _cell_has_stuff(tilemap: TileMap, cell: Vector2i) -> bool:
 			return true
 	return false
 
-static func _break_single_tile(tilemap: TileMap, tile_pos: Vector2i, atlas_coords: Vector2i, parent: Node, force: bool = false, debris_z: int = DEBRIS_Z) -> void:
+static func _break_single_tile(tilemap: TileMap, tile_pos: Vector2i, atlas_coords: Vector2i, parent: Node, force: bool = false, debris_z: int = DEBRIS_Z, suction_center: Vector2 = Vector2.ZERO, suction: bool = false) -> void:
 	var source_id := tilemap.get_cell_source_id(0, tile_pos)
 	if source_id == -1:
 		return
@@ -479,7 +482,7 @@ static func _break_single_tile(tilemap: TileMap, tile_pos: Vector2i, atlas_coord
 	player.global_position = world_pos
 	player.play()
 
-	spawn_break_particles(tilemap, tile_pos, atlas_coords, parent, debris_z)
+	spawn_break_particles(tilemap, tile_pos, atlas_coords, parent, debris_z, suction_center, suction)
 	tilemap.erase_cell(0, tile_pos)
 
 const MAX_POOLED := 12
@@ -519,7 +522,7 @@ static func _release_player(p: AudioStreamPlayer2D) -> void:
 	else:
 		p.queue_free()
 
-static func spawn_break_particles(tilemap: TileMap, tile_pos: Vector2i, atlas_coords: Vector2i, parent: Node, debris_z: int = DEBRIS_Z) -> void:
+static func spawn_break_particles(tilemap: TileMap, tile_pos: Vector2i, atlas_coords: Vector2i, parent: Node, debris_z: int = DEBRIS_Z, suction_center: Vector2 = Vector2.ZERO, suction: bool = false) -> void:
 	var world_pos := tilemap.to_global(tilemap.map_to_local(tile_pos))
 
 	var piece_tex: Texture2D = null
@@ -529,22 +532,60 @@ static func spawn_break_particles(tilemap: TileMap, tile_pos: Vector2i, atlas_co
 		piece_tex = src.texture
 		basis = Vector2(src.texture_region_size)
 
+	if suction:
+		var tile_visual := Sprite2D.new()
+		if piece_tex != null and basis.x > 0.0 and basis.y > 0.0:
+			var tile_texture := AtlasTexture.new()
+			tile_texture.atlas = piece_tex
+			tile_texture.region = Rect2(Vector2(atlas_coords) * basis, basis)
+			tile_visual.texture = tile_texture
+		else:
+			var fallback := Polygon2D.new()
+			fallback.polygon = PackedVector2Array([Vector2(-20, -20), Vector2(20, -20), Vector2(20, 20), Vector2(-20, 20)])
+			fallback.color = Color(0.58, 0.22, 0.72, 1.0)
+			fallback.process_mode = Node.PROCESS_MODE_ALWAYS
+			parent.add_child(fallback)
+			fallback.global_position = world_pos
+			var fallback_tween := fallback.create_tween().set_parallel(true)
+			fallback_tween.tween_property(fallback, "global_position", suction_center, 0.65).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+			fallback_tween.tween_property(fallback, "scale", Vector2.ZERO, 0.65)
+			fallback_tween.tween_property(fallback, "modulate:a", 0.0, 0.65)
+			fallback_tween.chain().tween_callback(fallback.queue_free)
+			return
+		tile_visual.z_index = debris_z
+		tile_visual.z_as_relative = false
+		tile_visual.scale = tilemap.global_scale
+		parent.add_child(tile_visual)
+		tile_visual.global_position = world_pos
+		var pull_time := clampf(world_pos.distance_to(suction_center) / 1800.0, 0.45, 1.25)
+		var suction_tween := tile_visual.create_tween().set_parallel(true)
+		suction_tween.tween_property(tile_visual, "global_position", suction_center, pull_time).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+		suction_tween.tween_property(tile_visual, "scale", Vector2.ZERO, pull_time).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+		suction_tween.tween_property(tile_visual, "modulate:a", 0.0, pull_time)
+		suction_tween.chain().tween_callback(tile_visual.queue_free)
+		return
+
 	if piece_tex != null and basis.x > 0.0 and basis.y > 0.0:
 		var origin := Vector2(atlas_coords) * basis
 		spawn_texture_break_particles(piece_tex, Rect2(origin, basis), world_pos, parent, DEBRIS_COUNT, 18.0, 34.0, debris_z)
 	else:
 		spawn_texture_break_particles(null, Rect2(), world_pos, parent, DEBRIS_COUNT, 18.0, 34.0, debris_z)
 
-static func spawn_texture_break_particles(texture: Texture2D, region: Rect2, world_pos: Vector2, parent: Node, count: int = 4, min_size: float = 18.0, max_size: float = 34.0, z_index: int = DEBRIS_Z) -> void:
+static func spawn_texture_break_particles(texture: Texture2D, region: Rect2, world_pos: Vector2, parent: Node, count: int = 4, min_size: float = 18.0, max_size: float = 34.0, z_index: int = DEBRIS_Z, suction_center: Vector2 = Vector2.ZERO, suction: bool = false) -> void:
 	if not is_instance_valid(parent):
 		return
 	for i in range(count):
 		var chunk := RigidBody2D.new()
-		chunk.collision_layer = 2
-		chunk.gravity_scale = 3.2
+		chunk.collision_layer = 0 if suction else 2
+		chunk.collision_mask = 0 if suction else 1
+		chunk.gravity_scale = 0.0 if suction else 3.2
 		chunk.linear_damp = 3.5
 		chunk.angular_damp = 2.0
 		chunk.z_index = z_index
+		if suction:
+			chunk.process_mode = Node.PROCESS_MODE_ALWAYS
+			chunk.freeze = true
+			chunk.freeze_mode = RigidBody2D.FREEZE_MODE_KINEMATIC
 		parent.call_deferred("add_child", chunk)
 		chunk.global_position = world_pos
 		chunk.rotation = randf_range(0.0, TAU)
@@ -577,15 +618,22 @@ static func spawn_texture_break_particles(texture: Texture2D, region: Rect2, wor
 		collision.shape = shape
 		chunk.add_child(collision)
 
-		var angle := -PI / 2.0 + randf_range(-PI / 2.0, PI / 2.0)
-		var speed := randf_range(150.0, 350.0)
-		chunk.linear_velocity = Vector2.from_angle(angle) * speed
-		chunk.angular_velocity = randf_range(-8.0, 8.0)
-
 		var tween := chunk.create_tween()
-		tween.tween_interval(1.0)
-		tween.tween_property(chunk, "modulate:a", 0.0, 0.5)
-		tween.tween_callback(chunk.queue_free)
+		if suction:
+			var pull_time := clampf(world_pos.distance_to(suction_center) / 1800.0, 0.45, 1.25)
+			tween.set_parallel(true)
+			tween.tween_property(chunk, "global_position", suction_center, pull_time).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+			tween.tween_property(chunk, "scale", Vector2.ZERO, pull_time).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+			tween.tween_property(chunk, "modulate:a", 0.0, pull_time)
+			tween.chain().tween_callback(chunk.queue_free)
+		else:
+			var angle := -PI / 2.0 + randf_range(-PI / 2.0, PI / 2.0)
+			var speed := randf_range(150.0, 350.0)
+			chunk.linear_velocity = Vector2.from_angle(angle) * speed
+			chunk.angular_velocity = randf_range(-8.0, 8.0)
+			tween.tween_interval(1.0)
+			tween.tween_property(chunk, "modulate:a", 0.0, 0.5)
+			tween.tween_callback(chunk.queue_free)
 
 static func _break_opened_chests_near(parent: Node, world_pos: Vector2, radius: float = 120.0) -> void:
 	if not is_instance_valid(parent):

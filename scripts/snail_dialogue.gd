@@ -2,6 +2,9 @@ extends RigidBody2D
 
 @export var prompt_text := "PRESS E TO INTERACT"
 @export var npc_name := "Snail"
+## What the dialogue box calls him once the transformation has turned him into
+## the Corrupted Snail. The first conversation still uses npc_name.
+@export var boss_npc_name := "Corrupted Snail"
 @export var portrait_texture: Texture2D = null
 @export_multiline var dialogue_text := ""
 @export_multiline var post_dialogue_text := ""
@@ -207,7 +210,10 @@ const DEATH_FADE_TIME := 0.8
 const DEATH_BLACK_HOLE_DELAY := 0.75
 const DEATH_BLACK_HOLE_GROW_TIME := 0.9
 const DEATH_BLACK_HOLE_PULL_TIME := 2.8
+const DEATH_BLACK_HOLE_TILE_BATCH := 12
+const DEATH_BLACK_HOLE_TILE_INTERVAL := 0.04
 const DEATH_BLACK_HOLE_RADIUS_SCALE := 0.38
+const DEATH_BLACK_HOLE_SNAIL_PULL_TIME := 2.6
 const DEATH_CREDITS_PATH := "res://scenes/credits.tscn"
 
 var _mole_overlapping := false
@@ -660,6 +666,7 @@ func _begin_boss_fight() -> void:
 	# Lets the boss's own spawns recognise it - the ice goblin's frost mushroom
 	# uses this to leave the shell alone instead of chipping away at the fight.
 	add_to_group(&"snail_boss")
+	add_to_group(&"boss")
 	# Walking into the shell must not shove it either. The mole's collision mask
 	# never matched the boss layer, so it was never blocked by the shell to begin
 	# with - the solver just used the contact to drag a 500hp boss down a cliff.
@@ -998,7 +1005,6 @@ func _apply_boss_damage(amount: float) -> void:
 		return
 	_boss_health = maxf(_boss_health - amount, 0.0)
 	_flash_boss_aura_shield()
-	_spawn_damage_hit_particles()
 	EnemyDamage.spawn_damage_number(self, amount, get_global_mouse_position(), true)
 	SFX.play("enemy_hit", global_position)
 	if _boss_hit_tween and _boss_hit_tween.is_valid():
@@ -1012,43 +1018,6 @@ func _apply_boss_damage(amount: float) -> void:
 		mole.screen_shake(8.0, 0.16)
 	if _boss_health <= 0.0:
 		_defeat_boss()
-
-func _spawn_damage_hit_particles() -> void:
-	var scene_root := get_tree().current_scene as Node2D
-	if scene_root == null or _sprite == null:
-		return
-	var texture := _current_sprite_texture()
-	var sprite_size := texture.get_size() if texture != null else Vector2(585.0, 442.0)
-	var world_half_size := sprite_size * _sprite.global_scale.abs() * 0.5
-	var impact_center := _sprite.global_position
-	var spark_texture := _make_firework_spark_texture()
-	for burst_index in 2:
-		var particles := CPUParticles2D.new()
-		particles.one_shot = true
-		particles.emitting = true
-		particles.explosiveness = 1.0
-		particles.amount = 64 if burst_index == 0 else 42
-		particles.lifetime = 0.85 if burst_index == 0 else 0.6
-		particles.direction = Vector2.ZERO
-		particles.spread = 180.0
-		particles.initial_velocity_min = 320.0 if burst_index == 0 else 180.0
-		particles.initial_velocity_max = 980.0 if burst_index == 0 else 640.0
-		particles.gravity = Vector2(0.0, 520.0)
-		particles.damping_min = 36.0
-		particles.damping_max = 100.0
-		particles.scale_amount_min = 1.1 if burst_index == 0 else 1.8
-		particles.scale_amount_max = 2.8 if burst_index == 0 else 4.0
-		particles.texture = spark_texture
-		var gradient := Gradient.new()
-		gradient.set_color(0, Color(1.0, 0.96, 1.0, 1.0))
-		gradient.set_color(0.2, Color(0.72, 0.22, 1.0, 1.0) if burst_index == 0 else Color(0.96, 0.58, 1.0, 1.0))
-		gradient.set_color(1, Color(0.35, 0.04, 0.72, 0.0))
-		particles.color_ramp = gradient
-		particles.z_index = BOSS_LASER_FIREWORK_Z + 1
-		particles.z_as_relative = false
-		scene_root.add_child(particles)
-		particles.global_position = impact_center + Vector2(randf_range(-world_half_size.x, world_half_size.x), randf_range(-world_half_size.y, world_half_size.y))
-		get_tree().create_timer(particles.lifetime + 0.25).timeout.connect(particles.queue_free)
 
 func _create_boss_health_bar() -> void:
 	_boss_health_layer = CanvasLayer.new()
@@ -1781,7 +1750,7 @@ func _show_death_dialogue() -> void:
 func _setup_death_box() -> void:
 	if _death_box == null or not is_instance_valid(_death_box):
 		return
-	_death_box.set_npc_name(npc_name)
+	_death_box.set_npc_name(boss_npc_name)
 	_death_box.set_portrait(portrait_texture)
 	_apply_portrait_blink_to(_death_box)
 	_death_box.next_pressed.connect(_on_death_dialogue_next)
@@ -1886,9 +1855,7 @@ func _death_finale() -> void:
 	_dismiss_death_box()
 	_begin_black_hole_after_explosion(center, body_size)
 
-	var fade := create_tween()
-	fade.tween_interval(0.9)
-	fade.tween_property(_sprite, "modulate:a", 0.0, DEATH_FADE_TIME)
+	# The shell stays visible until the hole has swallowed the arena tiles.
 	# Keep this controller alive until the black-hole pull hands off to credits.
 
 func _shake_camera(strength_multiplier: float = 1.0) -> void:
@@ -1943,7 +1910,72 @@ func _open_black_hole(center: Vector2, body_size: Vector2) -> void:
 
 	var growth := _death_black_hole.create_tween()
 	growth.tween_property(_death_black_hole, "scale", Vector2.ONE, DEATH_BLACK_HOLE_GROW_TIME).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	growth.tween_callback(_suck_player_into_black_hole.bind(center))
+	growth.tween_callback(_start_black_hole_tile_suction.bind(center))
+
+func _start_black_hole_tile_suction(center: Vector2) -> void:
+	var tilemap := get_parent().get_node_or_null("TileMap") as TileMap
+	if tilemap == null:
+		_pull_snail_into_black_hole(center)
+		return
+
+	var pull_radius := 1800.0
+	if _dialogue_focus_camera != null and is_instance_valid(_dialogue_focus_camera):
+		var half_view := _dialogue_focus_camera.get_viewport_rect().size / _dialogue_focus_camera.zoom * 0.5
+		pull_radius = half_view.length()
+	var cell_lookup: Dictionary = {}
+	for layer in range(tilemap.get_layers_count()):
+		for cell in tilemap.get_used_cells(layer):
+			var cell_world := tilemap.to_global(tilemap.map_to_local(cell))
+			if cell_world.distance_to(center) <= pull_radius:
+				cell_lookup[cell] = true
+	var cells: Array[Vector2i] = []
+	for cell in cell_lookup:
+		cells.append(cell)
+	cells.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+		var a_world := tilemap.to_global(tilemap.map_to_local(a))
+		var b_world := tilemap.to_global(tilemap.map_to_local(b))
+		return a_world.distance_squared_to(center) > b_world.distance_squared_to(center))
+
+	var index := 0
+	while index < cells.size() and is_inside_tree():
+		for batch_offset in range(DEATH_BLACK_HOLE_TILE_BATCH):
+			var cell_index := index + batch_offset
+			if cell_index >= cells.size():
+				break
+			var cell: Vector2i = cells[cell_index]
+			if tilemap.get_cell_source_id(0, cell) != -1:
+				TileBreakSFX.break_tile(tilemap, cell, get_parent(), true, TileBreakSFX.DEBRIS_Z_OVER_BEAM, center, true)
+			else:
+				for layer in range(1, tilemap.get_layers_count()):
+					if tilemap.get_cell_source_id(layer, cell) != -1:
+						TileBreakSFX.break_decoration_tile(tilemap, cell, get_parent(), TileBreakSFX.DEBRIS_Z_OVER_BEAM, center, true, layer)
+		index += DEATH_BLACK_HOLE_TILE_BATCH
+		if index < cells.size():
+			await get_tree().create_timer(DEATH_BLACK_HOLE_TILE_INTERVAL).timeout
+	_pull_snail_into_black_hole(center)
+
+func _pull_snail_into_black_hole(center: Vector2) -> void:
+	if _sprite == null or not is_instance_valid(_sprite):
+		_suck_player_into_black_hole(center)
+		return
+	_transformed = false
+	_sprite.visible = true
+	_sprite.modulate.a = 1.0
+	var pull := _death_black_hole.create_tween()
+	pull.set_parallel(true)
+	pull.tween_property(_sprite, "global_position", center, DEATH_BLACK_HOLE_SNAIL_PULL_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	pull.tween_property(_sprite, "global_scale", Vector2.ZERO, DEATH_BLACK_HOLE_SNAIL_PULL_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	pull.tween_property(_sprite, "rotation", TAU * 2.0, DEATH_BLACK_HOLE_SNAIL_PULL_TIME).as_relative()
+	for aura in _aura_sprites:
+		if is_instance_valid(aura):
+			pull.tween_property(aura, "modulate:a", 0.0, DEATH_BLACK_HOLE_SNAIL_PULL_TIME)
+	if _dialogue_focus_camera != null and is_instance_valid(_dialogue_focus_camera):
+		pull.tween_property(_dialogue_focus_camera, "global_position", center, DEATH_BLACK_HOLE_SNAIL_PULL_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+		pull.tween_property(_dialogue_focus_camera, "zoom", Vector2(1.3, 1.3), DEATH_BLACK_HOLE_SNAIL_PULL_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	pull.chain().tween_callback(func():
+		_sprite.visible = false
+		_suck_player_into_black_hole(center)
+	)
 
 func _black_hole_circle(radius: float) -> PackedVector2Array:
 	var points := PackedVector2Array()

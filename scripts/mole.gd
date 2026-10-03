@@ -53,6 +53,10 @@ const GRAPPLE_LATCH_DIST := 42.0
 const GRAPPLE_ROPE_COLOR := Color(0.85, 0.65, 0.3, 1.0)
 const GRAPPLE_ROPE_WIDTH := 6.0
 const GRAPPLE_ITEM := preload("res://resources/grappling_hook.tres")
+## The dialogue box is a scene, not an autoload, so it is referenced rather than
+## reached by name. Only is_open() is used - see that script for why item use
+## cannot be gated on the tree being paused instead.
+const DialogueBox := preload("res://scripts/dialogue_box.gd")
 const TileBreakSFX := preload("res://scripts/tile_break_sfx.gd")
 const GAME_SPEED := 1.2
 
@@ -727,6 +731,11 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		# Reading and fighting at the same time is not a thing. NPC conversations
+		# keep the tree running on purpose, so this has to be asked of the box
+		# directly rather than inherited from the pause state.
+		if DialogueBox.is_open():
+			return
 		var slot := Inventory.selected_slot
 		var item: ItemData = Inventory.slots[slot] if slot >= 0 and slot < Inventory.slots.size() else null
 		if item == null:
@@ -808,6 +817,11 @@ func _input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 
 func _handle_inventory_input() -> void:
+	# Held mid-conversation, a hotkey press would drink a potion or spend a bomb
+	# that the player was only reading about. Not consuming is the point: an
+	# item in use is gone for good.
+	if DialogueBox.is_open():
+		return
 	if Input.is_action_just_pressed("inventory_1"):
 		_toggle_slot(0)
 	elif Input.is_action_just_pressed("inventory_2"):
@@ -1294,7 +1308,7 @@ func _dash_ability_strike() -> void:
 		if front.distance_to(enemy.global_position) > DASH_HIT_RADIUS:
 			continue
 		_dash_hit_enemies[enemy] = true
-		var dmg := DASH_ABILITY_DAMAGE * ComboManager.get_damage_multiplier()
+		var dmg := DASH_ABILITY_DAMAGE * ComboManager.get_damage_multiplier(enemy)
 		if enemy.has_method("take_damage"):
 			enemy.take_damage(dmg, Vector2(tunnel_direction, 0.0))
 			spawn_dirt_particles(enemy.global_position)
@@ -1486,7 +1500,7 @@ func _ground_pound_strike() -> void:
 			continue
 		if global_position.distance_to(enemy.global_position) > hit_radius:
 			continue
-		var dmg := strike_damage * ComboManager.get_damage_multiplier()
+		var dmg := strike_damage * ComboManager.get_damage_multiplier(enemy)
 		var dir: Vector2 = (enemy as Node2D).global_position - global_position
 		dir = dir.normalized()
 		if dir == Vector2.ZERO:

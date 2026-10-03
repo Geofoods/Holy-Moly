@@ -68,12 +68,13 @@ func _damage_enemies_in_blast(origin: Vector2, radius: float, damage: float) -> 
 		if _blast_distance_to(hurtbox, enemy, origin) > radius:
 			continue
 		var direction: Vector2 = (enemy.global_position - origin).normalized()
+		var target_damage := damage * ComboManager.get_damage_multiplier(enemy)
 		# Explosions are their own kind of hit: the snail boss's aura shield soaks
 		# up a swing, but a bomb going off against it still hurts.
 		if enemy.has_method("take_explosion_damage"):
-			enemy.take_explosion_damage(damage, direction)
+			enemy.take_explosion_damage(target_damage, direction)
 		elif enemy.has_method("take_damage"):
-			enemy.take_damage(damage, direction)
+			enemy.take_damage(target_damage, direction)
 		elif enemy.has_method("die"):
 			enemy.die()
 
@@ -86,7 +87,7 @@ func _blast_exclusions() -> Array[Node]:
 	return []
 
 func _rolled_blast_damage() -> float:
-	return ENEMY_DAMAGE * DAMAGE_SCALAR * ComboManager.get_damage_multiplier() * randf_range(1.0 - DAMAGE_VARIATION, 1.0 + DAMAGE_VARIATION)
+	return ENEMY_DAMAGE * DAMAGE_SCALAR * randf_range(1.0 - DAMAGE_VARIATION, 1.0 + DAMAGE_VARIATION)
 
 ## How close an explosion landed to an enemy, measured against its hurtbox
 ## shape rather than its origin. Both bosses park a large hurtbox a long way from

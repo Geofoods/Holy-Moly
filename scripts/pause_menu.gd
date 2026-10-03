@@ -19,6 +19,7 @@ func _ready() -> void:
 		"CenterContainer/PausePanel/VBoxContainer/ButtonContainer/ResumeButton",
 		"CenterContainer/PausePanel/VBoxContainer/ButtonContainer/RestartButton",
 		"CenterContainer/PausePanel/VBoxContainer/ButtonContainer/FieldGuideButton",
+		"CenterContainer/PausePanel/VBoxContainer/ButtonContainer/MapButton",
 		"CenterContainer/PausePanel/VBoxContainer/ButtonContainer/MainMenuButton",
 	]:
 		var button := get_node(button_path) as Button
@@ -102,6 +103,7 @@ func _set_input_enabled(enabled: bool) -> void:
 	button_container.get_node("ResumeButton").disabled = not enabled
 	button_container.get_node("RestartButton").disabled = not enabled
 	button_container.get_node("FieldGuideButton").disabled = not enabled
+	button_container.get_node("MapButton").disabled = not enabled
 	button_container.get_node("MainMenuButton").disabled = not enabled
 
 func _on_background_input(event: InputEvent) -> void:
@@ -120,6 +122,12 @@ func _on_field_guide_pressed() -> void:
 	var info_popup = get_parent().get_node_or_null("InfoPopup")
 	if info_popup:
 		info_popup.open()
+
+## Hands the screen to the map overlay. This menu is already paused by the time
+## the button can be pressed, so the map opens over it and leaves the pause
+## alone; closing the map brings this menu straight back.
+func _on_map_pressed() -> void:
+	MapOverlay.open_map()
 
 func _on_main_menu_pressed() -> void:
 	get_tree().paused = false

@@ -130,6 +130,7 @@ var _indicator_layer: CanvasLayer = null
 var _indicator_arrow: Polygon2D = null
 
 func _ready() -> void:
+	add_to_group(&"boss")
 	_create_heart_glow()
 	anim.stop()
 	anim.frame = 0
@@ -923,7 +924,7 @@ func _on_hurtbox_area_entered(area: Area2D) -> void:
 		return
 	var parent = area.get_parent()
 	if "is_swinging" in parent and parent.is_swinging:
-		take_damage(parent.get_damage())
+		take_damage(parent.get_damage(self))
 
 func _sprite_center() -> Vector2:
 	var frame_tex := anim.sprite_frames.get_frame_texture(anim.animation, anim.frame)
@@ -942,7 +943,6 @@ func take_damage(amount: float, direction: Vector2 = Vector2.ZERO) -> void:
 	health -= amount
 	if direction != Vector2.ZERO:
 		hit_direction = direction.normalized()
-	_spawn_damage_hit_particles()
 	EnemyDamage.spawn_damage_number(self, amount, get_global_mouse_position(), true)
 	if health > 0.0:
 		_hit_feedback()
@@ -960,39 +960,6 @@ func take_damage(amount: float, direction: Vector2 = Vector2.ZERO) -> void:
 ## it is fighting, but not once the death finale has taken over.
 func can_be_frozen() -> bool:
 	return _boss_active and health > 0.0
-
-func _spawn_damage_hit_particles() -> void:
-	var scene_root := get_tree().current_scene as Node2D
-	if scene_root == null:
-		return
-	var half_size := anim.scale.abs() * Vector2(155.0, 155.0)
-	for burst_index in 2:
-		var particles := CPUParticles2D.new()
-		particles.one_shot = true
-		particles.emitting = true
-		particles.explosiveness = 1.0
-		particles.amount = 58 if burst_index == 0 else 38
-		particles.lifetime = 0.75 if burst_index == 0 else 0.55
-		particles.direction = Vector2.ZERO
-		particles.spread = 180.0
-		particles.initial_velocity_min = 280.0 if burst_index == 0 else 160.0
-		particles.initial_velocity_max = 850.0 if burst_index == 0 else 520.0
-		particles.gravity = Vector2(0.0, 420.0)
-		particles.damping_min = 45.0
-		particles.damping_max = 120.0
-		particles.scale_amount_min = 8.0 if burst_index == 0 else 12.0
-		particles.scale_amount_max = 22.0 if burst_index == 0 else 30.0
-		particles.texture = LASER_LIGHT_TEXTURE
-		var gradient := Gradient.new()
-		gradient.set_color(0, Color(1.0, 0.96, 1.0, 1.0))
-		gradient.set_color(0.18, Color(0.72, 0.24, 1.0, 1.0) if burst_index == 0 else Color(0.94, 0.58, 1.0, 1.0))
-		gradient.set_color(1, Color(0.38, 0.06, 0.78, 0.0))
-		particles.color_ramp = gradient
-		particles.z_index = 35
-		particles.z_as_relative = false
-		scene_root.add_child(particles)
-		particles.global_position = anim.global_position + Vector2(randf_range(-half_size.x, half_size.x), randf_range(-half_size.y, half_size.y))
-		get_tree().create_timer(particles.lifetime + 0.25).timeout.connect(particles.queue_free)
 
 func _hit_feedback() -> void:
 	var base_scale: Vector2 = anim.get_meta("hit_feedback_base_scale", anim.scale)

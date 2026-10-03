@@ -72,6 +72,10 @@ var _open := false
 ## True while the fade-out is playing. The overlay is still on screen and the
 ## tree is still paused, so it must not be treated as closed yet.
 var _closing := false
+## True only when this overlay is the thing that paused the tree. Opening from
+## the pause menu happens on an already-paused tree, and that menu expects to
+## still own the pause when the map is dismissed.
+var _paused_by_map := false
 ## True once a destination has been picked and travel is underway, so the close
 ## paths and M cannot interrupt a teleport already committed to.
 var _traveling := false
@@ -107,11 +111,21 @@ func _unhandled_input(event: InputEvent) -> void:
 func is_map_open() -> bool:
 	return _open
 
+## Public entry point for the MAP buttons in the title and pause screens. Unlike
+## the M key it opens over an already-paused tree, because the pause menu is
+## paused by the time its button can be pressed; the map simply takes the screen
+## over and hands the pause back on close.
+func open_map() -> void:
+	_open_map()
+
 func _open_map() -> void:
-	if _open or _traveling or get_tree().paused:
+	if _open or _traveling:
 		return
 
 	_open = true
+	# Whatever had the tree paused before - the pause menu - keeps ownership of
+	# that flag, so dismissing the map leaves its screen standing.
+	_paused_by_map = not get_tree().paused
 	get_tree().paused = true
 
 	_root = Control.new()
@@ -388,7 +402,12 @@ func _finish_close(closing: Control = null) -> void:
 	if _root == closing or closing == null:
 		_root = null
 		_holder = null
-	get_tree().paused = false
+	# Only lift the pause this overlay raised. Opening from the pause menu means
+	# the pause outlives the map, and unpausing here would leave that menu
+	# showing over a running level.
+	if _paused_by_map:
+		_paused_by_map = false
+		get_tree().paused = false
 
 func _style_label(label: Label, size: int, color: Color) -> void:
 	var font := load(FONT_PATH) as Font

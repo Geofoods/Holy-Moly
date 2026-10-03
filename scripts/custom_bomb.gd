@@ -98,7 +98,7 @@ func _blast() -> void:
 	pass
 
 func _rolled_enemy_damage() -> float:
-	return enemy_damage * DAMAGE_SCALAR * ComboManager.get_damage_multiplier() * randf_range(1.0 - DAMAGE_VARIATION, 1.0 + DAMAGE_VARIATION)
+	return enemy_damage * DAMAGE_SCALAR * randf_range(1.0 - DAMAGE_VARIATION, 1.0 + DAMAGE_VARIATION)
 
 func _damage_enemies_in_radius() -> void:
 	for hurtbox in get_tree().get_nodes_in_group("enemy_hurtbox"):
@@ -107,7 +107,8 @@ func _damage_enemies_in_radius() -> void:
 		var enemy := hurtbox.get_parent()
 		if enemy and is_instance_valid(enemy) and global_position.distance_to(enemy.global_position) <= blast_radius:
 			if enemy.has_method("take_damage"):
-				enemy.take_damage(_rolled_enemy_damage(), (enemy.global_position - global_position).normalized())
+				var damage := _rolled_enemy_damage() * ComboManager.get_damage_multiplier(enemy)
+				enemy.take_damage(damage, (enemy.global_position - global_position).normalized())
 			elif enemy.has_method("die"):
 				enemy.die()
 

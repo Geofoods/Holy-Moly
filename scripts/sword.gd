@@ -43,10 +43,10 @@ func _ready() -> void:
 	Shop.loadout_changed.connect(_apply_weapon_visual)
 	_apply_weapon_visual()
 
-func get_damage() -> float:
+func get_damage(target: Node = null) -> float:
 	var w := Shop.get_melee()
 	var base := randf_range(w.min_damage, w.max_damage) if w else randf_range(5.0, 10.0)
-	return base * ComboManager.get_damage_multiplier()
+	return base * ComboManager.get_damage_multiplier(target)
 
 func _apply_weapon_visual() -> void:
 	if sprite:
