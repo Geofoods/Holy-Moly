@@ -15,7 +15,7 @@
 [ext_resource type="PackedScene" uid="uid://cdxu1kg5or16d" path="res://candle.tscn" id="14_xt7jk"]
 [ext_resource type="PackedScene" uid="uid://buv33lctn53nn" path="res://scenes/respawn_station.tscn" id="16_6qlmf"]
 [ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="16_s2rbe"]
-[ext_resource type="PackedScene" path="res://scenes/shopkeeper_npc.tscn" id="17_shopkeeper"]
+[ext_resource type="PackedScene" uid="uid://dsn8kk2u1nx7s" path="res://scenes/shopkeeper_npc.tscn" id="17_shopkeeper"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.8, 0.68, 0.46, 1)
@@ -116,7 +116,6 @@ theme_override_styles/focus = SubResource("StyleBoxFlat_pausebutton_hover")
 text = "?"
 
 [node name="InventoryUI" parent="." unique_id=126326489 instance=ExtResource("8_6r41h")]
-visible = false
 
 [node name="InfoPopup" parent="." unique_id=778241011 instance=ExtResource("9_sn4is")]
 
@@ -173,7 +172,7 @@ metadata/_edit_use_anchors_ = true
 position = Vector2(2920, 352)
 
 [node name="ShopkeeperMole" parent="." unique_id=741375062 instance=ExtResource("17_shopkeeper")]
-position = Vector2(1860, -90)
+position = Vector2(1857, 5)
 scale = Vector2(0.25, 0.25)
 
 [node name="RespawnStation" parent="." unique_id=778143865 instance=ExtResource("16_6qlmf")]

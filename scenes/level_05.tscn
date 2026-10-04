@@ -17,9 +17,11 @@
 [ext_resource type="PackedScene" uid="uid://iuqjuk37ur0d" path="res://scenes/slimeenemy.tscn" id="20_n2bam"]
 [ext_resource type="PackedScene" uid="uid://k06dbe7sq1ph" path="res://scenes/goblinenemy.tscn" id="21_lglef"]
 [ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="22_lglef"]
+[ext_resource type="PackedScene" uid="uid://dg6omg8f4xhgx" path="res://scenes/snail.tscn" id="22_paq7k"]
 [ext_resource type="Script" uid="uid://dpsujuff7o60j" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
 [ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
 [ext_resource type="PackedScene" uid="uid://3wwhicdeo8hl" path="res://scenes/info_popup.tscn" id="info_popup_res"]
+[ext_resource type="Script" uid="uid://dt8p0aswaem2b" path="res://scripts/level_05_intro.gd" id="level5_intro"]
 [ext_resource type="PackedScene" path="res://scenes/level_intro_banner.tscn" id="level_banner_res"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
@@ -56,6 +58,7 @@ shader_parameter/darkness = 0.7
 size = Vector2(4079.5, 933)
 
 [node name="Node2D2" type="Node2D" unique_id=1979316305]
+script = ExtResource("level5_intro")
 
 [node name="ParallaxBackgroun2" parent="." unique_id=1654768929 instance=ExtResource("16_o2pic")]
 
@@ -243,9 +246,6 @@ position = Vector2(3181, -858)
 [node name="Enemy12" parent="." unique_id=463146960 instance=ExtResource("16_eceou")]
 position = Vector2(2162, -1915)
 
-[node name="Enemy15" parent="." unique_id=339862022 instance=ExtResource("16_eceou")]
-position = Vector2(3063, -382)
-
 [node name="Enemy14" parent="." unique_id=383233866 instance=ExtResource("16_eceou")]
 position = Vector2(2039, 178)
 
@@ -340,13 +340,19 @@ texture = ExtResource("22_lglef")
 
 [node name="ColorRect3" type="ColorRect" parent="Costume10" unique_id=631066280]
 z_index = 99
-offset_left = 222.9914
-offset_top = 1565.6759
-offset_right = 676.3921
-offset_bottom = 2982.19
+offset_left = 222.98767
+offset_top = 1565.7429
+offset_right = 676.38837
+offset_bottom = 2982.2568
 rotation = 3.1415927
 mouse_filter = 2
 color = Color(0, 0, 0, 1)
+
+[node name="Snail" parent="." unique_id=1260151595 instance=ExtResource("22_paq7k")]
+position = Vector2(4080, -2467)
+dialogue_text = "Help! Save me, I've been taken prisoner! Come up here!"
+remove_after_dialogue = true
+skip_if_arena_completed = true
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]

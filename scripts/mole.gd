@@ -53,6 +53,10 @@ const GRAPPLE_LATCH_DIST := 42.0
 const GRAPPLE_ROPE_COLOR := Color(0.85, 0.65, 0.3, 1.0)
 const GRAPPLE_ROPE_WIDTH := 6.0
 const GRAPPLE_ITEM := preload("res://resources/grappling_hook.tres")
+## The dialogue box is a scene, not an autoload, so it is referenced rather than
+## reached by name. Only is_open() is used - see that script for why item use
+## cannot be gated on the tree being paused instead.
+const DialogueBox := preload("res://scripts/dialogue_box.gd")
 const TileBreakSFX := preload("res://scripts/tile_break_sfx.gd")
 const GAME_SPEED := 1.2
 
@@ -61,6 +65,17 @@ const GAME_SPEED := 1.2
 ## scene can't re-enable it.
 const PEACEFUL_SCENES := [
 	"res://scenes/molevillage.tscn",
+	"res://scenes/shopkeeper_item.tscn",
+]
+
+## Scenes the mole always arrives at their own default spawn point in, whatever
+## position was saved when they last walked out of one of the scene's exits.
+## Set in code so editor re-saves of a scene can't re-enable it.
+##
+## The shop is the one that needs this: it has two exits side by side, and the
+## saved position is wherever the mole stood inside the one they left by, so
+## coming back dropped them in that doorway again instead of on the shop floor.
+const DEFAULT_SPAWN_SCENES := [
 	"res://scenes/shopkeeper_item.tscn",
 ]
 
@@ -198,7 +213,16 @@ func _ready() -> void:
 	if _mole_light:
 		_mole_light_base_energy = _mole_light.energy
 		_mole_light_base_scale = _mole_light.texture_scale
-	LevelMusic.start()
+	# A level that arrives silent is faded out rather than started, and the gate
+	# lives here rather than on something in the scene: the await above pushes
+	# this past every scene node's _ready, so a stop issued from one would already
+	# have been undone by the start that follows it here. Also stops the bed
+	# carried over from the previous level, which start() would otherwise skip
+	# because it reuses an existing player.
+	if LevelData.starts_silent(str(get_tree().current_scene.scene_file_path)):
+		LevelMusic.stop()
+	else:
+		LevelMusic.start()
 	Inventory.initialize()
 	Inventory.selected_slot_changed.connect(_on_selected_slot_changed)
 	Inventory.selected_slot = 0
@@ -231,10 +255,13 @@ func _play_respawn_arrival() -> void:
 		station.spawn_mole_in(self)
 
 ## Restores the position the mole had when it last left this level, if any, so
-## re-entering a level drops the player back where they exited.
+## re-entering a level drops the player back where they exited. Scenes listed in
+## DEFAULT_SPAWN_SCENES opt out and always start from their own spawn point.
 func _restore_level_position() -> void:
 	var cs := get_tree().current_scene
 	if cs == null:
+		return
+	if cs.scene_file_path in DEFAULT_SPAWN_SCENES:
 		return
 	var saved = Inventory.get_level_return_position(cs.scene_file_path)
 	if saved is Vector2:
@@ -718,6 +745,11 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		# Reading and fighting at the same time is not a thing. NPC conversations
+		# keep the tree running on purpose, so this has to be asked of the box
+		# directly rather than inherited from the pause state.
+		if DialogueBox.is_open():
+			return
 		var slot := Inventory.selected_slot
 		var item: ItemData = Inventory.slots[slot] if slot >= 0 and slot < Inventory.slots.size() else null
 		if item == null:
@@ -799,6 +831,11 @@ func _input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 
 func _handle_inventory_input() -> void:
+	# Held mid-conversation, a hotkey press would drink a potion or spend a bomb
+	# that the player was only reading about. Not consuming is the point: an
+	# item in use is gone for good.
+	if DialogueBox.is_open():
+		return
 	if Input.is_action_just_pressed("inventory_1"):
 		_toggle_slot(0)
 	elif Input.is_action_just_pressed("inventory_2"):
@@ -1285,7 +1322,7 @@ func _dash_ability_strike() -> void:
 		if front.distance_to(enemy.global_position) > DASH_HIT_RADIUS:
 			continue
 		_dash_hit_enemies[enemy] = true
-		var dmg := DASH_ABILITY_DAMAGE * ComboManager.get_damage_multiplier()
+		var dmg := DASH_ABILITY_DAMAGE * ComboManager.get_damage_multiplier(enemy)
 		if enemy.has_method("take_damage"):
 			enemy.take_damage(dmg, Vector2(tunnel_direction, 0.0))
 			spawn_dirt_particles(enemy.global_position)
@@ -1477,7 +1514,7 @@ func _ground_pound_strike() -> void:
 			continue
 		if global_position.distance_to(enemy.global_position) > hit_radius:
 			continue
-		var dmg := strike_damage * ComboManager.get_damage_multiplier()
+		var dmg := strike_damage * ComboManager.get_damage_multiplier(enemy)
 		var dir: Vector2 = (enemy as Node2D).global_position - global_position
 		dir = dir.normalized()
 		if dir == Vector2.ZERO:

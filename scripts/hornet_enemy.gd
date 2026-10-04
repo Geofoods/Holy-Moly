@@ -274,7 +274,7 @@ func _on_hurtbox_area_entered(area: Area2D) -> void:
 			_enter_recover()
 			cooldown_timer = DASH_COOLDOWN
 		velocity = (global_position - parent.global_position).normalized() * 500.0 + Vector2(0, -200)
-		take_damage(parent.get_damage())
+		take_damage(parent.get_damage(self))
 
 ## Direction the last hit pushed this enemy, so its death fragments are blown
 ## the same way (see spawn_death_fragments in enemy.gd).
@@ -308,7 +308,7 @@ func _setup_health_bar() -> void:
 	add_child(_health_bar)
 
 func _draw_health_bar() -> void:
-	EnemyDamage.draw_health_bar(_health_bar, health, MAX_HEALTH, -100.0)
+	EnemyDamage.draw_health_bar(_health_bar, visual, health, MAX_HEALTH, -100.0)
 
 func die() -> void:
 	died.emit()

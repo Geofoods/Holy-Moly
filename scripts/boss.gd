@@ -27,6 +27,7 @@ const LASER_COOLDOWN_MIN := 5.5
 const LASER_COOLDOWN_MAX := 8.5
 const LASER_CHARGE_TIME := 1.6
 const LASER_STRIKE_DURATION := 1.25
+const LASER_TRAVEL_TIME := 0.35
 const LASER_FADE_TIME := 0.55
 const LASER_LENGTH := 3000.0
 const LASER_GROUND_TRACE_STEP := 16.0
@@ -60,6 +61,8 @@ const HEART_FIREWORK_HOLD := 2.3
 const DEATH_FRAGMENT_LIFE := 10.0
 
 const EnemyDamage := preload("res://scripts/enemy.gd")
+const HEART_GLOW_TEXTURE := preload("res://costume3 (1).svg")
+const LASER_LIGHT_TEXTURE := preload("res://costume3 (1).svg")
 
 const INTRO_LINES := [
 	"hello there little mole,",
@@ -74,6 +77,7 @@ var _spit_cooldown := 0.0
 var _laser_cooldown := 0.0
 var _laser_attack_active := false
 var _laser_hit_tile := Vector2i(-1, -1)
+var _heart_glow: PointLight2D = null
 
 var _cutscene_mole: Node = null
 var _cutscene_cam: Camera2D = null
@@ -126,6 +130,8 @@ var _indicator_layer: CanvasLayer = null
 var _indicator_arrow: Polygon2D = null
 
 func _ready() -> void:
+	add_to_group(&"boss")
+	_create_heart_glow()
 	anim.stop()
 	anim.frame = 0
 	trigger.body_entered.connect(_on_trigger_entered)
@@ -137,6 +143,22 @@ func _ready() -> void:
 	_arena_map = get_parent().get_node_or_null("TileMap2") as TileMap
 	_tile_break_script = load("res://scripts/tile_break_sfx.gd")
 	_projectile_scene = preload("res://area_2d.tscn")
+
+func _create_heart_glow() -> void:
+	_heart_glow = PointLight2D.new()
+	_heart_glow.name = "CorruptedHeartGlow"
+	_heart_glow.position = anim.position
+	_heart_glow.texture = HEART_GLOW_TEXTURE
+	_heart_glow.texture_scale = 2.8
+	_heart_glow.color = Color(0.62, 0.2, 1.0, 1.0)
+	_heart_glow.energy = 1.0
+	_heart_glow.range_item_cull_mask = 1023
+	_heart_glow.shadow_enabled = false
+	add_child(_heart_glow)
+
+	var pulse := _heart_glow.create_tween().set_loops()
+	pulse.tween_property(_heart_glow, "energy", 1.45, 1.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	pulse.tween_property(_heart_glow, "energy", 0.85, 1.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 func _create_health_bar() -> void:
 	_health_bar_layer = CanvasLayer.new()
@@ -462,21 +484,28 @@ func _fire_laser_attack() -> void:
 	SFX.play("explosion", laser_start, -2.0, 0.12)
 	if is_instance_valid(mole) and mole.has_method("screen_shake"):
 		mole.screen_shake(24.0, LASER_STRIKE_DURATION)
-	_damage_mole_in_laser(mole, laser_start, laser_end)
+	var reached_laser_tip: bool = await _extend_laser_to_tip(beam_lines, laser_start, laser_end, mole)
+	if not reached_laser_tip:
+		_clear_laser_lines(beam_lines)
+		_laser_attack_active = false
+		return
 	_break_tiles_along_laser(laser_start, laser_end)
-	# Unconditional: this used to be gated on the beam finding bedrock, so whether
-	# the blast showed up at all came down to the level geometry.
+	# The endpoint firework now detonates only once the visible beam has reached it.
 	_spawn_laser_ground_firework(laser_end)
 	var laser_time_left := LASER_STRIKE_DURATION
 	while laser_time_left > 0.0:
 		var damage_interval := minf(0.1, laser_time_left)
 		await get_tree().create_timer(damage_interval).timeout
+		await get_tree().physics_frame
 		laser_time_left -= damage_interval
 		_damage_mole_in_laser(mole, laser_start, laser_end)
 	for line in beam_lines:
 		if is_instance_valid(line):
-			var fade := line.create_tween()
+			var fade := line.create_tween().set_parallel(true)
 			fade.tween_property(line, "modulate:a", 0.0, LASER_FADE_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+			for child in line.get_children():
+				if child is PointLight2D:
+					fade.tween_property(child, "energy", 0.0, LASER_FADE_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	await get_tree().create_timer(LASER_FADE_TIME).timeout
 	_clear_laser_lines(beam_lines)
 	_laser_attack_active = false
@@ -512,7 +541,65 @@ func _create_laser_glow(start: Vector2, finish: Vector2, is_preview: bool) -> Ar
 		lines.append(_create_laser_line(start, finish, Color(0.62, 0.06, 1.0, 0.62), LASER_WIDTH + 28.0))
 		lines.append(_create_laser_line(start, finish, Color(0.88, 0.42, 1.0, 0.95), LASER_WIDTH))
 		lines.append(_create_laser_line(start, finish, Color(0.98, 0.82, 1.0, 1.0), 30.0))
+	_attach_laser_lights(lines, start, finish, is_preview)
 	return lines
+
+func _attach_laser_lights(lines: Array[Line2D], start: Vector2, finish: Vector2, is_preview: bool) -> void:
+	if lines.is_empty() or not is_instance_valid(lines[0]):
+		return
+	var scene_root := get_tree().current_scene as Node2D
+	if scene_root == null:
+		return
+	var local_start := scene_root.to_local(start)
+	var local_end := scene_root.to_local(finish)
+	var beam_line := lines[0]
+	for fraction in [0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875]:
+		var light := PointLight2D.new()
+		light.name = "LaserPurpleLight"
+		light.position = local_start.lerp(local_end, fraction)
+		light.set_meta("laser_fraction", fraction)
+		light.texture = LASER_LIGHT_TEXTURE
+		light.texture_scale = 3.0
+		light.color = Color(0.62, 0.2, 1.0, 1.0)
+		light.energy = 0.55 if is_preview else 1.0
+		light.range_item_cull_mask = 1023
+		light.shadow_enabled = false
+		beam_line.add_child(light)
+
+func _extend_laser_to_tip(lines: Array[Line2D], start: Vector2, finish: Vector2, mole: Node2D) -> bool:
+	var scene_root := get_tree().current_scene as Node2D
+	if scene_root == null:
+		return false
+	var local_start := scene_root.to_local(start)
+	var local_finish := scene_root.to_local(finish)
+	var elapsed := 0.0
+	var last_damage_time := 0.0
+	var physics_step := 1.0 / float(Engine.physics_ticks_per_second)
+	_set_laser_progress(lines, local_start, local_finish, 0.0)
+	while elapsed < LASER_TRAVEL_TIME:
+		await get_tree().physics_frame
+		if not is_inside_tree() or not _boss_active or health <= 0.0:
+			return false
+		elapsed += physics_step
+		var progress := clampf(elapsed / LASER_TRAVEL_TIME, 0.0, 1.0)
+		var current_tip := start.lerp(finish, progress)
+		_set_laser_progress(lines, local_start, local_finish, progress)
+		if elapsed - last_damage_time >= 0.1:
+			_damage_mole_in_laser(mole, start, current_tip)
+			last_damage_time = elapsed
+	_set_laser_progress(lines, local_start, local_finish, 1.0)
+	return true
+
+func _set_laser_progress(lines: Array[Line2D], local_start: Vector2, local_finish: Vector2, progress: float) -> void:
+	var current_tip := local_start.lerp(local_finish, progress)
+	for line in lines:
+		if not is_instance_valid(line) or line.get_point_count() < 2:
+			continue
+		line.set_point_position(1, current_tip)
+		for child in line.get_children():
+			if child is PointLight2D and child.has_meta("laser_fraction"):
+				var light_fraction := float(child.get_meta("laser_fraction"))
+				(child as PointLight2D).position = local_start.lerp(local_finish, light_fraction * progress)
 
 func _animate_laser_beam(lines: Array[Line2D]) -> void:
 	for line in lines:
@@ -544,15 +631,24 @@ func _clear_laser_lines(lines: Array[Line2D]) -> void:
 			line.queue_free()
 
 func _damage_mole_in_laser(mole: Node2D, start: Vector2, finish: Vector2) -> void:
-	if not is_instance_valid(mole) or not mole.has_method("take_damage"):
+	if not is_instance_valid(mole) or not mole.is_in_group("mole") or not mole.has_method("take_damage") or not (mole is CollisionObject2D):
 		return
+	var mole_body := mole as CollisionObject2D
 	var segment := finish - start
 	if segment.length_squared() <= 0.0:
 		return
-	var t := clampf((mole.global_position - start).dot(segment) / segment.length_squared(), 0.0, 1.0)
-	var closest := start + segment * t
-	if mole.global_position.distance_to(closest) <= LASER_WIDTH * 0.5 + LASER_COLLISION_MARGIN:
-		mole.take_damage(LASER_DAMAGE, start, true, true)
+	var beam_shape := RectangleShape2D.new()
+	beam_shape.size = Vector2(maxf(segment.length(), 1.0), LASER_WIDTH + LASER_COLLISION_MARGIN * 2.0)
+	var query := PhysicsShapeQueryParameters2D.new()
+	query.shape = beam_shape
+	query.transform = Transform2D(segment.angle(), (start + finish) * 0.5)
+	query.collision_mask = mole_body.collision_layer
+	query.collide_with_bodies = true
+	query.collide_with_areas = false
+	for hit in get_world_2d().direct_space_state.intersect_shape(query, 32):
+		if hit.get("collider") == mole_body:
+			mole.take_damage(LASER_DAMAGE, start, true, true)
+			return
 
 func _break_tiles_along_laser(start: Vector2, finish: Vector2) -> void:
 	if _tilemap == null or _tile_break_script == null:
@@ -572,6 +668,21 @@ func _break_tiles_along_laser(start: Vector2, finish: Vector2) -> void:
 			_tile_break_script.break_tile(_tilemap, cell, get_parent(), false, _tile_break_script.DEBRIS_Z_OVER_BEAM)
 
 func _spawn_laser_ground_firework(world_pos: Vector2) -> void:
+	var scene_root := get_tree().current_scene as Node2D
+	if scene_root != null:
+		var flash := PointLight2D.new()
+		flash.name = "HeartLaserTipExplosion"
+		flash.texture = LASER_LIGHT_TEXTURE
+		flash.texture_scale = 0.8
+		flash.color = Color(0.62, 0.16, 1.0, 1.0)
+		flash.energy = 3.0
+		flash.shadow_enabled = false
+		scene_root.add_child(flash)
+		flash.global_position = world_pos
+		var flash_tween := flash.create_tween().set_parallel(true)
+		flash_tween.tween_property(flash, "texture_scale", 6.0, 0.3).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		flash_tween.tween_property(flash, "energy", 0.0, 0.3).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		flash_tween.chain().tween_callback(flash.queue_free)
 	_spawn_firework_burst(world_pos, 180, Color(0.72, 0.12, 1.0, 1.0), 1100.0, 1.8)
 	_spawn_firework_burst(world_pos, 96, Color(0.96, 0.72, 1.0, 1.0), 760.0, 1.45)
 	_spawn_firework_burst(world_pos + Vector2(-38.0, -24.0), 56, Color(0.45, 0.18, 1.0, 1.0), 620.0, 1.25)
@@ -709,6 +820,9 @@ func _on_intro_dialogue_next() -> void:
 				box.queue_free()
 		)
 		_dialogue_finished = true
+		# The bed is already silent by the time the player gets here, so the
+		# theme fades up into the gap the dialogue leaves rather than under it.
+		LevelMusic.play_boss_track()
 		return
 	_dialogue_line_index += 1
 	_show_intro_dialogue_line()
@@ -810,7 +924,7 @@ func _on_hurtbox_area_entered(area: Area2D) -> void:
 		return
 	var parent = area.get_parent()
 	if "is_swinging" in parent and parent.is_swinging:
-		take_damage(parent.get_damage())
+		take_damage(parent.get_damage(self))
 
 func _sprite_center() -> Vector2:
 	var frame_tex := anim.sprite_frames.get_frame_texture(anim.animation, anim.frame)
@@ -867,6 +981,12 @@ func die() -> void:
 	hurtbox.set_deferred("monitorable", false)
 	_destroy_health_bar()
 	_destroy_offscreen_indicator()
+	# The fight is over the moment the heart goes down, and the theme recedes
+	# under the collapse rather than being cut off. Torn down here because the
+	# level does not end with the boss: the mole walks out to the exit and would
+	# otherwise carry the theme the rest of the way.
+	LevelMusic.prepare_vessel_road()
+	LevelMusic.stop_boss_track(LevelMusic.BOSS_DEATH_FADE, LevelMusic.start_vessel_opening)
 	_start_death_cutscene()
 
 	modulate = Color(3.0, 2.4, 2.4, 1.0)

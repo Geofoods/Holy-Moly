@@ -51,7 +51,7 @@ func _process(_delta: float) -> void:
 func _build_catalog() -> void:
 	catalog = [
 		_make_melee("shovel", "Shovel", "The trusty starting tool.", 0, 5.0, 10.0, 2.4, 0.3, Color(0.9, 0.8, 0.55)),
-		_make_melee("gold_shovel", "Golden Shovel", "Wide arc, quick swing, double damage.", 160, 10.0, 20.0, 2.8, 0.2, Color(1.0, 0.8, 0.2)),
+		_make_melee("gold_shovel", "Golden Shovel", "Wide arc, quick swing, double damage.", 160, 10.0, 20.0, 2.8, 0.2, Color(1.0, 0.8, 0.2), true),
 	]
 	weapon_catalog.clear()
 	ability_catalog.clear()
@@ -69,12 +69,13 @@ func _build_item_catalog() -> void:
 	# deliberately sells the four staples and nothing else, so the pager never
 	# appears and the panel stays a quick read.
 	var defs := [
-		# Healing
-		{"name": "Miner's Rations", "price": 25},
-		{"name": "Potted Honeycomb", "price": 35},
-		{"name": "Holy Water", "price": 60},
+		# Tools
+		{"name": "Drill", "price": 70},
 		# Explosives
 		{"name": "Bomb", "price": 80},
+		{"name": "Ice Bomb", "price": 95},
+		# Healing
+		{"name": "Holy Water", "price": 60},
 	]
 	for def in defs:
 		var item := _find_item(def["name"])
@@ -127,7 +128,7 @@ func _make_ability(id: String, name: String, desc: String, price: int, color: Co
 	w.icon_color = color
 	return w
 
-func _make_melee(id: String, name: String, desc: String, price: int, dmg_min: float, dmg_max: float, arc: float, dur: float, color: Color) -> WeaponData:
+func _make_melee(id: String, name: String, desc: String, price: int, dmg_min: float, dmg_max: float, arc: float, dur: float, color: Color, polished := false) -> WeaponData:
 	var w := WeaponData.new()
 	w.id = id
 	w.display_name = name
@@ -139,6 +140,7 @@ func _make_melee(id: String, name: String, desc: String, price: int, dmg_min: fl
 	w.swing_arc = arc
 	w.swing_duration = dur
 	w.icon_color = color
+	w.polished = polished
 	return w
 
 func _make_ranged(id: String, name: String, desc: String, price: int, dmg_min: float, dmg_max: float, cooldown: float, speed: float, color: Color) -> WeaponData:
@@ -308,7 +310,11 @@ func _loadout_refresh() -> void:
 	if equipped_ranged_id != "" and not owns(equipped_ranged_id):
 		equipped_ranged_id = ""
 
-	_owned_append("shovel")
+	# Base moveset, granted on every boot like the shovel so existing saves pick
+	# it up too. The wall jump is not an unlock any more - it is part of how the
+	# mole moves from the first level, so nothing has to buy or earn it.
+	for id in ["shovel", "wall_jump"]:
+		_owned_append(id)
 	equipped_melee_id = "shovel" if not owns(equipped_melee_id) else equipped_melee_id
 
 	loadout_changed.emit()

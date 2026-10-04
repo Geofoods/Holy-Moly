@@ -10,3 +10,12 @@ func _ready() -> void:
 
 func _on_body_entered(_body: Node) -> void:
 	_explode()
+
+## Goblin-thrown blasts must not damage the Corrupted Snail or disrupt its
+## scripted boss fight. Player bombs keep their normal behavior.
+func _blast_exclusions() -> Array[Node]:
+	var exclusions: Array[Node] = []
+	for snail in get_tree().get_nodes_in_group(&"snail_boss"):
+		if is_instance_valid(snail):
+			exclusions.append(snail)
+	return exclusions

@@ -111,7 +111,7 @@ func _on_hurtbox_area_entered(area: Area2D) -> void:
 			var dir = (global_position - mole.global_position).normalized()
 			velocity = dir * 600.0 + Vector2(0, -250)
 			_stun_timer = 0.25
-		take_damage(parent.get_damage())
+		take_damage(parent.get_damage(self))
 
 ## Takes the hit direction the fragment-spawning enemies use for their death
 ## gibs; this one just shrinks away, so it ignores it.
@@ -141,7 +141,7 @@ func _setup_health_bar() -> void:
 	add_child(_health_bar)
 
 func _draw_health_bar() -> void:
-	EnemyDamage.draw_health_bar(_health_bar, health, MAX_HEALTH, -70.0)
+	EnemyDamage.draw_health_bar(_health_bar, visual, health, MAX_HEALTH, -70.0)
 
 func die() -> void:
 	SFX.play("enemy_death", global_position)

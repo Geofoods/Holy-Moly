@@ -3,6 +3,29 @@ extends CanvasLayer
 signal next_pressed
 signal prev_pressed
 
+## How many dialogue boxes are currently live. Every one of them owns the screen
+## while it is up, so this is the single answer to "is the player reading rather
+## than playing". A count rather than a flag because a box is freed some time
+## after it closes, so the flag would stay set through the fade-out.
+static var _open_count := 0
+
+## True while any dialogue box is on screen. The mole checks this so items
+## cannot be fired or spent mid-conversation. These checks cannot lean on
+## get_tree().paused: NPC conversations deliberately leave the tree running so
+## explosions and particles keep going under the box.
+static func is_open() -> bool:
+	return _open_count > 0
+
+## Keeps the music in step with the boxes. Driven off the same count that
+## `is_open()` reads, and only acts on the 0-1 and 1-0 edges: a second box opening
+## while the first is still sliding away must not start the music back up
+## underneath it.
+static func _follow_music() -> void:
+	if _open_count > 0:
+		LevelMusic.duck_for_dialogue()
+	else:
+		LevelMusic.unduck_for_dialogue()
+
 const TYPE_SPEED := 0.018
 const SLIDE_DISTANCE := 240.0
 
@@ -31,6 +54,8 @@ var _portrait_frame_time := 0.0
 var _portrait_playing := false
 
 func _ready() -> void:
+	_open_count += 1
+	_follow_music()
 	next_button.pressed.connect(_on_next_pressed)
 	prev_button.pressed.connect(_on_prev_pressed)
 
@@ -144,9 +169,22 @@ func skip_typing() -> void:
 		_type_tween.kill()
 	main_label.text = _full_text
 
+## Releasing the count on the way out rather than on free keeps item use blocked
+## through the slide-away, so the player cannot spend something in the moment
+## between dismissing the box and it being gone.
 func hide_box() -> void:
 	_closing = true
+	_open_count = maxi(_open_count - 1, 0)
+	_follow_music()
 	var tween := create_tween()
 	tween.set_parallel(true)
 	tween.tween_property(self, "offset:y", SLIDE_DISTANCE, 0.3).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	tween.tween_property(panel, "modulate:a", 0.0, 0.25)
+
+## A box can also disappear without hide_box - a scene change mid-line, or the
+## husked NPC path that never opened one - so the count is released here too and
+## cannot be left stuck above zero.
+func _exit_tree() -> void:
+	if not _closing:
+		_open_count = maxi(_open_count - 1, 0)
+		_follow_music()

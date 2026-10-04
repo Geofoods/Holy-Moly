@@ -35,7 +35,7 @@ func _ready() -> void:
 	add_child(_health_bar)
 
 func _draw_health_bar() -> void:
-	EnemyDamage.draw_health_bar(_health_bar, health, HP_MAX, -92.0)
+	EnemyDamage.draw_health_bar(_health_bar, visual, health, HP_MAX, -92.0)
 
 func _process(delta: float) -> void:
 	if _flash > 0.0:

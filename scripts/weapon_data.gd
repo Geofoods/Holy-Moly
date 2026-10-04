@@ -19,3 +19,8 @@ var cooldown := 0.45
 var projectile_speed := 1500.0
 
 var icon_color := Color.WHITE
+
+## Set on a weapon that should look polished rather than merely tinted - it gets
+## the shine shader over its sprite, so the gold shovel catches the light instead
+## of just being a gold-coloured shovel.
+var polished := false

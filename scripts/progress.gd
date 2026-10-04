@@ -40,6 +40,11 @@ var queen_defeated := false
 var corrupted_defeated := false
 var boss_rush_cleared := false
 var arena_completed := false
+## Set when the final boss's death hands off to the credits, which is the one
+## moment that unambiguously means the campaign was finished. The title screen
+## gates Boss Rush on this, so it has to survive a quit between beating the boss
+## and rolling the credits.
+var game_completed := false
 var best_combo := 0
 
 ## Banked respawn station. `respawn_scene` is the scene the mole is set to
@@ -175,6 +180,17 @@ func mark_boss_rush_cleared() -> void:
 		boss_rush_cleared = true
 		save_progress()
 
+func mark_game_completed() -> void:
+	if not game_completed:
+		game_completed = true
+		save_progress()
+
+## Whether the title screen has a Boss Rush to offer. Kept as a named query so
+## the unlock rule lives in one place rather than being re-derived at every call
+## site.
+func is_game_completed() -> bool:
+	return game_completed
+
 func mark_arena_completed() -> void:
 	if not arena_completed:
 		arena_completed = true
@@ -240,6 +256,7 @@ func save_progress() -> void:
 	cfg.set_value("bosses", "rush", boss_rush_cleared)
 	cfg.set_value("arena", "completed", arena_completed)
 	cfg.set_value("meta", "best_combo", best_combo)
+	cfg.set_value("meta", "game_completed", game_completed)
 	cfg.set_value("respawn", "scene", respawn_scene)
 	cfg.set_value("respawn", "position", respawn_position)
 	cfg.set_value("respawn", "activated", respawn_activated)
@@ -264,6 +281,7 @@ func load_progress() -> void:
 	boss_rush_cleared = bool(cfg.get_value("bosses", "rush", false))
 	arena_completed = bool(cfg.get_value("arena", "completed", false))
 	best_combo = int(cfg.get_value("meta", "best_combo", 0))
+	game_completed = bool(cfg.get_value("meta", "game_completed", false))
 	respawn_scene = str(cfg.get_value("respawn", "scene", ""))
 	var pos = cfg.get_value("respawn", "position", Vector2.ZERO)
 	if pos is Vector2:

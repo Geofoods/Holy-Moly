@@ -25,3 +25,20 @@ func _ready() -> void:
 
 func _on_body_entered(_body: Node) -> void:
 	_explode()
+
+## The frost mushroom is the Ice Goblin's own ordnance, so it must leave the
+## Corrupted Snail that coughed the goblin out alone. The snail drives the fight,
+## and its transformation and death are both scripted, so letting a minion damage
+## it would pull the encounter off-script - and freezing it would stall the
+## autoscroller outright, since freezing stops the snail's own processing.
+##
+## Only this goblin-thrown blast is exempt. The player's own ice bomb still
+## damages and chills the snail - see take_explosion_damage and can_be_frozen on
+## the snail for why.
+func _blast_exclusions() -> Array[Node]:
+	var exclusions: Array[Node] = []
+	for snail in get_tree().get_nodes_in_group(&"snail_boss"):
+		if is_instance_valid(snail):
+			exclusions.append(snail)
+	return exclusions
+

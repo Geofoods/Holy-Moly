@@ -18,6 +18,7 @@
 [ext_resource type="PackedScene" uid="uid://cdxu1kg5or16d" path="res://candle.tscn" id="20_2exuq"]
 [ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="21_2exuq"]
 [ext_resource type="PackedScene" uid="uid://c0pwtkklnyw5s" path="res://scenes/hornet_enemy.tscn" id="22_naxwy"]
+[ext_resource type="PackedScene" path="res://ice_goblinenemy.tscn" id="23_2i8rr"]
 [ext_resource type="Script" uid="uid://dpsujuff7o60j" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
 [ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
 [ext_resource type="PackedScene" uid="uid://3wwhicdeo8hl" path="res://scenes/info_popup.tscn" id="info_popup_res"]
@@ -359,6 +360,9 @@ position = Vector2(1155, 2090)
 
 [node name="HornetEnemy2" parent="." unique_id=2065490915 instance=ExtResource("22_naxwy")]
 position = Vector2(3695, 2036)
+
+[node name="IceGoblin" parent="." unique_id=1275221711 instance=ExtResource("23_2i8rr")]
+position = Vector2(5685, 2439)
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]

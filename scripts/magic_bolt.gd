@@ -10,7 +10,7 @@ var _tail: Array[Vector2] = []
 const TAIL_MAX := 14
 
 func setup(w: WeaponData, dir_facing: Vector2) -> void:
-	_damage = randf_range(w.min_damage, w.max_damage) * ComboManager.get_damage_multiplier()
+	_damage = randf_range(w.min_damage, w.max_damage)
 	_velocity = dir_facing * w.projectile_speed
 	_color = w.icon_color
 	rotation = dir_facing.angle()
@@ -36,7 +36,7 @@ func _on_area_entered(area: Area2D) -> void:
 		var enemy := area.get_parent()
 		if enemy and enemy.has_method("take_damage"):
 			_dead = true
-			enemy.take_damage(_damage, _velocity.normalized())
+			enemy.take_damage(_damage * ComboManager.get_damage_multiplier(enemy), _velocity.normalized())
 			_explode()
 
 func _on_body_entered(body: Node) -> void:

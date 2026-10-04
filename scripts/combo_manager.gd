@@ -1,8 +1,12 @@
 extends CanvasLayer
 
 const COMBO_WINDOW := 7.0
-const SPEED_BONUS_PER_KILL := 0.08
-const MAX_SPEED_BONUS := 0.6
+const SPEED_BONUS_PER_KILL := 0.03
+const MAX_SPEED_BONUS := 0.25
+const DAMAGE_BONUS_PER_KILL := 0.05
+const MAX_DAMAGE_BONUS := 0.5
+const COIN_BONUS_PER_KILL := 0.1
+const MAX_COIN_BONUS := 1.0
 const COYOTE_TIME := 0.08
 
 var combo := 0
@@ -64,11 +68,13 @@ func get_speed_multiplier() -> float:
 func get_coyote_time() -> float:
 	return COYOTE_TIME
 
-func get_damage_multiplier() -> float:
-	return float(maxi(1, combo))
+func get_damage_multiplier(target: Node = null) -> float:
+	if target != null and is_instance_valid(target) and target.is_in_group(&"boss"):
+		return 1.0
+	return 1.0 + minf(float(combo) * DAMAGE_BONUS_PER_KILL, MAX_DAMAGE_BONUS)
 
 func get_coin_multiplier() -> float:
-	return float(maxi(1, combo))
+	return 1.0 + minf(float(combo) * COIN_BONUS_PER_KILL, MAX_COIN_BONUS)
 
 func _reset_combo() -> void:
 	combo = 0
@@ -77,9 +83,8 @@ func _reset_combo() -> void:
 
 func _update_label() -> void:
 	var time_left := int(ceil(combo_timer))
-	var mult := maxi(1, combo)
-	_label.text = "COMBO x%d\nDMG x%d\nCOIN x%d\nSPD x%.2f\nTIME %ds" % \
-		[combo, mult, mult, get_speed_multiplier(), time_left]
+	_label.text = "COMBO x%d\nDMG x%.2f\nCOIN x%.2f\nSPD x%.2f\nTIME %ds" % \
+		[combo, get_damage_multiplier(), get_coin_multiplier(), get_speed_multiplier(), time_left]
 
 func _get_combo_color() -> Color:
 	if combo >= 10:

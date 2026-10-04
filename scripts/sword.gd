@@ -24,6 +24,10 @@ var _ghost_tweens: Dictionary = {}
 var _ghost_accum := 0.0
 var _ghost_index := 0
 
+## Built once and reused, so swapping weapons back and forth does not churn a new
+## ShaderMaterial every time the loadout changes.
+var _polish_material: ShaderMaterial = null
+
 const HIGHLIGHT_MINEABLE := Color(0.15, 1.0, 0.35, 1.0)
 const HIGHLIGHT_UNMINEABLE := Color(1.0, 0.15, 0.15, 1.0)
 const HIGHLIGHT_AIR := Color(1.0, 1.0, 1.0, 1.0)
@@ -43,15 +47,29 @@ func _ready() -> void:
 	Shop.loadout_changed.connect(_apply_weapon_visual)
 	_apply_weapon_visual()
 
-func get_damage() -> float:
+func get_damage(target: Node = null) -> float:
 	var w := Shop.get_melee()
 	var base := randf_range(w.min_damage, w.max_damage) if w else randf_range(5.0, 10.0)
-	return base * ComboManager.get_damage_multiplier()
+	return base * ComboManager.get_damage_multiplier(target)
 
 func _apply_weapon_visual() -> void:
-	if sprite:
-		var w := Shop.get_melee()
-		sprite.self_modulate = w.icon_color if w else Color.WHITE
+	if not sprite:
+		return
+	var w := Shop.get_melee()
+	sprite.self_modulate = w.icon_color if w else Color.WHITE
+	_apply_polish(w != null and w.polished)
+
+## Puts the shine on, or takes it back off again. Anything else - swapping back to
+## the trusty shovel mid-run - has to drop the material rather than just leave it,
+## or the trusty shovel would come out looking equally precious.
+func _apply_polish(on: bool) -> void:
+	if not on:
+		sprite.material = null
+		return
+	if _polish_material == null:
+		_polish_material = ShaderMaterial.new()
+		_polish_material.shader = preload("res://shaders/gold_shine.gdshader")
+	sprite.material = _polish_material
 
 func _setup_ghosts() -> void:
 	var world := get_parent().get_parent()

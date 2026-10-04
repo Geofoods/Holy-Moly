@@ -56,26 +56,38 @@ func arm() -> void:
 ## Every enemy hurtbox the blast catches. Shared with the ice bomb, which
 ## extends this script for the fuse, art and crater but detonates on its own.
 func _damage_enemies_in_blast(origin: Vector2, radius: float, damage: float) -> void:
+	var excluded := _blast_exclusions()
 	for hurtbox in get_tree().get_nodes_in_group("enemy_hurtbox"):
 		if not is_instance_valid(hurtbox):
 			continue
 		var enemy := hurtbox.get_parent()
 		if enemy == null or not is_instance_valid(enemy):
 			continue
+		if excluded.has(enemy):
+			continue
 		if _blast_distance_to(hurtbox, enemy, origin) > radius:
 			continue
 		var direction: Vector2 = (enemy.global_position - origin).normalized()
+		var target_damage := damage * ComboManager.get_damage_multiplier(enemy)
 		# Explosions are their own kind of hit: the snail boss's aura shield soaks
 		# up a swing, but a bomb going off against it still hurts.
 		if enemy.has_method("take_explosion_damage"):
-			enemy.take_explosion_damage(damage, direction)
+			enemy.take_explosion_damage(target_damage, direction)
 		elif enemy.has_method("take_damage"):
-			enemy.take_damage(damage, direction)
+			enemy.take_damage(target_damage, direction)
 		elif enemy.has_method("die"):
 			enemy.die()
 
+## Targets this particular blast must never affect - neither damage nor freeze.
+## Empty by default, so every existing bomb keeps hitting and chilling the boss
+## exactly as before: the player's own blasts reaching the snail is deliberate.
+## A blast that is not meant to land on a given target overrides this rather than
+## the shared loops above.
+func _blast_exclusions() -> Array[Node]:
+	return []
+
 func _rolled_blast_damage() -> float:
-	return ENEMY_DAMAGE * DAMAGE_SCALAR * ComboManager.get_damage_multiplier() * randf_range(1.0 - DAMAGE_VARIATION, 1.0 + DAMAGE_VARIATION)
+	return ENEMY_DAMAGE * DAMAGE_SCALAR * randf_range(1.0 - DAMAGE_VARIATION, 1.0 + DAMAGE_VARIATION)
 
 ## How close an explosion landed to an enemy, measured against its hurtbox
 ## shape rather than its origin. Both bosses park a large hurtbox a long way from

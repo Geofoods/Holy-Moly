@@ -28,7 +28,7 @@ animations = [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_f0")
 }],
-"loop": true,
+"loop": 1,
 "name": &"default",
 "speed": 5.0
 }, {
@@ -42,7 +42,7 @@ animations = [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_f3")
 }],
-"loop": true,
+"loop": 1,
 "name": &"lit",
 "speed": 6.0
 }]
@@ -63,6 +63,7 @@ position = Vector2(9.2, -149.3)
 scale = Vector2(0.88, 0.88)
 sprite_frames = SubResource("SpriteFrames_station")
 autoplay = "default"
+frame_progress = 0.9286749
 script = ExtResource("2_art")
 
 [node name="PadLight" type="PointLight2D" parent="." unique_id=1812109311]

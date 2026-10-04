@@ -2,6 +2,9 @@ extends RigidBody2D
 
 @export var prompt_text := "PRESS E TO INTERACT"
 @export var npc_name := "Snail"
+## What the dialogue box calls him once the transformation has turned him into
+## the Corrupted Snail. The first conversation still uses npc_name.
+@export var boss_npc_name := "Corrupted Snail"
 @export var portrait_texture: Texture2D = null
 @export_multiline var dialogue_text := ""
 @export_multiline var post_dialogue_text := ""
@@ -15,8 +18,24 @@ extends RigidBody2D
 @export var post_dialogue_clearance := Vector2.ZERO
 ## Some story snails visibly transform after their dialogue is dismissed.
 @export var transform_after_dialogue := false
+## Set on a snail that exists only to say its one line and then leaves - the level
+## 05 snail is a prisoner calling for help, and there is nothing to come back
+## for. Off by default because the snails that do stay are the ones the player is
+## meant to be able to talk to again.
+@export var remove_after_dialogue := false
+## For a snail whose line is only the setup for the arena. Once the arena has been
+## cleared that story has already happened, so a save that has done it should not
+## have this snail back standing in the level waiting to be rescued a second time.
+## Off by default - the arena is the only one-time event with a snail hanging off
+## it, and every other snail is unconditional.
+@export var skip_if_arena_completed := false
 ## Starts a boss fight after the transformation finishes; used by the level 10 snail.
 @export var boss_after_dialogue := false
+## Set only on the snail that stands between the Corrupted Heart and its own
+## fight: its dialogue interrupts the walk's music, and what follows the
+## conversation picks that music up further along. Off everywhere else, so the
+## other snails in the game say nothing to the soundtrack.
+@export var post_heart_music := false
 ## The artwork faces left at flip_h = false, so flipping points it right.
 @export var sprite_faces_left := true
 
@@ -61,20 +80,88 @@ const BOSS_PROJECTILE_SPEED := 620.0
 const BOSS_LASER_COOLDOWN := 9.0
 const BOSS_LASER_CHARGE_TIME := 1.5
 const BOSS_LASER_STRIKE_DURATION := 1.25
+const BOSS_LASER_TRAVEL_TIME := 0.35
 const BOSS_LASER_FADE_TIME := 0.55
 const BOSS_LASER_LENGTH := 3000.0
 const BOSS_LASER_WIDTH := 136.0
 const BOSS_LASER_TILE_SAMPLE_SPACING := 38.0
 const BOSS_LASER_DAMAGE := 2.0
+
+## Half health is where the shell stops playing it safe. The crossing fires the
+## enrage: a scream, and on a coin flip the ice laser behind it.
+const BOSS_ENRAGE_HEALTH_RATIO := 0.5
+const BOSS_ENRAGE_SCREAM_TIME := 1.3
+const BOSS_SCREAM_SHUDDER_BEATS := 7
+const BOSS_SCREAM_SHUDDER_ANGLE := 0.075
+const BOSS_SCREAM_RING_COUNT := 3
+const BOSS_SCREAM_RING_POINTS := 28
+const BOSS_SCREAM_RING_START_RADIUS := 50.0
+const BOSS_SCREAM_RING_END_RADIUS := 340.0
+const BOSS_SCREAM_RING_TIME := 0.55
+const BOSS_SCREAM_RING_STAGGER := 0.11
+## The scream is not always followed by the ice laser. When the roll misses, the
+## half-health beat is the scream on its own - but the beam is a standing part of
+## the second half regardless, so a missed roll only costs the crossing its
+## flourish, not the rest of the fight its attack.
+const BOSS_ICE_LASER_CHANCE := 0.5
+## How long the shell goes between ice beams once it is enraged. Longer than the
+## purple laser's cooldown and deliberately not a multiple of it, so the two drift
+## against each other rather than arriving in a fixed alternation the mole could
+## learn and count.
+const BOSS_ICE_LASER_COOLDOWN := 11.0
+## The ice beam tracks the mole for this long before it fires, and only settles on
+## a direction at the end of it. Committing to a side inside these two seconds is
+## what gets you out of the way; standing still does not.
+const BOSS_ICE_LASER_AIM_TIME := 2.0
+const BOSS_ICE_LASER_STRIKE_DURATION := 1.0
+const BOSS_ICE_LASER_TRAVEL_TIME := 0.3
+const BOSS_ICE_LASER_FADE_TIME := 0.5
+const BOSS_ICE_LASER_WIDTH := 118.0
+const BOSS_ICE_LASER_DAMAGE := 2.0
+## How long the ice it lays down stays on the floor, and how long it takes to melt
+## once that is up. Frozen ground is the part the mole actually feels: it slips on
+## it for the whole of the first number.
+const BOSS_ICE_LASER_FROST_DURATION := 7.0
+const BOSS_ICE_LASER_FROST_FADE_TIME := 1.8
+const BOSS_ICE_LASER_ICE_TEXTURE := preload("res://sprites/iceoverlay.png")
+## The ice beam and its lights are the same purple laser with the heat taken out:
+## cyan light on the beam, white where it is thickest.
+const BOSS_ICE_LASER_LIGHT_COLOR := Color(0.45, 0.82, 1.0, 1.0)
+
 const BOSS_TILE_BREAK_INTERVAL := 0.22
 const BOSS_MINION_SPAWN_INTERVAL := Vector2(5.0, 8.0)
 const BOSS_MINION_MAX_ALIVE := 4
+## The cap above counts every node still sitting in the snail_boss_minion group,
+## and a minion only ever leaves that group by dying and being freed. A goblin
+## add cannot do that on its own: goblin_enemy.gd pins its x velocity, so it walks
+## nowhere and stands where it was coughed out until the autoscroller leaves it
+## behind, at which point its distance LOD puts it to sleep for good. Four of
+## those and _spawn_boss_minion fails its cap check on every tick and the snail
+## stops summoning for the rest of the fight. So adds that can no longer reach the
+## mole are retired on a sweep instead, which is also what clears an add that fell
+## into one of the pits the shell carves - there is no kill plane in the project.
+const BOSS_MINION_RETIRE_INTERVAL := 0.5
+## How far behind the shell an add may be before it is retired. The snail is the
+## leftmost thing in the fight framing and only ever moves right, so an add behind
+## it can never catch the mole up, however fast it walks.
+const BOSS_MINION_RETIRE_BEHIND := 240.0
+## And how far from the mole, for the adds that are still ahead of the snail but
+## cannot reach it anyway - a pit, a ledge it cannot climb, terrain it is wedged
+## in. Adds are released about 1600px short of the mole and walk in from there, so
+## anything past this has stopped making progress.
+const BOSS_MINION_RETIRE_DIST := 2200.0
 const BOSS_MINION_SCENES: Array[PackedScene] = [
 	preload("res://scenes/antenemy.tscn"),
 	preload("res://scenes/beetleenemy.tscn"),
 	preload("res://scenes/slimeenemy.tscn"),
+	# The goblins are the ranged entries. They only throw when they are on screen
+	# and have line of sight to the mole, so the fight camera clamping the player
+	# into frame is what keeps them actually engaging instead of idling.
+	preload("res://scenes/goblinenemy.tscn"),
+	preload("res://ice_goblinenemy.tscn"),
 ]
 const BOSS_PROJECTILE_SCENE := preload("res://area_2d.tscn")
+const BOSS_LASER_LIGHT_TEXTURE := preload("res://costume3 (1).svg")
 ## Loot drops into the fight: a loose Drill or Holy Water the player grabs on the
 ## move. These used to be chests, which meant stopping to open one while the
 ## snail was still firing.
@@ -110,8 +197,13 @@ const BOSS_AUTO_SCROLL_PLAYER_SCREEN_RATIO := 0.82
 const BOSS_AUTO_SCROLL_HORIZONTAL_LEAD := 0.30
 const BOSS_AUTO_SCROLL_VERTICAL_OFFSET := -300.0
 const BOSS_AUTO_SCROLL_VERTICAL_FOLLOW := 4.0
+## Inset from the fight camera's edge that still counts as on screen. The mole
+## is drawn at a quarter scale here, so this is only a little padding - just
+## enough that it is never clipped by the edge of the frame.
+const BOSS_CAM_CLAMP_MARGIN := Vector2(64.0, 64.0)
 
 var _boss_minion_spawn_timer := 0.0
+var _boss_minion_retire_timer := 0.0
 const TileBreakSFX := preload("res://scripts/tile_break_sfx.gd")
 
 var _original_sprite_scale := Vector2.ONE
@@ -128,6 +220,19 @@ var _boss_spit_timer := 0.0
 var _boss_laser_timer := 0.0
 var _boss_laser_active := false
 var _boss_laser_lines: Array[Line2D] = []
+## Latched once the shell has crossed half health, so the enrage only ever fires
+## on the hit that crosses it.
+var _boss_enraged := false
+## An enrage beat (scream, possibly the ice laser) is playing right now. The
+## normal spit and laser hold off for its length so nothing fires on top of it.
+var _boss_enrage_active := false
+## Counts down to the next ice beam. Armed at the start of the fight but only
+## ever read once the shell is enraged, so the beam stays out of the first half
+## entirely and is not sitting there ready to fire the instant the crossing lands.
+var _boss_ice_laser_timer := 0.0
+var _boss_ice_laser_active := false
+var _boss_ice_laser_lines: Array[Line2D] = []
+var _boss_scream_tween: Tween = null
 var _boss_aura_shield: Line2D = null
 var _boss_break_timer := 0.0
 var _boss_loot_spawn_timer := 0.0
@@ -169,6 +274,9 @@ const ITEM_GET := preload("res://scripts/item_get_animation.gd")
 const MELEE_ICON := preload("res://sprites/shovel.png")
 ## Roughly the dialogue box's slide-away, so the fanfare lands once it is gone.
 const FANFARE_DELAY := 0.35
+## How long a retiring snail takes to fade out. Slow enough to read as leaving
+## rather than being deleted.
+const RETIRE_FADE := 0.6
 ## The grand death: the snail defies the mole one last time, then bursts like a
 ## firework show while the box is on screen, and the finale blast frees it.
 const DEATH_CURSE_TEXT := "AHHHH! I SWEAR WHEN I GO TO HELL I WILL DESTROY ALL MOLES"
@@ -191,7 +299,10 @@ const DEATH_FADE_TIME := 0.8
 const DEATH_BLACK_HOLE_DELAY := 0.75
 const DEATH_BLACK_HOLE_GROW_TIME := 0.9
 const DEATH_BLACK_HOLE_PULL_TIME := 2.8
+const DEATH_BLACK_HOLE_TILE_BATCH := 12
+const DEATH_BLACK_HOLE_TILE_INTERVAL := 0.04
 const DEATH_BLACK_HOLE_RADIUS_SCALE := 0.38
+const DEATH_BLACK_HOLE_SNAIL_PULL_TIME := 2.6
 const DEATH_CREDITS_PATH := "res://scenes/credits.tscn"
 
 var _mole_overlapping := false
@@ -220,6 +331,12 @@ var _banner_text := ""
 signal dialogue_closed
 
 func _ready() -> void:
+	# The story this snail introduces has already been played out, so it is not put
+	# in the level at all. Checked before anything is wired up, so a skipped snail
+	# costs no signal connections and no prompt label.
+	if skip_if_arena_completed and Progress.is_arena_completed():
+		queue_free()
+		return
 	var zone := get_node_or_null("Area2D") as Area2D
 	if zone:
 		zone.body_entered.connect(_on_body_entered)
@@ -272,7 +389,7 @@ func _physics_process(delta: float) -> void:
 	if mole == null or not is_instance_valid(mole):
 		return
 
-	if not _boss_laser_active:
+	if not _boss_laser_active and not _boss_enrage_active and not _boss_ice_laser_active:
 		_boss_spit_timer -= delta
 		if _boss_spit_timer <= 0.0:
 			_boss_spit_timer = BOSS_SPIT_INTERVAL
@@ -283,10 +400,28 @@ func _physics_process(delta: float) -> void:
 			_boss_laser_timer = BOSS_LASER_COOLDOWN
 			_fire_boss_laser(mole)
 
+	# Past half health the ice beam is a standing attack rather than the once-a-fight
+	# dice roll the crossing used to be, so it is timed here off the same loop as
+	# everything else. Held off while the purple laser is up or an enrage beat is
+	# playing: the timer pauses for the duration rather than expiring and firing on
+	# top of a beam that is already out, so the shell never crosses two at once.
+	if _boss_enraged and not _boss_ice_laser_active and not _boss_enrage_active and not _boss_laser_active:
+		_boss_ice_laser_timer -= delta
+		if _boss_ice_laser_timer <= 0.0:
+			_boss_ice_laser_timer = BOSS_ICE_LASER_COOLDOWN
+			_fire_boss_ice_laser(mole)
+
 	_boss_minion_spawn_timer -= delta
 	if _boss_minion_spawn_timer <= 0.0:
 		_spawn_boss_minion()
 		_boss_minion_spawn_timer = randf_range(BOSS_MINION_SPAWN_INTERVAL.x, BOSS_MINION_SPAWN_INTERVAL.y)
+
+	# The summon pool is capped, so an add left behind by the autoscroller has to
+	# give its slot back or the snail quietly runs out of adds to call.
+	_boss_minion_retire_timer -= delta
+	if _boss_minion_retire_timer <= 0.0:
+		_boss_minion_retire_timer = BOSS_MINION_RETIRE_INTERVAL
+		_retire_stranded_boss_minions()
 
 	_boss_loot_spawn_timer -= delta
 	if _boss_loot_spawn_timer <= 0.0:
@@ -332,6 +467,7 @@ func _process(delta: float) -> void:
 	_update_transformation_aura()
 	if _boss_active and not _boss_dying:
 		_update_boss_autoscroll_camera(delta)
+		_confine_mole_to_boss_camera()
 
 ## Flip the sprite only - the body, collision shapes and Area2D are untouched.
 func _update_facing() -> void:
@@ -373,6 +509,10 @@ func show_dialogue() -> void:
 
 func _open_dialogue() -> void:
 	_dialogue_open = true
+	# The walk out of the heart's arena is still scored by its loop. The dialogue
+	# opens on top of it, so the loop is let go before the box starts talking.
+	if post_heart_music:
+		LevelMusic.stop_vessel()
 	if boss_after_dialogue:
 		# Keep the level running so any active explosions and particles continue
 		# under the dialogue. The camera stays on the player for this line; the
@@ -456,8 +596,14 @@ func _on_dialogue_done() -> void:
 	_start_transformation()
 	_grant_unlock()
 	_move_player_clear_of_snail()
+	# Whatever the dialogue interrupted picks up past it, on the far side of the
+	# conversation rather than where the loop left off.
+	if post_heart_music:
+		LevelMusic.play_vessel_after_snail()
 	# This story encounter becomes a boss, not an interactable NPC, after its scene.
 	_hushed = true if boss_after_dialogue else _refresh_hushed()
+	if remove_after_dialogue:
+		_retire_when_dialogue_clears()
 	if _dialogue_box == null or not is_instance_valid(_dialogue_box):
 		_dialogue_box = null
 		_dialogue_open = false
@@ -478,6 +624,38 @@ func _on_dialogue_done() -> void:
 	)
 	_dialogue_open = false
 	dialogue_closed.emit()
+
+## Sends a snail off once it has said its line. Hushed immediately, so the prompt
+## cannot pop back up over the closing box, and the wait is deliberately
+## FANFARE_DELAY long: the box's own teardown is a deferred callback on this node,
+## so freeing any sooner would fire it at an instance that is already gone.
+func _retire_when_dialogue_clears() -> void:
+	_hushed = true
+	get_tree().create_timer(FANFARE_DELAY).timeout.connect(_begin_retire)
+
+## Fades the shell out and lets it go. The collider goes at the same time rather
+## than at the end of the fade, so the player is never left standing on something
+## that is on its way out, and the body is frozen in case the snail was still
+## falling when it started talking.
+func _begin_retire() -> void:
+	if _label != null:
+		_label.visible = false
+	var interaction_area := get_node_or_null("Area2D") as Area2D
+	if interaction_area != null:
+		interaction_area.set_deferred("monitoring", false)
+		interaction_area.set_deferred("monitorable", false)
+	var body_shape := get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if body_shape != null:
+		body_shape.set_deferred("disabled", true)
+	freeze = true
+	if _sprite == null:
+		queue_free()
+		return
+	var tween := create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(_sprite, "modulate:a", 0.0, RETIRE_FADE).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	tween.tween_property(_sprite, "scale", _sprite.scale * 0.85, RETIRE_FADE).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	tween.chain().tween_callback(queue_free)
 
 ## Puts the player on the far side of the snail once its dialogue is out of the
 ## way, so they are never left standing inside it. The momentum is cleared too,
@@ -632,6 +810,10 @@ func _begin_boss_fight() -> void:
 	# The fight drives this snail's position by script, so the dash must not be
 	# able to shove it off its autoscroll path. It still takes the hit damage.
 	add_to_group(&"knockback_locked")
+	# Lets the boss's own spawns recognise it - the ice goblin's frost mushroom
+	# uses this to leave the shell alone instead of chipping away at the fight.
+	add_to_group(&"snail_boss")
+	add_to_group(&"boss")
 	# Walking into the shell must not shove it either. The mole's collision mask
 	# never matched the boss layer, so it was never blocked by the shell to begin
 	# with - the solver just used the contact to drag a 500hp boss down a cliff.
@@ -645,7 +827,15 @@ func _begin_boss_fight() -> void:
 	_boss_spit_timer = 1.0
 	_boss_laser_timer = 5.0
 	_boss_laser_active = false
+	_boss_enraged = false
+	_boss_enrage_active = false
+	_boss_ice_laser_active = false
+	# Armed rather than run: nothing reads this until _boss_enraged is latched, so
+	# the first ice beam still has to wait out the enrage and the purple laser's
+	# turn at the crossing rather than cutting the scream short.
+	_boss_ice_laser_timer = BOSS_ICE_LASER_COOLDOWN
 	_boss_minion_spawn_timer = 3.0
+	_boss_minion_retire_timer = 0.0
 	_boss_break_timer = 0.0
 	_boss_loot_spawn_timer = BOSS_LOOT_FIRST_SPAWN_DELAY
 	_boss_immune_timer = 0.0
@@ -754,6 +944,25 @@ func _boss_camera_lead_x(camera: Camera2D, zoom_x: float = -1.0) -> float:
 	var effective_zoom := zoom_x if zoom_x > 0.0 else camera.zoom.x
 	var viewport_width: float = camera.get_viewport_rect().size.x
 	return viewport_width / maxf(effective_zoom, 0.01) * BOSS_AUTO_SCROLL_HORIZONTAL_LEAD
+
+## Holds the player inside the fight framing. The autoscroller leads the camera
+## rather than following it, so nothing else stops the mole running off the side
+## of the screen and continuing through terrain the fight cannot be seen from.
+func _confine_mole_to_boss_camera() -> void:
+	var camera := get_viewport().get_camera_2d()
+	if camera == null:
+		return
+	var mole := get_tree().get_first_node_in_group("mole") as Node2D
+	if mole == null or not is_instance_valid(mole):
+		return
+	var half_view := camera.get_viewport_rect().size / camera.zoom * 0.5
+	var center := camera.get_screen_center_position()
+	var limit_min := center - half_view + BOSS_CAM_CLAMP_MARGIN
+	var limit_max := center + half_view - BOSS_CAM_CLAMP_MARGIN
+	mole.global_position = Vector2(
+		clampf(mole.global_position.x, limit_min.x, limit_max.x),
+		clampf(mole.global_position.y, limit_min.y, limit_max.y)
+	)
 
 func _brighten_boss_arena() -> void:
 	var scene := get_tree().current_scene
@@ -964,6 +1173,8 @@ func _apply_boss_damage(amount: float) -> void:
 		mole.screen_shake(8.0, 0.16)
 	if _boss_health <= 0.0:
 		_defeat_boss()
+		return
+	_check_boss_enrage()
 
 func _create_boss_health_bar() -> void:
 	_boss_health_layer = CanvasLayer.new()
@@ -1121,6 +1332,30 @@ func _spawn_boss_minion() -> void:
 	EnemySpawn.play(minion)
 	SFX.play("enemy_fire", to_global(spawn_offset), -8.0, 0.15, 0.85)
 
+## Frees the adds the fight has left behind, so a stationary one that can never
+## reach the mole does not sit on a summon slot until the snail runs dry. Driven
+## off the same group the cap counts, which means a minion leaves it by being
+## retired here exactly as it would by dying - both paths hand the slot back.
+func _retire_stranded_boss_minions() -> void:
+	var mole := get_tree().get_first_node_in_group("mole") as Node2D
+	var behind_x := global_position.x - BOSS_MINION_RETIRE_BEHIND
+	for node in get_tree().get_nodes_in_group("snail_boss_minion"):
+		var minion := node as Node2D
+		if minion == null or not is_instance_valid(minion):
+			continue
+		var stranded := minion.global_position.x < behind_x
+		if not stranded and mole != null and is_instance_valid(mole):
+			stranded = minion.global_position.distance_to(mole.global_position) > BOSS_MINION_RETIRE_DIST
+		if stranded:
+			_retire_boss_minion(minion)
+
+## An add the fight has left behind is taken out quietly rather than blinked out of
+## existence. The death cue is quiet because it almost always plays off the left of
+## the frame, behind the shell. No coins: nobody earned them.
+func _retire_boss_minion(minion: Node2D) -> void:
+	SFX.play("enemy_death", minion.global_position, -16.0, 0.15, 0.8)
+	minion.queue_free()
+
 ## Drops a Drill or Holy Water into the arena for the player to grab on the move.
 func _spawn_boss_loot() -> void:
 	if not _boss_active or _boss_dying:
@@ -1134,6 +1369,385 @@ func _spawn_boss_loot() -> void:
 	var drop_at: Vector2 = mole.global_position + BOSS_LOOT_DROP_OFFSET
 	LootDrop.spawn_random(parent, drop_at)
 	SFX.play("coin", drop_at, -12.0, 0.12, 0.9)
+
+## Runs off every hit, but only does its work on the one that carries the shell
+## through half health.
+func _check_boss_enrage() -> void:
+	if _boss_enraged or not _boss_active or _boss_dying:
+		return
+	if _boss_health > BOSS_MAX_HEALTH * BOSS_ENRAGE_HEALTH_RATIO:
+		return
+	_boss_enraged = true
+	_boss_enrage_active = true
+	_scream_boss()
+	await get_tree().create_timer(BOSS_ENRAGE_SCREAM_TIME).timeout
+	if not is_inside_tree() or not _boss_active or _boss_dying:
+		_boss_enrage_active = false
+		return
+	# The scream is the certain half of the beat. The ice laser is the dice roll on
+	# top of it, so a run can end with the shell taking the bite and saying nothing
+	# back. Awaited rather than fired off, because the enrage gate is what holds the
+	# snail's ordinary attacks off, and that gate is only released on the way out of
+	# here - releasing it while the beam was still winding up would let the purple
+	# laser start up underneath it.
+	if randf() < BOSS_ICE_LASER_CHANCE:
+		var mole := get_tree().get_first_node_in_group("mole") as Node2D
+		if mole != null and is_instance_valid(mole):
+			await _fire_boss_ice_laser(mole)
+	_boss_enrage_active = false
+
+## The scream is the half-health tell: the shell shudders, throws off rings of
+## sound, and shoves the camera, so the beat lands even if the player is looking
+## straight at the snail rather than at the health bar.
+func _scream_boss() -> void:
+	SFX.play("enemy_fire", global_position, -3.0, 0.05, 0.5)
+	SFX.play("hurt", global_position, -6.0, 0.05, 0.65)
+	SFX.play("explosion", global_position, -12.0, 0.1, 0.6)
+	var mole := get_tree().get_first_node_in_group("mole")
+	if is_instance_valid(mole) and mole.has_method("screen_shake"):
+		mole.call("screen_shake", 18.0, 0.5)
+	_shudder_boss_sprite()
+	_spawn_boss_scream_rings()
+	_flash_boss_aura_shield()
+
+## A shiver rather than a squash: the hit reaction already owns the sprite's
+## scale, and a second tween fighting it over the same property would leave the
+## shell stretched when the next hit landed.
+func _shudder_boss_sprite() -> void:
+	if _sprite == null or not is_instance_valid(_sprite):
+		return
+	var base_rotation := _sprite.rotation
+	if _boss_scream_tween != null and _boss_scream_tween.is_valid():
+		_boss_scream_tween.kill()
+	_boss_scream_tween = create_tween()
+	for beat in BOSS_SCREAM_SHUDDER_BEATS:
+		var swing := BOSS_SCREAM_SHUDDER_ANGLE if beat % 2 == 0 else -BOSS_SCREAM_SHUDDER_ANGLE
+		_boss_scream_tween.tween_property(_sprite, "rotation", base_rotation + swing, 0.05)
+	_boss_scream_tween.tween_property(_sprite, "rotation", base_rotation, 0.14) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+## Rings thrown off the shell one after another, so the scream reads as pressure
+## spreading out of it rather than as one flash.
+func _spawn_boss_scream_rings() -> void:
+	var scene_root := get_tree().current_scene as Node2D
+	if scene_root == null or _sprite == null or not is_instance_valid(_sprite):
+		return
+	var origin := scene_root.to_local(_sprite.global_position)
+	for i in BOSS_SCREAM_RING_COUNT:
+		var ring := Line2D.new()
+		ring.name = "BossScreamRing"
+		ring.width = 14.0 - float(i) * 3.0
+		ring.default_color = Color(0.78, 0.42, 1.0, 0.7)
+		ring.z_index = BOSS_LASER_FIREWORK_Z
+		ring.z_as_relative = false
+		_set_boss_scream_ring_radius(BOSS_SCREAM_RING_START_RADIUS, ring)
+		scene_root.add_child(ring)
+		# Staggered by holding each ring still for a beat before it is let go.
+		var tween := ring.create_tween()
+		tween.tween_interval(float(i) * BOSS_SCREAM_RING_STAGGER)
+		tween.set_parallel(true)
+		tween.tween_method(_set_boss_scream_ring_radius.bind(ring),
+			BOSS_SCREAM_RING_START_RADIUS, BOSS_SCREAM_RING_END_RADIUS, BOSS_SCREAM_RING_TIME)
+		tween.tween_property(ring, "modulate:a", 0.0, BOSS_SCREAM_RING_TIME)
+		tween.chain().tween_callback(ring.queue_free)
+
+func _set_boss_scream_ring_radius(radius: float, ring: Line2D) -> void:
+	if not is_instance_valid(ring) or ring.get_point_count() < BOSS_SCREAM_RING_POINTS:
+		return
+	for i in ring.get_point_count():
+		var angle := TAU * float(i) / float(ring.get_point_count())
+		ring.set_point_position(i, Vector2(cos(angle), sin(angle)) * radius)
+
+## The ice beam. Unlike the purple laser, which locks its direction the moment it
+## starts charging, this one keeps its aim on the mole for BOSS_ICE_LASER_AIM_TIME
+## and only settles at the end of it - so it cannot be dodged by standing still,
+## only by committing to a direction while it is winding up. Where it lands, the
+## ground stays frozen.
+##
+## Enraged, this is one attack in a rotation and is entered from _physics_process
+## without being awaited, exactly like the purple laser; the coroutine runs on its
+## own and _boss_ice_laser_active is what keeps the next tick out.
+func _fire_boss_ice_laser(mole: Node2D) -> void:
+	if _boss_ice_laser_active or not _boss_active or _boss_dying or not is_instance_valid(mole):
+		return
+	_boss_ice_laser_active = true
+	# Armed here rather than only at the call sites, so the enrage's own roll and
+	# the rotation's timer cannot both claim the same beat and put two beams out
+	# back to back. Whichever fires, the next one is a full cooldown away.
+	_boss_ice_laser_timer = BOSS_ICE_LASER_COOLDOWN
+	var scene_root := get_tree().current_scene as Node2D
+	if scene_root == null:
+		_boss_ice_laser_active = false
+		return
+
+	var laser_start := _sprite.global_position
+	var tracked_end := laser_start + Vector2.RIGHT * 200.0
+	var aim := _create_boss_ice_laser_lines(laser_start, tracked_end, true)
+	_boss_ice_laser_lines = aim
+	SFX.play("enemy_fire", laser_start, -4.0, 0.1, 0.7)
+	if mole.has_method("screen_shake"):
+		mole.call("screen_shake", 4.0, 0.2)
+
+	var elapsed := 0.0
+	var physics_step := 1.0 / float(Engine.physics_ticks_per_second)
+	while elapsed < BOSS_ICE_LASER_AIM_TIME:
+		await get_tree().physics_frame
+		if not is_inside_tree() or not _boss_active or _boss_dying:
+			_abort_boss_ice_laser()
+			return
+		elapsed += physics_step
+		var progress := clampf(elapsed / BOSS_ICE_LASER_AIM_TIME, 0.0, 1.0)
+		if is_instance_valid(mole) and mole.is_in_group("mole"):
+			var aim_vector := mole.global_position - _sprite.global_position
+			if aim_vector.length_squared() > 1.0:
+				tracked_end = _sprite.global_position + aim_vector.normalized() * BOSS_LASER_LENGTH
+		tracked_end = _clip_boss_laser_to_view(laser_start, tracked_end)
+		_set_boss_ice_laser_aim(aim, scene_root.to_local(laser_start), scene_root.to_local(tracked_end), progress)
+
+	# Aim settled. Whatever it was pointing at is where it fires.
+	var laser_end := _trace_boss_laser(laser_start, (tracked_end - laser_start).normalized(), tracked_end)
+	_clear_boss_laser_lines(aim)
+	var beam := _create_boss_ice_laser_lines(laser_start, laser_end, false)
+	_boss_ice_laser_lines = beam
+	_animate_boss_laser(beam)
+	_spawn_boss_ice_laser_charge_flash(laser_start)
+	SFX.play("explosion", laser_start, -4.0, 0.12, 1.25)
+	if mole.has_method("screen_shake"):
+		mole.call("screen_shake", 15.0, BOSS_ICE_LASER_STRIKE_DURATION)
+	var reached_laser_tip: bool = await _extend_boss_laser_to_tip(beam, laser_start, laser_end, mole,
+		BOSS_ICE_LASER_WIDTH, BOSS_ICE_LASER_DAMAGE, BOSS_ICE_LASER_TRAVEL_TIME)
+	if not reached_laser_tip:
+		_abort_boss_ice_laser()
+		return
+	_freeze_tiles_along_boss_ice_laser(laser_start, laser_end)
+	_spawn_boss_ice_laser_impact(laser_end)
+
+	var laser_time_left := BOSS_ICE_LASER_STRIKE_DURATION
+	while laser_time_left > 0.0:
+		var damage_interval := minf(0.1, laser_time_left)
+		await get_tree().create_timer(damage_interval).timeout
+		await get_tree().physics_frame
+		laser_time_left -= damage_interval
+		_damage_mole_in_boss_laser(mole, laser_start, laser_end, BOSS_ICE_LASER_WIDTH, BOSS_ICE_LASER_DAMAGE)
+	for line in beam:
+		if is_instance_valid(line):
+			var fade := line.create_tween().set_parallel(true)
+			fade.tween_property(line, "modulate:a", 0.0, BOSS_ICE_LASER_FADE_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+			for child in line.get_children():
+				if child is PointLight2D:
+					fade.tween_property(child, "energy", 0.0, BOSS_ICE_LASER_FADE_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	await get_tree().create_timer(BOSS_ICE_LASER_FADE_TIME).timeout
+	_abort_boss_ice_laser()
+
+## Drops the beam and hands the fight back its normal rhythm.
+func _abort_boss_ice_laser() -> void:
+	_clear_boss_laser_lines(_boss_ice_laser_lines)
+	_boss_ice_laser_lines.clear()
+	_boss_ice_laser_active = false
+
+func _create_boss_ice_laser_lines(start: Vector2, finish: Vector2, telegraph: bool) -> Array[Line2D]:
+	var lines: Array[Line2D] = []
+	var widths: Array[float]
+	var colors: Array[Color]
+	if telegraph:
+		widths = [BOSS_ICE_LASER_WIDTH + 10.0, BOSS_ICE_LASER_WIDTH * 0.34, 22.0]
+		colors = [Color(0.08, 0.36, 0.68, 0.34), Color(0.34, 0.72, 1.0, 0.6), Color(0.78, 0.95, 1.0, 0.75)]
+	else:
+		widths = [BOSS_ICE_LASER_WIDTH + 58.0, BOSS_ICE_LASER_WIDTH + 22.0, BOSS_ICE_LASER_WIDTH, 26.0]
+		colors = [Color(0.06, 0.3, 0.62, 0.36), Color(0.2, 0.62, 1.0, 0.68), Color(0.62, 0.92, 1.0, 0.96), Color(0.94, 0.99, 1.0, 1.0)]
+
+	var scene_root := get_tree().current_scene as Node2D
+	if scene_root == null:
+		return lines
+	for i in widths.size():
+		var line := Line2D.new()
+		line.width = widths[i]
+		line.default_color = colors[i]
+		line.z_index = 25
+		line.z_as_relative = false
+		# The aim telegraph winds up by growing into the beam it is warning about,
+		# so each line needs to know the width it is growing into.
+		line.set_meta("ice_full_width", widths[i])
+		line.add_point(scene_root.to_local(start))
+		line.add_point(scene_root.to_local(finish))
+		scene_root.add_child(line)
+		lines.append(line)
+	_attach_boss_laser_lights(lines, scene_root.to_local(start), scene_root.to_local(finish), telegraph, BOSS_ICE_LASER_LIGHT_COLOR)
+	return lines
+
+## Winds the telegraph up over the aim: thin and faint at the start of the two
+## seconds, hot and nearly the width of the real beam by the end of it.
+func _set_boss_ice_laser_aim(lines: Array[Line2D], local_start: Vector2, local_finish: Vector2, progress: float) -> void:
+	var grow := lerpf(0.16, 1.0, progress)
+	var flicker := 0.82 + 0.18 * sin(progress * 42.0)
+	for line in lines:
+		if not is_instance_valid(line) or line.get_point_count() < 2:
+			continue
+		line.set_point_position(1, local_finish)
+		line.width = float(line.get_meta("ice_full_width")) * grow
+		line.modulate.a = lerpf(0.3, 1.0, progress) * flicker
+		for child in line.get_children():
+			if child is PointLight2D and child.has_meta("laser_fraction"):
+				var light_fraction := float(child.get_meta("laser_fraction"))
+				(child as PointLight2D).position = local_start.lerp(local_finish, light_fraction)
+
+## The ice the beam leaves behind. Coats the ground rather than breaking it open,
+## and registers every cell it touches so the mole slips on all of it - which is
+## the part that actually changes the fight.
+func _freeze_tiles_along_boss_ice_laser(start: Vector2, finish: Vector2) -> void:
+	var parent := get_parent() as Node2D
+	if parent == null:
+		return
+	var tilemap := parent.get_node_or_null("TileMap") as TileMap
+	if tilemap == null or tilemap.tile_set == null:
+		return
+	var segment := finish - start
+	var distance := segment.length()
+	if distance <= 0.0:
+		return
+	var direction := segment / distance
+	var perpendicular := Vector2(-direction.y, direction.x)
+	var tile_world_size := Vector2(tilemap.tile_set.tile_size) * tilemap.scale
+
+	# A layer of its own so the whole patch can be melted away together later, the
+	# way the ice bomb melts its blast.
+	var frost_layer := Node2D.new()
+	frost_layer.name = "BossIceFrost"
+	frost_layer.z_index = 0
+	frost_layer.global_position = Vector2.ZERO
+	parent.add_child(frost_layer)
+
+	var sample_count := maxi(1, int(ceil(distance / BOSS_LASER_TILE_SAMPLE_SPACING)))
+	var frosted: Dictionary = {}
+	for i in range(sample_count + 1):
+		var center := start + direction * minf(float(i) * BOSS_LASER_TILE_SAMPLE_SPACING, distance)
+		for offset in [-0.5, -0.25, 0.0, 0.25, 0.5]:
+			var sample: Vector2 = center + perpendicular * (BOSS_ICE_LASER_WIDTH * float(offset))
+			var cell := tilemap.local_to_map(tilemap.to_local(sample))
+			if frosted.has(cell) or tilemap.get_cell_source_id(0, cell) == -1:
+				continue
+			var tile_data := tilemap.get_cell_tile_data(0, cell)
+			# Bedrock is what stops the beam, so the ice stops with it rather than
+			# coating the wall the shot died against.
+			if tile_data != null and (tile_data.get_custom_data("bedrock") as bool):
+				continue
+			frosted[cell] = true
+			var overlay := IceOverlay.new()
+			overlay.tilemap = tilemap
+			overlay.cell = cell
+			overlay.texture = BOSS_ICE_LASER_ICE_TEXTURE
+			overlay.position = tilemap.to_global(tilemap.map_to_local(cell))
+			overlay.scale = tile_world_size / BOSS_ICE_LASER_ICE_TEXTURE.get_size()
+			overlay.modulate = Color(1.0, 1.0, 1.0, randf_range(0.6, 0.9))
+			frost_layer.add_child(overlay)
+			FrozenTiles.register(cell, BOSS_ICE_LASER_FROST_DURATION)
+
+	if frost_layer.get_child_count() > 0:
+		get_tree().create_timer(BOSS_ICE_LASER_FROST_DURATION).timeout.connect(_melt_boss_ice_frost.bind(frost_layer))
+	else:
+		frost_layer.queue_free()
+
+## Melts the whole strip of frost the beam laid down. Held until the melt is done,
+## so the ice is not pulled out from under itself halfway through fading.
+##
+## Static on purpose, for the same reason the ice bomb's is: the snail can be freed
+## out from under this if the fight is abandoned, and a connection to one of its own
+## methods would be torn down with it, leaving the frost frozen to the floor.
+static func _melt_boss_ice_frost(frost_layer: Node2D) -> void:
+	if not is_instance_valid(frost_layer):
+		return
+	for child in frost_layer.get_children():
+		if child is IceOverlay:
+			(child as IceOverlay).fade_out(BOSS_ICE_LASER_FROST_FADE_TIME)
+	frost_layer.get_tree().create_timer(BOSS_ICE_LASER_FROST_FADE_TIME + 0.1).timeout.connect(frost_layer.queue_free)
+
+func _spawn_boss_ice_laser_charge_flash(world_pos: Vector2) -> void:
+	var scene_root := get_tree().current_scene as Node2D
+	if scene_root == null:
+		return
+	var flash := PointLight2D.new()
+	flash.name = "BossIceLaserChargeFlash"
+	flash.texture = BOSS_LASER_LIGHT_TEXTURE
+	flash.texture_scale = 2.4
+	flash.color = BOSS_ICE_LASER_LIGHT_COLOR
+	flash.energy = 2.4
+	flash.shadow_enabled = false
+	scene_root.add_child(flash)
+	flash.global_position = world_pos
+	var tween := flash.create_tween().set_parallel(true)
+	tween.tween_property(flash, "energy", 0.0, 0.35).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.tween_property(flash, "texture_scale", 4.4, 0.35).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.chain().tween_callback(flash.queue_free)
+
+## The same impact as the purple laser with the heat swapped for cold, plus the
+## shards the ice bomb throws up when it goes off.
+func _spawn_boss_ice_laser_impact(world_pos: Vector2) -> void:
+	var scene_root := get_tree().current_scene as Node2D
+	if scene_root == null:
+		return
+	var impact_light := PointLight2D.new()
+	impact_light.name = "BossIceLaserTipFlash"
+	impact_light.texture = BOSS_LASER_LIGHT_TEXTURE
+	impact_light.texture_scale = 0.8
+	impact_light.color = BOSS_ICE_LASER_LIGHT_COLOR
+	impact_light.energy = 3.2
+	impact_light.shadow_enabled = false
+	scene_root.add_child(impact_light)
+	impact_light.global_position = world_pos
+	var light_tween := impact_light.create_tween().set_parallel(true)
+	light_tween.tween_property(impact_light, "texture_scale", 6.0, 0.3).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	light_tween.tween_property(impact_light, "energy", 0.0, 0.3).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	light_tween.chain().tween_callback(impact_light.queue_free)
+
+	var firework := Node2D.new()
+	firework.name = "SnailIceLaserFirework"
+	firework.z_index = BOSS_LASER_FIREWORK_Z
+	firework.z_as_relative = false
+	scene_root.add_child(firework)
+	firework.global_position = world_pos
+
+	var spark_texture := _make_firework_spark_texture()
+	_spawn_laser_firework_burst(firework, spark_texture, 120, 1.5, 480.0, 980.0, Color(0.36, 0.78, 1.0, 1.0))
+	get_tree().create_timer(0.16).timeout.connect(func():
+		if is_instance_valid(firework):
+			_spawn_laser_firework_burst(firework, spark_texture, 72, 1.25, 260.0, 620.0, Color(0.72, 0.94, 1.0, 1.0))
+	)
+
+	_spawn_laser_ground_spray(firework, spark_texture, Color(0.42, 0.8, 1.0, 1.0), Color(0.1, 0.34, 0.7, 0.0))
+	_spawn_laser_impact_column(firework, spark_texture, Color(0.6, 0.9, 1.0, 1.0), Color(0.16, 0.5, 0.9, 0.0))
+	_spawn_ice_laser_shards(firework)
+
+	get_tree().create_timer(2.0).timeout.connect(firework.queue_free)
+	SFX.play("explosion", world_pos, -4.0, 0.1, 1.25)
+	var mole := get_tree().get_first_node_in_group("mole")
+	if is_instance_valid(mole) and mole.has_method("screen_shake"):
+		mole.call("screen_shake", 20.0, 0.45)
+
+## Shards thrown off the point of impact, weighted back down so they fall away
+## instead of hanging in the air the way the laser sparks do.
+func _spawn_ice_laser_shards(parent: Node2D) -> void:
+	var shards := CPUParticles2D.new()
+	shards.one_shot = true
+	shards.amount = 40
+	shards.lifetime = 0.8
+	shards.explosiveness = 0.9
+	shards.direction = Vector2.ZERO
+	shards.spread = 180.0
+	shards.initial_velocity_min = 140.0
+	shards.initial_velocity_max = 380.0
+	shards.gravity = Vector2(0.0, 520.0)
+	shards.damping_min = 40.0
+	shards.damping_max = 110.0
+	shards.scale_amount_min = 0.25
+	shards.scale_amount_max = 0.7
+	var gradient := Gradient.new()
+	gradient.set_color(0, Color(0.92, 0.99, 1.0, 1.0))
+	gradient.set_color(0.4, Color(0.52, 0.84, 1.0, 0.95))
+	gradient.set_color(1, Color(0.2, 0.5, 0.85, 0.0))
+	shards.color_ramp = gradient
+	shards.z_index = 2
+	parent.add_child(shards)
+	shards.emitting = true
 
 func _fire_boss_laser(mole: Node2D) -> void:
 	if _boss_laser_active or not _boss_active or _boss_dying or not is_instance_valid(mole):
@@ -1181,20 +1795,32 @@ func _fire_boss_laser(mole: Node2D) -> void:
 	SFX.play("explosion", laser_start, -3.0, 0.12)
 	if is_instance_valid(mole) and mole.has_method("screen_shake"):
 		mole.call("screen_shake", 16.0, BOSS_LASER_STRIKE_DURATION)
-	_damage_mole_in_boss_laser(mole, laser_start, laser_end)
+	var reached_laser_tip: bool = await _extend_boss_laser_to_tip(beam, laser_start, laser_end, mole)
+	if not reached_laser_tip:
+		_clear_boss_laser_lines(beam)
+		_boss_laser_lines.clear()
+		if is_inside_tree():
+			_boss_laser_active = false
+			_boss_laser_timer = BOSS_LASER_COOLDOWN
+		return
 	_break_blocks_along_boss_laser(laser_start, laser_end)
+	# Detonate the purple impact only once the beam's animated tip arrives.
 	_spawn_boss_laser_impact(laser_end)
 
 	var laser_time_left := BOSS_LASER_STRIKE_DURATION
 	while laser_time_left > 0.0:
 		var damage_interval := minf(0.1, laser_time_left)
 		await get_tree().create_timer(damage_interval).timeout
+		await get_tree().physics_frame
 		laser_time_left -= damage_interval
 		_damage_mole_in_boss_laser(mole, laser_start, laser_end)
 	for line in beam:
 		if is_instance_valid(line):
-			var fade := line.create_tween()
+			var fade := line.create_tween().set_parallel(true)
 			fade.tween_property(line, "modulate:a", 0.0, BOSS_LASER_FADE_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+			for child in line.get_children():
+				if child is PointLight2D:
+					fade.tween_property(child, "energy", 0.0, BOSS_LASER_FADE_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	await get_tree().create_timer(BOSS_LASER_FADE_TIME).timeout
 	_clear_boss_laser_lines(beam)
 	_boss_laser_lines.clear()
@@ -1226,7 +1852,60 @@ func _create_boss_laser_lines(start: Vector2, finish: Vector2, telegraph: bool) 
 		line.add_point(scene_root.to_local(finish))
 		scene_root.add_child(line)
 		lines.append(line)
+	_attach_boss_laser_lights(lines, scene_root.to_local(start), scene_root.to_local(finish), telegraph)
 	return lines
+
+func _attach_boss_laser_lights(lines: Array[Line2D], local_start: Vector2, local_finish: Vector2, telegraph: bool, light_color: Color = Color(0.62, 0.2, 1.0, 1.0)) -> void:
+	if lines.is_empty() or not is_instance_valid(lines[0]):
+		return
+	var beam_line := lines[0]
+	for fraction in [0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875]:
+		var light := PointLight2D.new()
+		light.name = "BossLaserPurpleLight"
+		light.position = local_start.lerp(local_finish, fraction)
+		light.set_meta("laser_fraction", fraction)
+		light.texture = BOSS_LASER_LIGHT_TEXTURE
+		light.texture_scale = 3.0
+		light.color = light_color
+		light.energy = 0.55 if telegraph else 1.0
+		light.range_item_cull_mask = 1023
+		light.shadow_enabled = false
+		beam_line.add_child(light)
+
+func _extend_boss_laser_to_tip(lines: Array[Line2D], start: Vector2, finish: Vector2, mole: Node2D, width: float = BOSS_LASER_WIDTH, damage: float = BOSS_LASER_DAMAGE, travel_time: float = BOSS_LASER_TRAVEL_TIME) -> bool:
+	var scene_root := get_tree().current_scene as Node2D
+	if scene_root == null:
+		return false
+	var local_start := scene_root.to_local(start)
+	var local_finish := scene_root.to_local(finish)
+	var elapsed := 0.0
+	var last_damage_time := 0.0
+	var physics_step := 1.0 / float(Engine.physics_ticks_per_second)
+	_set_boss_laser_progress(lines, local_start, local_finish, 0.0)
+	while elapsed < travel_time:
+		await get_tree().physics_frame
+		if not is_inside_tree() or not _boss_active or _boss_dying:
+			return false
+		elapsed += physics_step
+		var progress := clampf(elapsed / travel_time, 0.0, 1.0)
+		var current_tip := start.lerp(finish, progress)
+		_set_boss_laser_progress(lines, local_start, local_finish, progress)
+		if elapsed - last_damage_time >= 0.1:
+			_damage_mole_in_boss_laser(mole, start, current_tip, width, damage)
+			last_damage_time = elapsed
+	_set_boss_laser_progress(lines, local_start, local_finish, 1.0)
+	return true
+
+func _set_boss_laser_progress(lines: Array[Line2D], local_start: Vector2, local_finish: Vector2, progress: float) -> void:
+	var current_tip := local_start.lerp(local_finish, progress)
+	for line in lines:
+		if not is_instance_valid(line) or line.get_point_count() < 2:
+			continue
+		line.set_point_position(1, current_tip)
+		for child in line.get_children():
+			if child is PointLight2D and child.has_meta("laser_fraction"):
+				var light_fraction := float(child.get_meta("laser_fraction"))
+				(child as PointLight2D).position = local_start.lerp(local_finish, light_fraction * progress)
 
 func _animate_boss_laser(lines: Array[Line2D]) -> void:
 	for line in lines:
@@ -1243,16 +1922,25 @@ func _clear_boss_laser_lines(lines: Array[Line2D]) -> void:
 		if is_instance_valid(line):
 			line.queue_free()
 
-func _damage_mole_in_boss_laser(mole: Node2D, start: Vector2, finish: Vector2) -> void:
-	if not is_instance_valid(mole) or not mole.has_method("take_damage"):
+func _damage_mole_in_boss_laser(mole: Node2D, start: Vector2, finish: Vector2, width: float = BOSS_LASER_WIDTH, damage: float = BOSS_LASER_DAMAGE) -> void:
+	if not is_instance_valid(mole) or not mole.is_in_group("mole") or not mole.has_method("take_damage") or not (mole is CollisionObject2D):
 		return
+	var mole_body := mole as CollisionObject2D
 	var segment := finish - start
 	if segment.length_squared() <= 0.0:
 		return
-	var progress := clampf((mole.global_position - start).dot(segment) / segment.length_squared(), 0.0, 1.0)
-	var closest := start + segment * progress
-	if mole.global_position.distance_to(closest) <= BOSS_LASER_WIDTH * 0.5 + 28.0:
-		mole.call("take_damage", BOSS_LASER_DAMAGE, start, true, true)
+	var beam_shape := RectangleShape2D.new()
+	beam_shape.size = Vector2(maxf(segment.length(), 1.0), width + 56.0)
+	var query := PhysicsShapeQueryParameters2D.new()
+	query.shape = beam_shape
+	query.transform = Transform2D(segment.angle(), (start + finish) * 0.5)
+	query.collision_mask = mole_body.collision_layer
+	query.collide_with_bodies = true
+	query.collide_with_areas = false
+	for hit in get_world_2d().direct_space_state.intersect_shape(query, 32):
+		if hit.get("collider") == mole_body:
+			mole.call("take_damage", damage, start, true, true)
+			return
 
 func _break_blocks_along_boss_laser(start: Vector2, finish: Vector2) -> void:
 	var tilemap := get_parent().get_node_or_null("TileMap") as TileMap
@@ -1330,6 +2018,20 @@ func _spawn_boss_laser_impact(world_pos: Vector2) -> void:
 	var scene_root := get_tree().current_scene as Node2D
 	if scene_root == null:
 		return
+	var impact_light := PointLight2D.new()
+	impact_light.name = "BossLaserTipPurpleFlash"
+	impact_light.texture = BOSS_LASER_LIGHT_TEXTURE
+	impact_light.texture_scale = 0.8
+	impact_light.color = Color(0.64, 0.18, 1.0, 1.0)
+	impact_light.energy = 3.0
+	impact_light.shadow_enabled = false
+	scene_root.add_child(impact_light)
+	impact_light.global_position = world_pos
+	var light_tween := impact_light.create_tween().set_parallel(true)
+	light_tween.tween_property(impact_light, "texture_scale", 6.0, 0.3).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	light_tween.tween_property(impact_light, "energy", 0.0, 0.3).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	light_tween.chain().tween_callback(impact_light.queue_free)
+
 	var firework := Node2D.new()
 	firework.name = "SnailLaserFirework"
 	firework.z_index = BOSS_LASER_FIREWORK_Z
@@ -1359,7 +2061,7 @@ func _spawn_boss_laser_impact(world_pos: Vector2) -> void:
 ## Wide, flat fan of sparks thrown sideways along the ground. `spread` is measured
 ## from `direction`, so aiming UP with a near-180 spread keeps everything close to
 ## the horizontal, and the low gravity lets the spray settle rather than arc.
-func _spawn_laser_ground_spray(parent: Node2D, spark_texture: Texture2D) -> void:
+func _spawn_laser_ground_spray(parent: Node2D, spark_texture: Texture2D, hot: Color = Color(0.86, 0.42, 1.0, 1.0), fade: Color = Color(0.4, 0.08, 0.72, 0.0)) -> void:
 	var particles := CPUParticles2D.new()
 	particles.one_shot = true
 	particles.amount = 88
@@ -1377,8 +2079,8 @@ func _spawn_laser_ground_spray(parent: Node2D, spark_texture: Texture2D) -> void
 	particles.texture = spark_texture
 	var gradient := Gradient.new()
 	gradient.set_color(0, Color(1.0, 0.96, 1.0, 1.0))
-	gradient.set_color(0.12, Color(0.86, 0.42, 1.0, 1.0))
-	gradient.set_color(1, Color(0.4, 0.08, 0.72, 0.0))
+	gradient.set_color(0.12, hot)
+	gradient.set_color(1, fade)
 	particles.color_ramp = gradient
 	particles.z_index = 1
 	parent.add_child(particles)
@@ -1387,7 +2089,7 @@ func _spawn_laser_ground_spray(parent: Node2D, spark_texture: Texture2D) -> void
 ## The narrow bright plume off the exact hit point, replacing the old expanding
 ## sprite flash: fast, short-lived, and tight enough to read as the beam's contact
 ## point rather than a glow swelling over the whole impact.
-func _spawn_laser_impact_column(parent: Node2D, spark_texture: Texture2D) -> void:
+func _spawn_laser_impact_column(parent: Node2D, spark_texture: Texture2D, hot: Color = Color(0.94, 0.66, 1.0, 1.0), fade: Color = Color(0.55, 0.12, 0.95, 0.0)) -> void:
 	var particles := CPUParticles2D.new()
 	particles.one_shot = true
 	particles.amount = 46
@@ -1407,8 +2109,8 @@ func _spawn_laser_impact_column(parent: Node2D, spark_texture: Texture2D) -> voi
 	particles.texture = spark_texture
 	var gradient := Gradient.new()
 	gradient.set_color(0, Color(1.0, 1.0, 1.0, 1.0))
-	gradient.set_color(0.3, Color(0.94, 0.66, 1.0, 1.0))
-	gradient.set_color(1, Color(0.55, 0.12, 0.95, 0.0))
+	gradient.set_color(0.3, hot)
+	gradient.set_color(1, fade)
 	particles.color_ramp = gradient
 	particles.z_index = 2
 	parent.add_child(particles)
@@ -1427,8 +2129,8 @@ func _spawn_laser_firework_burst(parent: Node2D, spark_texture: Texture2D, amoun
 	particles.gravity = Vector2(0.0, 280.0)
 	particles.damping_min = 24.0
 	particles.damping_max = 72.0
-	particles.scale_amount_min = 0.16
-	particles.scale_amount_max = 0.42
+	particles.scale_amount_min = 1.0
+	particles.scale_amount_max = 2.4
 	particles.texture = spark_texture
 	var gradient := Gradient.new()
 	gradient.set_color(0, Color(1.0, 0.94, 1.0, 1.0))
@@ -1547,11 +2249,14 @@ func _defeat_boss() -> void:
 	_clear_boss_laser_lines(_boss_laser_lines)
 	_boss_laser_lines.clear()
 	_boss_laser_active = false
+	_abort_boss_ice_laser()
+	_boss_enrage_active = false
 	set_physics_process(false)
 	linear_velocity = Vector2.ZERO
 	gravity_scale = 0.0
 	_restore_boss_camera_zoom()
-	_restore_boss_ambient()
+	# Keep the boss-fight lighting through the death sequence; restoring it here
+	# made the finale and its effects much darker than the fight.
 	if _boss_hurtbox != null:
 		_boss_hurtbox.set_deferred("monitoring", false)
 		_boss_hurtbox.set_deferred("monitorable", false)
@@ -1607,7 +2312,7 @@ func _show_death_dialogue() -> void:
 func _setup_death_box() -> void:
 	if _death_box == null or not is_instance_valid(_death_box):
 		return
-	_death_box.set_npc_name(npc_name)
+	_death_box.set_npc_name(boss_npc_name)
 	_death_box.set_portrait(portrait_texture)
 	_apply_portrait_blink_to(_death_box)
 	_death_box.next_pressed.connect(_on_death_dialogue_next)
@@ -1677,8 +2382,8 @@ func _spawn_death_firework_burst(world_pos: Vector2) -> void:
 	var spark_texture := _make_firework_spark_texture()
 	var tint: Color = DEATH_FIREWORK_COLORS.pick_random()
 	# Each particle node holds one burst while the central finale waits on input.
-	# The dense loops below trade a few extra spread-out pulses for the larger
-	# sprites/particle counts needed to read clearly at the distant camera scale.
+	# Large sparks stay legible at the distant camera scale; the old subpixel
+	# particle sizes made every shell explosion effectively invisible.
 	_spawn_laser_firework_burst(firework, spark_texture, int(DEATH_FIREWORK_PARTICLE_COUNT * blast_scale), 1.3, 420.0, 860.0 * blast_scale, tint)
 	_spawn_laser_firework_burst(firework, spark_texture, int(DEATH_FIREWORK_PARTICLE_COUNT * 0.55 * blast_scale), 1.0, 200.0, 540.0 * blast_scale, Color(1.0, 0.94, 1.0, 1.0))
 	_spawn_laser_firework_burst(firework, spark_texture, int(DEATH_FIREWORK_PARTICLE_COUNT * 0.35 * blast_scale), 0.8, 100.0, 300.0 * blast_scale, Color(1.0, 0.78, 0.26, 1.0))
@@ -1712,9 +2417,7 @@ func _death_finale() -> void:
 	_dismiss_death_box()
 	_begin_black_hole_after_explosion(center, body_size)
 
-	var fade := create_tween()
-	fade.tween_interval(0.9)
-	fade.tween_property(_sprite, "modulate:a", 0.0, DEATH_FADE_TIME)
+	# The shell stays visible until the hole has swallowed the arena tiles.
 	# Keep this controller alive until the black-hole pull hands off to credits.
 
 func _shake_camera(strength_multiplier: float = 1.0) -> void:
@@ -1740,6 +2443,19 @@ func _open_black_hole(center: Vector2, body_size: Vector2) -> void:
 	_death_black_hole.scale = Vector2(0.04, 0.04)
 	var radius := maxf(body_size.x, body_size.y) * DEATH_BLACK_HOLE_RADIUS_SCALE
 
+	var aura := PointLight2D.new()
+	aura.name = "BlackHolePurpleAura"
+	aura.texture = SNAIL_GLOW_TEXTURE
+	aura.texture_scale = maxf(radius / 150.0, 1.0)
+	aura.color = Color(0.58, 0.12, 1.0, 1.0)
+	aura.energy = 1.8
+	aura.range_item_cull_mask = 1023
+	aura.shadow_enabled = false
+	aura.z_index = -2
+	_death_black_hole.add_child(aura)
+	var aura_pulse := aura.create_tween().set_loops()
+	aura_pulse.tween_property(aura, "energy", 2.4, 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	aura_pulse.tween_property(aura, "energy", 1.4, 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	var halo := Polygon2D.new()
 	halo.polygon = _black_hole_circle(radius * 0.9)
 	halo.color = Color(0.24, 0.025, 0.42, 0.82)
@@ -1756,7 +2472,72 @@ func _open_black_hole(center: Vector2, body_size: Vector2) -> void:
 
 	var growth := _death_black_hole.create_tween()
 	growth.tween_property(_death_black_hole, "scale", Vector2.ONE, DEATH_BLACK_HOLE_GROW_TIME).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	growth.tween_callback(_suck_player_into_black_hole.bind(center))
+	growth.tween_callback(_start_black_hole_tile_suction.bind(center))
+
+func _start_black_hole_tile_suction(center: Vector2) -> void:
+	var tilemap := get_parent().get_node_or_null("TileMap") as TileMap
+	if tilemap == null:
+		_pull_snail_into_black_hole(center)
+		return
+
+	var pull_radius := 1800.0
+	if _dialogue_focus_camera != null and is_instance_valid(_dialogue_focus_camera):
+		var half_view := _dialogue_focus_camera.get_viewport_rect().size / _dialogue_focus_camera.zoom * 0.5
+		pull_radius = half_view.length()
+	var cell_lookup: Dictionary = {}
+	for layer in range(tilemap.get_layers_count()):
+		for cell in tilemap.get_used_cells(layer):
+			var cell_world := tilemap.to_global(tilemap.map_to_local(cell))
+			if cell_world.distance_to(center) <= pull_radius:
+				cell_lookup[cell] = true
+	var cells: Array[Vector2i] = []
+	for cell in cell_lookup:
+		cells.append(cell)
+	cells.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+		var a_world := tilemap.to_global(tilemap.map_to_local(a))
+		var b_world := tilemap.to_global(tilemap.map_to_local(b))
+		return a_world.distance_squared_to(center) > b_world.distance_squared_to(center))
+
+	var index := 0
+	while index < cells.size() and is_inside_tree():
+		for batch_offset in range(DEATH_BLACK_HOLE_TILE_BATCH):
+			var cell_index := index + batch_offset
+			if cell_index >= cells.size():
+				break
+			var cell: Vector2i = cells[cell_index]
+			if tilemap.get_cell_source_id(0, cell) != -1:
+				TileBreakSFX.break_tile(tilemap, cell, get_parent(), true, TileBreakSFX.DEBRIS_Z_OVER_BEAM, center, true)
+			else:
+				for layer in range(1, tilemap.get_layers_count()):
+					if tilemap.get_cell_source_id(layer, cell) != -1:
+						TileBreakSFX.break_decoration_tile(tilemap, cell, get_parent(), TileBreakSFX.DEBRIS_Z_OVER_BEAM, center, true, layer)
+		index += DEATH_BLACK_HOLE_TILE_BATCH
+		if index < cells.size():
+			await get_tree().create_timer(DEATH_BLACK_HOLE_TILE_INTERVAL).timeout
+	_pull_snail_into_black_hole(center)
+
+func _pull_snail_into_black_hole(center: Vector2) -> void:
+	if _sprite == null or not is_instance_valid(_sprite):
+		_suck_player_into_black_hole(center)
+		return
+	_transformed = false
+	_sprite.visible = true
+	_sprite.modulate.a = 1.0
+	var pull := _death_black_hole.create_tween()
+	pull.set_parallel(true)
+	pull.tween_property(_sprite, "global_position", center, DEATH_BLACK_HOLE_SNAIL_PULL_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	pull.tween_property(_sprite, "global_scale", Vector2.ZERO, DEATH_BLACK_HOLE_SNAIL_PULL_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	pull.tween_property(_sprite, "rotation", TAU * 2.0, DEATH_BLACK_HOLE_SNAIL_PULL_TIME).as_relative()
+	for aura in _aura_sprites:
+		if is_instance_valid(aura):
+			pull.tween_property(aura, "modulate:a", 0.0, DEATH_BLACK_HOLE_SNAIL_PULL_TIME)
+	if _dialogue_focus_camera != null and is_instance_valid(_dialogue_focus_camera):
+		pull.tween_property(_dialogue_focus_camera, "global_position", center, DEATH_BLACK_HOLE_SNAIL_PULL_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+		pull.tween_property(_dialogue_focus_camera, "zoom", Vector2(1.3, 1.3), DEATH_BLACK_HOLE_SNAIL_PULL_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	pull.chain().tween_callback(func():
+		_sprite.visible = false
+		_suck_player_into_black_hole(center)
+	)
 
 func _black_hole_circle(radius: float) -> PackedVector2Array:
 	var points := PackedVector2Array()
@@ -1825,6 +2606,10 @@ func _go_to_credits() -> void:
 	if _death_credits_started:
 		return
 	_death_credits_started = true
+	# Beating the final boss is what unlocks Boss Rush on the title screen, and
+	# it is recorded here rather than in the credits roll so that quitting
+	# straight out of the fight still counts.
+	Progress.mark_game_completed()
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 	get_tree().root.add_child(transition)
 	transition.change_to(DEATH_CREDITS_PATH)

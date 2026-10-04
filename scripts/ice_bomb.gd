@@ -176,6 +176,7 @@ func _spawn_ice_burst() -> void:
 	get_tree().create_timer(1.2).timeout.connect(shards.queue_free)
 
 func _freeze_radius() -> void:
+	var excluded := _blast_exclusions()
 	for hurtbox in get_tree().get_nodes_in_group("enemy_hurtbox"):
 		if not is_instance_valid(hurtbox):
 			continue
@@ -186,6 +187,8 @@ func _freeze_radius() -> void:
 		# or the snail mid-transformation before the fight has even started, would
 		# stall a scripted sequence.
 		if enemy.has_method("can_be_frozen") and not enemy.can_be_frozen():
+			continue
+		if excluded.has(enemy):
 			continue
 		if _blast_distance_to(hurtbox, enemy, global_position) <= explosion_radius:
 			freeze_node(enemy, FREEZE_DURATION)

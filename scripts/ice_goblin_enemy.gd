@@ -7,6 +7,9 @@ extends "res://scripts/goblin_enemy.gd"
 
 const FROST_MUSHROOM_SCENE := preload("res://ice_goblin_mushroom.tscn")
 
+const ICE_COAT_SHADER := preload("res://shaders/ice_coat.gdshader")
+const ICE_OVERLAY_TEXTURE := preload("res://sprites/iceoverlay.png")
+
 ## Icy wash over the shared goblin sprite, so it reads as frozen the moment it
 ## walks on screen without needing new art. The regular goblin's hit-flash
 ## tweens the whole node's modulate, not the visual's, so this tint survives
@@ -17,6 +20,17 @@ func _ready() -> void:
 	super()
 	mushroom_scene = FROST_MUSHROOM_SCENE
 	visual.modulate = ICE_TINT
+	_apply_ice_coat()
+
+## Paints the ice bomb's frost pattern into the shared goblin frames. It has to
+## be a shader rather than a frost sprite laid over the top: that texture is an
+## opaque tile, so as a child node it would frost the whole frame rectangle
+## instead of the goblin standing in it.
+func _apply_ice_coat() -> void:
+	var coat := ShaderMaterial.new()
+	coat.shader = ICE_COAT_SHADER
+	coat.set_shader_parameter("frost", ICE_OVERLAY_TEXTURE)
+	visual.material = coat
 
 ## Shatter-hint on death: a puff of ice shards rides along with the usual
 ## goblin break-apart, so it dies like something frozen rather than merely

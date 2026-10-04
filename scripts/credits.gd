@@ -15,6 +15,10 @@ const FONT_PATH := "res://Baby Doll.otf"
 const LOGO_PATH := "res://holymolylogo.png"
 const RETURN_PATH := "res://scenes/intro.tscn"
 const MUSIC_PATH := "res://Spirited Away - The Name of Life (Slowed + Reverb).mp3"
+## Matched to the other out-of-gameplay music (the intro and game over rolls both
+## sit at -14) rather than to the quieter in-game level bed, so the credits do not
+## feel like they dropped in quieter than the menu the player just came from.
+const MUSIC_VOLUME_DB := -14.0
 
 const STUDIO := "Holy Moly"
 const VERSION := "v0.2beta"
@@ -298,7 +302,7 @@ func _start_music() -> void:
 	_music = AudioStreamPlayer.new()
 	_music.process_mode = Node.PROCESS_MODE_ALWAYS
 	_music.stream = load(MUSIC_PATH) as AudioStream
-	_music.volume_db = -17.0
+	_music.volume_db = MUSIC_VOLUME_DB
 	add_child(_music)
 	_music.finished.connect(_music.play)
 	_music.play()
