@@ -22,3 +22,6 @@ func _ready() -> void:
 	# re-tinting the sprite toward cold blues as it ticks down, so this only
 	# sets the resting look before the fuse starts.
 	sprite.modulate = Color(0.72, 0.95, 1.25, 1.0)
+
+func _on_body_entered(_body: Node) -> void:
+	_explode()
