@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://bjf05meawiduw"
+path="res://.godot/imported/Hollow Knight OST - Nosk [youaretube.com].mp3-06fe49ec9f4ce053dfaf40ff84bbf742.mp3str"
+
+[deps]
+
+source_file="res://Hollow Knight OST - Nosk [youaretube.com].mp3"
+dest_files=["res://.godot/imported/Hollow Knight OST - Nosk [youaretube.com].mp3-06fe49ec9f4ce053dfaf40ff84bbf742.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

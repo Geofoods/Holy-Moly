@@ -18,6 +18,17 @@ extends RigidBody2D
 @export var post_dialogue_clearance := Vector2.ZERO
 ## Some story snails visibly transform after their dialogue is dismissed.
 @export var transform_after_dialogue := false
+## Set on a snail that exists only to say its one line and then leaves - the level
+## 05 snail is a prisoner calling for help, and there is nothing to come back
+## for. Off by default because the snails that do stay are the ones the player is
+## meant to be able to talk to again.
+@export var remove_after_dialogue := false
+## For a snail whose line is only the setup for the arena. Once the arena has been
+## cleared that story has already happened, so a save that has done it should not
+## have this snail back standing in the level waiting to be rescued a second time.
+## Off by default - the arena is the only one-time event with a snail hanging off
+## it, and every other snail is unconditional.
+@export var skip_if_arena_completed := false
 ## Starts a boss fight after the transformation finishes; used by the level 10 snail.
 @export var boss_after_dialogue := false
 ## Set only on the snail that stands between the Corrupted Heart and its own
@@ -89,8 +100,15 @@ const BOSS_SCREAM_RING_END_RADIUS := 340.0
 const BOSS_SCREAM_RING_TIME := 0.55
 const BOSS_SCREAM_RING_STAGGER := 0.11
 ## The scream is not always followed by the ice laser. When the roll misses, the
-## half-health beat is the scream on its own.
+## half-health beat is the scream on its own - but the beam is a standing part of
+## the second half regardless, so a missed roll only costs the crossing its
+## flourish, not the rest of the fight its attack.
 const BOSS_ICE_LASER_CHANCE := 0.5
+## How long the shell goes between ice beams once it is enraged. Longer than the
+## purple laser's cooldown and deliberately not a multiple of it, so the two drift
+## against each other rather than arriving in a fixed alternation the mole could
+## learn and count.
+const BOSS_ICE_LASER_COOLDOWN := 11.0
 ## The ice beam tracks the mole for this long before it fires, and only settles on
 ## a direction at the end of it. Committing to a side inside these two seconds is
 ## what gets you out of the way; standing still does not.
@@ -208,6 +226,10 @@ var _boss_enraged := false
 ## An enrage beat (scream, possibly the ice laser) is playing right now. The
 ## normal spit and laser hold off for its length so nothing fires on top of it.
 var _boss_enrage_active := false
+## Counts down to the next ice beam. Armed at the start of the fight but only
+## ever read once the shell is enraged, so the beam stays out of the first half
+## entirely and is not sitting there ready to fire the instant the crossing lands.
+var _boss_ice_laser_timer := 0.0
 var _boss_ice_laser_active := false
 var _boss_ice_laser_lines: Array[Line2D] = []
 var _boss_scream_tween: Tween = null
@@ -252,6 +274,9 @@ const ITEM_GET := preload("res://scripts/item_get_animation.gd")
 const MELEE_ICON := preload("res://sprites/shovel.png")
 ## Roughly the dialogue box's slide-away, so the fanfare lands once it is gone.
 const FANFARE_DELAY := 0.35
+## How long a retiring snail takes to fade out. Slow enough to read as leaving
+## rather than being deleted.
+const RETIRE_FADE := 0.6
 ## The grand death: the snail defies the mole one last time, then bursts like a
 ## firework show while the box is on screen, and the finale blast frees it.
 const DEATH_CURSE_TEXT := "AHHHH! I SWEAR WHEN I GO TO HELL I WILL DESTROY ALL MOLES"
@@ -306,6 +331,12 @@ var _banner_text := ""
 signal dialogue_closed
 
 func _ready() -> void:
+	# The story this snail introduces has already been played out, so it is not put
+	# in the level at all. Checked before anything is wired up, so a skipped snail
+	# costs no signal connections and no prompt label.
+	if skip_if_arena_completed and Progress.is_arena_completed():
+		queue_free()
+		return
 	var zone := get_node_or_null("Area2D") as Area2D
 	if zone:
 		zone.body_entered.connect(_on_body_entered)
@@ -358,7 +389,7 @@ func _physics_process(delta: float) -> void:
 	if mole == null or not is_instance_valid(mole):
 		return
 
-	if not _boss_laser_active and not _boss_enrage_active:
+	if not _boss_laser_active and not _boss_enrage_active and not _boss_ice_laser_active:
 		_boss_spit_timer -= delta
 		if _boss_spit_timer <= 0.0:
 			_boss_spit_timer = BOSS_SPIT_INTERVAL
@@ -368,6 +399,17 @@ func _physics_process(delta: float) -> void:
 		if _boss_laser_timer <= 0.0:
 			_boss_laser_timer = BOSS_LASER_COOLDOWN
 			_fire_boss_laser(mole)
+
+	# Past half health the ice beam is a standing attack rather than the once-a-fight
+	# dice roll the crossing used to be, so it is timed here off the same loop as
+	# everything else. Held off while the purple laser is up or an enrage beat is
+	# playing: the timer pauses for the duration rather than expiring and firing on
+	# top of a beam that is already out, so the shell never crosses two at once.
+	if _boss_enraged and not _boss_ice_laser_active and not _boss_enrage_active and not _boss_laser_active:
+		_boss_ice_laser_timer -= delta
+		if _boss_ice_laser_timer <= 0.0:
+			_boss_ice_laser_timer = BOSS_ICE_LASER_COOLDOWN
+			_fire_boss_ice_laser(mole)
 
 	_boss_minion_spawn_timer -= delta
 	if _boss_minion_spawn_timer <= 0.0:
@@ -560,6 +602,8 @@ func _on_dialogue_done() -> void:
 		LevelMusic.play_vessel_after_snail()
 	# This story encounter becomes a boss, not an interactable NPC, after its scene.
 	_hushed = true if boss_after_dialogue else _refresh_hushed()
+	if remove_after_dialogue:
+		_retire_when_dialogue_clears()
 	if _dialogue_box == null or not is_instance_valid(_dialogue_box):
 		_dialogue_box = null
 		_dialogue_open = false
@@ -580,6 +624,38 @@ func _on_dialogue_done() -> void:
 	)
 	_dialogue_open = false
 	dialogue_closed.emit()
+
+## Sends a snail off once it has said its line. Hushed immediately, so the prompt
+## cannot pop back up over the closing box, and the wait is deliberately
+## FANFARE_DELAY long: the box's own teardown is a deferred callback on this node,
+## so freeing any sooner would fire it at an instance that is already gone.
+func _retire_when_dialogue_clears() -> void:
+	_hushed = true
+	get_tree().create_timer(FANFARE_DELAY).timeout.connect(_begin_retire)
+
+## Fades the shell out and lets it go. The collider goes at the same time rather
+## than at the end of the fade, so the player is never left standing on something
+## that is on its way out, and the body is frozen in case the snail was still
+## falling when it started talking.
+func _begin_retire() -> void:
+	if _label != null:
+		_label.visible = false
+	var interaction_area := get_node_or_null("Area2D") as Area2D
+	if interaction_area != null:
+		interaction_area.set_deferred("monitoring", false)
+		interaction_area.set_deferred("monitorable", false)
+	var body_shape := get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if body_shape != null:
+		body_shape.set_deferred("disabled", true)
+	freeze = true
+	if _sprite == null:
+		queue_free()
+		return
+	var tween := create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(_sprite, "modulate:a", 0.0, RETIRE_FADE).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	tween.tween_property(_sprite, "scale", _sprite.scale * 0.85, RETIRE_FADE).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	tween.chain().tween_callback(queue_free)
 
 ## Puts the player on the far side of the snail once its dialogue is out of the
 ## way, so they are never left standing inside it. The momentum is cleared too,
@@ -754,6 +830,10 @@ func _begin_boss_fight() -> void:
 	_boss_enraged = false
 	_boss_enrage_active = false
 	_boss_ice_laser_active = false
+	# Armed rather than run: nothing reads this until _boss_enraged is latched, so
+	# the first ice beam still has to wait out the enrage and the purple laser's
+	# turn at the crossing rather than cutting the scream short.
+	_boss_ice_laser_timer = BOSS_ICE_LASER_COOLDOWN
 	_boss_minion_spawn_timer = 3.0
 	_boss_minion_retire_timer = 0.0
 	_boss_break_timer = 0.0
@@ -1383,10 +1463,18 @@ func _set_boss_scream_ring_radius(radius: float, ring: Line2D) -> void:
 ## and only settles at the end of it - so it cannot be dodged by standing still,
 ## only by committing to a direction while it is winding up. Where it lands, the
 ## ground stays frozen.
+##
+## Enraged, this is one attack in a rotation and is entered from _physics_process
+## without being awaited, exactly like the purple laser; the coroutine runs on its
+## own and _boss_ice_laser_active is what keeps the next tick out.
 func _fire_boss_ice_laser(mole: Node2D) -> void:
 	if _boss_ice_laser_active or not _boss_active or _boss_dying or not is_instance_valid(mole):
 		return
 	_boss_ice_laser_active = true
+	# Armed here rather than only at the call sites, so the enrage's own roll and
+	# the rotation's timer cannot both claim the same beat and put two beams out
+	# back to back. Whichever fires, the next one is a full cooldown away.
+	_boss_ice_laser_timer = BOSS_ICE_LASER_COOLDOWN
 	var scene_root := get_tree().current_scene as Node2D
 	if scene_root == null:
 		_boss_ice_laser_active = false

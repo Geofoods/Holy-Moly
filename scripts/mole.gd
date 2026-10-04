@@ -68,6 +68,17 @@ const PEACEFUL_SCENES := [
 	"res://scenes/shopkeeper_item.tscn",
 ]
 
+## Scenes the mole always arrives at their own default spawn point in, whatever
+## position was saved when they last walked out of one of the scene's exits.
+## Set in code so editor re-saves of a scene can't re-enable it.
+##
+## The shop is the one that needs this: it has two exits side by side, and the
+## saved position is wherever the mole stood inside the one they left by, so
+## coming back dropped them in that doorway again instead of on the shop floor.
+const DEFAULT_SPAWN_SCENES := [
+	"res://scenes/shopkeeper_item.tscn",
+]
+
 @export var can_break := true
 
 var mole_hole_scene := preload("res://scenes/molehole.tscn")
@@ -244,10 +255,13 @@ func _play_respawn_arrival() -> void:
 		station.spawn_mole_in(self)
 
 ## Restores the position the mole had when it last left this level, if any, so
-## re-entering a level drops the player back where they exited.
+## re-entering a level drops the player back where they exited. Scenes listed in
+## DEFAULT_SPAWN_SCENES opt out and always start from their own spawn point.
 func _restore_level_position() -> void:
 	var cs := get_tree().current_scene
 	if cs == null:
+		return
+	if cs.scene_file_path in DEFAULT_SPAWN_SCENES:
 		return
 	var saved = Inventory.get_level_return_position(cs.scene_file_path)
 	if saved is Vector2:

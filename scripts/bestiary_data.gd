@@ -130,7 +130,7 @@ const ENTRIES: Array[Dictionary] = [
 		"category": "Upgrade",
 		"danger_level": 1,
 		"description": "A pair of rough grip pads that let you cling to tunnel walls and kick off them.",
-		"behavior": "Once purchased, it is always active. Press Jump while touching a wall to launch off it in the opposite direction. Holding toward the wall while falling slows your descent.",
+		"behavior": "Always active. Press Jump while touching a wall to launch off it in the opposite direction. Holding toward the wall while falling slows your descent.",
 		"attack_pattern": "Wall jumps launch you upward and away from the wall. Sliding reduces your fall speed to 420 px/s, letting you descend shafts safely.",
 		"strategy": "Chain wall jumps between two facing walls to climb vertical shafts, or ride a wall slide to reach treasures at the bottom of deep tunnels without taking fall damage.",
 	},
@@ -166,7 +166,7 @@ const CONTROLS: Array[Dictionary] = [
 		"rows": [
 			{"label": "Left / Right buttons (bottom-left)", "detail": "Move left / right."},
 			{"label": "Up button (bottom-left)", "detail": "Jump."},
-			{"label": "Jump while against a wall", "detail": "With the Wall Jump Grip, kick off the wall you're holding toward."},
+			{"label": "Jump while against a wall", "detail": "Kick off the wall you're holding toward to wall jump."},
 		],
 	},
 	{

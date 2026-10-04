@@ -116,6 +116,11 @@ func _on_snail_dialogue_closed() -> void:
 	_begin_pan_back()
 
 func _begin_pan_back() -> void:
+	# The snail has said its line, so the fight is about to start and the arena
+	# takes its theme. Hooked here rather than on dialogue_closed because this is
+	# also where the sequence lands when the scene has no snail to talk to, and
+	# the waves still have to be scored either way.
+	LevelMusic.play_arena_track()
 	_state = State.PANNING_BACK
 	_t = 0.0
 	_from_pos = global_position
@@ -134,6 +139,9 @@ func _finish_pan_back() -> void:
 func _on_waves_cleared() -> void:
 	if _state != State.FIGHTING:
 		return
+	# The arena is won, so the theme is given back to the level and fades out under
+	# the pan to the shattering wall rather than playing on through an empty room.
+	LevelMusic.stop_arena_track()
 	_done = true
 	_state = State.PANNING_TO_BREAK
 	_t = 0.0

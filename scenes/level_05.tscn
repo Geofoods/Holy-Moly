@@ -351,6 +351,8 @@ color = Color(0, 0, 0, 1)
 [node name="Snail" parent="." unique_id=1260151595 instance=ExtResource("22_paq7k")]
 position = Vector2(4080, -2467)
 dialogue_text = "Help! Save me, I've been taken prisoner! Come up here!"
+remove_after_dialogue = true
+skip_if_arena_completed = true
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]
