@@ -28,6 +28,9 @@ var is_flashing := false
 
 func _ready() -> void:
 	linear_velocity = Vector2.ZERO
+	var mole := get_tree().get_first_node_in_group("mole")
+	if mole is CollisionObject2D:
+		add_collision_exception_with(mole)
 
 func _process(delta: float) -> void:
 	if not fuse_active or is_flashing:

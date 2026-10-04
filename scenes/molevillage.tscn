@@ -199,6 +199,7 @@ position = Vector2(-873, -200)
 [node name="Snail" parent="." unique_id=1260151595 instance=ExtResource("15_bj43u")]
 position = Vector2(1864, -463)
 dialogue_text = "Hey, I am the friendly snail! I might not be a mole but I'm still a resident here! Please don't deport me!"
+skip_if_game_completed = true
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]

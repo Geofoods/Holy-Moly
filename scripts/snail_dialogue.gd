@@ -29,6 +29,13 @@ extends RigidBody2D
 ## Off by default - the arena is the only one-time event with a snail hanging off
 ## it, and every other snail is unconditional.
 @export var skip_if_arena_completed := false
+## For a snail whose place in the world is a thing the ending takes away rather
+## than a fight the save has already been through. The village snail is the one:
+## once the game has been beaten it is not a resident any more, so a finished save
+## should not walk into the village and find it still outside asking to be left
+## alone. Off by default - every other snail hangs off a fight or a level, not off
+## the ending, and the boss that finishes the game must not skip itself.
+@export var skip_if_game_completed := false
 ## Starts a boss fight after the transformation finishes; used by the level 10 snail.
 @export var boss_after_dialogue := false
 ## Set only on the snail that stands between the Corrupted Heart and its own
@@ -332,9 +339,11 @@ signal dialogue_closed
 
 func _ready() -> void:
 	# The story this snail introduces has already been played out, so it is not put
-	# in the level at all. Checked before anything is wired up, so a skipped snail
-	# costs no signal connections and no prompt label.
-	if skip_if_arena_completed and Progress.is_arena_completed():
+	# in the level at all - whether that is the arena fight it was setting up or the
+	# ending that took its place in the village. Checked before anything is wired up,
+	# so a skipped snail costs no signal connections and no prompt label.
+	if (skip_if_arena_completed and Progress.is_arena_completed()) \
+			or (skip_if_game_completed and Progress.is_game_completed()):
 		queue_free()
 		return
 	var zone := get_node_or_null("Area2D") as Area2D

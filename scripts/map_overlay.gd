@@ -7,11 +7,12 @@ extends CanvasLayer
 ## Art is looked up per scene so each place shows its own map. A scene with no
 ## art of its own falls back to the design image rather than showing nothing.
 ##
-## Under the art is a travel list: the two hub scenes can each be selected here,
-## and picking one plays a teleportation and hands off to the normal circle
-## wipe. Both are available from the first frame - there is nothing to unlock -
-## and each hub owns a respawn station, so arriving drops the mole onto its pad
-## and plays the same arrival animation a death retry does.
+## Under the art is a travel list: the hub scenes and a couple of levels can each
+## be selected here, and picking one plays a teleportation and hands off to the
+## normal circle wipe. A destination unlocks once Progress records a visit, so
+## the list only offers somewhere the mole has actually been. Every destination
+## owns a respawn station, so arriving drops the mole onto its pad and plays the
+## same arrival animation a death retry does.
 
 ## Width of the travel panel, fixed so every button lines up under the title.
 const PORTAL_PANEL_WIDTH := 300

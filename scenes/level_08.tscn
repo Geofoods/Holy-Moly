@@ -19,6 +19,7 @@
 [ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="21_2exuq"]
 [ext_resource type="PackedScene" uid="uid://c0pwtkklnyw5s" path="res://scenes/hornet_enemy.tscn" id="22_naxwy"]
 [ext_resource type="PackedScene" path="res://ice_goblinenemy.tscn" id="23_2i8rr"]
+[ext_resource type="PackedScene" uid="uid://buv33lctn53nn" path="res://scenes/respawn_station.tscn" id="24_rx33q"]
 [ext_resource type="Script" uid="uid://dpsujuff7o60j" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
 [ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
 [ext_resource type="PackedScene" uid="uid://3wwhicdeo8hl" path="res://scenes/info_popup.tscn" id="info_popup_res"]
@@ -286,9 +287,6 @@ position = Vector2(3799, 3926)
 [node name="Enemy38" parent="." unique_id=1695448850 instance=ExtResource("13_qihgo")]
 position = Vector2(5529, 4135)
 
-[node name="chest" parent="." unique_id=950738903 instance=ExtResource("19_sy85i")]
-position = Vector2(1421, 2500)
-
 [node name="chest2" parent="." unique_id=1869885401 instance=ExtResource("19_sy85i")]
 position = Vector2(2454, 2480)
 
@@ -303,9 +301,6 @@ position = Vector2(4971, 2476)
 
 [node name="chest6" parent="." unique_id=1940171027 instance=ExtResource("19_sy85i")]
 position = Vector2(5703, 2972)
-
-[node name="candle2" parent="." unique_id=1824990162 instance=ExtResource("20_2exuq")]
-position = Vector2(1226, 2555)
 
 [node name="candle3" parent="." unique_id=150870187 instance=ExtResource("20_2exuq")]
 position = Vector2(2174, 2562)
@@ -363,6 +358,9 @@ position = Vector2(3695, 2036)
 
 [node name="IceGoblin" parent="." unique_id=1275221711 instance=ExtResource("23_2i8rr")]
 position = Vector2(5685, 2439)
+
+[node name="RespawnStation" parent="." unique_id=778143865 instance=ExtResource("24_rx33q")]
+position = Vector2(1559, 2608)
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]

@@ -46,6 +46,9 @@ func _ready() -> void:
 	add_child(shape)
 	collision_layer = 1
 	collision_mask = 1
+	var mole := get_tree().get_first_node_in_group("mole")
+	if mole is CollisionObject2D:
+		add_collision_exception_with(mole)
 
 func _process(delta: float) -> void:
 	if not fuse_active or is_flashing:
