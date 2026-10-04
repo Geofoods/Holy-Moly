@@ -18,7 +18,7 @@ animations = [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_idle")
 }],
-"loop": true,
+"loop": 1,
 "name": &"idle",
 "speed": 5.0
 }, {
@@ -29,7 +29,7 @@ animations = [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_idle")
 }],
-"loop": true,
+"loop": 1,
 "name": &"talking",
 "speed": 6.0
 }]
@@ -47,8 +47,8 @@ script = ExtResource("2_script")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1609994387]
 light_mask = 2
-position = Vector2(19.2, -441.2)
-scale = Vector2(2.4, 2.4)
+position = Vector2(-1, -126)
+scale = Vector2(0.64625, 0.64625)
 sprite_frames = SubResource("SpriteFrames_shop")
 animation = &"idle"
 autoplay = "idle"
