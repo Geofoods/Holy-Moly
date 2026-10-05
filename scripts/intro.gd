@@ -10,6 +10,9 @@ const VERSION := "v0.2beta"
 ## throws every enemy type the journey has met at the player alongside the
 ## Corrupted Heart, so it reads as a rush without needing a scene of its own.
 const BOSS_RUSH_SCENE := "res://scenes/level_09.tscn"
+## The credits roll. Reachable from here as well as from the win screen, so the
+## roll can be watched without having to finish the game to find it.
+const CREDITS_SCENE := "res://scenes/credits.tscn"
 
 var _last_hop_index := -1
 var _intro_music: AudioStreamPlayer = null
@@ -23,7 +26,6 @@ func _ready():
 	
 	var vbox = $CenterContainer/VBoxContainer
 	vbox.modulate.a = 0.0
-	$CreditsLabel.modulate.a = 0.0
 	vbox.scale = Vector2(0.85, 0.85)
 	vbox.call_deferred("set", "pivot_offset", vbox.size / 2.0)
 	_set_buttons_enabled(false)
@@ -33,6 +35,8 @@ func _ready():
 	var last_level_btn = $CenterContainer/VBoxContainer/ButtonContainer/LastLevelButton
 	var field_guide_btn = $CenterContainer/VBoxContainer/ButtonContainer/FieldGuideButton
 	var boss_rush_btn = $CenterContainer/VBoxContainer/ButtonContainer/BossRushButton
+	var clear_save_btn = $CenterContainer/VBoxContainer/BottomRow/ClearSaveButton
+	var credits_btn = $CenterContainer/VBoxContainer/BottomRow/CreditsButton
 	play_btn.mouse_entered.connect(_on_button_hover.bind(play_btn))
 	play_btn.mouse_exited.connect(_on_button_unhover.bind(play_btn))
 	last_level_btn.mouse_entered.connect(_on_button_hover.bind(last_level_btn))
@@ -41,6 +45,10 @@ func _ready():
 	boss_rush_btn.mouse_exited.connect(_on_button_unhover.bind(boss_rush_btn))
 	field_guide_btn.mouse_entered.connect(_on_button_hover.bind(field_guide_btn))
 	field_guide_btn.mouse_exited.connect(_on_button_unhover.bind(field_guide_btn))
+	clear_save_btn.mouse_entered.connect(_on_button_hover.bind(clear_save_btn))
+	clear_save_btn.mouse_exited.connect(_on_button_unhover.bind(clear_save_btn))
+	credits_btn.mouse_entered.connect(_on_button_hover.bind(credits_btn))
+	credits_btn.mouse_exited.connect(_on_button_unhover.bind(credits_btn))
 	# The "Play Last Level" shortcut only makes sense when there is a level to
 	# go back to, so a first launch shows just the plain Play button.
 	last_level_btn.visible = Progress.has_last_level()
@@ -160,18 +168,18 @@ func animate_menu_reveal() -> void:
 	if version_label:
 		tween.tween_property(version_label, "modulate:a", 1.0, 0.55).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 
-	var credits_label := get_node_or_null("CreditsLabel")
-	if credits_label:
-		tween.tween_property(credits_label, "modulate:a", 1.0, 0.62).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-
 func _set_buttons_enabled(enabled: bool) -> void:
 	var play_btn = $CenterContainer/VBoxContainer/ButtonContainer/PlayButton
 	var last_level_btn = $CenterContainer/VBoxContainer/ButtonContainer/LastLevelButton
 	var field_guide_btn = $CenterContainer/VBoxContainer/ButtonContainer/FieldGuideButton
 	var boss_rush_btn = $CenterContainer/VBoxContainer/ButtonContainer/BossRushButton
+	var clear_save_btn = $CenterContainer/VBoxContainer/BottomRow/ClearSaveButton
+	var credits_btn = $CenterContainer/VBoxContainer/BottomRow/CreditsButton
 	play_btn.disabled = not enabled
 	last_level_btn.disabled = not enabled
 	field_guide_btn.disabled = not enabled
+	clear_save_btn.disabled = not enabled
+	credits_btn.disabled = not enabled
 	# Boss Rush carries its own save-flag gate on top of the intro reveal, so it
 	# has to be re-derived here rather than simply flipped with the others -
 	# otherwise the reveal pass would unlock it on a fresh save. A disabled Button
@@ -184,6 +192,8 @@ func _set_buttons_enabled(enabled: bool) -> void:
 		last_level_btn.pivot_offset = last_level_btn.size / 2.0
 		boss_rush_btn.pivot_offset = boss_rush_btn.size / 2.0
 		field_guide_btn.pivot_offset = field_guide_btn.size / 2.0
+		clear_save_btn.pivot_offset = clear_save_btn.size / 2.0
+		credits_btn.pivot_offset = credits_btn.size / 2.0
 
 func _on_button_hover(button: Button) -> void:
 	if button.disabled:
@@ -264,3 +274,38 @@ func _on_field_guide_pressed() -> void:
 	var info_popup = get_node_or_null("InfoPopup")
 	if info_popup:
 		info_popup.open()
+
+## Opens the credits roll. The same scene the win screen plays, reached from the
+## title screen so it can be watched without finishing the game first. The menu
+## music is faded out first for the same reason as the other exits: the roll brings
+## its own track, and two at once would sit on top of each other.
+func _on_credits_pressed() -> void:
+	SFX.play_ui("ui_click", -6.0, 1.2)
+	_fade_out_menu_music()
+	var credits_btn = $CenterContainer/VBoxContainer/BottomRow/CreditsButton
+	credits_btn.disabled = true
+	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
+	get_tree().root.add_child(transition)
+	transition.change_to(CREDITS_SCENE)
+
+func _on_clear_save_pressed() -> void:
+	SFX.play_ui("ui_click", -6.0, 1.2)
+	var confirmation := ConfirmationDialog.new()
+	confirmation.title = "Clear Save Data?"
+	confirmation.dialog_text = "This will permanently erase your progress, unlocks, coins, and last-level save. This cannot be undone."
+	confirmation.ok_button_text = "Clear Save Data"
+	confirmation.cancel_button_text = "Cancel"
+	confirmation.confirmed.connect(_clear_save_data)
+	confirmation.confirmed.connect(confirmation.queue_free)
+	confirmation.canceled.connect(confirmation.queue_free)
+	add_child(confirmation)
+	confirmation.popup_centered()
+
+func _clear_save_data() -> void:
+	Progress.clear_save_data()
+	Shop.clear_save_data()
+	Inventory.reset()
+	$CenterContainer/VBoxContainer/ButtonContainer/LastLevelButton.visible = false
+	$CenterContainer/VBoxContainer/ButtonContainer/BossRushButton.disabled = true
+	$CenterContainer/VBoxContainer/BottomRow/ClearSaveButton.disabled = true
+	SFX.play_ui("ui_click", -6.0, 1.2)

@@ -18,17 +18,19 @@ extends CanvasLayer
 const PORTAL_PANEL_WIDTH := 300
 
 ## The travel destinations, in the order they are listed. `path` is the scene to
-## load; `label` is what the button says. The labels are written out rather than
-## derived from the file names because neither hub has a LevelData entry, which
-## used to fall back to tidied file names and render them as "Molevillage" and
-## "Shopkeeper Item".
+## load; `label` is what the button says. Every label is written out rather than
+## derived from the file names: neither hub has a LevelData entry, which used to
+## fall back to tidied file names and render them as "Molevillage" and "Shopkeeper
+## Item", and the two levels repeat the names LevelData already gives them.
 const TRAVEL_HUBS: Array[Dictionary] = [
 	{"path": "res://scenes/molevillage.tscn", "label": "Mole Village"},
 	{"path": "res://scenes/shopkeeper_item.tscn", "label": "Mole Shopkeeper"},
+	{"path": "res://scenes/level_04.tscn", "label": "Goblin Outpost"},
+	{"path": "res://scenes/level_08.tscn", "label": "Goblin Stronghold"},
 ]
 
 ## Where the mole has been, the mole has to have got there on foot first, so a
-## destination is only offered once Progress records a visit. Both hubs own a
+## destination is only offered once Progress records a visit. Each of these owns a
 ## respawn station, so arriving drops the mole onto its pad.
 const LOCKED_SUFFIX := "  ·  NOT VISITED"
 
@@ -63,9 +65,22 @@ const SCENE_MAPS := {
 	"res://scenes/level_09.tscn": "res://Untitled design (1)/level9.png",
 	"res://scenes/level_10.tscn": "res://Untitled design (1)/level10.png",
 }
-## Fraction of the smaller screen axis the art is fitted into, leaving room for
-## the title above and the hint below.
-const MAP_ART_FILL := 0.6
+## Fraction of the smaller screen axis the art is fitted into. The travel list now
+## stands beside the map rather than under it, so the height is only fighting the
+## title and the hint - which lets the art have most of the window back.
+const MAP_ART_FILL := 0.62
+## Gap between the map column and the travel list.
+const MAP_COLUMN_GAP := 24
+## Height of one destination button, and the gap between entries.
+const PORTAL_BUTTON_HEIGHT := 44
+const PORTAL_BUTTON_SEPARATION := 6
+## The destination list is not allowed to grow past this share of the window's
+## height. A list that grew with every destination added would eventually run off
+## the bottom of the screen; capped here it scrolls instead, and stays whole at any
+## count.
+const TRAVEL_LIST_FILL := 0.62
+## Floor for that share on a window too short to give the list a useful one.
+const TRAVEL_LIST_MIN_HEIGHT := 110.0
 ## How long the overlay takes to fade in, and to fade back out again on close.
 const MAP_FADE_TIME := 0.18
 
@@ -151,9 +166,19 @@ func _open_map() -> void:
 	panel.add_theme_stylebox_override("panel", _make_panel_style())
 	center.add_child(panel)
 
+	# The map and the travel list sit side by side rather than one above the other:
+	# the map is close to square, so stacking the list underneath made a column far
+	# taller than the window and forced the art down to a fraction of the height to
+	# keep it all on screen. Beside it, the pair is only as wide as the two
+	# together, which leaves the art its height back.
+	var columns := HBoxContainer.new()
+	columns.add_theme_constant_override("separation", MAP_COLUMN_GAP)
+	panel.add_child(columns)
+
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 10)
-	panel.add_child(vbox)
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	columns.add_child(vbox)
 
 	var title := Label.new()
 	title.text = "MAP"
@@ -163,6 +188,9 @@ func _open_map() -> void:
 
 	var map_box := PanelContainer.new()
 	map_box.add_theme_stylebox_override("panel", _make_map_style())
+	# Shrink centre rather than stretch: the art keeps its aspect ratio inside, and
+	# the column gives up the spare width to the list beside it.
+	map_box.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	vbox.add_child(map_box)
 
 	_art = _current_map_art()
@@ -191,7 +219,11 @@ func _open_map() -> void:
 	_style_label(hint, 20, Color(0.8, 0.8, 0.8, 0.9))
 	vbox.add_child(hint)
 
-	vbox.add_child(_build_portal_panel())
+	# Centred against the map rather than pinned to the top, so the list reads as
+	# belonging to the picture beside it.
+	var travel := _build_portal_panel()
+	travel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	columns.add_child(travel)
 
 	_root.modulate.a = 0.0
 	var tween := create_tween()
@@ -208,7 +240,7 @@ func _build_portal_panel() -> Control:
 	# highlighted and disabled rather than hidden, so the player can see where
 	# they are in the set of destinations.
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 6)
+	vbox.add_theme_constant_override("separation", PORTAL_BUTTON_SEPARATION)
 	panel.add_child(vbox)
 
 	var title := Label.new()
@@ -217,12 +249,33 @@ func _build_portal_panel() -> Control:
 	_style_label(title, 24, Color(0.62, 0.9, 1.0, 1))
 	vbox.add_child(title)
 
+	# The entries scroll inside a capped box rather than stretching the panel.
+	# Horizontal scrolling is off so a long destination name clips instead of
+	# inviting a sideways drag that would hide the buttons' own edges.
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.custom_minimum_size = Vector2(PORTAL_PANEL_WIDTH, _travel_list_height())
+	vbox.add_child(scroll)
+
+	var list := VBoxContainer.new()
+	list.add_theme_constant_override("separation", PORTAL_BUTTON_SEPARATION)
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(list)
+
 	var current := _current_scene_path()
 	for hub in TRAVEL_HUBS:
 		var path := str(hub["path"])
-		vbox.add_child(_make_portal_button(path, str(hub["label"]), _portal_state(path, current)))
+		list.add_child(_make_portal_button(path, str(hub["label"]), _portal_state(path, current)))
 
 	return panel
+
+## How tall the destination list is allowed to be: enough for every destination
+## when they all fit, and no more than its share of the window when they do not.
+func _travel_list_height() -> float:
+	var screen := get_viewport().get_visible_rect().size
+	var per_entry := float(PORTAL_BUTTON_HEIGHT + PORTAL_BUTTON_SEPARATION)
+	var wanted := float(TRAVEL_HUBS.size()) * per_entry
+	return minf(wanted, maxf(TRAVEL_LIST_MIN_HEIGHT, screen.y * TRAVEL_LIST_FILL))
 
 ## Where a destination sits in the three states. Being the current scene wins
 ## over everything, so standing in an unvisited hub still shows as HERE.
@@ -237,7 +290,7 @@ func _portal_state(scene_path: String, current: String) -> int:
 func _make_portal_button(scene_path: String, label: String, state: int) -> Button:
 	var button := Button.new()
 	button.text = _portal_button_text(label, state)
-	button.custom_minimum_size = Vector2(PORTAL_PANEL_WIDTH, 44)
+	button.custom_minimum_size = Vector2(PORTAL_PANEL_WIDTH, PORTAL_BUTTON_HEIGHT)
 	button.add_theme_font_override("font", load(FONT_PATH) as Font)
 	button.add_theme_font_size_override("font_size", 19)
 	button.add_theme_color_override("font_color", _portal_text_color(state))
@@ -279,7 +332,7 @@ func _portal_text_color(state: int) -> Color:
 func _on_portal_hovered() -> void:
 	SFX.play_ui("ui_hover", -18.0, 1.8)
 
-## Arrives the mole on the destination hub's station pad. The station plays the
+## Arrives the mole on the destination's station pad. The station plays the
 ## materialise animation, so travel and a death retry read identically.
 func _travel_to(scene_path: String) -> void:
 	if _traveling or scene_path.is_empty():
@@ -292,11 +345,11 @@ func _travel_to(scene_path: String) -> void:
 		return
 	_traveling = true
 	SFX.play_ui("ui_click")
-	# Bank the destination as the respawn so a death there also returns to the
-	# hub, and set the flag that tells the station to play its arrival
-	# animation. No position is recorded: both hubs have a single station, and
-	# the one in the destination scene works the arrival spot out from its own
-	# pad, so there is nothing here that has to agree with it.
+	# Bank the destination as the respawn so a death there also returns to it,
+	# and set the flag that tells the station to play its arrival animation. No
+	# position is recorded: each destination has a single station, and the one in
+	# the scene arrived at works the arrival spot out from its own pad, so there is
+	# nothing here that has to agree with it.
 	Progress.set_respawn(scene_path, Vector2.ZERO)
 	Progress.respawn_pending = true
 	Inventory.current_level_path = scene_path
@@ -362,6 +415,10 @@ func _current_map_art() -> Texture2D:
 	return texture if texture != null else null
 
 ## The art fitted to the screen while keeping its aspect ratio.
+##
+## The project stretches the window from a fixed 1152x648 base, so the viewport
+## reports that base however far the window is dragged; the share below is against
+## it, not against whatever the player's window happens to be.
 func _map_art_size() -> Vector2:
 	var screen := get_viewport().get_visible_rect().size
 	var extent := minf(screen.x, screen.y) * MAP_ART_FILL

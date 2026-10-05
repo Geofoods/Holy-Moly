@@ -14,9 +14,17 @@ lifetime_randomness = 0.46
 emission_shape = 1
 emission_sphere_radius = 128.0
 gravity = Vector3(0, -200, 0)
-scale_min = 0.55
-scale_max = 1.0
+scale_min = 1.0
+scale_max = 1.6
+anim_speed_min = 1.0
+anim_speed_max = 1.0
 color_ramp = SubResource("3")
+
+[sub_resource type="CanvasItemMaterial" id="5"]
+particles_animation = true
+particles_anim_h_frames = 5
+particles_anim_v_frames = 1
+particles_anim_loop = false
 
 [node name="Retro Explosion" type="GPUParticles2D" unique_id=1082202212]
 emitting = false
@@ -29,3 +37,4 @@ texture = ExtResource("1")
 lifetime = 0.5
 explosiveness = 0.51
 process_material = SubResource("4")
+material = SubResource("5")

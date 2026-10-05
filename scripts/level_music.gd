@@ -28,13 +28,6 @@ var _boss_volume_tween: Tween = null
 ## one number rather than a -40 copied into each tween.
 const SILENT_VOLUME_DB := -40.0
 
-## How long a dialogue box takes to silence the music and to bring it back.
-## Matches the field guide's duck so the two read as the same gesture, and is
-## short enough that the music has finished leaving before the first line has
-## finished typing - a box that is read, skipped and closed in one go never
-## actually gets to be heard over.
-const DUCK_FADE := 0.4
-
 ## The theme plays a fifth slower than it was written, 1.2x as long throughout.
 ## Godot slows audio by resampling rather than time-stretching, so this drops
 ## the pitch by the same factor as the tempo - the boss has been alone and quiet
@@ -235,13 +228,6 @@ func _advance_region_loop() -> void:
 ## Brings the next pass in under the last REGION_LOOP_XFADE seconds of this one.
 func _begin_region_loop() -> void:
 	var outgoing := _region_player
-	# A dialogue is holding the track silent, so there is no seam to hide and no
-	# reason to spend a second player on it.
-	if _ducked:
-		_kill_region_volume_tween()
-		outgoing.play()
-		_region_volume_tween = _fade_to_silent(outgoing, REGION_LOOP_XFADE)
-		return
 	var incoming := AudioStreamPlayer.new()
 	incoming.stream = outgoing.stream
 	incoming.process_mode = Node.PROCESS_MODE_ALWAYS
@@ -276,17 +262,15 @@ func _promote_region_next() -> void:
 		outgoing.queue_free()
 
 ## Last resort for a pass that runs out without the crossfade having caught it -
-## a track whose length the poll cannot read, or one that ended while a dialogue
-## had it held silent. Starts the next pass from the top rather than leaving a
-## gap. The fade back up goes to silence while a dialogue still holds the track,
-## since that duck owns the volume until it lifts.
+## a track whose length the poll cannot read, or one the poll lost track of. Starts
+## the next pass from the top rather than leaving a gap, fading back up to where
+## the track normally sits.
 func _on_region_track_finished() -> void:
 	if _region_player == null or not is_instance_valid(_region_player):
 		return
 	_kill_region_volume_tween()
 	_region_player.play()
-	_region_volume_tween = _fade_to_target(_region_player,
-		SILENT_VOLUME_DB if _ducked else _region_target_volume, REGION_LOOP_XFADE)
+	_region_volume_tween = _fade_to_target(_region_player, _region_target_volume, REGION_LOOP_XFADE)
 
 ## Whether the player is on the stretch of the game this track is scored for. The
 ## death fade is six seconds long, so the walk can begin while the heart is still
@@ -564,14 +548,7 @@ func _start_bed() -> void:
 		return
 	_player = AudioStreamPlayer.new()
 	_player.stream = _stream
-	# A bed arriving while a box is up joins the rest of the music rather than
-	# starting over it. Recorded as ducked so the box closing brings it back with
-	# everything else, instead of leaving it stranded at the silent floor.
-	if _ducked:
-		_player.volume_db = SILENT_VOLUME_DB
-		_ducked_ids[_player.get_instance_id()] = true
-	else:
-		_player.volume_db = _target_volume
+	_player.volume_db = _target_volume
 	_player.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(_player)
 	_player.finished.connect(_player.play)
@@ -645,8 +622,7 @@ func stop() -> void:
 
 ## Fades one player down to silence and hands back the tween, so the caller can
 ## park it in that player's own slot and kill it if something else wants the
-## volume before this finishes. Silent rather than paused on purpose - see
-## duck_for_dialogue().
+## volume before this finishes.
 func _fade_to_silent(player: AudioStreamPlayer, fade_time: float) -> Tween:
 	var tween := create_tween()
 	tween.tween_property(player, "volume_db", SILENT_VOLUME_DB, fade_time)
@@ -657,100 +633,6 @@ func _fade_to_target(player: AudioStreamPlayer, target: float, fade_time: float)
 	var tween := create_tween()
 	tween.tween_property(player, "volume_db", target, fade_time)
 	return tween
-
-## Whether this duck is the reason `player` is where it is, forgetting it either
-## way so a track cannot stay on the books. False for a player that was torn down
-## and replaced while the box was up - which is exactly what the snail's own
-## post-conversation swell does, and it keeps that timing rather than having it
-## shortened to a duck's fade.
-func _took_this_player_down(player: AudioStreamPlayer) -> bool:
-	if player == null or not is_instance_valid(player):
-		return false
-	var id := player.get_instance_id()
-	if not _ducked_ids.has(id):
-		return false
-	_ducked_ids.erase(id)
-	return true
-
-## Whether a dialogue box is up. Set for as long as one is, which is also what a
-## bed arriving mid-conversation checks so it comes up with everything else.
-var _ducked := false
-
-## The players duck_for_dialogue() is holding down, by instance id. Ids rather
-## than nodes so a track that has been freed and replaced across the box cannot be
-## mistaken for the one that was faded down.
-var _ducked_ids := {}
-
-## A dialogue box owns the screen, so the music under it gets out of the way all
-## the way to silence and is brought back when the last box closes. Every player
-## is covered for the same reason pause() covers every player: which track
-## happens to be carrying the scene is not something a box should have to know,
-## and in any one scene it is usually not the bed.
-##
-## The tracks keep playing while they are down. Pausing them instead would strand
-## the vessel, whose segment loop is driven by watching the playhead, and would
-## cost the tracks their place in the bar - a bed that stopped dead and picked up
-## again mid-phrase reads as a glitch rather than as a conversation happening.
-func duck_for_dialogue() -> void:
-	_ducked = true
-	if _player and is_instance_valid(_player):
-		_ducked_ids[_player.get_instance_id()] = true
-		_kill_bed_volume_tween()
-		_bed_volume_tween = _fade_to_silent(_player, DUCK_FADE)
-	if _boss_player and is_instance_valid(_boss_player):
-		_ducked_ids[_boss_player.get_instance_id()] = true
-		_kill_boss_volume_tween()
-		_boss_volume_tween = _fade_to_silent(_boss_player, DUCK_FADE)
-	if _vessel_player and is_instance_valid(_vessel_player):
-		_ducked_ids[_vessel_player.get_instance_id()] = true
-		_kill_vessel_volume_tween()
-		_vessel_volume_tween = _fade_to_silent(_vessel_player, DUCK_FADE)
-	if _region_player and is_instance_valid(_region_player):
-		_ducked_ids[_region_player.get_instance_id()] = true
-		_kill_region_volume_tween()
-		_region_volume_tween = _fade_to_silent(_region_player, DUCK_FADE)
-	# The pass fading in at a loop point is the region's music too. Set straight
-	# to silence rather than faded: the crossfade that was driving it has just
-	# been killed, and it starts from silence anyway, so there is nothing to ease.
-	if _region_next_player and is_instance_valid(_region_next_player):
-		_ducked_ids[_region_next_player.get_instance_id()] = true
-		_region_next_player.volume_db = SILENT_VOLUME_DB
-	if _arena_player and is_instance_valid(_arena_player):
-		_ducked_ids[_arena_player.get_instance_id()] = true
-		_kill_arena_volume_tween()
-		_arena_volume_tween = _fade_to_silent(_arena_player, DUCK_FADE)
-
-## Puts back only what duck_for_dialogue() was holding, and only once. A player
-## the field guide is still holding is left alone: that duck owns the volume
-## until resume() runs, and fading this one up underneath it would only be two
-## arguments about the same property.
-func unduck_for_dialogue() -> void:
-	if not _ducked:
-		return
-	_ducked = false
-	if _took_this_player_down(_player) and not _player.stream_paused:
-		_kill_bed_volume_tween()
-		_bed_volume_tween = _fade_to_target(_player, _target_volume, DUCK_FADE)
-	if _took_this_player_down(_boss_player) and not _boss_player.stream_paused:
-		_kill_boss_volume_tween()
-		_boss_volume_tween = _fade_to_target(_boss_player, _boss_target_volume, DUCK_FADE)
-	if _took_this_player_down(_vessel_player) and not _vessel_player.stream_paused:
-		_kill_vessel_volume_tween()
-		_vessel_volume_tween = _fade_to_target(_vessel_player, _vessel_target_volume, DUCK_FADE)
-	if _took_this_player_down(_region_player) and not _region_player.stream_paused:
-		_kill_region_volume_tween()
-		_region_volume_tween = _fade_to_target(_region_player, _region_target_volume, DUCK_FADE)
-	if _region_next_player and is_instance_valid(_region_next_player) and _took_this_player_down(_region_next_player):
-		# The crossfade tween was killed when the duck went down, so this pass has
-		# been sitting at silence. Once it is promoted it is the region's track, and
-		# the promotion fades it up from wherever it is rather than assuming the
-		# crossfade put it where it should be.
-		_region_next_player.volume_db = SILENT_VOLUME_DB
-		_kill_region_volume_tween()
-		_region_volume_tween = _fade_to_target(_region_next_player, _region_target_volume, DUCK_FADE)
-	if _took_this_player_down(_arena_player) and not _arena_player.stream_paused:
-		_kill_arena_volume_tween()
-		_arena_volume_tween = _fade_to_target(_arena_player, _arena_target_volume, DUCK_FADE)
 
 ## The field guide ducks whatever is playing. Every player is covered: in level
 ## 09 the bed is already gone, and in the village the bed never started, so

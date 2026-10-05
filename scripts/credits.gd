@@ -20,7 +20,7 @@ const MUSIC_PATH := "res://Spirited Away - The Name of Life (Slowed + Reverb).mp
 ## feel like they dropped in quieter than the menu the player just came from.
 const MUSIC_VOLUME_DB := -14.0
 
-const STUDIO := "Holy Moly"
+const STUDIO := "BGGames"
 const VERSION := "v0.2beta"
 const COPYRIGHT_YEAR := 2026
 
@@ -120,7 +120,7 @@ func _ready() -> void:
 func _build_roll() -> void:
 	_add_logo()
 	_add_spacer(60.0)
-	_add_label("A " + STUDIO.to_upper() + " GAME", 26, COL_MUTED, 4)
+	_add_label("A " + STUDIO.to_upper() + " Production", 26, COL_MUTED, 4)
 	_add_spacer(70.0)
 	for entry in CREDITS:
 		var section := str(entry.get("section", ""))

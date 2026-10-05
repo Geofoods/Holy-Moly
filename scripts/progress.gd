@@ -243,6 +243,25 @@ func take_respawn_pending() -> bool:
 	respawn_pending = false
 	return pending
 
+## Restores every persisted progression field to its fresh-save value.
+func clear_save_data() -> void:
+	acorns.clear()
+	completed.clear()
+	visited.clear()
+	queen_defeated = false
+	corrupted_defeated = false
+	boss_rush_cleared = false
+	arena_completed = false
+	game_completed = false
+	best_combo = 0
+	respawn_scene = ""
+	respawn_position = Vector2.ZERO
+	respawn_activated = ""
+	respawn_pending = false
+	last_level_scene = ""
+	acorn_changed.emit()
+	save_progress()
+
 func save_progress() -> void:
 	var cfg := ConfigFile.new()
 	for p in acorns:

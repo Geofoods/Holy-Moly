@@ -7,9 +7,9 @@ const DAMAGE_SCALAR := 10.0
 const DAMAGE_VARIATION := 0.2
 const TileBreakSFX := preload("res://scripts/tile_break_sfx.gd")
 
-## Blast radius the Retro Explosion particle art was authored for, so the effect
-## can be scaled up when the radius grows.
-const EXPLOSION_ART_RADIUS := 200.0
+## Fixed art scale shared by bombs and goblin mushrooms, independent of how far
+## the gameplay blast reaches.
+const EXPLOSION_ART_SCALE := 1.5
 
 # The blast reach and the crater it digs are tuned together: three tiles out
 # plus half a tile is 280px at the usual 80px-per-tile scale, so the damage
@@ -136,10 +136,11 @@ func _explode() -> void:
 	dead = true
 	SFX.play("explosion", global_position)
 
-	var explosion_particles := preload("res://Retro Explosion.tscn").instantiate()
-	explosion_particles.global_position = global_position
-	explosion_particles.scale = Vector2.ONE * (explosion_radius / EXPLOSION_ART_RADIUS)
+	var explosion_particles := preload("res://Retro Explosion.tscn").instantiate() as GPUParticles2D
 	get_parent().add_child(explosion_particles)
+	explosion_particles.global_position = global_position
+	explosion_particles.scale = Vector2.ONE * EXPLOSION_ART_SCALE
+	explosion_particles.finished.connect(explosion_particles.queue_free)
 	explosion_particles.emitting = true
 
 	var mole := get_tree().get_first_node_in_group("mole")
@@ -149,29 +150,6 @@ func _explode() -> void:
 		var dist := global_position.distance_to(mole.global_position)
 		if dist <= explosion_radius and mole.has_method("take_damage"):
 			mole.take_damage(explosion_damage, global_position, true)
-
-	var smoke := CPUParticles2D.new()
-	smoke.emitting = true
-	smoke.one_shot = true
-	smoke.amount = 40
-	smoke.lifetime = 0.5
-	smoke.explosiveness = 0.9
-	smoke.direction = Vector2.ZERO
-	smoke.spread = 180.0
-	smoke.initial_velocity_min = explosion_radius * 1.5
-	smoke.initial_velocity_max = explosion_radius * 2.5
-	smoke.damping_min = explosion_radius * 2.5
-	smoke.damping_max = explosion_radius * 3.5
-	smoke.scale_amount_min = 10.0
-	smoke.scale_amount_max = 20.0
-	smoke.color = Color(0.2, 0.2, 0.2, 0.9)
-	var fade := Gradient.new()
-	fade.set_color(0, Color(0.2, 0.2, 0.2, 0.9))
-	fade.set_color(1, Color(0.1, 0.1, 0.1, 0.0))
-	smoke.color_ramp = fade
-	get_parent().add_child(smoke)
-	smoke.global_position = global_position
-	get_tree().create_timer(1.0).timeout.connect(smoke.queue_free)
 
 	var tilemap: TileMap = get_parent().get_node_or_null("TileMap")
 	if tilemap:

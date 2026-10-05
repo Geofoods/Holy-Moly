@@ -217,6 +217,7 @@ func _bank() -> void:
 	# way out of a level. The pad decides where the mole actually reappears.
 	var mole := _nearest_mole()
 	var pos := mole.global_position if mole != null else spawn_point()
+	Inventory.clear_level_return_positions_after(scene)
 	Progress.activate_respawn(scene, pos)
 	_flash = ARRIVE_FLASH
 	_pad_particles.emitting = true

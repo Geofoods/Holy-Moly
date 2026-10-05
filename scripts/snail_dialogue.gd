@@ -1,6 +1,6 @@
 extends RigidBody2D
 
-@export var prompt_text := "PRESS E TO INTERACT"
+@export var prompt_text := "PRESS E"
 @export var npc_name := "Snail"
 ## What the dialogue box calls him once the transformation has turned him into
 ## the Corrupted Snail. The first conversation still uses npc_name.
@@ -52,6 +52,7 @@ extends RigidBody2D
 const TRANSFORM_SCALE := 11.0
 const EnemyDamage := preload("res://scripts/enemy.gd")
 const EnemySpawn := preload("res://scripts/enemy_spawn.gd")
+const IceBomb := preload("res://scripts/ice_bomb.gd")
 const SNAIL_GLOW_TEXTURE := preload("res://costume3 (1).svg")
 const AURA_COLORS := [Color(0.72, 0.25, 1.0, 0.65), Color(0.82, 0.48, 1.0, 0.32)]
 const SNAIL_GLOW_COLOR := Color(0.62, 0.22, 1.0, 1.0)
@@ -169,6 +170,7 @@ const BOSS_MINION_SCENES: Array[PackedScene] = [
 ]
 const BOSS_PROJECTILE_SCENE := preload("res://area_2d.tscn")
 const BOSS_LASER_LIGHT_TEXTURE := preload("res://costume3 (1).svg")
+const BOSS_LASER_EXPLOSION_SCENE := preload("res://Retro Explosion.tscn")
 ## Loot drops into the fight: a loose Drill or Holy Water the player grabs on the
 ## move. These used to be chests, which meant stopping to open one while the
 ## snail was still firing.
@@ -1524,7 +1526,7 @@ func _fire_boss_ice_laser(mole: Node2D) -> void:
 	if mole.has_method("screen_shake"):
 		mole.call("screen_shake", 15.0, BOSS_ICE_LASER_STRIKE_DURATION)
 	var reached_laser_tip: bool = await _extend_boss_laser_to_tip(beam, laser_start, laser_end, mole,
-		BOSS_ICE_LASER_WIDTH, BOSS_ICE_LASER_DAMAGE, BOSS_ICE_LASER_TRAVEL_TIME)
+		BOSS_ICE_LASER_WIDTH, BOSS_ICE_LASER_DAMAGE, BOSS_ICE_LASER_TRAVEL_TIME, true)
 	if not reached_laser_tip:
 		_abort_boss_ice_laser()
 		return
@@ -1537,7 +1539,7 @@ func _fire_boss_ice_laser(mole: Node2D) -> void:
 		await get_tree().create_timer(damage_interval).timeout
 		await get_tree().physics_frame
 		laser_time_left -= damage_interval
-		_damage_mole_in_boss_laser(mole, laser_start, laser_end, BOSS_ICE_LASER_WIDTH, BOSS_ICE_LASER_DAMAGE)
+		_damage_mole_in_boss_laser(mole, laser_start, laser_end, BOSS_ICE_LASER_WIDTH, BOSS_ICE_LASER_DAMAGE, true)
 	for line in beam:
 		if is_instance_valid(line):
 			var fade := line.create_tween().set_parallel(true)
@@ -1881,7 +1883,7 @@ func _attach_boss_laser_lights(lines: Array[Line2D], local_start: Vector2, local
 		light.shadow_enabled = false
 		beam_line.add_child(light)
 
-func _extend_boss_laser_to_tip(lines: Array[Line2D], start: Vector2, finish: Vector2, mole: Node2D, width: float = BOSS_LASER_WIDTH, damage: float = BOSS_LASER_DAMAGE, travel_time: float = BOSS_LASER_TRAVEL_TIME) -> bool:
+func _extend_boss_laser_to_tip(lines: Array[Line2D], start: Vector2, finish: Vector2, mole: Node2D, width: float = BOSS_LASER_WIDTH, damage: float = BOSS_LASER_DAMAGE, travel_time: float = BOSS_LASER_TRAVEL_TIME, freeze_mole: bool = false) -> bool:
 	var scene_root := get_tree().current_scene as Node2D
 	if scene_root == null:
 		return false
@@ -1900,7 +1902,7 @@ func _extend_boss_laser_to_tip(lines: Array[Line2D], start: Vector2, finish: Vec
 		var current_tip := start.lerp(finish, progress)
 		_set_boss_laser_progress(lines, local_start, local_finish, progress)
 		if elapsed - last_damage_time >= 0.1:
-			_damage_mole_in_boss_laser(mole, start, current_tip, width, damage)
+			_damage_mole_in_boss_laser(mole, start, current_tip, width, damage, freeze_mole)
 			last_damage_time = elapsed
 	_set_boss_laser_progress(lines, local_start, local_finish, 1.0)
 	return true
@@ -1931,7 +1933,7 @@ func _clear_boss_laser_lines(lines: Array[Line2D]) -> void:
 		if is_instance_valid(line):
 			line.queue_free()
 
-func _damage_mole_in_boss_laser(mole: Node2D, start: Vector2, finish: Vector2, width: float = BOSS_LASER_WIDTH, damage: float = BOSS_LASER_DAMAGE) -> void:
+func _damage_mole_in_boss_laser(mole: Node2D, start: Vector2, finish: Vector2, width: float = BOSS_LASER_WIDTH, damage: float = BOSS_LASER_DAMAGE, freeze_mole: bool = false) -> void:
 	if not is_instance_valid(mole) or not mole.is_in_group("mole") or not mole.has_method("take_damage") or not (mole is CollisionObject2D):
 		return
 	var mole_body := mole as CollisionObject2D
@@ -1949,6 +1951,8 @@ func _damage_mole_in_boss_laser(mole: Node2D, start: Vector2, finish: Vector2, w
 	for hit in get_world_2d().direct_space_state.intersect_shape(query, 32):
 		if hit.get("collider") == mole_body:
 			mole.call("take_damage", damage, start, true, true)
+			if freeze_mole:
+				IceBomb.freeze_node(mole, IceBomb.MOLE_FREEZE_DURATION)
 			return
 
 func _break_blocks_along_boss_laser(start: Vector2, finish: Vector2) -> void:
@@ -2027,6 +2031,13 @@ func _spawn_boss_laser_impact(world_pos: Vector2) -> void:
 	var scene_root := get_tree().current_scene as Node2D
 	if scene_root == null:
 		return
+	var explosion := BOSS_LASER_EXPLOSION_SCENE.instantiate() as GPUParticles2D
+	explosion.scale = Vector2.ONE * 2.5
+	explosion.modulate = Color(0.68, 0.24, 1.0, 1.0)
+	explosion.finished.connect(explosion.queue_free)
+	scene_root.add_child(explosion)
+	explosion.global_position = world_pos
+	explosion.emitting = true
 	var impact_light := PointLight2D.new()
 	impact_light.name = "BossLaserTipPurpleFlash"
 	impact_light.texture = BOSS_LASER_LIGHT_TEXTURE

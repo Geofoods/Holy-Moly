@@ -23,6 +23,7 @@
 [ext_resource type="PackedScene" uid="uid://dnp3icrndkjm8" path="res://scenes/antenemy.tscn" id="22_akcom"]
 [ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="22_ktybg"]
 [ext_resource type="PackedScene" uid="uid://iuqjuk37ur0d" path="res://scenes/slimeenemy.tscn" id="23_cg1jc"]
+[ext_resource type="PackedScene" uid="uid://buv33lctn53nn" path="res://scenes/respawn_station.tscn" id="25_fgiyy"]
 [ext_resource type="PackedScene" path="res://ice_goblinenemy.tscn" id="26_icegob"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
@@ -289,7 +290,6 @@ position = Vector2(5239, 1811)
 
 [node name="Snail" parent="." unique_id=1260151595 instance=ExtResource("20_uv3yh")]
 position = Vector2(5091, 4064)
-npc_name = "Snail"
 dialogue_text = "Thanks for defeating the Corrupted Heart. I will take its power and use it for good!"
 post_dialogue_clearance = Vector2(500, 0)
 transform_after_dialogue = true
@@ -424,6 +424,9 @@ position = Vector2(17942, 3469)
 
 [node name="chest23" parent="." unique_id=2049880098 instance=ExtResource("17_cin7o")]
 position = Vector2(17931, 3321)
+
+[node name="RespawnStation" parent="." unique_id=778143865 instance=ExtResource("25_fgiyy")]
+position = Vector2(360, 2659)
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]

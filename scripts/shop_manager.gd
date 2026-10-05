@@ -319,6 +319,16 @@ func _loadout_refresh() -> void:
 
 	loadout_changed.emit()
 
+## Clears persisted currency and purchases while preserving the starter shovel.
+func clear_save_data() -> void:
+	coins = 0
+	owned.clear()
+	equipped_melee_id = "shovel"
+	equipped_ranged_id = ""
+	_loadout_refresh()
+	coins_changed.emit(coins)
+	_save_data()
+
 func _save_data() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value("shop", "version", SAVE_VERSION)

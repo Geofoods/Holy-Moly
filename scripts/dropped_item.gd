@@ -76,8 +76,9 @@ func _physics_process(delta: float) -> void:
 		if collision:
 			var normal = collision.get_normal()
 			_velocity = _velocity.bounce(normal) * BOUNCE
-			# If we land on a floor or velocity becomes very small, start floating
-			if normal.y < -0.7 or _velocity.length() < MIN_BOUNCE_VELOCITY:
+			# Only settle into the idle bob after landing. Low speed against a wall
+			# or ceiling must not cancel gravity while the item is still airborne.
+			if normal.y < -0.7:
 				_is_floating = true
 				_y_start_float = global_position.y
 				_velocity = Vector2.ZERO

@@ -161,6 +161,34 @@ corner_radius_bottom_left = 12
 shadow_color = Color(0, 0, 0, 0.3)
 shadow_size = 8
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_creditsbutton"]
+bg_color = Color(0.13, 0.12, 0.24, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.85, 0.72, 0.35, 0.5)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0.7, 0.58, 0.2, 0.3)
+shadow_size = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_creditsbutton_hover"]
+bg_color = Color(0.23, 0.21, 0.4, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.88, 0.45, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0.9, 0.75, 0.3, 0.45)
+shadow_size = 12
+
 [node name="IntroScreen" type="Control" unique_id=1091680018]
 layout_mode = 3
 anchors_preset = 0
@@ -287,13 +315,48 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_infobutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_infobutton_hover")
 text = "FIELD GUIDE"
 
+[node name="BottomRow" type="HBoxContainer" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_constants/separation = 30
+alignment = 1
+
+[node name="ClearSaveButton" type="Button" parent="CenterContainer/VBoxContainer/BottomRow"]
+custom_minimum_size = Vector2(240, 48)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(1, 0.88, 0.88, 1)
+theme_override_fonts/font = ExtResource("6_es01l")
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxFlat_exitbutton")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_exitbutton_hover")
+theme_override_styles/hover = SubResource("StyleBoxFlat_exitbutton_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_exitbutton_hover")
+text = "CLEAR SAVE DATA"
+
+[node name="CreditsButton" type="Button" parent="CenterContainer/VBoxContainer/BottomRow"]
+custom_minimum_size = Vector2(240, 48)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(1, 0.88, 0.45, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("6_es01l")
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxFlat_creditsbutton")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_creditsbutton_hover")
+theme_override_styles/hover = SubResource("StyleBoxFlat_creditsbutton_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_creditsbutton_hover")
+tooltip_text = "Watch the credits roll"
+text = "CREDITS"
+
 [node name="CreditsLabel" type="Label" parent="." unique_id=29629912]
 layout_mode = 0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = -46.0
-offset_bottom = -14.0
+offset_top = -32.0
+offset_bottom = 0.0
 grow_horizontal = 2
 grow_vertical = 0
 theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 0.9)
@@ -310,4 +373,7 @@ horizontal_alignment = 1
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/LastLevelButton" to="." method="_on_last_level_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/BossRushButton" to="." method="_on_boss_rush_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/FieldGuideButton" to="." method="_on_field_guide_pressed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/BottomRow/ClearSaveButton" to="." method="_on_clear_save_pressed"]
+
+[connection signal="pressed" from="CenterContainer/VBoxContainer/BottomRow/CreditsButton" to="." method="_on_credits_pressed"]
 

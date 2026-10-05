@@ -7,6 +7,8 @@ extends "res://scripts/bomb.gd"
 
 const FREEZE_DURATION := 5.0
 const MOLE_FREEZE_DURATION := 2.0
+const EXPLOSION_SCENE := preload("res://Retro Explosion.tscn")
+const ICE_EXPLOSION_TINT := Color(0.48, 0.76, 1.0, 1.0)
 ## The cold snap is a hit in its own right, just a lighter one than a fire bomb:
 ## freezing the target is what this bomb is really for.
 const DAMAGE_SCALE := 0.7
@@ -134,26 +136,13 @@ static func _melt_frost(frost_layer: Node2D) -> void:
 	frost_layer.get_tree().create_timer(FROST_FADE_DURATION + 0.1).timeout.connect(frost_layer.queue_free)
 
 func _spawn_ice_burst() -> void:
-	var burst := CPUParticles2D.new()
-	burst.emitting = true
-	burst.one_shot = true
-	burst.amount = 46
-	burst.lifetime = 0.55
-	burst.explosiveness = 0.9
-	burst.direction = Vector2.ZERO
-	burst.spread = 180.0
-	burst.initial_velocity_min = explosion_radius * 1.5
-	burst.initial_velocity_max = explosion_radius * 2.5
-	burst.damping_min = explosion_radius * 2.5
-	burst.damping_max = explosion_radius * 3.5
-	burst.scale_amount_min = 9.0
-	burst.scale_amount_max = 16.0
-	var fade := Gradient.new()
-	fade.set_color(0, Color(0.75, 0.92, 1.0, 0.95))
-	fade.set_color(1, Color(0.5, 0.7, 1.0, 0.0))
-	burst.color_ramp = fade
-	get_parent().add_child(burst)
-	burst.global_position = global_position
+	var explosion := EXPLOSION_SCENE.instantiate() as GPUParticles2D
+	get_parent().add_child(explosion)
+	explosion.global_position = global_position
+	explosion.scale = Vector2.ONE * EXPLOSION_ART_SCALE
+	explosion.modulate = ICE_EXPLOSION_TINT
+	explosion.finished.connect(explosion.queue_free)
+	explosion.emitting = true
 
 	var shards := CPUParticles2D.new()
 	shards.emitting = true
@@ -172,7 +161,6 @@ func _spawn_ice_burst() -> void:
 	get_parent().add_child(shards)
 	shards.global_position = global_position
 
-	get_tree().create_timer(1.2).timeout.connect(burst.queue_free)
 	get_tree().create_timer(1.2).timeout.connect(shards.queue_free)
 
 func _freeze_radius() -> void:
@@ -201,7 +189,7 @@ func _freeze_radius() -> void:
 		if global_position.distance_to(bullet.global_position) <= explosion_radius:
 			freeze_node(bullet, FREEZE_DURATION)
 
-func freeze_node(node: Node2D, duration: float) -> void:
+static func freeze_node(node: Node2D, duration: float) -> void:
 	if node == null or not is_instance_valid(node) or node.has_meta("frozen"):
 		return
 	node.set_meta("frozen", true)

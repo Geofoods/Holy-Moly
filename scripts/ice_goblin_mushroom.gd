@@ -41,4 +41,3 @@ func _blast_exclusions() -> Array[Node]:
 		if is_instance_valid(snail):
 			exclusions.append(snail)
 	return exclusions
-

@@ -31,6 +31,17 @@ func set_level_return_position(path: String, pos: Vector2) -> void:
 func get_level_return_position(path: String) -> Variant:
 	return level_return_positions.get(path, null)
 
+## Removes cached return positions for campaign levels after the checkpoint level,
+## so re-entering a later level starts from its normal spawn point again.
+func clear_level_return_positions_after(path: String) -> void:
+	var checkpoint_index: int = Progress.ACORN_LEVELS.find(path)
+	if checkpoint_index < 0:
+		return
+	for saved_path in level_return_positions.keys():
+		var saved_index: int = Progress.ACORN_LEVELS.find(str(saved_path))
+		if saved_index > checkpoint_index:
+			level_return_positions.erase(saved_path)
+
 var selected_slot: int = -1:
 	set(value):
 		selected_slot = value

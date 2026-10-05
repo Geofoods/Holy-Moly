@@ -1,0 +1,146 @@
+[gd_scene format=3 uid="uid://b0upvdi8u3euv"]
+
+[ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="1_qur2k"]
+[ext_resource type="TileSet" uid="uid://d07lidnoim34q" path="res://tileset.tres" id="2_k5io5"]
+[ext_resource type="PackedScene" uid="uid://cc3uivb5mk5x5" path="res://scenes/parallax_background.tscn" id="3_caov7"]
+[ext_resource type="PackedScene" uid="uid://p1of6ummc17j" path="res://scenes/mole.tscn" id="4_piy57"]
+[ext_resource type="PackedScene" uid="uid://c6xus6tuhcmfo" path="res://scenes/heart.tscn" id="5_e6rra"]
+[ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="6_r8mpt"]
+[ext_resource type="PackedScene" uid="uid://3wwhicdeo8hl" path="res://scenes/info_popup.tscn" id="7_kqv1m"]
+[ext_resource type="PackedScene" uid="uid://d2i1x8x1y6qa" path="res://scenes/pause_menu.tscn" id="8_dopbk"]
+[ext_resource type="PackedScene" path="res://scenes/level_intro_banner.tscn" id="9_5245t"]
+[ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="10_mju4m"]
+[ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="12_t7f2l"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
+bg_color = Color(0.8, 0.68, 0.46, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.42, 0.28, 0.14, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton_hover"]
+bg_color = Color(0.97, 0.91, 0.78, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.42, 0.28, 0.14, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_trceg"]
+size = Vector2(12788, 933)
+
+[node name="Node2D" type="Node2D" unique_id=1979316305]
+
+[node name="FireflySpawner" type="Node2D" parent="." unique_id=522481684]
+script = ExtResource("1_qur2k")
+firefly_color = Color(0.890196, 0.392157, 0.0784314, 0.9)
+
+[node name="TileMap" type="TileMap" parent="." unique_id=193735831]
+modulate = Color(0.8784314, 0.62352943, 0.24313726, 1)
+scale = Vector2(0.5, 0.5)
+tile_set = ExtResource("2_k5io5")
+format = 2
+
+[node name="ParallaxBackground" parent="." unique_id=211574599 instance=ExtResource("3_caov7")]
+
+[node name="CharacterBody2D2" parent="." unique_id=501808252 instance=ExtResource("4_piy57")]
+position = Vector2(-880, -339)
+scale = Vector2(0.25, 0.25)
+
+[node name="Camera2D" type="Camera2D" parent="CharacterBody2D2" unique_id=955812054]
+position = Vector2(92, -296)
+scale = Vector2(4, 4)
+zoom = Vector2(0.65, 0.65)
+position_smoothing_enabled = true
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=71896557]
+layer = 2
+
+[node name="heart" parent="CanvasLayer" unique_id=1207891791 instance=ExtResource("5_e6rra")]
+position = Vector2(117.99999, 113.99999)
+scale = Vector2(0.24147864, 0.24147864)
+
+[node name="PauseButton" type="Button" parent="CanvasLayer" unique_id=2042132586]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -65.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 65.0
+grow_horizontal = 0
+theme_override_colors/font_color = Color(0.32, 0.2, 0.08, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("6_r8mpt")
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_pausebutton")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_pausebutton_hover")
+theme_override_styles/hover = SubResource("StyleBoxFlat_pausebutton_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_pausebutton_hover")
+text = "II"
+
+[node name="InfoButton" type="Button" parent="CanvasLayer" unique_id=778241010]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -66.0
+offset_top = -66.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.32, 0.2, 0.08, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("6_r8mpt")
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StyleBoxFlat_pausebutton")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_pausebutton_hover")
+theme_override_styles/hover = SubResource("StyleBoxFlat_pausebutton_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_pausebutton_hover")
+text = "?"
+
+[node name="InfoPopup" parent="." unique_id=778241011 instance=ExtResource("7_kqv1m")]
+
+[node name="PauseMenu" parent="." unique_id=1779626465 instance=ExtResource("8_dopbk")]
+
+[node name="LevelIntroBanner" parent="." unique_id=52537147 instance=ExtResource("9_5245t")]
+
+[node name="nextlevel" type="Area2D" parent="." unique_id=254585503]
+script = ExtResource("10_mju4m")
+next_scene = "uid://b16phqrsrbx5d"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="nextlevel" unique_id=1570220951]
+position = Vector2(7472, 1281)
+shape = SubResource("RectangleShape2D_trceg")
+
+[node name="Costume7" type="Sprite2D" parent="." unique_id=632085231]
+z_index = 99
+position = Vector2(1736.0002, 557)
+rotation = -0.0016440153
+scale = Vector2(39.52905, 1.717514)
+texture = ExtResource("12_t7f2l")
+
+[node name="ColorRect3" type="ColorRect" parent="Costume7" unique_id=401983242]
+z_index = 99
+offset_left = 222.99133
+offset_top = 2183.6511
+offset_right = 676.392
+offset_bottom = 4218.14
+rotation = 3.1415927
+mouse_filter = 2
+color = Color(0, 0, 0, 1)
+
+[connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
+[connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]
