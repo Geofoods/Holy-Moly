@@ -173,6 +173,7 @@ func _select_entry(id: String) -> void:
 	var danger_row := HBoxContainer.new()
 	title_col.add_child(danger_row)
 	var cat_label := _make_heading(String(entry.get("category", "")).to_upper(), 14, Color(0.5, 0.4, 0.25, 1))
+	cat_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	danger_row.add_child(cat_label)
 	var sep := Label.new()
 	sep.text = "   •   DANGER: "
@@ -180,7 +181,9 @@ func _select_entry(id: String) -> void:
 	sep.add_theme_font_size_override("font_size", 14)
 	sep.add_theme_color_override("font_color", Color(0.5, 0.4, 0.25, 1))
 	danger_row.add_child(sep)
-	danger_row.add_child(_make_heading(DANGER_LABELS[clampi(danger, 1, 6)], 14, DANGER_COLORS[clampi(danger, 1, 6)]))
+	var danger_label := _make_heading(DANGER_LABELS[clampi(danger, 1, 6)], 14, DANGER_COLORS[clampi(danger, 1, 6)])
+	danger_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	danger_row.add_child(danger_label)
 
 	detail_vbox.add_child(HSeparator.new())
 
