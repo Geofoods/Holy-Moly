@@ -32,15 +32,12 @@ func _ready():
 	$MoleShadow.hide()
 
 	var play_btn = $CenterContainer/VBoxContainer/ButtonContainer/PlayButton
-	var last_level_btn = $CenterContainer/VBoxContainer/ButtonContainer/LastLevelButton
 	var field_guide_btn = $CenterContainer/VBoxContainer/ButtonContainer/FieldGuideButton
 	var boss_rush_btn = $CenterContainer/VBoxContainer/ButtonContainer/BossRushButton
 	var clear_save_btn = $CenterContainer/VBoxContainer/BottomRow/ClearSaveButton
 	var credits_btn = $CenterContainer/VBoxContainer/BottomRow/CreditsButton
 	play_btn.mouse_entered.connect(_on_button_hover.bind(play_btn))
 	play_btn.mouse_exited.connect(_on_button_unhover.bind(play_btn))
-	last_level_btn.mouse_entered.connect(_on_button_hover.bind(last_level_btn))
-	last_level_btn.mouse_exited.connect(_on_button_unhover.bind(last_level_btn))
 	boss_rush_btn.mouse_entered.connect(_on_button_hover.bind(boss_rush_btn))
 	boss_rush_btn.mouse_exited.connect(_on_button_unhover.bind(boss_rush_btn))
 	field_guide_btn.mouse_entered.connect(_on_button_hover.bind(field_guide_btn))
@@ -49,10 +46,7 @@ func _ready():
 	clear_save_btn.mouse_exited.connect(_on_button_unhover.bind(clear_save_btn))
 	credits_btn.mouse_entered.connect(_on_button_hover.bind(credits_btn))
 	credits_btn.mouse_exited.connect(_on_button_unhover.bind(credits_btn))
-	# The "Play Last Level" shortcut only makes sense when there is a level to
-	# go back to, so a first launch shows just the plain Play button.
-	last_level_btn.visible = Progress.has_last_level()
-	
+
 	_add_version_label()
 
 	animate_intro()
@@ -170,13 +164,11 @@ func animate_menu_reveal() -> void:
 
 func _set_buttons_enabled(enabled: bool) -> void:
 	var play_btn = $CenterContainer/VBoxContainer/ButtonContainer/PlayButton
-	var last_level_btn = $CenterContainer/VBoxContainer/ButtonContainer/LastLevelButton
 	var field_guide_btn = $CenterContainer/VBoxContainer/ButtonContainer/FieldGuideButton
 	var boss_rush_btn = $CenterContainer/VBoxContainer/ButtonContainer/BossRushButton
 	var clear_save_btn = $CenterContainer/VBoxContainer/BottomRow/ClearSaveButton
 	var credits_btn = $CenterContainer/VBoxContainer/BottomRow/CreditsButton
 	play_btn.disabled = not enabled
-	last_level_btn.disabled = not enabled
 	field_guide_btn.disabled = not enabled
 	clear_save_btn.disabled = not enabled
 	credits_btn.disabled = not enabled
@@ -189,7 +181,6 @@ func _set_buttons_enabled(enabled: bool) -> void:
 	boss_rush_btn.disabled = not enabled or not Progress.is_game_completed()
 	if enabled:
 		play_btn.pivot_offset = play_btn.size / 2.0
-		last_level_btn.pivot_offset = last_level_btn.size / 2.0
 		boss_rush_btn.pivot_offset = boss_rush_btn.size / 2.0
 		field_guide_btn.pivot_offset = field_guide_btn.size / 2.0
 		clear_save_btn.pivot_offset = clear_save_btn.size / 2.0
@@ -233,25 +224,9 @@ func _on_play_pressed() -> void:
 	get_tree().root.add_child(transition)
 	transition.change_to(target)
 
-## Drops the mole back into the scene it was last standing in. Unlike a fresh
-## Play, this keeps the run's inventory, checkpoint and health: it is "resume
-## where I left off", not "start over".
-func _on_last_level_pressed() -> void:
-	SFX.play_ui("ui_click", -6.0, 1.2)
-	_fade_out_menu_music()
-	var last_level_btn = $CenterContainer/VBoxContainer/ButtonContainer/LastLevelButton
-	last_level_btn.disabled = true
-	var target := Progress.last_level_scene
-	# Keep the resume-aware bookkeeping in step with a normal level entry, so
-	# pause->restart and the game-over retry land back in this same scene.
-	Inventory.current_level_path = target
-	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
-	get_tree().root.add_child(transition)
-	transition.change_to(target)
-
-## Drops straight into the Boss Rush. Like "Play Last Level" this is a resume
-## rather than a fresh Play: the mole keeps the gear it finished the game with,
-## because that gear is what the rush is unlocked for.
+## Drops straight into the Boss Rush. This is a resume rather than a fresh
+## Play: the mole keeps the gear it finished the game with, because that gear
+## is what the rush is unlocked for.
 func _on_boss_rush_pressed() -> void:
 	# Re-checked here as well as on the button, so a locked mode cannot be
 	# entered by anything that presses it without going through the menu.
@@ -305,7 +280,6 @@ func _clear_save_data() -> void:
 	Progress.clear_save_data()
 	Shop.clear_save_data()
 	Inventory.reset()
-	$CenterContainer/VBoxContainer/ButtonContainer/LastLevelButton.visible = false
 	$CenterContainer/VBoxContainer/ButtonContainer/BossRushButton.disabled = true
 	$CenterContainer/VBoxContainer/BottomRow/ClearSaveButton.disabled = true
 	SFX.play_ui("ui_click", -6.0, 1.2)

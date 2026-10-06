@@ -1353,7 +1353,7 @@ npc_name = "Grub"
 
 [node name="door" type="Area2D" parent="." unique_id=1389915287]
 script = ExtResource("13_door")
-target_scene = "uid://c4hcaxvv2u37u"
+target_scene = "res://scenes/mole_village.tscn"
 prompt_offset = Vector2(-96, -352)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="door" unique_id=1106423571]

@@ -27,6 +27,7 @@ const TRAVEL_HUBS: Array[Dictionary] = [
 	{"path": "res://scenes/shopkeeper_item.tscn", "label": "Mole Shopkeeper"},
 	{"path": "res://scenes/level_04.tscn", "label": "Goblin Outpost"},
 	{"path": "res://scenes/level_08.tscn", "label": "Goblin Stronghold"},
+	{"path": "res://scenes/level_10.tscn", "label": "Crystal Switchback"},
 ]
 
 ## Where the mole has been, the mole has to have got there on foot first, so a

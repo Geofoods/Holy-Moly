@@ -72,8 +72,24 @@ const LEVELS: Dictionary = {
 func get_info(scene_path: String) -> Dictionary:
 	return LEVELS.get(scene_path, {})
 
+## Scenes that arrive with no music at all under them. Kept out of LEVELS on
+## purpose: LEVELS is also how the game decides what counts as a numbered
+## campaign level, and a scene listed there grows an intro banner and a results
+## screen whether it wants them or not. "The Arena" has an intro banner node
+## that deletes itself purely because its info comes back empty, so giving it an
+## entry here to carry one flag would make it try to read a number it does not
+## have. The flag is about music, so it gets its own list.
+const SILENT_SCENES: Array[String] = [
+	"res://scenes/The Arena.tscn",
+]
+
 ## Whether a level arrives without the level bed under it. Level 09 opens
 ## silent and only scores itself once the Corrupted Heart has finished talking,
 ## so the bed is faded out on the way in rather than ducked during the fight.
+##
+## "The Arena" opens silent for a different reason: its music belongs to the
+## fight, not the room. The bed is stopped on the way in so the arena theme can
+## arrive from true silence once the snail has said its line, instead of fading
+## up over a bed that has to be cut underneath it a moment later anyway.
 func starts_silent(scene_path: String) -> bool:
-	return bool(get_info(scene_path).get("starts_silent", false))
+	return SILENT_SCENES.has(scene_path) or bool(get_info(scene_path).get("starts_silent", false))

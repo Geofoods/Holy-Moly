@@ -40,6 +40,28 @@ func _ready() -> void:
 	_label.visible = false
 	_label.pivot_offset = Vector2(220, 30)
 	add_child(_label)
+	Inventory.player_died.connect(_on_player_died)
+
+## The label sits on layer 100, above the game over screen, so a combo still
+## counting down when the mole dies would sit on top of that art. Connected to
+## the same signal the health HUD cracks on, which fires at the top of the death
+## sequence (mole.gd) - well before the screen is up - so the label is gone by
+## the time anything of it is on screen.
+##
+## Only the readout is hidden. The combo value itself is left alone: what it is
+## worth on a retry is a separate question from whether it should be readable
+## while the player is looking at a game over screen.
+func _on_player_died() -> void:
+	_kill_label_tweens()
+	_label.visible = false
+
+func _kill_label_tweens() -> void:
+	if _color_tween and _color_tween.is_valid():
+		_color_tween.kill()
+	if _scale_tween and _scale_tween.is_valid():
+		_scale_tween.kill()
+	_color_tween = null
+	_scale_tween = null
 
 func _process(delta: float) -> void:
 	if combo <= 0:
@@ -99,10 +121,7 @@ func _get_combo_color() -> Color:
 		return Color(0.4, 1.0, 0.4)
 
 func _flash_label() -> void:
-	if _color_tween and _color_tween.is_valid():
-		_color_tween.kill()
-	if _scale_tween and _scale_tween.is_valid():
-		_scale_tween.kill()
+	_kill_label_tweens()
 
 	var target_color := _get_combo_color()
 	_label.add_theme_color_override("font_color", Color.WHITE)

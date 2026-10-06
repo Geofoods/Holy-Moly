@@ -66,6 +66,7 @@ const GAME_SPEED := 1.2
 const PEACEFUL_SCENES := [
 	"res://scenes/molevillage.tscn",
 	"res://scenes/shopkeeper_item.tscn",
+	"res://scenes/house1.tscn",
 ]
 
 ## Scenes the mole always arrives at their own default spawn point in, whatever

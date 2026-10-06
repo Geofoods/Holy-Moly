@@ -63,18 +63,6 @@ const ENTRIES: Array[Dictionary] = [
 		"strategy": "Keep your distance and hit it when it lands.",
 	},
 	{
-		"id": "snake",
-		"name": "Cave Snake",
-		"icon": "res://icon.svg",
-		"icon_region": Rect2(),
-		"category": "Enemy",
-		"danger_level": 3,
-		"description": "A hissing serpent that slithers through the cave floors, coiled and waiting for prey. It bites up close, but from a distance it spits a fan of venom.",
-		"behavior": "Slithers back and forth along the ground. When it spots you, it stops and rears up to telegraph. Up close it strikes in a fast lunge; from further away it spits a 3-way fan of venom globs before lying low to recover.",
-		"attack_pattern": "Either a fast 900 px/s lunge under half a second dealing contact damage, or a fan of 3 venom globs that each deal light damage and slow you for a few seconds. Both are telegraphed by the rear-and-shake, followed by a short cooldown.",
-		"strategy": "The rear-up is your cue: swing to knock it out of the telegraph, hop over the lunge, or sprint sideways to weave through the venom fan. Punish it while it recovers. Takes 2 shovel hits to defeat.",
-	},
-	{
 		"id": "hornet",
 		"name": "Hornet",
 		"icon": "res://icon.svg",

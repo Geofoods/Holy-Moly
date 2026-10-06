@@ -171,7 +171,7 @@ position = Vector2(2920, 352)
 position = Vector2(151, 35)
 
 [node name="ShopkeeperMole" parent="." unique_id=1821904010 instance=ExtResource("17_shopkeeper")]
-position = Vector2(1923, 14)
+position = Vector2(1925, 21)
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]

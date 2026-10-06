@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://uukw6aqabygl"]
 
 [ext_resource type="Script" path="res://scripts/door.gd" id="1_door"]
+[ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="2_font"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_hun61"]
 radius = 191.9427
@@ -17,3 +18,17 @@ color = Color(0.8104292, 0.4387144, 0.23864526, 1)
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=51608978]
 position = Vector2(31, 50)
 shape = SubResource("CircleShape2D_hun61")
+
+[node name="Prompt" type="Label" parent="." unique_id=1374045821]
+visible = false
+offset_left = -170.0
+offset_top = -90.0
+offset_right = 170.0
+offset_bottom = -30.0
+theme_override_colors/font_color = Color(1, 0.93, 0.66, 1)
+theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 1)
+theme_override_constants/outline_size = 5
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 40
+text = "PRESS E"
+horizontal_alignment = 1

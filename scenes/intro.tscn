@@ -35,34 +35,6 @@ corner_radius_bottom_left = 12
 shadow_color = Color(0.1, 1, 0.4, 0.5)
 shadow_size = 12
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_lastlevelbutton"]
-bg_color = Color(0.13, 0.72, 0.35, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.2, 1, 0.5, 0.4)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-shadow_color = Color(0.1, 0.9, 0.3, 0.35)
-shadow_size = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_lastlevelbutton_hover"]
-bg_color = Color(0.2, 0.85, 0.45, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.4, 1, 0.7, 1)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-shadow_color = Color(0.1, 1, 0.4, 0.5)
-shadow_size = 12
-
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_exitbutton"]
 bg_color = Color(0.72, 0.1, 0.18, 1)
 border_width_left = 3
@@ -270,20 +242,6 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_playbutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_playbutton_hover")
 text = "PLAY"
 
-[node name="LastLevelButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer" unique_id=1416814149]
-custom_minimum_size = Vector2(180, 70)
-layout_mode = 2
-size_flags_horizontal = 0
-theme_override_colors/font_color = Color(0.03, 0.03, 0.03, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_fonts/font = ExtResource("6_es01l")
-theme_override_font_sizes/font_size = 24
-theme_override_styles/normal = SubResource("StyleBoxFlat_lastlevelbutton")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_lastlevelbutton_hover")
-theme_override_styles/hover = SubResource("StyleBoxFlat_lastlevelbutton_hover")
-theme_override_styles/focus = SubResource("StyleBoxFlat_lastlevelbutton_hover")
-text = "LAST LEVEL"
-
 [node name="BossRushButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer" unique_id=1148290357]
 custom_minimum_size = Vector2(180, 70)
 layout_mode = 2
@@ -350,27 +308,9 @@ theme_override_styles/focus = SubResource("StyleBoxFlat_creditsbutton_hover")
 tooltip_text = "Watch the credits roll"
 text = "CREDITS"
 
-[node name="CreditsLabel" type="Label" parent="." unique_id=29629912]
-layout_mode = 0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -32.0
-offset_bottom = 0.0
-grow_horizontal = 2
-grow_vertical = 0
-theme_override_colors/font_color = Color(0.85, 0.85, 0.85, 0.9)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 4
-theme_override_fonts/font = ExtResource("6_es01l")
-theme_override_font_sizes/font_size = 18
-text = "Made by Bryan, George, Nimansh, Javis"
-horizontal_alignment = 1
-
 [node name="InfoPopup" parent="." instance=ExtResource("7_infopopup")]
 
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/PlayButton" to="." method="_on_play_pressed"]
-[connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/LastLevelButton" to="." method="_on_last_level_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/BossRushButton" to="." method="_on_boss_rush_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/FieldGuideButton" to="." method="_on_field_guide_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/BottomRow/ClearSaveButton" to="." method="_on_clear_save_pressed"]

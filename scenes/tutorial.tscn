@@ -15,6 +15,7 @@
 [ext_resource type="PackedScene" uid="uid://bcd57whed7bys" path="res://chest.tscn" id="chest_res"]
 [ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
 [ext_resource type="PackedScene" uid="uid://3wwhicdeo8hl" path="res://scenes/info_popup.tscn" id="info_popup_res"]
+[ext_resource type="PackedScene" uid="uid://d2i1x8x1y6qa" path="res://scenes/pause_menu.tscn" id="16_pausemenu"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_skipbutton"]
 bg_color = Color(0.8, 0.68, 0.46, 1)
@@ -29,6 +30,30 @@ corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_skipbutton_hover"]
+bg_color = Color(0.97, 0.91, 0.78, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.42, 0.28, 0.14, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
+bg_color = Color(0.8, 0.68, 0.46, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.42, 0.28, 0.14, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton_hover"]
 bg_color = Color(0.97, 0.91, 0.78, 1)
 border_width_left = 2
 border_width_top = 2
@@ -80,6 +105,25 @@ layer = 99
 position = Vector2(117.99999, 113.99999)
 scale = Vector2(0.24147864, 0.24147864)
 
+[node name="PauseButton" type="Button" parent="CanvasLayer" unique_id=2042132586]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -65.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 65.0
+grow_horizontal = 0
+theme_override_colors/font_color = Color(0.32, 0.2, 0.08, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("9_font")
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_pausebutton")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_pausebutton_hover")
+theme_override_styles/hover = SubResource("StyleBoxFlat_pausebutton_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_pausebutton_hover")
+text = "II"
+
 [node name="InfoButton" type="Button" parent="CanvasLayer" unique_id=866534843]
 anchors_preset = 3
 anchor_left = 1.0
@@ -105,6 +149,9 @@ text = "?"
 [node name="InventoryUI" parent="." unique_id=297350306 instance=ExtResource("12_invui")]
 
 [node name="InfoPopup" parent="." unique_id=454017660 instance=ExtResource("info_popup_res")]
+
+[node name="PauseMenu" parent="." unique_id=1779626465 instance=ExtResource("16_pausemenu")]
+visible = false
 
 [node name="FireflySpawner" type="Node2D" parent="." unique_id=578334012]
 script = ExtResource("firefly_script")
@@ -254,6 +301,7 @@ position = Vector2(3310, -1564)
 [node name="chest4" parent="." unique_id=991442522 instance=ExtResource("chest_res")]
 position = Vector2(4040, -1591)
 
+[connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]
 [connection signal="body_entered" from="greeting area" to="NpcMole4" method="on_greeting_area_entered"]
 [connection signal="body_entered" from="chest area" to="NpcMole4" method="on_secondary_area_entered"]

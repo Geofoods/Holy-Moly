@@ -1,4 +1,4 @@
-extends Node2D
+extends RigidBody2D
 
 ## Respawn station. Bank it and the mole rematerialises on this pad after a
 ## death instead of at the level's entrance.
