@@ -135,11 +135,41 @@ static func _melt_frost(frost_layer: Node2D) -> void:
 			(child as IceOverlay).fade_out(FROST_FADE_DURATION)
 	frost_layer.get_tree().create_timer(FROST_FADE_DURATION + 0.1).timeout.connect(frost_layer.queue_free)
 
+## The shared explosion art runs a fire ramp - yellow to orange to smoke - as
+## its particle color_ramp, and particle colors multiply with modulate rather
+## than replace it. Those fire stops hold no blue at all, so ICE_EXPLOSION_TINT
+## could only ever darken them: yellow times blue is still yellow. This hands
+## the same material a cold ramp on the same stops instead, so the blast reads
+## blue either way and the tint on top only deepens it. Duplicated rather than
+## edited in place, since the resource is shared with every other explosion in
+## the game.
+func _ice_explosion_material() -> ParticleProcessMaterial:
+	var probe := EXPLOSION_SCENE.instantiate() as GPUParticles2D
+	var material := probe.process_material.duplicate() as ParticleProcessMaterial
+	probe.free()
+
+	var gradient := Gradient.new()
+	gradient.offsets = PackedFloat32Array([
+		0.0, 0.389423, 0.413462, 0.548077,
+		0.567308, 0.701923, 0.745192, 1.0,
+	])
+	gradient.colors = PackedColorArray([
+		Color(0.75, 0.9, 1.0), Color(0.75, 0.9, 1.0),
+		Color(0.45, 0.72, 1.0), Color(0.45, 0.72, 1.0),
+		Color(0.18, 0.42, 0.9), Color(0.18, 0.42, 0.9),
+		Color(0.08, 0.16, 0.35), Color(0.08, 0.16, 0.35),
+	])
+	var ramp := GradientTexture1D.new()
+	ramp.gradient = gradient
+	material.color_ramp = ramp
+	return material
+
 func _spawn_ice_burst() -> void:
 	var explosion := EXPLOSION_SCENE.instantiate() as GPUParticles2D
 	get_parent().add_child(explosion)
 	explosion.global_position = global_position
 	explosion.scale = Vector2.ONE * EXPLOSION_ART_SCALE
+	explosion.process_material = _ice_explosion_material()
 	explosion.modulate = ICE_EXPLOSION_TINT
 	explosion.finished.connect(explosion.queue_free)
 	explosion.emitting = true

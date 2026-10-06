@@ -272,10 +272,7 @@ var _boss_brightness_tween: Tween = null
 var _death_box: CanvasLayer = null
 var _death_finale_started := false
 var _death_black_hole: Node2D = null
-var _death_player: Node2D = null
 var _death_credits_started := false
-var _death_pull_start := Vector2.ZERO
-var _death_pull_center := Vector2.ZERO
 
 const ITEM_GET := preload("res://scripts/item_get_animation.gd")
 ## Melee weapons have no artwork of their own, so - like the weapon the mole
@@ -307,7 +304,6 @@ const DEATH_SHAKE_DURATION := 0.3
 const DEATH_FADE_TIME := 0.8
 const DEATH_BLACK_HOLE_DELAY := 0.75
 const DEATH_BLACK_HOLE_GROW_TIME := 0.9
-const DEATH_BLACK_HOLE_PULL_TIME := 2.8
 const DEATH_BLACK_HOLE_TILE_BATCH := 12
 const DEATH_BLACK_HOLE_TILE_INTERVAL := 0.04
 const DEATH_BLACK_HOLE_RADIUS_SCALE := 0.38
@@ -372,6 +368,15 @@ func _ready() -> void:
 		_label.visible = false
 		_label.z_index = 100
 		_label.z_as_relative = false
+		# The same emboldened Baby Doll npc_mole.gd builds for its prompt, so the
+		# two read as one UI element rather than as one bold label and one thin
+		# one. Matched there by hand rather than from a shared helper because the
+		# two nodes are reached by different paths ("Prompt" vs "Area2D/Prompt")
+		# and neither scene owns the other's node.
+		var variation := FontVariation.new()
+		variation.base_font = load("res://Baby Doll.otf") as Font
+		variation.variation_embolden = 1.0
+		_label.add_theme_font_override("font", variation)
 	_hushed = _refresh_hushed()
 	_setup_condition()
 	if boss_after_dialogue:
@@ -2312,10 +2317,33 @@ func _defeat_boss() -> void:
 ## off its shell the whole time the curse is up, and then it goes out in one
 ## giant blast - gibs, coins, screen shake - instead of quietly deflating.
 func _start_grand_death() -> void:
+	_hide_cutscene_ui()
 	SFX.play("enemy_death", global_position)
 	_show_death_dialogue()
 	_spawn_firework_ring()
 	_run_death_firework_loop()
+
+## The death cutscene plays to an empty screen: every piece of interface - the
+## level's HUD (hearts, buttons, hotbar, popups) and the autoload HUDs (coins,
+## combo, map, touch controls) - is hidden and put to sleep for the length of
+## the sequence. Nothing is restored: the scene dies into the credits. The
+## vignette stays because it is atmosphere rather than interface, and the
+## death dialogue is added after this runs, so the snail still gets his last
+## words over the empty screen.
+func _hide_cutscene_ui() -> void:
+	var scene_root := get_tree().current_scene
+	if scene_root != null:
+		for child in scene_root.get_children():
+			if (child is CanvasLayer or child is Control) and child.name != "VignetteLayer":
+				_hide_ui_node(child)
+	for child in get_tree().root.get_children():
+		if child is CanvasLayer or child is Control:
+			_hide_ui_node(child)
+
+func _hide_ui_node(node: Node) -> void:
+	# CanvasLayer is no CanvasItem, but both it and Control carry visible.
+	node.set("visible", false)
+	node.process_mode = Node.PROCESS_MODE_DISABLED
 
 ## The player dismisses the final dialogue to trigger the finale. Like
 ## _open_dialogue, the box is configured once it is inside the tree so its
@@ -2538,7 +2566,7 @@ func _start_black_hole_tile_suction(center: Vector2) -> void:
 
 func _pull_snail_into_black_hole(center: Vector2) -> void:
 	if _sprite == null or not is_instance_valid(_sprite):
-		_suck_player_into_black_hole(center)
+		_finish_into_black_hole()
 		return
 	_transformed = false
 	_sprite.visible = true
@@ -2556,7 +2584,7 @@ func _pull_snail_into_black_hole(center: Vector2) -> void:
 		pull.tween_property(_dialogue_focus_camera, "zoom", Vector2(1.3, 1.3), DEATH_BLACK_HOLE_SNAIL_PULL_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
 	pull.chain().tween_callback(func():
 		_sprite.visible = false
-		_suck_player_into_black_hole(center)
+		_finish_into_black_hole()
 	)
 
 func _black_hole_circle(radius: float) -> PackedVector2Array:
@@ -2579,47 +2607,16 @@ func _add_black_hole_ring(parent: Node2D, radius: float, width: float, color: Co
 	var spin := ring.create_tween().set_loops()
 	spin.tween_property(ring, "rotation", TAU, randf_range(2.4, 4.0)).as_relative()
 
-func _suck_player_into_black_hole(center: Vector2) -> void:
-	var mole := get_tree().get_first_node_in_group("mole") as Node2D
-	if mole == null or not is_instance_valid(mole):
-		get_tree().create_timer(0.6).timeout.connect(_go_to_credits)
-		return
-	_death_player = mole
-	_death_pull_start = mole.global_position
-	_death_pull_center = center
-	_frame_black_hole_suction(mole)
-	mole.set_process(false)
-	mole.set_physics_process(false)
-	mole.set_process_input(false)
-	mole.set_process_unhandled_input(false)
-	mole.set_process_unhandled_key_input(false)
-	if mole is CharacterBody2D:
-		(mole as CharacterBody2D).velocity = Vector2.ZERO
-	var pull := _death_black_hole.create_tween()
-	pull.set_parallel(true)
-	pull.tween_method(_update_black_hole_pull, 0.0, 1.0, DEATH_BLACK_HOLE_PULL_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
-	pull.tween_property(mole, "global_scale", Vector2.ZERO, DEATH_BLACK_HOLE_PULL_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
-	pull.tween_property(mole, "rotation", TAU * 2.0, DEATH_BLACK_HOLE_PULL_TIME).as_relative()
-	pull.chain().tween_callback(_finish_player_suction)
-
-func _frame_black_hole_suction(mole: Node2D) -> void:
-	if _dialogue_focus_camera == null or not is_instance_valid(_dialogue_focus_camera):
-		return
-	var camera_target := _death_pull_center.lerp(mole.global_position, 0.5)
-	var framing := _dialogue_focus_camera.create_tween().set_parallel(true)
-	framing.tween_property(_dialogue_focus_camera, "global_position", camera_target, DEATH_BLACK_HOLE_PULL_TIME).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
-	framing.tween_property(_dialogue_focus_camera, "zoom", Vector2(0.22, 0.22), 0.8).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-
-func _update_black_hole_pull(progress: float) -> void:
-	if _death_player == null or not is_instance_valid(_death_player):
-		return
-	var remaining := 1.0 - progress
-	var orbit := _death_pull_start - _death_pull_center
-	_death_player.global_position = _death_pull_center + orbit.rotated(TAU * 1.4 * progress) * pow(remaining, 1.8)
-
-func _finish_player_suction() -> void:
-	if _death_player != null and is_instance_valid(_death_player):
-		_death_player.visible = false
+## The snail is inside the hole now. The camera already rests on the black
+## hole and the mole keeps standing where he was - he is never part of the
+## pull. A beat on the hole, then the transition carries the credits in.
+func _finish_into_black_hole() -> void:
+	# Keep pushing into the hole rather than resting on it: the zoom runs on
+	# under the closing circle, so the core swallows the frame before the
+	# credits take over.
+	if _dialogue_focus_camera != null and is_instance_valid(_dialogue_focus_camera):
+		var push := _dialogue_focus_camera.create_tween()
+		push.tween_property(_dialogue_focus_camera, "zoom", Vector2(3.0, 3.0), 0.7).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
 	get_tree().create_timer(0.6).timeout.connect(_go_to_credits)
 
 func _go_to_credits() -> void:

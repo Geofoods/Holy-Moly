@@ -16,6 +16,7 @@ const WAVE_ENEMIES: Array[Dictionary] = [
 	{"scene": "res://scenes/beetleenemy.tscn", "name": "BEETLES"},
 	{"scene": "res://scenes/slimeenemy.tscn", "name": "SLIMES"},
 	{"scene": "res://scenes/hornet_enemy.tscn", "name": "HORNETS"},
+	{"scene": "res://ice_goblinenemy.tscn", "name": "ICE GOBLINS"},
 ]
 
 var _wave := -1

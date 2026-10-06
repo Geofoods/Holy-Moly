@@ -90,6 +90,10 @@ func toggle_pause() -> void:
 	pause_toggled.emit(is_paused)
 
 func _set_input_enabled(enabled: bool) -> void:
+	# The layer itself starts hidden in some scenes (tutorial, map), so the
+	# root has to follow the same state as its children or the menu never
+	# appears - same contract InfoPopup keeps with its own visibility.
+	visible = enabled
 	$DimBackground.visible = enabled
 	$CenterContainer.visible = enabled
 	$DimBackground.mouse_filter = Control.MOUSE_FILTER_STOP if enabled else Control.MOUSE_FILTER_IGNORE

@@ -20,6 +20,12 @@ var current_level_path: String = "res://scenes/level1.tscn"
 ## damage (and healed hearts) from one level into the next.
 var player_health: float = MAX_HEALTH
 
+## Raised only while the circle wipe is running between scenes. The wipe no
+## longer pauses the tree, so both the level being left and the level being
+## entered keep ticking behind it - the mole reads this in take_damage() and
+## ignores every source of damage until the circle has opened on the new scene.
+var transition_invulnerable := false
+
 ## Remembers where the mole left each level so re-entering that level restores
 ## the same position instead of the scene's default spawn point.
 var level_return_positions: Dictionary = {}

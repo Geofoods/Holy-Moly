@@ -9,7 +9,7 @@ const TileBreakSFX := preload("res://scripts/tile_break_sfx.gd")
 
 ## Fixed art scale shared by bombs and goblin mushrooms, independent of how far
 ## the gameplay blast reaches.
-const EXPLOSION_ART_SCALE := 1.5
+const EXPLOSION_ART_SCALE := 3.75
 
 # The blast reach and the crater it digs are tuned together: three tiles out
 # plus half a tile is 280px at the usual 80px-per-tile scale, so the damage

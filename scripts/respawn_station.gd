@@ -25,6 +25,16 @@ extends RigidBody2D
 const PROMPT_HALF_WIDTH := 190.0
 const PROMPT_HEIGHT := 60.0
 
+## The prompt's blue, and the lighter blue it shifts to the moment this pad
+## becomes the banked checkpoint - the same beat as the text flips to CHECKPOINT
+## SET, so wording and colour read as one state change. The resting value is the
+## deeper of the two deliberately: both states have to be blue for the change to
+## read as a lightening rather than as the label being repainted some other
+## colour. Mirrored into the Prompt node's own font override in respawn_station.tscn
+## so the scene shows the resting state before the first _process lands.
+const PROMPT_COLOR := Color(0.35, 0.75, 1.0, 1.0)
+const PROMPT_COLOR_ACTIVE := Color(0.72, 0.94, 1.0, 1.0)
+
 ## Arrival animation. The mole starts sunk below the pad, rises to it, then
 ## squash-and-stretch lands. Timing is in seconds.
 const ARRIVE_SINK := 190.0
@@ -152,6 +162,7 @@ func _position_prompt(lit: bool) -> void:
 	if lit:
 		text = "CHECKPOINT SET"
 	_prompt.text = text
+	_prompt.add_theme_color_override("font_color", PROMPT_COLOR_ACTIVE if lit else PROMPT_COLOR)
 	var at := global_position + prompt_offset
 	_prompt.offset_left = at.x - PROMPT_HALF_WIDTH
 	_prompt.offset_right = at.x + PROMPT_HALF_WIDTH

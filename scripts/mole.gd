@@ -147,6 +147,14 @@ var death_override: Callable = Callable()
 var _restoring_health := false
 var _dying := false
 
+## Set by scene_transition.gd the moment a circle wipe starts. The wipe no
+## longer pauses the tree, so the mole would otherwise read keys the player has
+## already let go of and slide to a halt behind the closing circle. Instead it
+## plays out the movement it had when the wipe began, and takes no further
+## input until the scene is swapped out for the next one.
+var _gliding_to_next_scene := false
+var _glide_direction := 0.0
+
 const MAX_HEALTH := 12.0
 
 var health: float = MAX_HEALTH:
@@ -500,6 +508,13 @@ func _setup_level_reverb() -> void:
 	_reverb.wet = SFX.REVERB_BASE_WET + t * 0.5
 	_reverb.room_size = SFX.REVERB_BASE_ROOM_SIZE + t * 0.7
 
+## Latches the movement the mole is making right now so it keeps playing out
+## through the closing circle. Only ever called by a scene transition, on the
+## level being left - the level being entered starts from its own spawn.
+func glide_into_next_scene() -> void:
+	_glide_direction = Input.get_axis("ui_left", "ui_right")
+	_gliding_to_next_scene = true
+
 func _physics_process(delta: float) -> void:
 	collision_mask = _normal_collision_mask
 
@@ -507,9 +522,13 @@ func _physics_process(delta: float) -> void:
 		_death_fall(delta)
 		return
 
+	# Player input is dead from here to the scene swap: whatever the mole was
+	# doing when the transition began is what keeps playing out.
+	var taking_input := not _gliding_to_next_scene
+
 	if not grapple_active and not is_on_floor():
 		velocity.y += AIR_GRAVITY * delta
-		if Input.is_action_pressed("ui_down"):
+		if taking_input and Input.is_action_pressed("ui_down"):
 			velocity.y = minf(velocity.y, FAST_FALL_SPEED)
 
 	_handle_inventory_input()
@@ -578,7 +597,7 @@ func _physics_process(delta: float) -> void:
 		_update_camera_position(delta)
 		return
 
-	if Input.is_action_just_pressed("dig_dash") and can_break:
+	if taking_input and Input.is_action_just_pressed("dig_dash") and can_break:
 		if is_on_floor():
 			start_dig_dash()
 		else:
@@ -591,7 +610,7 @@ func _physics_process(delta: float) -> void:
 	else:
 		_coyote_timer -= delta
 
-	var direction := Input.get_axis("ui_left", "ui_right")
+	var direction := Input.get_axis("ui_left", "ui_right") if taking_input else _glide_direction
 
 	if Shop.has_wall_jump():
 		_wall_jump_lock_timer = maxf(0.0, _wall_jump_lock_timer - delta)
@@ -618,7 +637,7 @@ func _physics_process(delta: float) -> void:
 	if climbing_talons_active and is_on_wall() and direction != 0 \
 			and signf(direction) == -signf(get_wall_normal().x) and velocity.y > 0.0:
 		velocity.y = 0.0
-	if Input.is_action_just_pressed("ui_accept") and can_wall_jump:
+	if taking_input and Input.is_action_just_pressed("ui_accept") and can_wall_jump:
 		velocity.y = WALL_JUMP_VELOCITY
 		velocity.x = -_wall_coyote_dir * WALL_JUMP_PUSHBACK
 		_jump_held = true
@@ -628,7 +647,7 @@ func _physics_process(delta: float) -> void:
 		is_sideways_jump = true
 		air_time = 1.0
 		launched_from_jump = true
-	elif Input.is_action_just_pressed("ui_accept") and can_jump:
+	elif taking_input and Input.is_action_just_pressed("ui_accept") and can_jump:
 		velocity.y = JUMP_VELOCITY
 		_jump_held = true
 		_coyote_timer = 0.0
@@ -639,7 +658,7 @@ func _physics_process(delta: float) -> void:
 		air_time = 1.0
 		launched_from_jump = true
 
-	if Input.is_action_just_released("ui_accept"):
+	if taking_input and Input.is_action_just_released("ui_accept"):
 		_jump_held = false
 		if velocity.y < 0:
 			velocity.y *= JUMP_CUT_MULTIPLIER
@@ -836,6 +855,10 @@ func _handle_inventory_input() -> void:
 	# that the player was only reading about. Not consuming is the point: an
 	# item in use is gone for good.
 	if DialogueBox.is_open():
+		return
+	# Same reasoning during a scene transition: the wipe carries the movement
+	# the mole already had, and a hotkey would change it mid-circle.
+	if _gliding_to_next_scene:
 		return
 	if Input.is_action_just_pressed("inventory_1"):
 		_toggle_slot(0)
@@ -1112,7 +1135,7 @@ func remove_mole_hole() -> void:
 		tween.tween_callback(hole.queue_free)
 
 func take_damage(amount: float, source_position: Vector2 = Vector2.ZERO, has_source: bool = false, is_projectile: bool = false) -> void:
-	if invulnerable or _dash_invulnerable or health <= 0:
+	if invulnerable or _dash_invulnerable or Inventory.transition_invulnerable or health <= 0:
 		return
 	if health - amount <= 0.0 and _consume_honeycombs():
 		Shop.drop_coins(global_position + Vector2(0, -40), 3, 2)
@@ -1387,13 +1410,15 @@ func _handle_grapple(delta: float) -> void:
 		if grapple_active:
 			_end_grapple()
 		return
-	if Input.is_action_just_pressed("dig_slash"):
+	if not _gliding_to_next_scene and Input.is_action_just_pressed("dig_slash"):
 		if is_digging or is_tunneling or is_ground_pounding:
 			return
 		if not grapple_active:
 			_try_start_grapple()
 		return
-	if grapple_active and Input.is_action_just_released("dig_slash"):
+	# A grapple already swinging keeps swinging through the wipe, so letting go
+	# of the button is ignored for the same reason the press above is.
+	if grapple_active and not _gliding_to_next_scene and Input.is_action_just_released("dig_slash"):
 		_end_grapple()
 	if not grapple_active:
 		return
@@ -1555,7 +1580,7 @@ func start_dig_dash() -> void:
 		if not is_tunneling:
 			return
 		tunnel_elapsed += get_process_delta_time()
-		if Input.is_action_just_pressed("dig_slash"):
+		if not _gliding_to_next_scene and Input.is_action_just_pressed("dig_slash"):
 			_dash_cancel_into_attack()
 			return
 

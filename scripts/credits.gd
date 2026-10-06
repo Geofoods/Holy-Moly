@@ -7,9 +7,12 @@ extends Control
 ## the last stop is THE END: it sits in the middle of the screen for a beat, the
 ## whole screen fades slowly to black, and the game returns to the main menu.
 ## A return button is always available and the roll can be fast-forwarded with
-## ESC / Enter / Space or a click, so nobody gets stuck watching the whole thing.
-## Skipping is held off for the first fraction of a second so a click made while
-## the scene is still fading in cannot wipe the crawl out before it has been seen.
+## ESC / Enter / Space, so nobody gets stuck watching the whole thing. A click
+## is deliberately inert: anything short of a keyboard key or the return button
+## itself leaves the crawl exactly where it was.
+## Skipping is held off for the first fraction of a second so a key press made
+## while the scene is still fading in cannot wipe the crawl out before it has
+## been seen.
 
 const FONT_PATH := "res://Baby Doll.otf"
 const LOGO_PATH := "res://holymolylogo.png"
@@ -46,7 +49,7 @@ const TAIL := 80.0
 ## name columns start and end.
 const ROW_GAP := 24.0
 const SIDE_MARGIN := 220
-## Skip input is ignored for this long after the crawl starts, so the click that
+## Skip input is ignored for this long after the crawl starts, so the press that
 ## arrives with the scene does not count as a skip.
 const SKIP_GRACE := 0.8
 
@@ -295,8 +298,6 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode in [KEY_ESCAPE, KEY_ENTER, KEY_KP_ENTER, KEY_SPACE]:
 			_finish_roll()
-	elif event is InputEventMouseButton and event.pressed:
-		_finish_roll()
 
 func _start_music() -> void:
 	_music = AudioStreamPlayer.new()
@@ -331,7 +332,7 @@ func _on_return_pressed() -> void:
 	_go_to_menu()
 
 ## Tears down the credits and wipes to the main menu. Shared by the return button
-## and the automatic hand-off at the end of THE END, and guarded so a click
+## and the automatic hand-off at the end of THE END, and guarded so a press
 ## landing during the hand-off cannot start a second transition on top of it.
 func _go_to_menu() -> void:
 	if _leaving:

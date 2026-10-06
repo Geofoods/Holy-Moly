@@ -54,7 +54,7 @@ animation = &"idle"
 autoplay = "idle"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=551529701]
-position = Vector2(-2, -48)
+position = Vector2(8, -58)
 rotation = 1.5707964
 shape = SubResource("CapsuleShape2D_npc")
 

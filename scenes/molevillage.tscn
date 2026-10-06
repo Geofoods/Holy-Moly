@@ -16,7 +16,6 @@
 [ext_resource type="PackedScene" uid="uid://dg6omg8f4xhgx" path="res://scenes/snail.tscn" id="15_bj43u"]
 [ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="15_ijuyj"]
 [ext_resource type="PackedScene" uid="uid://dsn8kk2u1nx7s" path="res://scenes/shopkeeper_npc.tscn" id="16_bj43u"]
-[ext_resource type="Script" uid="uid://cly034cqc8e1e" path="res://scripts/door.gd" id="17_door"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.8, 0.68, 0.46, 1)
@@ -44,9 +43,6 @@ corner_radius_bottom_left = 8
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_trceg"]
 size = Vector2(12788, 933)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_xl236"]
-size = Vector2(484, 380)
 
 [node name="Node2D" type="Node2D" unique_id=1979316305]
 
@@ -208,50 +204,6 @@ skip_if_game_completed = true
 
 [node name="ShopkeeperMole" parent="." unique_id=1821904010 instance=ExtResource("16_bj43u")]
 position = Vector2(4404, -222)
-
-[node name="house1" type="Area2D" parent="." unique_id=27675031]
-position = Vector2(3715, -273)
-script = ExtResource("17_door")
-target_scene = "res://scenes/house1.tscn"
-prompt_offset = Vector2(0, -250)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="house1" unique_id=506543146]
-shape = SubResource("RectangleShape2D_xl236")
-
-[node name="Prompt" type="Label" parent="house1" unique_id=1288450396]
-visible = false
-offset_left = -170.0
-offset_top = -523.0
-offset_right = 170.0
-offset_bottom = -463.0
-theme_override_colors/font_color = Color(1, 0.93, 0.66, 1)
-theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 1)
-theme_override_constants/outline_size = 5
-theme_override_fonts/font = ExtResource("7_3cvux")
-theme_override_font_sizes/font_size = 40
-text = "PRESS E"
-horizontal_alignment = 1
-
-[node name="Area2D2" type="Area2D" parent="." unique_id=2119200002]
-position = Vector2(2939, -172)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D2" unique_id=428698091]
-position = Vector2(3715, -273)
-shape = SubResource("RectangleShape2D_xl236")
-
-[node name="Area2D3" type="Area2D" parent="." unique_id=125228963]
-position = Vector2(3617, -153)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D3" unique_id=2093830552]
-position = Vector2(3715, -273)
-shape = SubResource("RectangleShape2D_xl236")
-
-[node name="Area2D4" type="Area2D" parent="." unique_id=403927372]
-position = Vector2(4605, -163)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D4" unique_id=383222718]
-position = Vector2(3715, -273)
-shape = SubResource("RectangleShape2D_xl236")
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]
