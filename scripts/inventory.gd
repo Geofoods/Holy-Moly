@@ -30,29 +30,46 @@ var transition_invulnerable := false
 ## the same position instead of the scene's default spawn point.
 var level_return_positions: Dictionary = {}
 
+## The order each saved position was recorded in, newest last. Lets a rewind
+## judge scenes that sit outside the campaign level list (houses, the village,
+## Slime Valley, the arena) by *when* the mole was last there instead of by a
+## list position they will never have, so a stale exit spot there resets too.
+var level_return_orders: Dictionary = {}
+var _return_sequence := 0
+
 func set_level_return_position(path: String, pos: Vector2) -> void:
 	if not path.is_empty():
 		level_return_positions[path] = pos
+		level_return_orders[path] = _return_sequence
+		_return_sequence += 1
 
 func get_level_return_position(path: String) -> Variant:
 	return level_return_positions.get(path, null)
 
-## Removes cached return positions for campaign levels after the checkpoint level,
-## so re-entering a later level starts from its normal spawn point again.
-## Called both when a station is banked and when a teleport (map travel or a
-## death retry) delivers the mole to one: arriving back rewinds the world past
-## the station to its default spawns.
+## Rewinds the saved positions that come after `path` in the campaign, so
+## re-entering them starts from their normal spawn point again. Called when a
+## teleport (map travel or a death retry) delivers the mole to a station: that
+## is the moment the levels past it go back to their default spawns. Banking a
+## station only remembers where things stood, and the wipe waits until the mole
+## actually comes back to it.
 ##
-## A station outside the level list (a hub like the village or the shop) sits
-## before every level, so it rewinds every level's position. Saved positions for
-## non-level scenes are left alone either way - there is no ordering to place
-## them in.
+## A scene on the level list is judged against the checkpoint's place in the
+## list. A scene off it (a hub, a house, Slime Valley, the arena) has no list
+## position, so it is judged by when it was last saved: anything recorded after
+## the checkpoint scene's own last save counts as past it.
 func clear_level_return_positions_after(path: String) -> void:
 	var checkpoint_index: int = Progress.ACORN_LEVELS.find(path)
+	var boundary_order: int = level_return_orders.get(path, 0)
 	for saved_path in level_return_positions.keys():
+		var after := false
 		var saved_index: int = Progress.ACORN_LEVELS.find(str(saved_path))
-		if saved_index >= 0 and saved_index > checkpoint_index:
+		if saved_index >= 0:
+			after = checkpoint_index < 0 or saved_index > checkpoint_index
+		else:
+			after = level_return_orders.get(saved_path, 0) > boundary_order
+		if after:
 			level_return_positions.erase(saved_path)
+			level_return_orders.erase(saved_path)
 
 var selected_slot: int = -1:
 	set(value):
@@ -76,6 +93,8 @@ func initialize() -> void:
 func reset() -> void:
 	clear()
 	level_return_positions.clear()
+	level_return_orders.clear()
+	_return_sequence = 0
 	player_health = MAX_HEALTH
 	_initialized = false
 

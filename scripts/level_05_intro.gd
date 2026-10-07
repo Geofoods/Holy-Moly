@@ -83,8 +83,10 @@ func _play_intro(player_camera: Camera2D, snail: Node) -> void:
 
 ## Frees the prisoner if he is still in the level. His own remove_after_dialogue
 ## path may already have taken him, so a node that is already gone is left alone
-## rather than freed a second time.
-func _remove_snail(snail: Node) -> void:
+## rather than freed a second time. The parameter is untyped on purpose: a freed
+## snail fails a `: Node` type check before the body runs, which would raise
+## instead of letting is_instance_valid catch it.
+func _remove_snail(snail) -> void:
 	if is_instance_valid(snail):
 		snail.queue_free()
 

@@ -30,6 +30,10 @@ const SLIDE_DISTANCE := 240.0
 var _full_text := ""
 var _type_tween: Tween
 var _closing := false
+## The scene that opened this box. A box is parented to the tree root rather than
+## the level, so it would otherwise ride into the next scene still on screen; the
+## owner is remembered so it can be cleared when that scene is left.
+var _owner_scene: Node = null
 
 # Optional idle-blink for the portrait: parks on a rest frame and plays the
 # frame list through at random intervals, mirroring the NPC's own blink.
@@ -45,6 +49,8 @@ var _portrait_playing := false
 
 func _ready() -> void:
 	_open_count += 1
+	_owner_scene = get_tree().current_scene
+	get_tree().scene_changed.connect(_on_scene_changed)
 	next_button.pressed.connect(_on_next_pressed)
 	prev_button.pressed.connect(_on_prev_pressed)
 
@@ -168,6 +174,14 @@ func hide_box() -> void:
 	tween.set_parallel(true)
 	tween.tween_property(self, "offset:y", SLIDE_DISTANCE, 0.3).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	tween.tween_property(panel, "modulate:a", 0.0, 0.25)
+
+## A box outlives the level that opened it, so a scene change is the one moment
+## it must not follow. The owner check keeps a box that is opened during a scene
+## change - after current_scene is already the new scene - from clearing itself
+## on that same change.
+func _on_scene_changed() -> void:
+	if get_tree().current_scene != _owner_scene:
+		queue_free()
 
 ## A box can also disappear without hide_box - a scene change mid-line, or the
 ## husked NPC path that never opened one - so the count is released here too and

@@ -355,7 +355,7 @@ func _travel_to(scene_path: String) -> void:
 	Progress.respawn_pending = true
 	# Teleporting rewinds the levels past the destination: they go back to their
 	# default spawn points instead of dropping the mole at an old exit spot when
-	# it treks forward again. Same reset banking a station does.
+	# it treks forward again. The same reset a death to this station does.
 	Inventory.clear_level_return_positions_after(scene_path)
 	Inventory.current_level_path = scene_path
 	_play_teleport_flash()

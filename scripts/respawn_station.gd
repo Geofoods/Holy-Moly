@@ -228,7 +228,10 @@ func _bank() -> void:
 	# way out of a level. The pad decides where the mole actually reappears.
 	var mole := _nearest_mole()
 	var pos := mole.global_position if mole != null else spawn_point()
-	Inventory.clear_level_return_positions_after(scene)
+	# Banking only remembers what the mole has saved: positions recorded from
+	# here on are the ones "after the station", and they are rewound when the
+	# mole actually comes back - by a map teleport here or by a death that
+	# respawns here - not while it is still walking forward.
 	Progress.activate_respawn(scene, pos)
 	_flash = ARRIVE_FLASH
 	_pad_particles.emitting = true

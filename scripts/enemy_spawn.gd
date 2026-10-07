@@ -12,6 +12,11 @@ extends Node
 
 ## How long the pop takes once it starts.
 const DURATION := 0.4
+## Extra slack after the pop before the safety restore fires. The emerge tween
+## normally calls [_restore] on its own; this only matters if that tween is ever
+## interrupted (killed or replaced), which used to leave the enemy hanging in
+## mid-air with gravity switched off.
+const RESTORE_GRACE := 0.15
 ## How far below its resting spot the body starts, so it reads as rising up.
 const RISE := 40.0
 ## Enemies start at (almost) no scale and grow in, rather than appearing whole.
@@ -35,10 +40,20 @@ static func play(enemy: Node2D, delay := 0.0) -> void:
 	var base_visual_pos := visual.position
 	var areas := _disable_areas(enemy)
 
+	enemy.set_meta("spawn_in_restored", false)
 	enemy.set_physics_process(false)
 	enemy.scale = base_scale * START_SCALE
 	enemy.modulate = Color(base_modulate.r + 0.9, base_modulate.g + 0.9, base_modulate.b + 0.9, 0.0)
 	visual.position = base_visual_pos + Vector2(0.0, RISE)
+
+	# Safety net: the emerge tween normally hands the enemy back, but if it is ever
+	# interrupted the enemy would keep its physics off and float forever. This
+	# guarantees the hand-back a moment after the pop would have finished. The
+	# restore is idempotent, so in the normal case this simply does nothing.
+	var tree := enemy.get_tree()
+	if tree != null:
+		# process_always = false so it waits out pauses just like the tween does.
+		tree.create_timer(delay + DURATION + RESTORE_GRACE, false).timeout.connect(_restore.bind(enemy, areas))
 
 	if delay > 0.0:
 		# process_always = false, so the stagger waits out pauses along with the
@@ -68,6 +83,11 @@ static func _emerge(enemy, visual, areas: Array, base_scale: Vector2, base_modul
 static func _restore(enemy, areas: Array) -> void:
 	if not is_instance_valid(enemy):
 		return
+	# The emerge tween and the safety timer both call this; only the first one
+	# should actually flip the switches.
+	if enemy.get_meta("spawn_in_restored", false):
+		return
+	enemy.set_meta("spawn_in_restored", true)
 	enemy.set_physics_process(true)
 	for entry in areas:
 		var area: Area2D = entry[0]
