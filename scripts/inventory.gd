@@ -39,13 +39,19 @@ func get_level_return_position(path: String) -> Variant:
 
 ## Removes cached return positions for campaign levels after the checkpoint level,
 ## so re-entering a later level starts from its normal spawn point again.
+## Called both when a station is banked and when a teleport (map travel or a
+## death retry) delivers the mole to one: arriving back rewinds the world past
+## the station to its default spawns.
+##
+## A station outside the level list (a hub like the village or the shop) sits
+## before every level, so it rewinds every level's position. Saved positions for
+## non-level scenes are left alone either way - there is no ordering to place
+## them in.
 func clear_level_return_positions_after(path: String) -> void:
 	var checkpoint_index: int = Progress.ACORN_LEVELS.find(path)
-	if checkpoint_index < 0:
-		return
 	for saved_path in level_return_positions.keys():
 		var saved_index: int = Progress.ACORN_LEVELS.find(str(saved_path))
-		if saved_index > checkpoint_index:
+		if saved_index >= 0 and saved_index > checkpoint_index:
 			level_return_positions.erase(saved_path)
 
 var selected_slot: int = -1:

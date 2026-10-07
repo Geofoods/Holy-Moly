@@ -16,6 +16,7 @@
 [ext_resource type="PackedScene" uid="uid://dg6omg8f4xhgx" path="res://scenes/snail.tscn" id="15_bj43u"]
 [ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="15_ijuyj"]
 [ext_resource type="PackedScene" uid="uid://dsn8kk2u1nx7s" path="res://scenes/shopkeeper_npc.tscn" id="16_bj43u"]
+[ext_resource type="Script" path="res://scripts/move_hint.gd" id="17_movehint"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.8, 0.68, 0.46, 1)
@@ -204,6 +205,10 @@ skip_if_game_completed = true
 
 [node name="ShopkeeperMole" parent="." unique_id=1821904010 instance=ExtResource("16_bj43u")]
 position = Vector2(4404, -222)
+
+[node name="MoveHint" type="CanvasLayer" parent="." unique_id=987654321]
+layer = 15
+script = ExtResource("17_movehint")
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]

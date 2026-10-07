@@ -27,7 +27,7 @@ const TRAVEL_HUBS: Array[Dictionary] = [
 	{"path": "res://scenes/shopkeeper_item.tscn", "label": "Mole Shopkeeper"},
 	{"path": "res://scenes/level_04.tscn", "label": "Goblin Outpost"},
 	{"path": "res://scenes/level_08.tscn", "label": "Goblin Stronghold"},
-	{"path": "res://scenes/level_10.tscn", "label": "Crystal Switchback"},
+	{"path": "res://scenes/level_10.tscn", "label": "Holy Moly"},
 ]
 
 ## Where the mole has been, the mole has to have got there on foot first, so a
@@ -353,6 +353,10 @@ func _travel_to(scene_path: String) -> void:
 	# nothing here that has to agree with it.
 	Progress.set_respawn(scene_path, Vector2.ZERO)
 	Progress.respawn_pending = true
+	# Teleporting rewinds the levels past the destination: they go back to their
+	# default spawn points instead of dropping the mole at an old exit spot when
+	# it treks forward again. Same reset banking a station does.
+	Inventory.clear_level_return_positions_after(scene_path)
 	Inventory.current_level_path = scene_path
 	_play_teleport_flash()
 	# The overlay has to come down before the wipe takes over, but the tree

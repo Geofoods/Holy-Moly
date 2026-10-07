@@ -12,34 +12,11 @@
 [ext_resource type="PackedScene" uid="uid://oucemvqovkp5" path="res://scenes/npc_mole.tscn" id="14_0hilk"]
 [ext_resource type="PackedScene" uid="uid://cdxu1kg5or16d" path="res://candle.tscn" id="14_wr8iv"]
 [ext_resource type="Script" uid="uid://b0njf1j83ia1l" path="res://scripts/level_exit.gd" id="15_wr8iv"]
+[ext_resource type="PackedScene" uid="uid://d2i1x8x1y6qa" path="res://scenes/pause_menu.tscn" id="16_pausemenu"]
 [ext_resource type="PackedScene" uid="uid://bcd57whed7bys" path="res://chest.tscn" id="chest_res"]
 [ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
 [ext_resource type="PackedScene" uid="uid://3wwhicdeo8hl" path="res://scenes/info_popup.tscn" id="info_popup_res"]
-[ext_resource type="PackedScene" uid="uid://d2i1x8x1y6qa" path="res://scenes/pause_menu.tscn" id="16_pausemenu"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_skipbutton"]
-bg_color = Color(0.8, 0.68, 0.46, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.42, 0.28, 0.14, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_skipbutton_hover"]
-bg_color = Color(0.97, 0.91, 0.78, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.42, 0.28, 0.14, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+[ext_resource type="PackedScene" path="res://scenes/level_intro_banner.tscn" id="level_banner_res"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.8, 0.68, 0.46, 1)
@@ -54,6 +31,30 @@ corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton_hover"]
+bg_color = Color(0.97, 0.91, 0.78, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.42, 0.28, 0.14, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_skipbutton"]
+bg_color = Color(0.8, 0.68, 0.46, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.42, 0.28, 0.14, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_skipbutton_hover"]
 bg_color = Color(0.97, 0.91, 0.78, 1)
 border_width_left = 2
 border_width_top = 2
@@ -170,7 +171,7 @@ dialogue_text_3 = "Left click and point to attack enemies!"
 dialogue_text_4 = "Press the number keys to change item slots in the inventory. Use the item by pressing left click!"
 dialogue_text_5 = "Press shift while on the ground to tunnel and dash!"
 dialogue_text_6 = "Press shift in the air to do a groundpound!"
-dialogue_text_7 = "That's everything you need to know! Keep going right and step into the glowing exit to head to the next level. Good luck down there!"
+dialogue_text_7 = "That's everything you need to know! Keep going right and jump right down into the caves!"
 npc_name = "Grub"
 
 [node name="greeting area" type="Area2D" parent="." unique_id=548195668]
@@ -300,6 +301,8 @@ position = Vector2(3310, -1564)
 
 [node name="chest4" parent="." unique_id=991442522 instance=ExtResource("chest_res")]
 position = Vector2(4040, -1591)
+
+[node name="LevelIntroBanner" parent="." unique_id=1873004402 instance=ExtResource("level_banner_res")]
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]

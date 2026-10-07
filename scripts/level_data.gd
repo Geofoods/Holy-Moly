@@ -9,6 +9,7 @@ const LEVELS: Dictionary = {
 	"res://scenes/level_02.tscn": {
 		"number": 2,
 		"name": "Ant Outskirts",
+		"banner_name": "Starting Depths",
 		"tip": "Ants can climb straight up walls to chase you. Getting to higher ground doesn't automatically lose them.",
 	},
 	"res://scenes/level_03.tscn": {
@@ -49,28 +50,44 @@ const LEVELS: Dictionary = {
 	"res://scenes/level_09.tscn": {
 		"number": 9,
 		"name": "The Corrupted Core",
+		"banner_name": "???",
 		"tip": "Every enemy from your journey can appear here. Stay sharp and don't get surrounded.",
 		"starts_silent": true,
 	},
 	"res://scenes/level_10.tscn": {
 		"number": 10,
 		"name": "Crystal Switchback",
+		"banner_name": "Holy Moly",
 		"tip": "The ledges are safe, but the gaps are not. Keep your momentum and watch for ambushes above.",
-	},
-	"res://scenes/level_11.tscn": {
-		"number": 11,
-		"name": "Beetle Gauntlet",
-		"tip": "Beetles need room to charge. Bait them across the arena, then punish them while they recover.",
-	},
-	"res://scenes/level_12.tscn": {
-		"number": 12,
-		"name": "Lantern Maze",
-		"tip": "Small ledges reward careful jumps. The warm lights mark the safest route through the dark.",
 	},
 }
 
 func get_info(scene_path: String) -> Dictionary:
 	return LEVELS.get(scene_path, {})
+
+## Banner titles for places that are not numbered campaign levels. Mole Village
+## and the tutorial are rooms, not levels - no number, no tip, no results screen -
+## but they still announce themselves on arrival. Keeping them out of LEVELS
+## leaves that registry meaning exactly one thing: "a numbered level the game
+## tracks, tips and scores".
+const AREA_TITLES: Dictionary = {
+	"res://scenes/molevillage.tscn": "Mole Village",
+	"res://scenes/tutorial.tscn": "Surface Caves",
+	"res://scenes/Slime Valley.tscn": "Slime Valley",
+	"res://scenes/The Arena.tscn": "The Arena",
+	"res://scenes/shopkeeper_item.tscn": "The Shopkeeper",
+}
+
+## What an arrival banner should read for a scene: a level's banner override,
+## then its plain name, then an area title. Empty means "no banner at all", which
+## is how every room that carries a banner node it never uses stays quiet.
+func get_banner_title(scene_path: String) -> String:
+	var info := get_info(scene_path)
+	if info.has("banner_name"):
+		return str(info["banner_name"])
+	if info.has("name"):
+		return str(info["name"])
+	return str(AREA_TITLES.get(scene_path, ""))
 
 ## Scenes that arrive with no music at all under them. Kept out of LEVELS on
 ## purpose: LEVELS is also how the game decides what counts as a numbered

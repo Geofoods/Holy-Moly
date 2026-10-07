@@ -5,7 +5,6 @@ const FADE_IN_TIME := 0.35
 const FADE_OUT_TIME := 0.4
 
 @onready var vbox: VBoxContainer = $VBoxContainer
-@onready var level_num_label: Label = $VBoxContainer/LevelNumLabel
 @onready var title_label: Label = $VBoxContainer/TitleLabel
 
 var _tween: Tween = null
@@ -16,14 +15,16 @@ func _ready() -> void:
 	vbox.modulate.a = 0.0
 
 	var scene_path := get_tree().current_scene.scene_file_path
-	var info: Dictionary = LevelData.get_info(scene_path)
-	if info.is_empty():
+	var title := LevelData.get_banner_title(scene_path)
+	if title.is_empty():
 		queue_free()
 		return
 
-	level_num_label.text = "LEVEL %d" % info["number"]
-	title_label.text = info["name"]
+	title_label.text = title
 
+	# Some scenes (level_02, map) carry this node with visible = false, so the
+	# layer has to switch itself on or the banner never appears.
+	visible = true
 	_play()
 
 func _play() -> void:

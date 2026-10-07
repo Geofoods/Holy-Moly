@@ -16,8 +16,6 @@ const ACORN_LEVELS: Array[String] = [
 	"res://scenes/level_hive.tscn",
 	"res://scenes/level_09.tscn",
 	"res://scenes/level_10.tscn",
-	"res://scenes/level_11.tscn",
-	"res://scenes/level_12.tscn",
 ]
 
 ## Scenes the title screen must never offer as "Play Last Level".
@@ -71,6 +69,11 @@ var last_level_scene := ""
 ## to the banked station and consumed once by the mole on arrival, so only the
 ## station the mole is actually arriving at plays the materialise animation.
 var respawn_pending := false
+
+## One-shot tutorial prompt, written the first time the mole village loads so the
+## "WASD to move" hint greets a new save exactly once. Saved rather than held in
+## memory so quitting before the player moves does not bring it back.
+var move_hint_seen := false
 
 var acorn_total := ACORN_LEVELS.size()
 
@@ -165,6 +168,14 @@ func mark_visited(path: String) -> void:
 func has_visited(path: String) -> bool:
 	return visited.has(path)
 
+## Records that the opening movement hint has been shown. Written on sight
+## rather than on dismissal so "never again" holds even if the player quits
+## before ever pressing a key.
+func mark_move_hint_seen() -> void:
+	if not move_hint_seen:
+		move_hint_seen = true
+		save_progress()
+
 func mark_queen_defeated() -> void:
 	if not queen_defeated:
 		queen_defeated = true
@@ -258,6 +269,7 @@ func clear_save_data() -> void:
 	respawn_position = Vector2.ZERO
 	respawn_activated = ""
 	respawn_pending = false
+	move_hint_seen = false
 	last_level_scene = ""
 	acorn_changed.emit()
 	save_progress()
@@ -280,6 +292,7 @@ func save_progress() -> void:
 	cfg.set_value("respawn", "position", respawn_position)
 	cfg.set_value("respawn", "activated", respawn_activated)
 	cfg.set_value("meta", "last_level_scene", last_level_scene)
+	cfg.set_value("meta", "move_hint_seen", move_hint_seen)
 	cfg.save(SAVE_PATH)
 
 func load_progress() -> void:
@@ -307,3 +320,4 @@ func load_progress() -> void:
 		respawn_position = pos
 	respawn_activated = str(cfg.get_value("respawn", "activated", ""))
 	last_level_scene = str(cfg.get_value("meta", "last_level_scene", ""))
+	move_hint_seen = bool(cfg.get_value("meta", "move_hint_seen", false))

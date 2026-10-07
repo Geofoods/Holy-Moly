@@ -285,7 +285,7 @@ const FANFARE_DELAY := 0.35
 const RETIRE_FADE := 0.6
 ## The grand death: the snail defies the mole one last time, then bursts like a
 ## firework show while the box is on screen, and the finale blast frees it.
-const DEATH_CURSE_TEXT := "AHHHH! I SWEAR WHEN I GO TO HELL I WILL DESTROY ALL MOLES"
+const DEATH_CURSE_TEXT := "HOLY MOLY! I SWEAR WHEN I GO TO HELL I WILL DESTROY ALL MOLES"
 ## Mirrors dialogue_box.gd's TYPE_SPEED, so the skip-typing timer matches typing.
 const DIALOGUE_TYPE_SPEED := 0.018
 ## Continuous particle bursts while the final dialogue is open.

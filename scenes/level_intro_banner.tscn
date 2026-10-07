@@ -16,23 +16,11 @@ anchor_bottom = 0.0
 offset_left = -320.0
 offset_top = 24.0
 offset_right = 320.0
-offset_bottom = 170.0
+offset_bottom = 120.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/separation = 12
 alignment = 1
-
-[node name="LevelNumLabel" type="Label" parent="VBoxContainer"]
-layout_mode = 2
-mouse_filter = 2
-theme_override_colors/font_color = Color(0.4, 0.95, 1.0, 1.0)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
-theme_override_constants/outline_size = 3
-theme_override_colors/font_outline_color = Color(0.0, 0.0, 0.0, 0.8)
-horizontal_alignment = 1
-text = "LEVEL 1"
 
 [node name="TitleLabel" type="Label" parent="VBoxContainer"]
 layout_mode = 2

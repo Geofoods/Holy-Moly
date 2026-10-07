@@ -7,11 +7,15 @@ const SNAIL_ZOOM := Vector2(0.9, 0.9)
 signal _snail_dialogue_finished
 
 func _ready() -> void:
+	var snail := get_node_or_null("Snail")
 	if Progress.has_visited(LEVEL_PATH):
+		# The rescue only happens once. A later visit has no cutscene to send the
+		# prisoner off with, so he is cleared here rather than left standing in a
+		# room he has already been saved from.
+		_remove_snail(snail)
 		return
 
 	var player_camera := get_node_or_null("CharacterBody2D2/Camera2D") as Camera2D
-	var snail := get_node_or_null("Snail")
 	if player_camera == null or snail == null:
 		return
 
@@ -60,6 +64,11 @@ func _play_intro(player_camera: Camera2D, snail: Node) -> void:
 	pan_back.tween_property(camera, "zoom", player_camera.zoom, PAN_DURATION).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
 	await pan_back.finished
 
+	# The prisoner's one line is the whole encounter. His own retire fade can be
+	# held up by the cutscene's pause, so the removal is made unconditional here:
+	# the snail is gone the moment control returns to the mole.
+	_remove_snail(snail)
+
 	camera.enabled = false
 	camera.queue_free()
 	player_camera.enabled = true
@@ -71,6 +80,13 @@ func _play_intro(player_camera: Camera2D, snail: Node) -> void:
 	if pause_menu != null:
 		pause_menu.set_process_input(true)
 	get_tree().paused = was_paused
+
+## Frees the prisoner if he is still in the level. His own remove_after_dialogue
+## path may already have taken him, so a node that is already gone is left alone
+## rather than freed a second time.
+func _remove_snail(snail: Node) -> void:
+	if is_instance_valid(snail):
+		snail.queue_free()
 
 func _on_snail_dialogue_closed() -> void:
 	_snail_dialogue_finished.emit()

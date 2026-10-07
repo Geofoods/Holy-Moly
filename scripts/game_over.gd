@@ -134,6 +134,9 @@ func _retry_path() -> String:
 		# Tells the station in the scene we are about to load that this arrival
 		# is a respawn, so it plays the materialise animation.
 		Progress.respawn_pending = true
+		# The mole is being sent back to the station, so the levels past it rewind
+		# to their default spawn points - the same reset banking the station did.
+		Inventory.clear_level_return_positions_after(Progress.respawn_scene)
 		Inventory.current_level_path = Progress.respawn_scene
 		return Progress.respawn_scene
 	var path := Inventory.current_level_path
