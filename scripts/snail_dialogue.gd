@@ -273,6 +273,10 @@ var _death_box: CanvasLayer = null
 var _death_finale_started := false
 var _death_black_hole: Node2D = null
 var _death_credits_started := false
+## Built once and shared by every firework so the death show does not allocate a
+## fresh 32x32 texture (and re-upload it) for each burst - texturing a burst per
+## frame is what made the browser build buckle under the finale.
+var _firework_spark_texture: Texture2D = null
 
 const ITEM_GET := preload("res://scripts/item_get_animation.gd")
 ## Melee weapons have no artwork of their own, so - like the weapon the mole
@@ -288,13 +292,19 @@ const RETIRE_FADE := 0.6
 const DEATH_CURSE_TEXT := "HOLY MOLY! I SWEAR WHEN I GO TO HELL I WILL DESTROY ALL MOLES"
 ## Mirrors dialogue_box.gd's TYPE_SPEED, so the skip-typing timer matches typing.
 const DIALOGUE_TYPE_SPEED := 0.018
-## Continuous particle bursts while the final dialogue is open.
-const DEATH_FIREWORK_LOOP_INTERVAL := 0.45
-const DEATH_FIREWORK_CLUSTER_COUNT := 6
-const DEATH_FIREWORK_PARTICLE_COUNT := 360
+## Continuous particle bursts while the final dialogue is open. Kept intentionally
+## light: the fireworks overlap for the whole dialogue, so the counts here are the
+## single biggest driver of whether the browser can survive the finale.
+const DEATH_FIREWORK_LOOP_INTERVAL := 0.7
+const DEATH_FIREWORK_CLUSTER_COUNT := 4
+const DEATH_FIREWORK_PARTICLE_COUNT := 120
 ## Firework bursts explode inside this radius of the shell rather than on one
 ## fixed point, so the show reads as coming from him.
 const DEATH_FIREWORK_RADIUS_SCALE := 0.42
+## Clamp on how far the shell's size may multiply the per-burst particle counts,
+## so a huge boss body cannot turn each burst into thousands of particles.
+const DEATH_FIREWORK_BLAST_SCALE_MIN := 0.4
+const DEATH_FIREWORK_BLAST_SCALE_MAX := 1.4
 const DEATH_FIREWORK_COLORS: Array[Color] = [
 	Color(0.72, 0.18, 1.0, 1.0), Color(1.0, 0.78, 0.26, 1.0),
 	Color(0.35, 0.85, 1.0, 1.0), Color(1.0, 0.32, 0.48, 1.0),
@@ -2167,6 +2177,8 @@ func _spawn_laser_firework_burst(parent: Node2D, spark_texture: Texture2D, amoun
 	particles.emitting = true
 
 func _make_firework_spark_texture() -> Texture2D:
+	if _firework_spark_texture != null:
+		return _firework_spark_texture
 	const TEXTURE_SIZE := 32
 	var image := Image.create(TEXTURE_SIZE, TEXTURE_SIZE, false, Image.FORMAT_RGBA8)
 	var center := Vector2(TEXTURE_SIZE - 1, TEXTURE_SIZE - 1) * 0.5
@@ -2175,7 +2187,8 @@ func _make_firework_spark_texture() -> Texture2D:
 			var distance := Vector2(x, y).distance_to(center) / (TEXTURE_SIZE * 0.5)
 			var alpha := pow(clampf(1.0 - distance, 0.0, 1.0), 2.0)
 			image.set_pixel(x, y, Color(1.0, 1.0, 1.0, alpha))
-	return ImageTexture.create_from_image(image)
+	_firework_spark_texture = ImageTexture.create_from_image(image)
+	return _firework_spark_texture
 
 func _spit_boss_projectile(mole: Node2D) -> void:
 	# Spawn at the visual center of the corrupted snail, not offset toward its
@@ -2392,7 +2405,7 @@ func _run_death_firework_loop() -> void:
 	while is_inside_tree() and _death_box != null and is_instance_valid(_death_box):
 		await get_tree().create_timer(DEATH_FIREWORK_LOOP_INTERVAL).timeout
 		if is_inside_tree() and _death_box != null and is_instance_valid(_death_box):
-			for burst in 3:
+			for burst in 2:
 				_spawn_death_firework()
 
 ## One firework exploding at a random point on the snail's shell.
@@ -2420,7 +2433,7 @@ func _spawn_death_firework_burst(world_pos: Vector2) -> void:
 	if scene_root == null:
 		return
 	var body_size := _boss_body_size()
-	var blast_scale := maxf(body_size.x, body_size.y) / 460.0
+	var blast_scale := clampf(maxf(body_size.x, body_size.y) / 460.0, DEATH_FIREWORK_BLAST_SCALE_MIN, DEATH_FIREWORK_BLAST_SCALE_MAX)
 	var firework := Node2D.new()
 	firework.z_index = BOSS_LASER_FIREWORK_Z
 	firework.z_as_relative = false
@@ -2448,9 +2461,8 @@ func _death_finale() -> void:
 		return
 	_death_finale_started = true
 	var body_size := _boss_body_size()
-	var blast_scale := maxf(body_size.x, body_size.y) / 460.0
 
-	for i in 10:
+	for i in 6:
 		var offset := Vector2(randf_range(-body_size.x, body_size.x) * 0.5, randf_range(-body_size.y, body_size.y) * 0.5)
 		get_tree().create_timer(randf_range(0.0, 0.4)).timeout.connect(_spawn_death_firework_burst.bind(global_position + offset))
 

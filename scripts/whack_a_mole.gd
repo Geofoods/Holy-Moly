@@ -236,9 +236,17 @@ func _process(delta: float) -> void:
 		_update_whacker(_whackers[i], i, delta)
 
 func _input(event: InputEvent) -> void:
-	if _over or not (event is InputEventKey):
+	if _over:
 		return
-	if event.is_echo() or not event.pressed:
+	# Keyboard presses, and the mobile joystick which sends synthetic
+	# InputEventAction events when a direction starts being held.
+	if event is InputEventKey:
+		if event.is_echo() or not event.pressed:
+			return
+	elif event is InputEventAction:
+		if not event.pressed:
+			return
+	else:
 		return
 	if event.is_action("ui_left"):
 		_try_move(-1, 0)

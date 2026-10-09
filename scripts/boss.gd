@@ -1024,14 +1024,15 @@ func _small_explosion(local_pos: Vector2) -> void:
 		SFX.play("explosion", to_global(local_pos), -13.0, 0.3)
 
 func _pre_big_explosion(local_pos: Vector2, half_w: float, half_h: float) -> void:
-	# Crackling purple bursts race across the heart before the final blast.
-	for i in 7:
+	# Crackling purple bursts race across the heart before the final blast. Counts
+	# stay modest so the finale does not flood the browser with particle nodes.
+	for i in 5:
 		var offset := Vector2(randf_range(-half_w, half_w), randf_range(-half_h, half_h))
 		var particles := CPUParticles2D.new()
 		particles.one_shot = true
 		particles.emitting = true
 		particles.explosiveness = 1.0
-		particles.amount = 24
+		particles.amount = 14
 		particles.lifetime = 0.5
 		particles.direction = Vector2.ZERO
 		particles.spread = 180.0
@@ -1054,15 +1055,15 @@ func _big_explosion(local_pos: Vector2) -> void:
 	var world_pos := to_global(local_pos)
 	# A bright core and overlapping colored shells make the heart burst like a
 	# huge firework instead of a single short-lived puff.
-	_spawn_firework_burst(world_pos, 180, Color(0.82, 0.25, 1.0, 1.0), 980.0, 1.8)
-	_spawn_firework_burst(world_pos, 120, Color(1.0, 0.78, 0.26, 1.0), 760.0, 1.6)
-	_spawn_firework_burst(world_pos + Vector2(-160, -80), 72, Color(0.35, 0.85, 1.0, 1.0), 620.0, 1.5)
-	_spawn_firework_burst(world_pos + Vector2(170, 65), 72, Color(1.0, 0.32, 0.48, 1.0), 620.0, 1.5)
+	_spawn_firework_burst(world_pos, 90, Color(0.82, 0.25, 1.0, 1.0), 980.0, 1.8)
+	_spawn_firework_burst(world_pos, 64, Color(1.0, 0.78, 0.26, 1.0), 760.0, 1.6)
+	_spawn_firework_burst(world_pos + Vector2(-160, -80), 40, Color(0.35, 0.85, 1.0, 1.0), 620.0, 1.5)
+	_spawn_firework_burst(world_pos + Vector2(170, 65), 40, Color(1.0, 0.32, 0.48, 1.0), 620.0, 1.5)
 	for i in 4:
 		var offset := Vector2(randf_range(-300.0, 300.0), randf_range(-220.0, 220.0))
 		var color: Color = [Color(0.9, 0.35, 1.0), Color(1.0, 0.75, 0.25), Color(0.3, 0.8, 1.0), Color(1.0, 0.35, 0.5)][i]
 		get_tree().create_timer(0.18 * (i + 1)).timeout.connect(
-			_spawn_firework_burst.bind(world_pos + offset, 56, color, 560.0, 1.4))
+			_spawn_firework_burst.bind(world_pos + offset, 32, color, 560.0, 1.4))
 	SFX.play("explosion", world_pos, -1.0, 0.05)
 	_shake_cutscene_cam(68.0, 0.9)
 
@@ -1372,7 +1373,7 @@ func _play_death_effect() -> void:
 	var death_particles := CPUParticles2D.new()
 	death_particles.emitting = true
 	death_particles.one_shot = true
-	death_particles.amount = 60
+	death_particles.amount = 32
 	death_particles.lifetime = 1.4
 	death_particles.explosiveness = 1.0
 	death_particles.direction = Vector2.ZERO

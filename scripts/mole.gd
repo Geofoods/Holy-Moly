@@ -770,6 +770,10 @@ func _input(event: InputEvent) -> void:
 		# directly rather than inherited from the pause state.
 		if DialogueBox.is_open():
 			return
+		# Touches on the mobile controls also arrive as emulated mouse clicks;
+		# they belong to the controls, not to the world.
+		if MobileControls.is_over_control(event.position):
+			return
 		var slot := Inventory.selected_slot
 		var item: ItemData = Inventory.slots[slot] if slot >= 0 and slot < Inventory.slots.size() else null
 		if item == null:

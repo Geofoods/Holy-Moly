@@ -5,6 +5,9 @@ extends Node2D
 
 const SHRINK := 0.75
 const MARGIN := 24.0
+## Gap under the coins label when the bar is tucked up under it, which is where
+## it goes while the mobile controls are on (see _reposition).
+const COINS_GAP := 12.0
 
 const BAR_GAP := 0.0     # screen px; 0 tucks the bar into the heart art
 const BAR_WIDTH := 240.0 # screen px
@@ -34,6 +37,7 @@ func _ready() -> void:
 	_build_cracks()
 	Inventory.player_died.connect(_on_player_died)
 	get_viewport().size_changed.connect(_reposition)
+	MobileControls.enabled_changed.connect(_reposition)
 	# Position once after the rest of the HUD has laid itself out.
 	_reposition.call_deferred()
 	_follow_inventory.call_deferred()
@@ -67,6 +71,14 @@ func _hotbar() -> Node:
 		return null
 	return inv
 
+## The coins counter the Shop HUD keeps in the top-left corner. Located by name
+## so this stays a lookup, like the hotbar above.
+func _coins_rect() -> Rect2:
+	var hud := Shop.get_node_or_null("CoinHud") as Control
+	if hud == null:
+		return Rect2()
+	return hud.get_global_rect()
+
 ## The tutorial can move the hotbar at runtime; stay vertically in line with it.
 func _follow_inventory() -> void:
 	var inv := _hotbar()
@@ -79,7 +91,9 @@ func _process(_delta: float) -> void:
 		_last_ratio = ratio
 		queue_redraw()
 
-func _reposition() -> void:
+## Takes the mobile-controls flag when called from its enabled_changed signal,
+## which it ignores in favour of reading the current state itself.
+func _reposition(_is_on: bool = false) -> void:
 	scale = _base_scale * SHRINK
 	var box := _heart_box_size()
 	var vp := get_viewport().get_visible_rect().size
@@ -88,6 +102,12 @@ func _reposition() -> void:
 	if inv != null and inv.has_method("hotbar_center_y"):
 		cy = inv.hotbar_center_y()
 	position = Vector2(MARGIN + box.x / 2.0, cy)
+	# With the mobile controls on, the joystick owns the bottom-left corner the
+	# heart normally lives in, so the whole bar moves up to sit directly below
+	# the coins label instead.
+	var coins := _coins_rect()
+	if MobileControls.enabled and coins.size != Vector2.ZERO:
+		position = Vector2(coins.position.x + box.x / 2.0, coins.end.y + COINS_GAP + box.y / 2.0)
 	queue_redraw()
 
 func _draw() -> void:

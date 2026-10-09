@@ -308,6 +308,29 @@ theme_override_styles/focus = SubResource("StyleBoxFlat_creditsbutton_hover")
 tooltip_text = "Watch the credits roll"
 text = "CREDITS"
 
+[node name="MobileControlsCheck" type="CheckBox" parent="CenterContainer/VBoxContainer/BottomRow"]
+custom_minimum_size = Vector2(280, 48)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0.32, 0.2, 0.08, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_colors/icon_normal_color = Color(0.32, 0.2, 0.08, 1)
+theme_override_colors/icon_hover_color = Color(0.2, 0.12, 0.04, 1)
+theme_override_colors/icon_pressed_color = Color(0.07, 0.45, 0.14, 1)
+theme_override_colors/icon_hover_pressed_color = Color(0.05, 0.55, 0.12, 1)
+theme_override_colors/icon_focus_color = Color(0.07, 0.45, 0.14, 1)
+theme_override_colors/icon_disabled_color = Color(0.28, 0.29, 0.32, 1)
+theme_override_fonts/font = ExtResource("6_es01l")
+theme_override_font_sizes/font_size = 20
+theme_override_constants/icon_max_width = 26
+theme_override_styles/normal = SubResource("StyleBoxFlat_infobutton")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_infobutton_hover")
+theme_override_styles/hover = SubResource("StyleBoxFlat_infobutton_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_infobutton_hover")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_bossrushbutton_locked")
+tooltip_text = "Show the on-screen touch controls (joystick to move and jump, interact, dig dash)"
+text = "MOBILE CONTROLS"
+
 [node name="InfoPopup" parent="." instance=ExtResource("7_infopopup")]
 
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/PlayButton" to="." method="_on_play_pressed"]
@@ -316,4 +339,6 @@ text = "CREDITS"
 [connection signal="pressed" from="CenterContainer/VBoxContainer/BottomRow/ClearSaveButton" to="." method="_on_clear_save_pressed"]
 
 [connection signal="pressed" from="CenterContainer/VBoxContainer/BottomRow/CreditsButton" to="." method="_on_credits_pressed"]
+
+[connection signal="toggled" from="CenterContainer/VBoxContainer/BottomRow/MobileControlsCheck" to="." method="_on_mobile_controls_toggled"]
 

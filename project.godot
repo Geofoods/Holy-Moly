@@ -33,8 +33,6 @@ TileDepth="*res://scripts/tilemap_depth_controller.gd"
 Progress="*res://scripts/progress.gd"
 FrozenTiles="*res://scripts/frozen_tiles.gd"
 Lighting="*res://scripts/scene_lighting.gd"
-VerifySpawn="*res://_verify_spawn.gd"
-Verify56="*res://_verify_56.gd"
 
 [display]
 

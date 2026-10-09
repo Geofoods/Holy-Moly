@@ -148,7 +148,7 @@ position = Vector2(1590, -43)
 
 [node name="Costume7" type="Sprite2D" parent="." unique_id=632085231]
 z_index = 99
-position = Vector2(2260, 634)
+position = Vector2(2341, 717.00006)
 rotation = -0.0016440153
 scale = Vector2(28.012527, 1.717514)
 texture = ExtResource("16_s2rbe")

@@ -29,7 +29,9 @@ func _first(candidates: Array[String]) -> Node:
 func _input(event: InputEvent) -> void:
 	if not player_nearby or is_open:
 		return
-	if event is InputEventKey and event.physical_keycode == KEY_E and event.pressed and not event.echo:
+	# The "interact" action covers both the E key and the mobile interact
+	# button (which sends a synthetic InputEventAction).
+	if event.is_action_pressed("interact"):
 		_open_chest()
 
 func _input_event(viewport: Viewport, event: InputEvent, shape_idx: int) -> void:
