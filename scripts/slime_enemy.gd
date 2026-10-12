@@ -11,7 +11,6 @@ const BIG_SCALE_MULT := 1.6
 const BIG_CHANCE := 0.25
 
 const EnemyDamage := preload("res://scripts/enemy.gd")
-const SlimeScene := preload("res://scenes/slimeenemy.tscn")
 
 
 @export var can_be_big := true
@@ -181,8 +180,9 @@ func die() -> void:
 	tween.tween_callback(queue_free)
 
 func _spawn_split_slimes() -> void:
+	var slime_scene := load("res://scenes/slimeenemy.tscn") as PackedScene
 	for i in 2:
-		var child: CharacterBody2D = SlimeScene.instantiate()
+		var child: CharacterBody2D = slime_scene.instantiate()
 		child.can_be_big = false
 		var offset_x := 30.0 if i == 0 else -30.0
 		child.global_position = global_position + Vector2(offset_x, -16.0)

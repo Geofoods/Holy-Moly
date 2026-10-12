@@ -16,6 +16,21 @@ var _label: Label = null
 var _color_tween: Tween = null
 var _scale_tween: Tween = null
 
+## Menus and end screens where the readout has no place. This autoload is a
+## CanvasLayer that survives scene changes, so a combo still counting down when
+## the player quits to the title screen would otherwise sit on top of the menu.
+## Same list and approach as mobile_controls.gd.
+const HIDDEN_SCENES := [
+	"res://scenes/intro.tscn",
+	"res://scenes/game_over.tscn",
+	"res://scenes/win_screen.tscn",
+	"res://scenes/credits.tscn",
+]
+
+## Scene the readout's visibility is currently derived from.
+var _scene_path := ""
+var _readout_hidden := false
+
 func _ready() -> void:
 	layer = 100
 	_label = Label.new()
@@ -64,13 +79,33 @@ func _kill_label_tweens() -> void:
 	_scale_tween = null
 
 func _process(delta: float) -> void:
+	_refresh_readout_visibility()
 	if combo <= 0:
 		return
 	combo_timer -= delta
 	if combo_timer <= 0.0:
 		_reset_combo()
 		return
+	# The combo value keeps ticking down while a menu is up (only the readout is
+	# hidden), so a return to gameplay shows it again only after the next
+	# increment - the same "hide the label, keep the value" split _on_player_died
+	# makes.
+	if _readout_hidden:
+		return
 	_update_label()
+
+## Hides the readout on menus and end screens. Tracked here rather than pushed
+## from each scene: every way in and out goes through a scene change, so the
+## current scene is the single source of truth (see mobile_controls.gd).
+func _refresh_readout_visibility() -> void:
+	var scene := get_tree().current_scene
+	var path := scene.scene_file_path if scene != null else ""
+	if path == _scene_path:
+		return
+	_scene_path = path
+	_readout_hidden = HIDDEN_SCENES.has(path)
+	if _readout_hidden:
+		_label.visible = false
 
 func increment() -> void:
 	combo += 1

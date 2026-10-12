@@ -226,8 +226,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
 			# A press on an NPC or a chest is an interaction, not a swing.
+			# Declined only - the interactable consumes the press when it acts
+			# on it; consuming here could swallow it first.
 			if TapInteract.is_press_on_any(event):
-				TapInteract.consume(event, self)
 				return
 			_mouse_held = true
 			_do_attack()

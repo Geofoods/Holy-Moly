@@ -776,9 +776,10 @@ func _input(event: InputEvent) -> void:
 		if MobileControls.is_over_control(event.position):
 			return
 		# A press on an NPC or a chest belongs to that interactable: it must not
-		# spend the held item or count as a dig_slash either.
+		# spend the held item or count as a dig_slash either. Declined only -
+		# this runs in _input, ahead of _unhandled_input, and consuming the press
+		# here would keep it from ever reaching the interactable itself.
 		if TapInteract.is_press_on_any(event):
-			TapInteract.consume(event, self)
 			return
 		var slot := Inventory.selected_slot
 		var item: ItemData = Inventory.slots[slot] if slot >= 0 and slot < Inventory.slots.size() else null

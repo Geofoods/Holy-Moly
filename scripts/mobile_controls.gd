@@ -12,9 +12,17 @@ extends CanvasLayer
 ## buttons and the joystick drive the InputMap actions through Input.action_*
 ## (for everything polling Input.*) and through synthetic events - an
 ## InputEventKey for the E button, an InputEventAction for the rest (for
-## everything reading events). Touches also arrive as emulated
-## mouse clicks, so clicks landing on a control are swallowed here and skipped
-## in the mole's item handling - tapping a control must not throw a bomb.
+## everything reading events).
+##
+## Every finger that lands off the controls is turned into an emulated mouse
+## click: the finger coming down sends a motion and a press, lifting sends the
+## release. The engine's own touch-to-mouse emulation only ever follows the
+## *first* touch point, so while the controls are on it is switched off here
+## (and switched back on whenever the overlay steps aside for a menu). That is
+## what lets a second finger swing the shovel while the first works the
+## joystick - the engine alone would ignore it. Clicks landing on a control are
+## swallowed here and skipped in the mole's item handling - tapping a control
+## must not throw a bomb.
 ##
 ## On mobile the mouse is kept out of the "dig_slash" action (see
 ## _ensure_actions) and world taps are translated into dig_slash presses here
@@ -84,12 +92,37 @@ var _touches: Dictionary = {}
 const MOUSE_TOUCH_INDEX := -2
 var _stick_touch := -1
 var _world_touch := -1
+
+## Finger (or the real mouse) currently driving the synthetic mouse, and where
+## it last touched. One pointer only, to match the single mouse the rest of the
+## game is written against.
+var _pointer_index := -1
+var _pointer_pos := Vector2.ZERO
+
+## Set when a held pointer had to be released while hidden; a release sent to a
+## paused tree is dropped (the sword skips _unhandled_input while paused), so
+## the mouse is neutralized once more when the overlay comes back.
+var _needs_mouse_release := false
+
+## Whether the engine's own touch-to-mouse emulation was on when the overlay
+## loaded. Restored whenever the overlay steps aside for a menu, whose Buttons
+## still rely on it.
+var _emulate_mouse_baseline := true
+
+## Whether the tree is paused, tracked so a pause (which the overlay itself must
+## keep watching for) can hide the controls and hand the mouse back.
+var _paused := false
+
 var _stick_vector := Vector2.ZERO
 ## Whether the stick is currently holding ui_accept (the jump) down.
 var _jump_held := false
 var _axis_strength: Dictionary = {&"ui_left": 0.0, &"ui_right": 0.0, &"ui_up": 0.0, &"ui_down": 0.0}
 
 func _ready() -> void:
+	# Keep processing while the tree is paused so a pause can still hide the
+	# controls and hand the mouse back to the pause menu (see _refresh_visibility).
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	_emulate_mouse_baseline = Input.is_emulating_mouse_from_touch()
 	layer = 100
 	_build_ui()
 	get_viewport().size_changed.connect(_layout)
@@ -103,9 +136,11 @@ func _ready() -> void:
 func _physics_process(_delta: float) -> void:
 	var path := _current_scene_path()
 	var talking := _dialogue_is_open()
-	if path != _scene_path or talking != _dialogue_open:
+	var paused := get_tree().paused
+	if path != _scene_path or talking != _dialogue_open or paused != _paused:
 		_scene_path = path
 		_dialogue_open = talking
+		_paused = paused
 		_refresh_visibility()
 
 func _current_scene_path() -> String:
@@ -147,10 +182,28 @@ func _dialogue_is_open() -> bool:
 	return false
 
 func _refresh_visibility() -> void:
-	visible = enabled and not HIDDEN_SCENES.has(_scene_path) and not _dialogue_open
+	# Paused means a menu, cutscene or popup owns the screen; the overlay sits
+	# that out too, so the mouse can go back to driving their Buttons.
+	visible = enabled and not HIDDEN_SCENES.has(_scene_path) and not _dialogue_open and not _paused
 	_refresh_field_guide_button()
+	_update_mouse_emulation()
 	if not visible:
 		_release_everything()
+	elif _needs_mouse_release:
+		# Back in play with a still-pressed button from before the pause, whose
+		# release never reached the (then paused) weapon. Clear it now.
+		_needs_mouse_release = false
+		_emulate_mouse_button(false, Vector2(-100000, -100000))
+
+## The overlay emulates its own mouse from every off-control touch (see
+## _engage_pointer), so the engine's single-touch emulation is turned off while
+## the controls are on - otherwise a touch would register twice, and a second
+## finger (digging while the joystick is held) would still be invisible. Handed
+## back whenever the overlay is hidden so menu Buttons keep working.
+func _update_mouse_emulation() -> void:
+	var want := _emulate_mouse_baseline if not visible else false
+	if Input.is_emulating_mouse_from_touch() != want:
+		Input.set_emulate_mouse_from_touch(want)
 
 ## The field guide's "?" button parks in the bottom-right corner, exactly where
 ## the dig/dash control lands, so it steps aside while the on-screen controls are
@@ -248,7 +301,7 @@ func is_over_control(pos: Vector2) -> bool:
 	return false
 
 func _input(event: InputEvent) -> void:
-	if not visible:
+	if not visible or get_tree().paused:
 		return
 	if event is InputEventScreenTouch:
 		if event.pressed:
@@ -259,6 +312,8 @@ func _input(event: InputEvent) -> void:
 	elif event is InputEventScreenDrag:
 		if event.index == _stick_touch:
 			_update_stick(event.position)
+		elif event.index == _pointer_index:
+			_update_pointer(event.position)
 		get_viewport().set_input_as_handled()
 	elif event is InputEventMouseButton:
 		# A touch is also delivered as an emulated mouse click (device
@@ -290,20 +345,22 @@ func _touch_begin(index: int, pos: Vector2) -> void:
 			_touches[index] = action
 			_send(action, true)
 			return
-	# A tap on an NPC or a chest belongs to that interactable: no dig_slash for
-	# it, the tap's emulated mouse click carries the interaction instead. Held
-	# as its own kind so _touch_end has nothing to release.
-	if TapInteract.target_at(pos) != null:
-		_touches[index] = &"tap"
-		return
-	_touches[index] = &"world"
-	if _world_touch == -1:
+	# Any other finger becomes the synthetic mouse: the press reaches the GUI and
+	# the world exactly like a real click, so an NPC or chest is interacted with
+	# and the world is swung at. Held as its own kind so _touch_end knows whether
+	# there is a dig_slash press to release too.
+	var on_target := TapInteract.target_at(pos) != null
+	_touches[index] = &"tap" if on_target else &"world"
+	_engage_pointer(index, pos)
+	if not on_target and _world_touch == -1:
 		_world_touch = index
 		_send(&"dig_slash", true)
 
 func _touch_end(index: int) -> void:
 	if not _touches.has(index):
 		return
+	if index == _pointer_index:
+		_release_pointer()
 	var held = _touches[index]
 	_touches.erase(index)
 	match held:
@@ -318,6 +375,52 @@ func _touch_end(index: int) -> void:
 				_send(&"dig_slash", false)
 		_:
 			_send(held, false)
+
+## Starts the synthetic mouse. Only real fingers (index >= 0) take it over: a
+## real mouse already produces its own events, and the desktop click that
+## reaches here only means the overlay's own buttons were hit.
+func _engage_pointer(index: int, pos: Vector2) -> void:
+	if index < 0 or _pointer_index != -1:
+		return
+	_pointer_index = index
+	_update_pointer(pos)
+	_emulate_mouse_button(true, pos)
+
+func _update_pointer(pos: Vector2) -> void:
+	_pointer_pos = pos
+	_emulate_mouse_motion(pos)
+
+func _release_pointer(offscreen: bool = false) -> void:
+	if _pointer_index == -1:
+		return
+	# A forced cleanup (hiding over a menu, focus loss) releases well off-screen:
+	# the release still clears whatever was holding the button, but cannot land
+	# as a fresh click on a Button that just appeared under the finger.
+	var pos := Vector2(-100000, -100000) if offscreen else _pointer_pos
+	_emulate_mouse_button(false, pos)
+	_pointer_index = -1
+
+## Feeds an emulated mouse event through the same path a real one takes, tagged
+## DEVICE_ID_EMULATION so this overlay's own _input skips it (see there) while
+## the GUI, the mole and the current weapon all receive it unchanged.
+func _emulate_mouse_motion(pos: Vector2) -> void:
+	var ev := InputEventMouseMotion.new()
+	ev.device = InputEvent.DEVICE_ID_EMULATION
+	ev.position = pos
+	ev.global_position = pos
+	Input.parse_input_event(ev)
+	Input.flush_buffered_events()
+
+func _emulate_mouse_button(pressed: bool, pos: Vector2) -> void:
+	var ev := InputEventMouseButton.new()
+	ev.device = InputEvent.DEVICE_ID_EMULATION
+	ev.button_index = MOUSE_BUTTON_LEFT
+	ev.pressed = pressed
+	ev.button_mask = MOUSE_BUTTON_MASK_LEFT if pressed else 0
+	ev.position = pos
+	ev.global_position = pos
+	Input.parse_input_event(ev)
+	Input.flush_buffered_events()
 
 func _update_stick(pos: Vector2) -> void:
 	var center := _stick_base.get_global_rect().get_center()
@@ -424,11 +527,17 @@ func _emit_action_event(action: StringName, pressed: bool, strength: float) -> v
 	Input.flush_buffered_events()
 
 ## Safety cleanup for when the overlay goes away mid-touch (focus loss, or
-## hiding over a menu scene). Releases the action STATE only - injecting
-## release events here would reach focused UI as fresh input: a released
+## hiding over a menu scene). Action and key events are not injected: a released
 ## ui_accept on the focused menu checkbox reads as a click, which re-runs this
-## very cleanup and the two keep triggering each other.
+## very cleanup and the two keep triggering each other. The synthetic mouse is
+## the exception - it is released, but far off-screen, so it clears the held
+## button without landing as a click on whatever appeared underneath.
 func _release_everything() -> void:
+	if _pointer_index != -1:
+		# The release below is dropped if the tree is paused right now (a paused
+		# weapon skips _unhandled_input), so arrange to send it again on return.
+		_needs_mouse_release = true
+	_release_pointer(true)
 	for action in _buttons.keys():
 		if InputMap.has_action(action):
 			Input.action_release(action)

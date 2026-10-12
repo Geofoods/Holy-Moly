@@ -46,13 +46,9 @@ func _ready():
 	clear_save_btn.mouse_exited.connect(_on_button_unhover.bind(clear_save_btn))
 	credits_btn.mouse_entered.connect(_on_button_hover.bind(credits_btn))
 	credits_btn.mouse_exited.connect(_on_button_unhover.bind(credits_btn))
-	var mobile_check = $CenterContainer/VBoxContainer/BottomRow/MobileControlsCheck
-	mobile_check.mouse_entered.connect(_on_button_hover.bind(mobile_check))
-	mobile_check.mouse_exited.connect(_on_button_unhover.bind(mobile_check))
-	# The checkbox starts from the auto-detected state (see mobile_controls.gd).
-	# Set silently so opening the menu does not fire the toggled handler and its
-	# click sound.
-	mobile_check.set_pressed_no_signal(MobileControls.enabled)
+	var settings_btn = $CenterContainer/VBoxContainer/BottomRow/SettingsButton
+	settings_btn.mouse_entered.connect(_on_button_hover.bind(settings_btn))
+	settings_btn.mouse_exited.connect(_on_button_unhover.bind(settings_btn))
 
 	_add_version_label()
 
@@ -175,12 +171,12 @@ func _set_buttons_enabled(enabled: bool) -> void:
 	var boss_rush_btn = $CenterContainer/VBoxContainer/ButtonContainer/BossRushButton
 	var clear_save_btn = $CenterContainer/VBoxContainer/BottomRow/ClearSaveButton
 	var credits_btn = $CenterContainer/VBoxContainer/BottomRow/CreditsButton
-	var mobile_check = $CenterContainer/VBoxContainer/BottomRow/MobileControlsCheck
+	var settings_btn = $CenterContainer/VBoxContainer/BottomRow/SettingsButton
 	play_btn.disabled = not enabled
 	field_guide_btn.disabled = not enabled
 	clear_save_btn.disabled = not enabled
 	credits_btn.disabled = not enabled
-	mobile_check.disabled = not enabled
+	settings_btn.disabled = not enabled
 	# Boss Rush carries its own save-flag gate on top of the intro reveal, so it
 	# has to be re-derived here rather than simply flipped with the others -
 	# otherwise the reveal pass would unlock it on a fresh save. A disabled Button
@@ -194,7 +190,7 @@ func _set_buttons_enabled(enabled: bool) -> void:
 		field_guide_btn.pivot_offset = field_guide_btn.size / 2.0
 		clear_save_btn.pivot_offset = clear_save_btn.size / 2.0
 		credits_btn.pivot_offset = credits_btn.size / 2.0
-		mobile_check.pivot_offset = mobile_check.size / 2.0
+		settings_btn.pivot_offset = settings_btn.size / 2.0
 
 func _on_button_hover(button: Button) -> void:
 	if button.disabled:
@@ -294,10 +290,10 @@ func _clear_save_data() -> void:
 	$CenterContainer/VBoxContainer/BottomRow/ClearSaveButton.disabled = true
 	SFX.play_ui("ui_click", -6.0, 1.2)
 
-## Turns the on-screen touch controls on or off by hand. Auto-detection still
-## picks the starting state (see mobile_controls.gd); this overrides it for the
-## session - a touchscreen desktop can switch them on, a phone can switch them
-## off.
-func _on_mobile_controls_toggled(pressed: bool) -> void:
+## Opens the settings screen, which owns the on-screen touch controls toggle (and
+## anything else added there later). Like the pause menu's SETTINGS button, this
+## just hands the screen over; the screen restores the previous pause state when
+## it closes.
+func _on_settings_pressed() -> void:
 	SFX.play_ui("ui_click", -6.0, 1.2)
-	MobileControls.set_enabled(pressed)
+	SettingsMenu.open()

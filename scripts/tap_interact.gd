@@ -14,11 +14,16 @@ extends RefCounted
 ## Interactables register their sprite in TAP_GROUP (see register). Everything
 ## else either asks is_press_on() about one particular sprite or
 ## is_press_on_any()/target_at() about all of them. A press that lands on an
-## interactable is swallowed with consume(): the viewport is told the event is
-## handled (so the weapons' _unhandled_input never swings at an NPC) and the
-## "dig_slash" action state is dropped (so the polled dig_slash sites - the
-## grapple start and the dash cancel - don't fire off a press that was meant
-## for conversation).
+## interactable is swallowed with consume() by the interactable that acts on
+## it: the viewport is told the event is handled (so the weapons'
+## _unhandled_input never swings at an NPC) and the "dig_slash" action state is
+## dropped (so the polled dig_slash sites - the grapple start and the dash
+## cancel - don't fire off a press that was meant for conversation).
+##
+## Only the interactable calls consume(). Everything else merely declines the
+## press (returns early): marking the event handled in _input - which runs
+## ahead of _unhandled_input - would keep the interactables from ever seeing
+## it.
 
 const TAP_GROUP := &"tap_interactable"
 
@@ -61,8 +66,10 @@ static func target_at(viewport_pos: Vector2) -> Node2D:
 	return null
 
 ## Marks a press as taken by an interactable: no weapon swing, no item use, no
-## dig_slash for it. The node is only asked for its viewport (the one the
-## event is travelling through). Safe to call more than once per event.
+## dig_slash for it. Called only by the interactable that acts on the press (or
+## swallows it as out of reach) - never by the guards that merely decline it.
+## The node is only asked for its viewport (the one the event is travelling
+## through). Safe to call more than once per event.
 static func consume(event: InputEvent, node: Node) -> void:
 	if node != null and is_instance_valid(node) and node.get_viewport() != null:
 		node.get_viewport().set_input_as_handled()

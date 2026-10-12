@@ -19,6 +19,7 @@ func _ready() -> void:
 		"CenterContainer/PausePanel/VBoxContainer/ButtonContainer/ResumeButton",
 		"CenterContainer/PausePanel/VBoxContainer/ButtonContainer/FieldGuideButton",
 		"CenterContainer/PausePanel/VBoxContainer/ButtonContainer/MapButton",
+		"CenterContainer/PausePanel/VBoxContainer/ButtonContainer/SettingsButton",
 		"CenterContainer/PausePanel/VBoxContainer/ButtonContainer/MainMenuButton",
 	]:
 		var button := get_node(button_path) as Button
@@ -34,6 +35,10 @@ func _input(event: InputEvent) -> void:
 			# The map overlay pauses the tree as well. Toggling here too would
 			# leave this menu's own flag out of step with the tree's.
 			if MapOverlay.is_map_open():
+				return
+			# Likewise the settings screen takes the screen over while leaving this
+			# menu paused underneath; the pause key belongs to it until it closes.
+			if SettingsMenu.is_open:
 				return
 			toggle_pause()
 			get_tree().root.set_input_as_handled()
@@ -106,6 +111,7 @@ func _set_input_enabled(enabled: bool) -> void:
 	button_container.get_node("ResumeButton").disabled = not enabled
 	button_container.get_node("FieldGuideButton").disabled = not enabled
 	button_container.get_node("MapButton").disabled = not enabled
+	button_container.get_node("SettingsButton").disabled = not enabled
 	button_container.get_node("MainMenuButton").disabled = not enabled
 
 func _on_background_input(event: InputEvent) -> void:
@@ -125,6 +131,12 @@ func _on_field_guide_pressed() -> void:
 ## alone; closing the map brings this menu straight back.
 func _on_map_pressed() -> void:
 	MapOverlay.open_map()
+
+## Hands the screen to the settings overlay. Like the map, this menu is already
+## paused by the time the button can be pressed, so settings opens over it and
+## leaves the pause alone; closing settings brings this menu straight back.
+func _on_settings_pressed() -> void:
+	SettingsMenu.open()
 
 func _on_main_menu_pressed() -> void:
 	get_tree().paused = false
