@@ -3,23 +3,27 @@ extends CanvasLayer
 ## On-screen touch controls, shown only when the game is running on a mobile
 ## device (phone or tablet). The left thumb gets a virtual joystick that drives
 ## the ui_* movement actions with analog strength and jumps when it is pushed
-## up; the right thumb gets interact (moles, chests, doors, ...) and a dig dash
-## button that doubles as
-## the ground pound while airborne, exactly like Shift does on desktop.
+## up; the right thumb gets an E button, which injects a real E key press so
+## moles, chests, doors, ... react exactly as they do to the E key, plus a dig
+## dash button that doubles as the ground pound while airborne, exactly like
+## Shift does on desktop.
 ##
 ## Touches are turned into input the rest of the game already understands:
 ## buttons and the joystick drive the InputMap actions through Input.action_*
-## (for everything polling Input.*) and through synthetic InputEventAction
-## events (for everything reading events). Touches also arrive as emulated
+## (for everything polling Input.*) and through synthetic events - an
+## InputEventKey for the E button, an InputEventAction for the rest (for
+## everything reading events). Touches also arrive as emulated
 ## mouse clicks, so clicks landing on a control are swallowed here and skipped
 ## in the mole's item handling - tapping a control must not throw a bomb.
 ##
 ## On mobile the mouse is kept out of the "dig_slash" action (see
 ## _ensure_actions) and world taps are translated into dig_slash presses here
-## instead, so a tap on a control can never swing the shovel.
+## instead, so a tap on a control can never swing the shovel. A tap on an NPC
+## or a chest is not a world tap at all: it is that interactable's click.
 
 const CIRCLE_TEX := preload("res://Default/button_circle.png")
 const BURST_ICON := preload("res://Defaulticons/icon_burst.png")
+const TapInteract := preload("res://scripts/tap_interact.gd")
 
 ## Dialogue boxes park over the bottom of the screen, right on top of the
 ## buttons, so the overlay steps aside while one is open - otherwise a tap on
@@ -74,6 +78,10 @@ var _buttons: Dictionary = {}
 ## Touch index -> what that finger is holding: a button action, &"stick" or
 ## &"world" (a tap on the game world itself).
 var _touches: Dictionary = {}
+## Index a real mouse uses among the touch points, so a click and a finger share
+## the same begin/end/lookup paths. Real touches have index >= 0, so a negative
+## value never collides.
+const MOUSE_TOUCH_INDEX := -2
 var _stick_touch := -1
 var _world_touch := -1
 var _stick_vector := Vector2.ZERO
@@ -140,8 +148,22 @@ func _dialogue_is_open() -> bool:
 
 func _refresh_visibility() -> void:
 	visible = enabled and not HIDDEN_SCENES.has(_scene_path) and not _dialogue_open
+	_refresh_field_guide_button()
 	if not visible:
 		_release_everything()
+
+## The field guide's "?" button parks in the bottom-right corner, exactly where
+## the dig/dash control lands, so it steps aside while the on-screen controls are
+## on. Hidden rather than disabled: with the controls off it must come back, and
+## a hidden Control swallows no clicks either way. Located by name under the
+## current scene so this stays a lookup, like heart_hud.gd's HUD nodes.
+func _refresh_field_guide_button() -> void:
+	var scene := get_tree().current_scene
+	if scene == null:
+		return
+	var button := scene.find_child("InfoButton", true, false) as CanvasItem
+	if button != null:
+		button.visible = not enabled
 
 ## Keeps left clicks out of "dig_slash" on touch devices: every tap would
 ## otherwise press it too. mole.gd only binds the mouse to dig_slash when the
@@ -157,7 +179,7 @@ func _build_ui() -> void:
 	_stick_knob = _make_circle(STICK_KNOB_SIZE, 0.85)
 	add_child(_stick_knob)
 	_buttons[&"dig_dash"] = _make_button(&"dig_dash", BURST_ICON, BUTTON_SIZE, "")
-	_buttons[&"interact"] = _make_button(&"interact", null, SMALL_BUTTON_SIZE, "USE")
+	_buttons[&"interact"] = _make_button(&"interact", null, SMALL_BUTTON_SIZE, "E")
 	_layout()
 
 func _make_circle(size: float, alpha: float) -> TextureRect:
@@ -239,12 +261,23 @@ func _input(event: InputEvent) -> void:
 			_update_stick(event.position)
 		get_viewport().set_input_as_handled()
 	elif event is InputEventMouseButton:
-		# A touch is also delivered as an emulated mouse click. Anything that
-		# lands on a control belongs to it, so keep the click away from the
-		# world. (mole.gd guards its own _input handler separately:
+		# A touch is also delivered as an emulated mouse click (device
+		# DEVICE_ID_EMULATION); the touch branch above already handled that, so
+		# only a real mouse drives the controls here - which is what lets the
+		# on-screen buttons be clicked on desktop.
+		if event.device != InputEvent.DEVICE_ID_EMULATION and event.button_index == MOUSE_BUTTON_LEFT:
+			if event.pressed:
+				_touch_begin(MOUSE_TOUCH_INDEX, event.position)
+			else:
+				_touch_end(MOUSE_TOUCH_INDEX)
+		# Anything that lands on a control belongs to it, so keep the click away
+		# from the world. (mole.gd guards its own _input handler separately:
 		# set_input_as_handled() does not stop other _input callbacks.)
 		if is_over_control(event.position):
 			get_viewport().set_input_as_handled()
+	elif event is InputEventMouseMotion:
+		if _stick_touch == MOUSE_TOUCH_INDEX:
+			_update_stick(event.position)
 
 func _touch_begin(index: int, pos: Vector2) -> void:
 	if _stick_base.get_global_rect().has_point(pos):
@@ -257,6 +290,12 @@ func _touch_begin(index: int, pos: Vector2) -> void:
 			_touches[index] = action
 			_send(action, true)
 			return
+	# A tap on an NPC or a chest belongs to that interactable: no dig_slash for
+	# it, the tap's emulated mouse click carries the interaction instead. Held
+	# as its own kind so _touch_end has nothing to release.
+	if TapInteract.target_at(pos) != null:
+		_touches[index] = &"tap"
+		return
 	_touches[index] = &"world"
 	if _world_touch == -1:
 		_world_touch = index
@@ -271,6 +310,8 @@ func _touch_end(index: int) -> void:
 		&"stick":
 			_stick_touch = -1
 			_reset_stick()
+		&"tap":
+			pass
 		&"world":
 			if _world_touch == index:
 				_world_touch = -1
@@ -342,6 +383,18 @@ func _set_axis(action: StringName, strength: float) -> void:
 		_emit_action_event(action, strength > 0.0, 1.0 if strength > 0.0 else 0.0)
 
 func _send(action: StringName, pressed: bool) -> void:
+	# The E control stands in for the E key rather than firing the interact
+	# action directly. The injected key event is what chests (via _input) and
+	# NPCs (via _unhandled_input) match against, and because E is the interact
+	# action's only binding the same event drives that action too. The action
+	# state is set as well so anything polling "interact" still sees the press.
+	if action == &"interact":
+		if pressed:
+			Input.action_press(action, 1.0)
+		else:
+			Input.action_release(action)
+		_send_key(KEY_E, pressed)
+		return
 	if not InputMap.has_action(action):
 		# "dig_dash" only exists once the mole has registered it; a button
 		# press outside a level must not spam errors about it.
@@ -351,6 +404,16 @@ func _send(action: StringName, pressed: bool) -> void:
 	else:
 		Input.action_release(action)
 	_emit_action_event(action, pressed, 1.0 if pressed else 0.0)
+
+## Injects a physical key event, taking the same path a real keyboard press
+## does, so both event readers and action pollers see it. Bound by
+## physical_keycode like the mole's own bindings, so layouts do not matter.
+func _send_key(physical_keycode: Key, pressed: bool) -> void:
+	var ev := InputEventKey.new()
+	ev.physical_keycode = physical_keycode
+	ev.pressed = pressed
+	Input.parse_input_event(ev)
+	Input.flush_buffered_events()
 
 func _emit_action_event(action: StringName, pressed: bool, strength: float) -> void:
 	var ev := InputEventAction.new()

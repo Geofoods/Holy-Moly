@@ -279,6 +279,7 @@ var _death_credits_started := false
 var _firework_spark_texture: Texture2D = null
 
 const ITEM_GET := preload("res://scripts/item_get_animation.gd")
+const TapInteract := preload("res://scripts/tap_interact.gd")
 ## Melee weapons have no artwork of their own, so - like the weapon the mole
 ## actually carries - the fanfare tints the shovel icon with the weapon colour.
 const MELEE_ICON := preload("res://sprites/shovel.png")
@@ -359,6 +360,7 @@ func _ready() -> void:
 		zone.body_entered.connect(_on_body_entered)
 		zone.body_exited.connect(_on_body_exited)
 	_sprite = get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
+	TapInteract.register(_sprite)
 	if _sprite:
 		_original_sprite_scale = _sprite.scale
 		var sprite_texture := _current_sprite_texture()
@@ -509,9 +511,16 @@ func _update_facing() -> void:
 	_sprite.flip_h = (dx > 0.0) == sprite_faces_left
 
 func _unhandled_input(event: InputEvent) -> void:
+	# Pressing on the snail works like the interact key - a click on desktop, a
+	# tap on mobile (taps arrive as emulated mouse clicks).
+	var pressed_on_me := TapInteract.is_press_on(event, _sprite)
+	if pressed_on_me:
+		# The press is spent on the snail even when it cannot talk (out of
+		# reach, hushed): pressing an NPC never swings a shovel at it.
+		TapInteract.consume(event, self)
 	if not _mole_overlapping or _dialogue_open or _hushed or dialogue_text.is_empty():
 		return
-	if event.is_action_pressed("interact"):
+	if event.is_action_pressed("interact") or pressed_on_me:
 		_open_dialogue()
 		get_viewport().set_input_as_handled()
 

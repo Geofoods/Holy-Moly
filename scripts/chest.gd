@@ -3,6 +3,7 @@ extends Area2D
 signal opened
 
 const TileBreakSFX := preload("res://scripts/tile_break_sfx.gd")
+const TapInteract := preload("res://scripts/tap_interact.gd")
 
 const ChestChunks := 8  # number of chest-sized break pieces
 
@@ -18,6 +19,12 @@ var player_nearby := false
 @onready var chest_lock: Control = _first(["Interaction/Lock", "Lock"]) as Control
 @onready var chest_lid: Node2D = _first(["Interaction/Lid", "Lid"]) as Node2D
 @onready var chest_prompt: Label = $PromptLabel
+## The chest body's sprite (a sibling of this Area2D): what a press must land
+## on to count as "pressing the chest".
+@onready var chest_sprite: AnimatedSprite2D = get_node_or_null("../AnimatedSprite2D") as AnimatedSprite2D
+
+func _ready() -> void:
+	TapInteract.register(chest_sprite)
 
 func _first(candidates: Array[String]) -> Node:
 	for path in candidates:
@@ -29,16 +36,26 @@ func _first(candidates: Array[String]) -> Node:
 func _input(event: InputEvent) -> void:
 	if not player_nearby or is_open:
 		return
-	# The "interact" action covers both the E key and the mobile interact
-	# button (which sends a synthetic InputEventAction).
+	# The "interact" action covers both the E key and the mobile E button
+	# (which injects a synthetic E key press).
 	if event.is_action_pressed("interact"):
 		_open_chest()
 
-func _input_event(viewport: Viewport, event: InputEvent, shape_idx: int) -> void:
-	if not player_nearby or is_open:
+## Pressing on the chest works like the interact key - a click on desktop, a
+## tap on mobile (taps arrive as emulated mouse clicks). _unhandled_input, so
+## any UI under the cursor keeps its click. The old Area2D _input_event path is
+## gone: physics picking is off in this project, so it never fired, and this
+## Area2D is the wide proximity zone, not the chest itself - the press must
+## land on the sprite.
+func _unhandled_input(event: InputEvent) -> void:
+	if not TapInteract.is_press_on(event, chest_sprite):
 		return
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-		_open_chest()
+	# The press is spent on the chest even when it cannot open (already open,
+	# player out of reach): pressing a chest never swings a shovel at it.
+	TapInteract.consume(event, self)
+	if not player_nearby or is_open or is_breaking:
+		return
+	_open_chest()
 
 const QUERY_INTERVAL := 0.1
 var _query_timer := 0.0

@@ -1,5 +1,6 @@
 extends CharacterBody2D
 
+const TapInteract = preload("res://scripts/tap_interact.gd")
 const SPEED = 700.0
 const JUMP_VELOCITY = -1400.0
 const JUMP_CUT_MULTIPLIER = 0.4
@@ -773,6 +774,11 @@ func _input(event: InputEvent) -> void:
 		# Touches on the mobile controls also arrive as emulated mouse clicks;
 		# they belong to the controls, not to the world.
 		if MobileControls.is_over_control(event.position):
+			return
+		# A press on an NPC or a chest belongs to that interactable: it must not
+		# spend the held item or count as a dig_slash either.
+		if TapInteract.is_press_on_any(event):
+			TapInteract.consume(event, self)
 			return
 		var slot := Inventory.selected_slot
 		var item: ItemData = Inventory.slots[slot] if slot >= 0 and slot < Inventory.slots.size() else null

@@ -17,7 +17,6 @@ func _ready() -> void:
 	$DimBackground.gui_input.connect(_on_background_input)
 	for button_path in [
 		"CenterContainer/PausePanel/VBoxContainer/ButtonContainer/ResumeButton",
-		"CenterContainer/PausePanel/VBoxContainer/ButtonContainer/RestartButton",
 		"CenterContainer/PausePanel/VBoxContainer/ButtonContainer/FieldGuideButton",
 		"CenterContainer/PausePanel/VBoxContainer/ButtonContainer/MapButton",
 		"CenterContainer/PausePanel/VBoxContainer/ButtonContainer/MainMenuButton",
@@ -105,7 +104,6 @@ func _set_input_enabled(enabled: bool) -> void:
 		if button is Button:
 			button.disabled = not enabled
 	button_container.get_node("ResumeButton").disabled = not enabled
-	button_container.get_node("RestartButton").disabled = not enabled
 	button_container.get_node("FieldGuideButton").disabled = not enabled
 	button_container.get_node("MapButton").disabled = not enabled
 	button_container.get_node("MainMenuButton").disabled = not enabled
@@ -116,11 +114,6 @@ func _on_background_input(event: InputEvent) -> void:
 
 func _on_resume_pressed() -> void:
 	toggle_pause()
-
-func _on_restart_pressed() -> void:
-	get_tree().paused = false
-	Inventory.player_health = Inventory.MAX_HEALTH
-	_wipe_to(get_tree().current_scene.scene_file_path)
 
 func _on_field_guide_pressed() -> void:
 	var info_popup = get_parent().get_node_or_null("InfoPopup")
@@ -137,8 +130,8 @@ func _on_main_menu_pressed() -> void:
 	get_tree().paused = false
 	_wipe_to("res://scenes/intro.tscn")
 
-## Leaves and re-enters levels through the same circle wipe the rest of the game
-## uses, so restarting or quitting never hard-cuts.
+## Leaves for the main menu through the same circle wipe the rest of the game
+## uses, so quitting a level never hard-cuts.
 func _wipe_to(path: String) -> void:
 	if path.is_empty():
 		return

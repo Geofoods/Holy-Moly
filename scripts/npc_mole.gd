@@ -13,6 +13,7 @@ const DIG_STUCK_TIME := 0.35
 const DIG_COOLDOWN := 0.55
 
 const TileBreakSFX := preload("res://scripts/tile_break_sfx.gd")
+const TapInteract := preload("res://scripts/tap_interact.gd")
 
 @export var move_speed := 45.0
 @export var min_walk_time := 1.0
@@ -67,6 +68,7 @@ var _dig_cooldown := 0.0
 
 func _ready() -> void:
 	_sprite = get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
+	TapInteract.register(_sprite)
 	_edge_ray = get_node_or_null("EdgeRay") as RayCast2D
 	_interact_area = get_node_or_null("InteractionArea") as Area2D
 	if _interact_area:
@@ -298,9 +300,16 @@ func _update_animation() -> void:
 	_sprite.speed_scale = 1.0 if not _is_paused else 0.0
 
 func _unhandled_input(event: InputEvent) -> void:
+	# Pressing on the mole works like the interact key - a click on desktop, a
+	# tap on mobile (taps arrive as emulated mouse clicks).
+	var pressed_on_me := TapInteract.is_press_on(event, _sprite)
+	if pressed_on_me:
+		# The press is spent on the mole even when no dialogue can open (out of
+		# reach, already talking): pressing an NPC never swings a shovel at it.
+		TapInteract.consume(event, self)
 	if not _mole_nearby or _dialogue_open or dialogue_text.is_empty():
 		return
-	if event.is_action_pressed("interact"):
+	if event.is_action_pressed("interact") or pressed_on_me:
 		_open_dialogue()
 		get_viewport().set_input_as_handled()
 

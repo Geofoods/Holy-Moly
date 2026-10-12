@@ -15,6 +15,7 @@ const AIR_GRAVITY := 2450.0
 const PROMPT_HALF_WIDTH := 190.0
 const PROMPT_HEIGHT := 60.0
 const FONT_PATH := "res://Baby Doll.otf"
+const TapInteract := preload("res://scripts/tap_interact.gd")
 ## Stops a held E key from popping the shop open again the instant it closes.
 const REOPEN_COOLDOWN := 0.4
 ## How long he keeps flapping his mouth once a dialogue opens, in seconds.
@@ -49,6 +50,7 @@ var _settled := false
 
 func _ready() -> void:
 	_sprite = get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
+	TapInteract.register(_sprite)
 	_interact_area = get_node_or_null("InteractionArea") as Area2D
 	if _interact_area:
 		_interact_area.body_entered.connect(_on_body_entered)
@@ -143,9 +145,16 @@ func _on_body_exited(body: Node) -> void:
 		_mole_nearby = false
 
 func _unhandled_input(event: InputEvent) -> void:
+	# Pressing on the stall works like the interact key - a click on desktop, a
+	# tap on mobile (taps arrive as emulated mouse clicks).
+	var pressed_on_me := TapInteract.is_press_on(event, _sprite)
+	if pressed_on_me:
+		# The press is spent on the merchant even when nothing can open (out of
+		# reach, a panel already up): pressing an NPC never swings a shovel at it.
+		TapInteract.consume(event, self)
 	if not _mole_nearby or _dialogue_open or _shop_open or get_tree().paused:
 		return
-	if not event.is_action_pressed("interact"):
+	if not event.is_action_pressed("interact") and not pressed_on_me:
 		return
 	get_viewport().set_input_as_handled()
 	if _reopen_timer > 0.0:

@@ -1,5 +1,7 @@
 extends Node2D
 
+const TapInteract := preload("res://scripts/tap_interact.gd")
+
 var is_swinging := false
 const SWING_ARC := 2.4
 const WINDUP_DURATION := 0.15
@@ -223,6 +225,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
+			# A press on an NPC or a chest is an interaction, not a swing.
+			if TapInteract.is_press_on_any(event):
+				TapInteract.consume(event, self)
+				return
 			_mouse_held = true
 			_do_attack()
 		else:

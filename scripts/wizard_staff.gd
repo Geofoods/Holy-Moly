@@ -1,6 +1,7 @@
 extends Node2D
 
 const BOLT_SCENE := preload("res://scenes/magic_bolt.tscn")
+const TapInteract := preload("res://scripts/tap_interact.gd")
 
 const CRYSTAL := Color(0.7, 0.35, 1.0)
 const WOOD := Color(0.42, 0.26, 0.12)
@@ -30,6 +31,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not visible:
 		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		# A press on an NPC or a chest is an interaction, not a bolt.
+		if TapInteract.is_press_on_any(event):
+			TapInteract.consume(event, self)
+			return
 		_fire()
 
 func _fire() -> void:
