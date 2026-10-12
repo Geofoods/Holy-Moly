@@ -506,6 +506,7 @@ static func _acquire_player(parent: Node) -> AudioStreamPlayer2D:
 	else:
 		p = _pool.pop_back()
 	p.process_mode = Node.PROCESS_MODE_ALWAYS
+	p.bus = &"SFX"
 	parent.add_child(p)
 	return p
 

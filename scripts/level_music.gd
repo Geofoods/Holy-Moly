@@ -231,6 +231,7 @@ func _begin_region_loop() -> void:
 	var incoming := AudioStreamPlayer.new()
 	incoming.stream = outgoing.stream
 	incoming.process_mode = Node.PROCESS_MODE_ALWAYS
+	incoming.bus = &"Music"
 	incoming.volume_db = SILENT_VOLUME_DB
 	add_child(incoming)
 	incoming.play()
@@ -326,6 +327,7 @@ func _update_region_track() -> void:
 	_region_player = AudioStreamPlayer.new()
 	_region_player.stream = load(_region_path)
 	_region_player.process_mode = Node.PROCESS_MODE_ALWAYS
+	_region_player.bus = &"Music"
 	_region_player.volume_db = SILENT_VOLUME_DB
 	add_child(_region_player)
 	# Looped by crossfading the next pass in under this one rather than by
@@ -381,6 +383,7 @@ func play_arena_track(fade_time := 2.5) -> void:
 	_arena_player = AudioStreamPlayer.new()
 	_arena_player.stream = _arena_stream
 	_arena_player.process_mode = Node.PROCESS_MODE_ALWAYS
+	_arena_player.bus = &"Music"
 	_arena_player.volume_db = SILENT_VOLUME_DB
 	add_child(_arena_player)
 	# The theme is shorter than the waves it scores, so it loops rather than
@@ -445,6 +448,7 @@ func _play_vessel_segment(from: float, until: float, fade_time: float) -> void:
 		_vessel_player = AudioStreamPlayer.new()
 		_vessel_player.stream = _vessel_stream
 		_vessel_player.process_mode = Node.PROCESS_MODE_ALWAYS
+		_vessel_player.bus = &"Music"
 		add_child(_vessel_player)
 	_vessel_loop_start = from
 	_vessel_loop_end = until
@@ -550,6 +554,7 @@ func _start_bed() -> void:
 	_player.stream = _stream
 	_player.volume_db = _target_volume
 	_player.process_mode = Node.PROCESS_MODE_ALWAYS
+	_player.bus = &"Music"
 	add_child(_player)
 	_player.finished.connect(_player.play)
 	_player.play()
@@ -569,6 +574,7 @@ func play_boss_track(fade_time := 6.0) -> void:
 	_boss_player = AudioStreamPlayer.new()
 	_boss_player.stream = _boss_stream
 	_boss_player.process_mode = Node.PROCESS_MODE_ALWAYS
+	_boss_player.bus = &"Music"
 	_boss_player.pitch_scale = BOSS_PITCH_SCALE
 	# Starts at the silent floor so the fade in reads as one movement, rather
 	# than a track that lands at full level and then ducks. The long default

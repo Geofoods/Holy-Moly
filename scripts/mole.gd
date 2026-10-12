@@ -304,6 +304,10 @@ func _setup_input_actions() -> void:
 	ev_up.physical_keycode = KEY_UP
 	InputMap.action_add_event("ui_accept", ev_up)
 
+	var ev_space = InputEventKey.new()
+	ev_space.physical_keycode = KEY_SPACE
+	InputMap.action_add_event("ui_accept", ev_space)
+
 	var ev_a = InputEventKey.new()
 	ev_a.physical_keycode = KEY_A
 	InputMap.action_add_event("ui_left", ev_a)

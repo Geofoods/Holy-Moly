@@ -243,6 +243,7 @@ func _start_browse_music() -> void:
 	_browse_music.stream = _browse_music_stream
 	_browse_music.volume_db = -12.0
 	_browse_music.process_mode = Node.PROCESS_MODE_ALWAYS
+	_browse_music.bus = &"Music"
 	add_child(_browse_music)
 	_browse_music.finished.connect(_browse_music.play)
 	_browse_music.play()

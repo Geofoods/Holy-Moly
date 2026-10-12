@@ -6,10 +6,18 @@ extends CanvasLayer
 ## back the way it was found, so opening it from the pause menu leaves that menu
 ## standing when it is dismissed.
 ##
-## Its one control for now is the on-screen touch controls toggle: auto-detection
-## still picks the starting state (see mobile_controls.gd), and this switch
-## overrides it for the session - a touchscreen desktop can switch them on, a
-## phone can switch them off.
+## It carries the on-screen touch controls toggle and a pair of volume sliders.
+## Auto-detection still picks the controls' starting state (see
+## mobile_controls.gd) and this switch overrides it for the session; the sliders
+## drive the SFX and Music buses, kept for the session too.
+
+## Buses the volume sliders drive. Created at startup by _ensure_buses().
+const SFX_BUS := &"SFX"
+const MUSIC_BUS := &"Music"
+
+## Slider floor treated as silence. A slider all the way down mutes the bus
+## outright rather than asking for -inf dB (see _apply_bus_volume).
+const VOLUME_MUTED := 0.0001
 
 var is_open := false
 ## The tree's paused flag before this screen raised it. Opening from the pause
@@ -17,9 +25,16 @@ var is_open := false
 ## pause when the settings screen is dismissed.
 var _was_paused_before := false
 
+## Slider positions (0..1 linear gain), kept for the session so the levels
+## survive the screen being closed and reopened.
+var _sfx_volume := 1.0
+var _music_volume := 1.0
+
 @onready var _dim: ColorRect = $DimBackground
 @onready var _panel: Control = $CenterContainer/Panel
 @onready var _mobile_check: CheckBox = $CenterContainer/Panel/Margin/VBox/MobileControlsCheck
+@onready var _sfx_slider: HSlider = $CenterContainer/Panel/Margin/VBox/SoundEffectsRow/SoundEffectsSlider
+@onready var _music_slider: HSlider = $CenterContainer/Panel/Margin/VBox/MusicRow/MusicSlider
 
 func _ready() -> void:
 	# Keep processing while the tree is paused: this screen is what pauses it
@@ -31,6 +46,16 @@ func _ready() -> void:
 	_panel.scale = Vector2(0.9, 0.9)
 	_panel.call_deferred("set", "pivot_offset", _panel.size / 2.0)
 	_dim.gui_input.connect(_on_dim_input)
+	# Prime the sliders from the stored levels before connecting, so setting them
+	# does not fire the change handlers, then apply the mix once at startup so it
+	# is right before this screen is ever opened.
+	_sfx_slider.value = _sfx_volume
+	_music_slider.value = _music_volume
+	_sfx_slider.value_changed.connect(_on_sfx_volume_changed)
+	_music_slider.value_changed.connect(_on_music_volume_changed)
+	_sfx_slider.drag_ended.connect(_on_sfx_drag_ended)
+	_ensure_buses()
+	_apply_volumes()
 
 func _input(event: InputEvent) -> void:
 	if not is_open:
@@ -97,3 +122,50 @@ func _on_close_pressed() -> void:
 func _on_mobile_controls_toggled(pressed: bool) -> void:
 	SFX.play_ui("ui_click", -6.0, 1.2)
 	MobileControls.set_enabled(pressed)
+
+## Adds the SFX and Music buses if the layout does not already carry them, both
+## routed to Master. Created here at startup rather than in default_bus_layout.tres
+## so they exist before any player is assigned to them - every sound in the game
+## names one of the two.
+func _ensure_buses() -> void:
+	for bus_name in [SFX_BUS, MUSIC_BUS]:
+		if AudioServer.get_bus_index(bus_name) != -1:
+			continue
+		var idx := AudioServer.bus_count
+		AudioServer.add_bus(idx)
+		AudioServer.set_bus_name(idx, bus_name)
+		AudioServer.set_bus_send(idx, &"Master")
+
+## Pushes the stored slider levels onto their buses, so the mix is applied the
+## moment the game starts rather than only once a slider is touched.
+func _apply_volumes() -> void:
+	_apply_bus_volume(SFX_BUS, _sfx_volume)
+	_apply_bus_volume(MUSIC_BUS, _music_volume)
+
+## A slider at zero mutes the bus rather than asking for -inf dB; anything above
+## it maps through the usual logarithm, so the travel feels even across the
+## range instead of doing all of its work near the top.
+func _apply_bus_volume(bus_name: StringName, linear: float) -> void:
+	var idx := AudioServer.get_bus_index(bus_name)
+	if idx < 0:
+		return
+	if linear <= VOLUME_MUTED:
+		AudioServer.set_bus_mute(idx, true)
+		return
+	AudioServer.set_bus_mute(idx, false)
+	AudioServer.set_bus_volume_db(idx, linear_to_db(linear))
+
+func _on_sfx_volume_changed(value: float) -> void:
+	_sfx_volume = value
+	_apply_bus_volume(SFX_BUS, value)
+
+func _on_music_volume_changed(value: float) -> void:
+	_music_volume = value
+	_apply_bus_volume(MUSIC_BUS, value)
+
+## Blips once the sound-effects slider is let go, so the new level can be heard
+## without leaving the screen. On release rather than on every step of the drag,
+## which would machine-gun the click all the way across.
+func _on_sfx_drag_ended(value_changed: bool) -> void:
+	if value_changed:
+		SFX.play_ui("ui_click", -6.0, 1.2)

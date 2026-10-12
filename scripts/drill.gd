@@ -23,6 +23,7 @@ func _start_drill_sound() -> void:
 	drill_player.stream = SFX._sounds["drill"][0]
 	drill_player.volume_db = -8.0
 	drill_player.max_distance = 2000.0
+	drill_player.bus = &"SFX"
 	add_child(drill_player)
 	drill_player.play()
 

@@ -201,6 +201,7 @@ func _play_combo_sound() -> void:
 	player.stream = stream
 	player.volume_db = volume
 	player.pitch_scale = pitch
+	player.bus = &"SFX"
 	SFX.add_child(player)
 	player.play()
 	player.finished.connect(player.queue_free)

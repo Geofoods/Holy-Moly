@@ -70,6 +70,7 @@ func _play_exit_sound() -> void:
 	player.stream = _exit_sound
 	player.volume_db = -6.0
 	player.pitch_scale = 1.8
+	player.bus = &"SFX"
 	SFX.add_child(player)
 	player.play()
 	var tween := SFX.create_tween()
