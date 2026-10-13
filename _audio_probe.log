@@ -1,0 +1,143 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 3.3.0 Core Profile Context 26.1.1.251211 - Compatibility - Using Device: ATI Technologies Inc. - AMD Radeon (TM) Graphics
+
+SCRIPT ERROR: Invalid call. Nonexistent function 'mix' in base 'AudioStreamPlaybackOggVorbis'.
+   at: _bake_pcm (res://scripts/sfx_manager.gd:176)
+   GDScript backtrace (most recent call first):
+       [0] _bake_pcm (res://scripts/sfx_manager.gd:176)
+       [1] pcm (res://scripts/sfx_manager.gd:152)
+       [2] _ready (res://scripts/sfx_manager.gd:56)
+SCRIPT ERROR: Invalid call. Nonexistent function 'mix' in base 'AudioStreamPlaybackOggVorbis'.
+   at: _bake_pcm (res://scripts/sfx_manager.gd:176)
+   GDScript backtrace (most recent call first):
+       [0] _bake_pcm (res://scripts/sfx_manager.gd:176)
+       [1] pcm (res://scripts/sfx_manager.gd:152)
+       [2] _ready (res://scripts/sfx_manager.gd:56)
+SCRIPT ERROR: Invalid call. Nonexistent function 'mix' in base 'AudioStreamPlaybackOggVorbis'.
+   at: _bake_pcm (res://scripts/sfx_manager.gd:176)
+   GDScript backtrace (most recent call first):
+       [0] _bake_pcm (res://scripts/sfx_manager.gd:176)
+       [1] pcm (res://scripts/sfx_manager.gd:152)
+       [2] _ready (res://scripts/sfx_manager.gd:56)
+SCRIPT ERROR: Invalid call. Nonexistent function 'mix' in base 'AudioStreamPlaybackOggVorbis'.
+   at: _bake_pcm (res://scripts/sfx_manager.gd:176)
+   GDScript backtrace (most recent call first):
+       [0] _bake_pcm (res://scripts/sfx_manager.gd:176)
+       [1] pcm (res://scripts/sfx_manager.gd:152)
+       [2] _ready (res://scripts/sfx_manager.gd:56)
+SCRIPT ERROR: Invalid call. Nonexistent function 'mix' in base 'AudioStreamPlaybackOggVorbis'.
+   at: _bake_pcm (res://scripts/sfx_manager.gd:176)
+   GDScript backtrace (most recent call first):
+       [0] _bake_pcm (res://scripts/sfx_manager.gd:176)
+       [1] pcm (res://scripts/sfx_manager.gd:152)
+       [2] _ready (res://scripts/sfx_manager.gd:56)
+SCRIPT ERROR: Invalid call. Nonexistent function 'mix' in base 'AudioStreamPlaybackOggVorbis'.
+   at: _bake_pcm (res://scripts/sfx_manager.gd:176)
+   GDScript backtrace (most recent call first):
+       [0] _bake_pcm (res://scripts/sfx_manager.gd:176)
+       [1] pcm (res://scripts/sfx_manager.gd:152)
+       [2] _ready (res://scripts/sfx_manager.gd:56)
+SCRIPT ERROR: Invalid call. Nonexistent function 'mix' in base 'AudioStreamPlaybackOggVorbis'.
+   at: _bake_pcm (res://scripts/sfx_manager.gd:176)
+   GDScript backtrace (most recent call first):
+       [0] _bake_pcm (res://scripts/sfx_manager.gd:176)
+       [1] pcm (res://scripts/sfx_manager.gd:152)
+       [2] _ready (res://scripts/sfx_manager.gd:56)
+SCRIPT ERROR: Invalid call. Nonexistent function 'mix' in base 'AudioStreamPlaybackOggVorbis'.
+   at: _bake_pcm (res://scripts/sfx_manager.gd:176)
+   GDScript backtrace (most recent call first):
+       [0] _bake_pcm (res://scripts/sfx_manager.gd:176)
+       [1] pcm (res://scripts/sfx_manager.gd:152)
+       [2] _ready (res://scripts/sfx_manager.gd:56)
+SCRIPT ERROR: Invalid call. Nonexistent function 'mix' in base 'AudioStreamPlaybackOggVorbis'.
+   at: _bake_pcm (res://scripts/sfx_manager.gd:176)
+   GDScript backtrace (most recent call first):
+       [0] _bake_pcm (res://scripts/sfx_manager.gd:176)
+       [1] pcm (res://scripts/sfx_manager.gd:152)
+       [2] _ready (res://scripts/sfx_manager.gd:56)
+SCRIPT ERROR: Invalid call. Nonexistent function 'mix' in base 'AudioStreamPlaybackOggVorbis'.
+   at: _bake_pcm (res://scripts/sfx_manager.gd:176)
+   GDScript backtrace (most recent call first):
+       [0] _bake_pcm (res://scripts/sfx_manager.gd:176)
+       [1] pcm (res://scripts/sfx_manager.gd:152)
+       [2] _ready (res://scripts/sfx_manager.gd:56)
+SCRIPT ERROR: Invalid call. Nonexistent function 'mix' in base 'AudioStreamPlaybackOggVorbis'.
+   at: _bake_pcm (res://scripts/sfx_manager.gd:176)
+   GDScript backtrace (most recent call first):
+       [0] _bake_pcm (res://scripts/sfx_manager.gd:176)
+       [1] pcm (res://scripts/sfx_manager.gd:152)
+       [2] _ready (res://scripts/sfx_manager.gd:56)
+SCRIPT ERROR: Invalid call. Nonexistent function 'mix' in base 'AudioStreamPlaybackOggVorbis'.
+   at: _bake_pcm (res://scripts/sfx_manager.gd:176)
+   GDScript backtrace (most recent call first):
+       [0] _bake_pcm (res://scripts/sfx_manager.gd:176)
+       [1] pcm (res://scripts/sfx_manager.gd:152)
+       [2] _ready (res://scripts/sfx_manager.gd:56)
+SCRIPT ERROR: Invalid call. Nonexistent function 'mix' in base 'AudioStreamPlaybackOggVorbis'.
+   at: _bake_pcm (res://scripts/sfx_manager.gd:176)
+   GDScript backtrace (most recent call first):
+       [0] _bake_pcm (res://scripts/sfx_manager.gd:176)
+       [1] pcm (res://scripts/sfx_manager.gd:152)
+       [2] _ready (res://scripts/sfx_manager.gd:56)
+SCRIPT ERROR: Invalid call. Nonexistent function 'mix' in base 'AudioStreamPlaybackOggVorbis'.
+   at: _bake_pcm (res://scripts/sfx_manager.gd:176)
+   GDScript backtrace (most recent call first):
+       [0] _bake_pcm (res://scripts/sfx_manager.gd:176)
+       [1] pcm (res://scripts/sfx_manager.gd:152)
+       [2] _ready (res://scripts/sfx_manager.gd:56)
+SCRIPT ERROR: Invalid call. Nonexistent function 'mix' in base 'AudioStreamPlaybackOggVorbis'.
+   at: _bake_pcm (res://scripts/sfx_manager.gd:176)
+   GDScript backtrace (most recent call first):
+       [0] _bake_pcm (res://scripts/sfx_manager.gd:176)
+       [1] pcm (res://scripts/sfx_manager.gd:152)
+       [2] _ready (res://scripts/sfx_manager.gd:56)
+SCRIPT ERROR: Invalid call. Nonexistent function 'mix' in base 'AudioStreamPlaybackOggVorbis'.
+   at: _bake_pcm (res://scripts/sfx_manager.gd:176)
+   GDScript backtrace (most recent call first):
+       [0] _bake_pcm (res://scripts/sfx_manager.gd:176)
+       [1] pcm (res://scripts/sfx_manager.gd:152)
+       [2] _ready (res://scripts/sfx_manager.gd:56)
+SCRIPT ERROR: Invalid call. Nonexistent function 'mix' in base 'AudioStreamPlaybackOggVorbis'.
+   at: _bake_pcm (res://scripts/sfx_manager.gd:176)
+   GDScript backtrace (most recent call first):
+       [0] _bake_pcm (res://scripts/sfx_manager.gd:176)
+       [1] pcm (res://scripts/sfx_manager.gd:152)
+       [2] _ready (res://scripts/sfx_manager.gd:56)
+SCRIPT ERROR: Invalid call. Nonexistent function 'mix' in base 'AudioStreamPlaybackOggVorbis'.
+   at: _bake_pcm (res://scripts/sfx_manager.gd:176)
+   GDScript backtrace (most recent call first):
+       [0] _bake_pcm (res://scripts/sfx_manager.gd:176)
+       [1] pcm (res://scripts/sfx_manager.gd:152)
+       [2] _ready (res://scripts/sfx_manager.gd:56)
+SCRIPT ERROR: Invalid call. Nonexistent function 'mix' in base 'AudioStreamPlaybackOggVorbis'.
+   at: _bake_pcm (res://scripts/sfx_manager.gd:176)
+   GDScript backtrace (most recent call first):
+       [0] _bake_pcm (res://scripts/sfx_manager.gd:176)
+       [1] pcm (res://scripts/sfx_manager.gd:152)
+       [2] _ready (res://scripts/sfx_manager.gd:56)
+SCRIPT ERROR: Invalid call. Nonexistent function 'mix' in base 'AudioStreamPlaybackOggVorbis'.
+   at: _bake_pcm (res://scripts/sfx_manager.gd:176)
+   GDScript backtrace (most recent call first):
+       [0] _bake_pcm (res://scripts/sfx_manager.gd:176)
+       [1] pcm (res://scripts/sfx_manager.gd:152)
+       [2] _ready (res://scripts/sfx_manager.gd:56)
+SCRIPT ERROR: Invalid call. Nonexistent function 'mix' in base 'AudioStreamPlaybackOggVorbis'.
+   at: _bake_pcm (res://scripts/sfx_manager.gd:176)
+   GDScript backtrace (most recent call first):
+       [0] _bake_pcm (res://scripts/sfx_manager.gd:176)
+       [1] pcm (res://scripts/sfx_manager.gd:152)
+       [2] _ready (res://scripts/sfx_manager.gd:56)
+SCRIPT ERROR: Invalid call. Nonexistent function 'mix' in base 'AudioStreamPlaybackOggVorbis'.
+   at: _bake_pcm (res://scripts/sfx_manager.gd:176)
+   GDScript backtrace (most recent call first):
+       [0] _bake_pcm (res://scripts/sfx_manager.gd:176)
+       [1] pcm (res://scripts/sfx_manager.gd:152)
+       [2] _ready (res://scripts/sfx_manager.gd:56)
+SCRIPT ERROR: Invalid call. Nonexistent function 'mix' in base 'AudioStreamPlaybackOggVorbis'.
+   at: _bake_pcm (res://scripts/sfx_manager.gd:176)
+   GDScript backtrace (most recent call first):
+       [0] _bake_pcm (res://scripts/sfx_manager.gd:176)
+       [1] pcm (res://scripts/sfx_manager.gd:152)
+       [2] _ready (res://scripts/sfx_manager.gd:56)
+PROBE ogg_play_avg_us=574 ogg_max_us=818 wav_play_avg_us=84 wav_max_us=140
+godot_exit=0

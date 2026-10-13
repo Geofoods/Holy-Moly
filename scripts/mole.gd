@@ -250,6 +250,12 @@ func _ready() -> void:
 	_refresh_weapon_visibility()
 	Shop.loadout_changed.connect(_refresh_weapon_visibility)
 	_play_respawn_arrival()
+	# Deferred so the scene root is settled: pre-warm the dirt burst ring now so
+	# the first block broken in the level does not pay the particle setup.
+	call_deferred("_ensure_dirt_bursts")
+	# Same idea for the break sounds: decode them to PCM once, here at level
+	# entry, instead of on the first block of each type broken.
+	TileBreakSFX.prewarm_sounds()
 
 ## A death sends the mole back to the banked respawn station, which plays the
 ## materialise animation. Any other way into a level is instant, so the flag is
@@ -1103,7 +1109,38 @@ func _update_camera_position(delta: float) -> void:
 ## rebuilding the ParticleProcessMaterial (and its ramp) on each burst.
 static var _dirt_material: ParticleProcessMaterial = null
 
+## Dirt bursts are pooled: a fresh GPUParticles2D per break allocated particle
+## buffers mid-gameplay and freed them again a moment later - the web build
+## hitches on exactly that. The ring is built once per mole and each burst is
+## pre-warmed invisible at level start, so the particle setup (and, on web, the
+## particle shader compile) is paid at load instead of on the first block
+## broken. Breaking a block then only repositions a burst and restarts it.
+const DIRT_BURST_POOL := 3
+var _dirt_bursts: Array[GPUParticles2D] = []
+var _dirt_burst_index := 0
+
 func spawn_dirt_particles(world_position: Vector2) -> void:
+	_ensure_dirt_bursts()
+	if _dirt_bursts.is_empty():
+		return
+	_dirt_burst_index = _dirt_burst_index % _dirt_bursts.size()
+	var dirt := _dirt_bursts[_dirt_burst_index]
+	_dirt_burst_index = (_dirt_burst_index + 1) % _dirt_bursts.size()
+	dirt.modulate.a = 1.0
+	dirt.global_position = world_position
+	dirt.restart()
+
+func _ensure_dirt_bursts() -> void:
+	# Bursts live under the scene root, so a scene change frees them - drop the
+	# dead entries and rebuild.
+	for i in range(_dirt_bursts.size() - 1, -1, -1):
+		if not is_instance_valid(_dirt_bursts[i]):
+			_dirt_bursts.remove_at(i)
+	if _dirt_bursts.size() >= DIRT_BURST_POOL:
+		return
+	var host := get_tree().current_scene
+	if host == null:
+		return
 	if _dirt_ramp == null:
 		var fade_gradient := Gradient.new()
 		fade_gradient.set_color(0, Color(1.0, 1.0, 1.0, 1.0))
@@ -1121,17 +1158,19 @@ func spawn_dirt_particles(world_position: Vector2) -> void:
 		_dirt_material.scale_max = 8.0
 		_dirt_material.color = Color(0.45, 0.30, 0.16, 1.0)
 		_dirt_material.color_ramp = _dirt_ramp
-	var dirt := GPUParticles2D.new()
-	dirt.global_position = world_position
-	dirt.one_shot = true
-	dirt.explosiveness = 1.0
-	dirt.amount = DIRT_PARTICLE_AMOUNT
-	dirt.lifetime = DIRT_PARTICLE_LIFETIME
-	dirt.process_material = _dirt_material
-	dirt.z_index = 5
-	get_tree().current_scene.add_child(dirt)
-	dirt.emitting = true
-	get_tree().create_timer(DIRT_PARTICLE_LIFETIME + 0.2).timeout.connect(dirt.queue_free)
+	while _dirt_bursts.size() < DIRT_BURST_POOL:
+		var dirt := GPUParticles2D.new()
+		dirt.one_shot = true
+		dirt.explosiveness = 1.0
+		dirt.amount = DIRT_PARTICLE_AMOUNT
+		dirt.lifetime = DIRT_PARTICLE_LIFETIME
+		dirt.process_material = _dirt_material
+		dirt.z_index = 5
+		# The pre-warm burst is invisible but fully simulated.
+		dirt.modulate.a = 0.0
+		host.add_child(dirt)
+		dirt.emitting = true
+		_dirt_bursts.append(dirt)
 
 
 func spawn_mole_hole() -> void:

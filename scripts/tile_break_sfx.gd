@@ -1,5 +1,10 @@
 extends Node
 
+## The SFX manager owns the PCM baking (SfxManager.pcm): starting a playback on
+## an OGG stream decodes it every play, over a millisecond each, which the web
+## build feels as a hitch every time a block is broken.
+const SfxManager := preload("res://scripts/sfx_manager.gd")
+
 enum TileType { DIRT, STONE, CORRUPTED, CRYSTAL, MUSHROOM, WOOD }
 
 const SOUNDS := {
@@ -244,6 +249,14 @@ const TYPE_COLORS := {
 	TileType.WOOD: [Color(0.55, 0.38, 0.20), Color(0.42, 0.28, 0.14)],
 }
 
+## Decodes every break sound to PCM up front (see SfxManager.pcm), so the first
+## block of each type broken in a level never pays the decode mid-gameplay.
+## Called once per level start by the mole alongside its dirt-burst prewarm.
+static func prewarm_sounds() -> void:
+	for variants: Array in SOUNDS.values():
+		for sound: AudioStream in variants:
+			SfxManager.pcm(sound)
+
 static func get_tile_type(atlas_coords: Vector2i) -> TileType:
 	if TILE_MAP.has(atlas_coords):
 		return TILE_MAP[atlas_coords]
@@ -397,7 +410,7 @@ static func _break_single_decoration_tile(tilemap: TileMap, tile_pos: Vector2i, 
 	var world_pos := tilemap.to_global(tilemap.map_to_local(tile_pos))
 
 	var player := _acquire_player(parent)
-	player.stream = sound
+	player.stream = SfxManager.pcm(sound)
 	player.pitch_scale = randf_range(0.9, 1.1)
 	player.volume_db = -8.0
 	player.global_position = world_pos
@@ -476,7 +489,7 @@ static func _break_single_tile(tilemap: TileMap, tile_pos: Vector2i, atlas_coord
 	# Pooled player: tunneling breaks many tiles per second, so a fresh
 	# AudioStreamPlayer2D allocation per tile causes noticeable alloc churn.
 	var player := _acquire_player(parent)
-	player.stream = sound
+	player.stream = SfxManager.pcm(sound)
 	player.pitch_scale = randf_range(0.9, 1.1)
 	player.volume_db = -6.0
 	player.global_position = world_pos
@@ -499,15 +512,22 @@ const DEBRIS_Z_OVER_BEAM := 30
 static var _pool: Array[AudioStreamPlayer2D] = []
 
 static func _acquire_player(parent: Node) -> AudioStreamPlayer2D:
-	var p: AudioStreamPlayer2D
-	if _pool.is_empty():
+	var p: AudioStreamPlayer2D = null
+	while p == null and not _pool.is_empty():
+		var candidate: AudioStreamPlayer2D = _pool.pop_back()
+		if is_instance_valid(candidate):
+			p = candidate
+	if p == null:
 		p = AudioStreamPlayer2D.new()
 		p.finished.connect(_release_player.bind(p))
-	else:
-		p = _pool.pop_back()
-	p.process_mode = Node.PROCESS_MODE_ALWAYS
-	p.bus = &"SFX"
-	parent.add_child(p)
+		p.process_mode = Node.PROCESS_MODE_ALWAYS
+		p.bus = &"SFX"
+	# Players stay parented between plays - removing and re-adding one per
+	# broken tile is tree churn the web build pays for on every block.
+	if p.get_parent() != parent:
+		if p.get_parent() != null:
+			p.get_parent().remove_child(p)
+		parent.add_child(p)
 	return p
 
 static func _release_player(p: AudioStreamPlayer2D) -> void:
@@ -517,8 +537,6 @@ static func _release_player(p: AudioStreamPlayer2D) -> void:
 	p.stream = null
 	var tree := p.get_tree()
 	if tree != null and tree.current_scene != null and _pool.size() < MAX_POOLED:
-		if p.get_parent():
-			p.get_parent().remove_child(p)
 		_pool.append(p)
 	else:
 		p.queue_free()
@@ -570,63 +588,144 @@ static func spawn_break_particles(tilemap: TileMap, tile_pos: Vector2i, atlas_co
 		var origin := Vector2(atlas_coords) * basis
 		spawn_texture_break_particles(piece_tex, Rect2(origin, basis), world_pos, parent, DEBRIS_COUNT, 18.0, 34.0, debris_z)
 	else:
-		spawn_texture_break_particles(null, Rect2(), world_pos, parent, DEBRIS_COUNT, 18.0, 34.0, debris_z)
+		spawn_texture_break_particles(null, Rect2(), world_pos, parent, DEBRIS_COUNT, 18.0, 34.0, debris_z)## Debris chunks are pooled and re-used out of the tree. Breaking a tile used
+## to allocate and free four RigidBody2D trees each time; on the web build that
+## churn is a visible hitch on every block. A reused chunk is configured while
+## out of the tree and re-added deferred, so call sites that break tiles from
+## physics callbacks (bullets, beetles) keep the same flush-safe contract.
+## There is no live cap: every debris piece a break asks for is spawned.
+const MAX_POOLED_CHUNKS := 64
+
+static var _chunk_pool: Array[RigidBody2D] = []
+## Spawn-order FIFO of chunks currently on screen, for validity pruning.
+static var _live_chunks: Array[RigidBody2D] = []
+static var _chunk_tweens: Dictionary = {}
+
+static func _acquire_chunk(parent: Node) -> RigidBody2D:
+	while not _chunk_pool.is_empty() and not is_instance_valid(_chunk_pool[_chunk_pool.size() - 1]):
+		_chunk_pool.pop_back()
+	while not _live_chunks.is_empty() and not is_instance_valid(_live_chunks[0]):
+		_live_chunks.pop_front()
+	var chunk: RigidBody2D = null
+	if not _chunk_pool.is_empty():
+		chunk = _chunk_pool.pop_back()
+	else:
+		chunk = RigidBody2D.new()
+		chunk.linear_damp = 3.5
+		chunk.angular_damp = 2.0
+		var sprite := Sprite2D.new()
+		sprite.name = &"Piece"
+		chunk.add_child(sprite)
+		var collision := CollisionShape2D.new()
+		collision.name = &"Shape"
+		collision.shape = RectangleShape2D.new()
+		chunk.add_child(collision)
+	_kill_chunk_tween(chunk)
+	chunk.process_mode = Node.PROCESS_MODE_INHERIT
+	chunk.freeze = false
+	chunk.freeze_mode = RigidBody2D.FREEZE_MODE_STATIC
+	chunk.gravity_scale = 3.2
+	chunk.collision_layer = 2
+	chunk.collision_mask = 1
+	chunk.modulate = Color(1, 1, 1, 1)
+	chunk.scale = Vector2.ONE
+	chunk.linear_velocity = Vector2.ZERO
+	chunk.angular_velocity = 0.0
+	_live_chunks.append(chunk)
+	parent.call_deferred("add_child", chunk)
+	return chunk
+
+static func _release_chunk(chunk: RigidBody2D) -> void:
+	if not is_instance_valid(chunk):
+		return
+	# Called from the chunk's own fade tween as its last step - killing that
+	# tween here would abort mid-callback, so only drop the tracking entry.
+	_chunk_tweens.erase(chunk.get_instance_id())
+	_live_chunks.erase(chunk)
+	if chunk.get_parent() != null:
+		chunk.get_parent().remove_child(chunk)
+	chunk.linear_velocity = Vector2.ZERO
+	chunk.angular_velocity = 0.0
+	if _chunk_pool.size() < MAX_POOLED_CHUNKS:
+		_chunk_pool.append(chunk)
+	else:
+		chunk.queue_free()
+
+static func _kill_chunk_tween(chunk: RigidBody2D) -> void:
+	var id := chunk.get_instance_id()
+	var old: Tween = _chunk_tweens.get(id)
+	if old != null and old.is_valid():
+		old.kill()
+	_chunk_tweens.erase(id)
+
+## The unpooled fallback for when there is no tile texture to cut pieces from:
+## a flat dust quad, built and freed as before.
+static func _build_dust_chunk(parent: Node, piece_size: Vector2) -> RigidBody2D:
+	var chunk := RigidBody2D.new()
+	chunk.linear_damp = 3.5
+	chunk.angular_damp = 2.0
+	var dust := Polygon2D.new()
+	dust.polygon = PackedVector2Array([
+		Vector2(-piece_size.x / 2.0, -piece_size.y / 2.0),
+		Vector2(piece_size.x / 2.0, -piece_size.y / 2.0),
+		Vector2(piece_size.x / 2.0, piece_size.y / 2.0),
+		Vector2(-piece_size.x / 2.0, piece_size.y / 2.0),
+	])
+	dust.color = Color(0.72, 0.58, 0.38, 1.0)
+	chunk.add_child(dust)
+	var shape := RectangleShape2D.new()
+	shape.size = piece_size * 0.75
+	var collision := CollisionShape2D.new()
+	collision.shape = shape
+	chunk.add_child(collision)
+	parent.call_deferred("add_child", chunk)
+	return chunk
 
 static func spawn_texture_break_particles(texture: Texture2D, region: Rect2, world_pos: Vector2, parent: Node, count: int = 4, min_size: float = 18.0, max_size: float = 34.0, z_index: int = DEBRIS_Z, suction_center: Vector2 = Vector2.ZERO, suction: bool = false) -> void:
 	if not is_instance_valid(parent):
 		return
+	var use_pieces := texture != null and region.size.x > 0.0 and region.size.y > 0.0
 	for i in range(count):
-		var chunk := RigidBody2D.new()
+		var piece_size := Vector2(randf_range(min_size, max_size), randf_range(min_size, max_size))
+		var chunk: RigidBody2D
+		if use_pieces:
+			chunk = _acquire_chunk(parent)
+			if chunk == null:
+				continue
+		else:
+			chunk = _build_dust_chunk(parent, piece_size)
 		chunk.collision_layer = 0 if suction else 2
 		chunk.collision_mask = 0 if suction else 1
 		chunk.gravity_scale = 0.0 if suction else 3.2
-		chunk.linear_damp = 3.5
-		chunk.angular_damp = 2.0
 		chunk.z_index = z_index
 		if suction:
 			chunk.process_mode = Node.PROCESS_MODE_ALWAYS
 			chunk.freeze = true
 			chunk.freeze_mode = RigidBody2D.FREEZE_MODE_KINEMATIC
-		parent.call_deferred("add_child", chunk)
 		chunk.global_position = world_pos
 		chunk.rotation = randf_range(0.0, TAU)
 
-		var piece_size := Vector2(randf_range(min_size, max_size), randf_range(min_size, max_size))
-		if texture != null and region.size.x > 0.0 and region.size.y > 0.0:
+		if use_pieces:
 			var piece := AtlasTexture.new()
 			piece.atlas = texture
 			var piece_offset := Vector2(
 				randf_range(0.0, maxf(region.size.x - piece_size.x, 0.0)),
 				randf_range(0.0, maxf(region.size.y - piece_size.y, 0.0)))
 			piece.region = Rect2(region.position + piece_offset, piece_size)
-			var sprite := Sprite2D.new()
+			var sprite := chunk.get_node("Piece") as Sprite2D
 			sprite.texture = piece
-			chunk.add_child(sprite)
-		else:
-			var dust := Polygon2D.new()
-			dust.polygon = PackedVector2Array([
-				Vector2(-piece_size.x / 2.0, -piece_size.y / 2.0),
-				Vector2(piece_size.x / 2.0, -piece_size.y / 2.0),
-				Vector2(piece_size.x / 2.0, piece_size.y / 2.0),
-				Vector2(-piece_size.x / 2.0, piece_size.y / 2.0),
-			])
-			dust.color = Color(0.72, 0.58, 0.38, 1.0)
-			chunk.add_child(dust)
-
-		var shape := RectangleShape2D.new()
-		shape.size = piece_size * 0.75
-		var collision := CollisionShape2D.new()
-		collision.shape = shape
-		chunk.add_child(collision)
+			var shape := (chunk.get_node("Shape") as CollisionShape2D).shape as RectangleShape2D
+			shape.size = piece_size * 0.75
 
 		var tween := chunk.create_tween()
+		_chunk_tweens[chunk.get_instance_id()] = tween
 		if suction:
 			var pull_time := clampf(world_pos.distance_to(suction_center) / 1800.0, 0.45, 1.25)
 			tween.set_parallel(true)
 			tween.tween_property(chunk, "global_position", suction_center, pull_time).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
 			tween.tween_property(chunk, "scale", Vector2.ZERO, pull_time).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
 			tween.tween_property(chunk, "modulate:a", 0.0, pull_time)
-			tween.chain().tween_callback(chunk.queue_free)
+			tween.chain().tween_callback(_release_chunk.bind(chunk))
 		else:
 			var angle := -PI / 2.0 + randf_range(-PI / 2.0, PI / 2.0)
 			var speed := randf_range(150.0, 350.0)
@@ -634,7 +733,7 @@ static func spawn_texture_break_particles(texture: Texture2D, region: Rect2, wor
 			chunk.angular_velocity = randf_range(-8.0, 8.0)
 			tween.tween_interval(1.0)
 			tween.tween_property(chunk, "modulate:a", 0.0, 0.5)
-			tween.tween_callback(chunk.queue_free)
+			tween.tween_callback(_release_chunk.bind(chunk))
 
 static func _break_opened_chests_near(parent: Node, world_pos: Vector2, radius: float = 120.0) -> void:
 	if not is_instance_valid(parent):
