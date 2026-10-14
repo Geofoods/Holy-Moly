@@ -492,7 +492,10 @@ static func spawn_death_fragments(enemy: Node2D, visual: Node2D, hit_dir := Vect
 			chunk.add_child(sprite)
 
 			var shape := RectangleShape2D.new()
-			shape.size = piece_size * piece_scale
+			# Facing is baked into the visual as a negative scale.x, so the
+			# piece's magnitude is what the shape wants; the sign only mirrors
+			# the sprite, and a shape size may never be negative.
+			shape.size = (piece_size * piece_scale).abs()
 			var collision := CollisionShape2D.new()
 			collision.shape = shape
 			chunk.add_child(collision)

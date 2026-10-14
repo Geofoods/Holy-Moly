@@ -5,7 +5,7 @@ const HOP_COUNT := 4
 const HOP_HEIGHT := 90.0
 const HOP_DURATION := 1.7
 const GROUND_RATIO := 0.72
-const VERSION := "v0.2beta"
+const VERSION := "v1.0.0"
 ## Where Boss Rush drops the mole. Level 09 is the Corrupted Core, which already
 ## throws every enemy type the journey has met at the player alongside the
 ## Corrupted Heart, so it reads as a rush without needing a scene of its own.

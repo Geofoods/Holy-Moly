@@ -9,3 +9,4 @@ signal enemy_attacked
 signal item_used
 signal dig_dash_started
 signal ground_pound_done
+signal wall_jump_done

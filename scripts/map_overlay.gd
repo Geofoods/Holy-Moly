@@ -24,6 +24,7 @@ const PORTAL_PANEL_WIDTH := 300
 ## Item", and the two levels repeat the names LevelData already gives them.
 const TRAVEL_HUBS: Array[Dictionary] = [
 	{"path": "res://scenes/molevillage.tscn", "label": "Mole Village"},
+	{"path": "res://scenes/tutorial.tscn", "label": "Surface Caves"},
 	{"path": "res://scenes/shopkeeper_item.tscn", "label": "Mole Shopkeeper"},
 	{"path": "res://scenes/level_04.tscn", "label": "Goblin Outpost"},
 	{"path": "res://scenes/level_08.tscn", "label": "Goblin Stronghold"},
@@ -102,7 +103,7 @@ var _art: Texture2D = null
 
 func _init() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	layer = 90
+	layer = 110
 
 func _ready() -> void:
 	get_tree().scene_changed.connect(_on_scene_changed)
@@ -401,7 +402,13 @@ func _checkpoint_status_text() -> String:
 	var checkpoint_scene := Progress.respawn_activated
 	if checkpoint_scene.is_empty():
 		return "NO CHECKPOINT SET"
-	var checkpoint_name := checkpoint_scene.get_file().get_basename().replace("_", " ").capitalize()
+	# Prefer the game's own display name for the place (LevelData carries the
+	# level names and the hub/room titles), so a checkpoint in Surface Caves reads
+	# by the name the player knows rather than the file it lives in. Tidied file
+	# name is the fallback for a scene LevelData does not know.
+	var checkpoint_name := LevelData.get_banner_title(checkpoint_scene)
+	if checkpoint_name.is_empty():
+		checkpoint_name = checkpoint_scene.get_file().get_basename().replace("_", " ").capitalize()
 	return "CHECKPOINT ACTIVE: " + checkpoint_name
 
 ## The art for the scene the player is standing in. Looks the path up rather

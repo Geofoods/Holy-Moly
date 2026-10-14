@@ -16,7 +16,7 @@
 [ext_resource type="PackedScene" uid="uid://dg6omg8f4xhgx" path="res://scenes/snail.tscn" id="15_bj43u"]
 [ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="15_ijuyj"]
 [ext_resource type="PackedScene" uid="uid://dsn8kk2u1nx7s" path="res://scenes/shopkeeper_npc.tscn" id="16_bj43u"]
-[ext_resource type="Script" path="res://scripts/move_hint.gd" id="17_movehint"]
+[ext_resource type="Script" uid="uid://68mlrugbxhiy" path="res://scripts/move_hint.gd" id="17_movehint"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
 bg_color = Color(0.8, 0.68, 0.46, 1)
@@ -152,9 +152,9 @@ position = Vector2(3682, -126)
 
 [node name="Costume7" type="Sprite2D" parent="." unique_id=632085231]
 z_index = 99
-position = Vector2(1736.0002, 557)
+position = Vector2(6499, 185)
 rotation = -0.0016440153
-scale = Vector2(39.52905, 1.717514)
+scale = Vector2(53.885086, 1.717514)
 texture = ExtResource("15_ijuyj")
 
 [node name="ColorRect3" type="ColorRect" parent="Costume7" unique_id=401983242]
@@ -171,21 +171,21 @@ color = Color(0, 0, 0, 1)
 modulate = Color(1, 0.52, 0.52, 1)
 position = Vector2(121, -190)
 scale = Vector2(0.25, 0.25)
-dialogue_text = "I once heard in my dreams that you could press M to open the map. What does that even mean, press M? Does M stand for Mole? In the map you can also fast travel and teleport? Crazy stuff in my head."
+dialogue_text = "Something has gone terribly wrong. Corruption has taken over all of the animals down below in the deep caverns. Please stop them!"
 npc_name = "Duggy"
 
 [node name="NpcMole2" parent="." unique_id=2043288762 instance=ExtResource("14_3j6u0")]
 modulate = Color(0.49, 0.643, 1, 1)
 position = Vector2(719, -58)
 scale = Vector2(0.25, 0.25)
-dialogue_text = "I once saw a grub as long as my paw. It got away... but I still dream about it."
+dialogue_text = "I've gotta warn you, the deeper you go, the harder the corruption is. We don't know what's exactly at the bottom of the caves but it cannot be good!"
 npc_name = "Scoop"
 
 [node name="NpcMole3" parent="." unique_id=1344418850 instance=ExtResource("14_3j6u0")]
 modulate = Color(0.4108, 0.79, 0.61304003, 1)
 position = Vector2(3435, -145)
 scale = Vector2(0.25, 0.25)
-dialogue_text = "Me and my mole friends discovered a new technique called wall jumping! Press jump when you are on a wall and you can jump from the wall!"
+dialogue_text = "A monster you might find is a slime. There are both big and small slimes! Big slimes split into two once killed!"
 npc_name = "Burrow"
 
 [node name="NpcMole4" parent="." unique_id=680839888 instance=ExtResource("14_3j6u0")]

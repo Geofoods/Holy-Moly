@@ -29,11 +29,20 @@ func _mole_overlapping() -> bool:
 func _on_body_entered(body: Node) -> void:
 	if not body.is_in_group("mole") or not _armed:
 		return
+	_mark_tutorial_done_if_leaving()
 	_play_exit_sound()
 	_save_return_position(body)
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 	get_tree().root.add_child(transition)
 	transition.change_to(target_scene)
+
+## Walking out of the tutorial through its exit is what finishing it means, so the
+## one-shot hints are banked here. The exit is a shared script, so the scene is
+## checked first: leaving any other level is not a tutorial completion.
+func _mark_tutorial_done_if_leaving() -> void:
+	var cs := get_tree().current_scene
+	if cs != null and str(cs.scene_file_path).ends_with("tutorial.tscn"):
+		Progress.mark_tutorial_done()
 
 func _on_body_exited(body: Node) -> void:
 	if body.is_in_group("mole"):

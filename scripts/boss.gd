@@ -815,10 +815,7 @@ func _on_intro_dialogue_next() -> void:
 		var box := _dialogue_box
 		_dialogue_box = null
 		box.hide_box()
-		get_tree().create_timer(0.35).timeout.connect(func():
-			if is_instance_valid(box):
-				box.queue_free()
-		)
+		get_tree().create_timer(0.35).timeout.connect(_free_dialogue_box.bind(weakref(box)))
 		_dialogue_finished = true
 		# The bed is already silent by the time the player gets here, so the
 		# theme fades up into the gap the dialogue leaves rather than under it.
@@ -826,6 +823,11 @@ func _on_intro_dialogue_next() -> void:
 		return
 	_dialogue_line_index += 1
 	_show_intro_dialogue_line()
+
+func _free_dialogue_box(box_ref: WeakRef) -> void:
+	var box := box_ref.get_ref() as CanvasLayer
+	if box:
+		box.queue_free()
 
 func _style_next_button_red() -> void:
 	var normal := StyleBoxFlat.new()

@@ -48,12 +48,6 @@ func _ready() -> void:
 	_load("break_wood", ["res://sounds/break_wood_1.ogg", "res://sounds/break_wood_2.ogg", "res://sounds/break_wood_3.ogg"])
 	_load("drill", ["res://sounds/drill.wav"])
 	_load("bomb_tick", ["res://sounds/bomb_tick.wav"])
-	# Bake every short SFX to PCM up front: see pcm(). Done here at boot so the
-	# cost is hidden behind the splash instead of landing mid-gameplay.
-	for key in _sounds:
-		var streams: Array = _sounds[key]
-		for s in streams:
-			pcm(s)
 
 func _load(key: String, paths: Array) -> void:
 	var streams: Array[AudioStream] = []
@@ -71,7 +65,7 @@ func play(key: String, pos: Vector2 = Vector2.ZERO, volume_db: float = -6.0, pit
 	var streams: Array = _sounds[key]
 	var stream: AudioStream = streams[randi() % streams.size()]
 	var player := _acquire_2d()
-	player.stream = pcm(stream)
+	player.stream = stream
 	player.volume_db = volume_db
 	# Godot rejects pitch_scale <= 0, so keep the variation below 1.0: that
 	# guarantees the lowest reachable pitch stays above zero.
@@ -90,8 +84,6 @@ func _acquire_2d() -> AudioStreamPlayer2D:
 	else:
 		p = _pool_2d.pop_back()
 	p.process_mode = Node.PROCESS_MODE_ALWAYS
-	# Sent to the SFX bus so the settings screen's sound-effects slider moves it.
-	p.bus = &"SFX"
 	return p
 
 func _release_2d(p: AudioStreamPlayer2D) -> void:
@@ -111,7 +103,7 @@ func play_ui(key: String, volume_db: float = -8.0, pitch: float = 1.0) -> void:
 	var streams: Array = _sounds[key]
 	var stream: AudioStream = streams[randi() % streams.size()]
 	var player := _acquire_ui()
-	player.stream = pcm(stream)
+	player.stream = stream
 	player.volume_db = volume_db
 	player.pitch_scale = maxf(0.01, pitch)
 	add_child(player)
@@ -125,93 +117,7 @@ func _acquire_ui() -> AudioStreamPlayer:
 	else:
 		p = _pool_ui.pop_back()
 	p.process_mode = Node.PROCESS_MODE_ALWAYS
-	# Sent to the SFX bus so the settings screen's sound-effects slider moves it.
-	p.bus = &"SFX"
 	return p
-
-## Short SFX are baked to PCM once and cached. Starting a playback on an OGG
-## stream instantiates the Vorbis decoder every single play - over a millisecond
-## each, which the web build feels as a hitch (breaking a block plays one of
-## these). A PCM stream's playback instantiation is nearly free. Long or looping
-## streams keep their originals: baking those would trade memory for something
-## started rarely.
-const PCM_BAKE_MAX_SECONDS := 12.0
-
-static var _pcm_cache := {}
-
-static func pcm(stream: AudioStream) -> AudioStream:
-	if stream == null or stream is AudioStreamWAV:
-		return stream
-	if "loop" in stream and stream.loop:
-		return stream
-	if stream.get_length() > PCM_BAKE_MAX_SECONDS:
-		return stream
-	var key := stream.get_instance_id()
-	if _pcm_cache.has(key):
-		return _pcm_cache[key]
-	var baked := _bake_pcm(stream)
-	if baked == null:
-		return stream
-	_pcm_cache[key] = baked
-	return baked
-
-static func _bake_pcm(stream: AudioStream) -> AudioStreamWAV:
-	var playback := stream.instantiate_playback()
-	if playback == null:
-		return null
-	# Pulling frames from an unstarted playback yields silence on some stream
-	# types, so start it from the beginning before the bake pulls its frames.
-	playback.start(0.0)
-	# The old `playback.mix(buffer, scale, frames)` binding no longer exists on
-	# every playback type (it errors on AudioStreamPlaybackOggVorbis); the
-	# script-facing mixer is mix_audio(), which hands back a PackedVector2Array
-	# of frames and optionally advances the position. The legacy call is kept
-	# only as a fallback for engines that still expose it.
-	var use_mix_audio := playback.has_method("mix_audio")
-	var rate := 44100
-	if "mix_rate" in stream:
-		rate = int(stream.mix_rate)
-	# A little slack over the nominal length: resampled streams can produce
-	# slightly more frames than get_length() advertises.
-	var total := int(ceil(stream.get_length() * float(rate))) + 256
-	var floats := PackedFloat32Array()
-	floats.resize(total * 2)
-	var written := 0
-	while written < total:
-		var got := 0
-		if use_mix_audio:
-			var frames: PackedVector2Array = playback.mix_audio(1.0, 1024)
-			got = frames.size()
-			if got > total - written:
-				frames.resize(total - written)
-				got = frames.size()
-			for i in range(got):
-				var frame: Vector2 = frames[i]
-				floats[written * 2] = frame.x
-				floats[written * 2 + 1] = frame.y
-		else:
-			var chunk := PackedFloat32Array()
-			chunk.resize(1024 * 2)
-			got = int(playback.mix(chunk, 1.0, 1024))
-			if got > total - written:
-				got = total - written
-			for i in range(got * 2):
-				floats[written * 2 + i] = chunk[i]
-		if got <= 0:
-			break
-		written += got
-	if written == 0:
-		return null
-	var wav := AudioStreamWAV.new()
-	wav.format = AudioStreamWAV.FORMAT_16_BITS
-	wav.mix_rate = rate
-	wav.stereo = true
-	var bytes := PackedByteArray()
-	bytes.resize(written * 2 * 2)
-	for i in range(written * 2):
-		bytes.encode_s16(i * 2, int(clampf(floats[i], -1.0, 1.0) * 32767.0))
-	wav.data = bytes
-	return wav
 
 func _release_ui(p: AudioStreamPlayer) -> void:
 	if not is_instance_valid(p):

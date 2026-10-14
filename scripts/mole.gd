@@ -253,9 +253,6 @@ func _ready() -> void:
 	# Deferred so the scene root is settled: pre-warm the dirt burst ring now so
 	# the first block broken in the level does not pay the particle setup.
 	call_deferred("_ensure_dirt_bursts")
-	# Same idea for the break sounds: decode them to PCM once, here at level
-	# entry, instead of on the first block of each type broken.
-	TileBreakSFX.prewarm_sounds()
 
 ## A death sends the mole back to the banked respawn station, which plays the
 ## materialise animation. Any other way into a level is instant, so the flag is
@@ -655,6 +652,7 @@ func _physics_process(delta: float) -> void:
 		_wall_jump_lock_timer = WALL_JUMP_LOCK_TIME
 		_wall_coyote_timer = 0.0
 		SFX.play("jump", global_position, -12.0, 0.25)
+		TutorialEvents.wall_jump_done.emit()
 		is_sideways_jump = true
 		air_time = 1.0
 		launched_from_jump = true
@@ -1066,11 +1064,21 @@ func _spawn_potion_mist() -> void:
 	add_child(splash)
 	splash.position = Vector2(0, -30)
 
-	get_tree().create_timer(1.2).timeout.connect(func(): mist.emitting = false)
-	get_tree().create_timer(2.5).timeout.connect(func():
-		if is_instance_valid(mist): mist.queue_free()
-		if is_instance_valid(splash): splash.queue_free()
-	)
+	get_tree().create_timer(1.2).timeout.connect(_stop_mist.bind(weakref(mist)))
+	get_tree().create_timer(2.5).timeout.connect(_free_respawn_effects.bind(weakref(mist), weakref(splash)))
+
+func _stop_mist(mist_ref: WeakRef) -> void:
+	var m := mist_ref.get_ref() as CPUParticles2D
+	if m:
+		m.emitting = false
+
+func _free_respawn_effects(mist_ref: WeakRef, splash_ref: WeakRef) -> void:
+	var m := mist_ref.get_ref() as CPUParticles2D
+	if m:
+		m.queue_free()
+	var s := splash_ref.get_ref() as CPUParticles2D
+	if s:
+		s.queue_free()
 
 func _activate_speed_boost() -> void:
 	speed_boost_active = true

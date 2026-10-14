@@ -34,9 +34,16 @@ const TapInteract := preload("res://scripts/tap_interact.gd")
 @export_multiline var dialogue_text_5 := ""
 @export_multiline var dialogue_text_6 := ""
 @export_multiline var dialogue_text_7 := ""
+@export_multiline var dialogue_text_8 := ""
+@export_multiline var dialogue_text_9 := ""
 @export var npc_name := "Mole"
 @export var portrait_texture: Texture2D = null
 @export var prompt_offset := Vector2(0, -90)
+## Marks this NPC as the tutorial's guide, whose lines are the step-by-step hints.
+## Once the mole has finished the tutorial (Progress.tutorial_done) every line -
+## the walk-in popups and the on-demand press-E greeting alike - stays quiet, so a
+## return trip to the Surface Caves does not replay the whole walkthrough.
+@export var tutorial_hints := false
 
 var _sprite: AnimatedSprite2D = null
 var _edge_ray: RayCast2D = null
@@ -56,6 +63,8 @@ var _fourth_triggered := false
 var _fifth_triggered := false
 var _sixth_triggered := false
 var _seventh_triggered := false
+var _eighth_triggered := false
+var _ninth_triggered := false
 var _active_area := 0
 var _jump_cooldown := 0.0
 var _knockback_velocity := Vector2.ZERO
@@ -111,15 +120,21 @@ func _connect_tutorial_events() -> void:
 	events.item_used.connect(_on_task_event.bind(4))
 	events.dig_dash_started.connect(_on_task_event.bind(5))
 	events.ground_pound_done.connect(_on_task_event.bind(6))
+	events.wall_jump_done.connect(_on_task_event.bind(8))
 
 func _on_task_event(area: int) -> void:
 	if not _dialogue_open or _active_area != area:
 		return
 	_close_dialogue()
 
+## True when this NPC is the tutorial guide and the mole has already finished the
+## tutorial, so none of its lines should play again.
+func _hints_are_spent() -> bool:
+	return tutorial_hints and Progress.tutorial_done
+
 func _process(_delta: float) -> void:
 	if _prompt:
-		_prompt.visible = _mole_nearby and not _dialogue_open and dialogue_text != ""
+		_prompt.visible = _mole_nearby and not _dialogue_open and dialogue_text != "" and not _hints_are_spent()
 		if _prompt.visible:
 			var p := global_position + prompt_offset
 			_prompt.offset_left = p.x - PROMPT_HALF_WIDTH
@@ -307,7 +322,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		# The press is spent on the mole even when no dialogue can open (out of
 		# reach, already talking): pressing an NPC never swings a shovel at it.
 		TapInteract.consume(event, self)
-	if not _mole_nearby or _dialogue_open or dialogue_text.is_empty():
+	if not _mole_nearby or _dialogue_open or dialogue_text.is_empty() or _hints_are_spent():
 		return
 	if event.is_action_pressed("interact") or pressed_on_me:
 		_open_dialogue()
@@ -400,6 +415,32 @@ func on_septenary_area_entered(body: Node) -> void:
 	_active_area = 7
 	_open_dialogue(dialogue_text_7)
 
+## Walljump line: closes itself as soon as the player wall jumps (see
+## TutorialEvents.wall_jump_done).
+func on_octonary_area_entered(body: Node) -> void:
+	if _eighth_triggered or _dialogue_open:
+		return
+	if not body.is_in_group("mole"):
+		return
+	if dialogue_text_8.is_empty():
+		return
+	_eighth_triggered = true
+	_active_area = 8
+	_open_dialogue(dialogue_text_8)
+
+## Map line: like the send-off there is no task event to complete here, so the
+## box only closes when the player dismisses it themselves.
+func on_nonary_area_entered(body: Node) -> void:
+	if _ninth_triggered or _dialogue_open:
+		return
+	if not body.is_in_group("mole"):
+		return
+	if dialogue_text_9.is_empty():
+		return
+	_ninth_triggered = true
+	_active_area = 9
+	_open_dialogue(dialogue_text_9)
+
 func _face_player() -> void:
 	_face_target(_player)
 
@@ -425,9 +466,18 @@ func _text_for_area() -> String:
 			return dialogue_text_6 if not dialogue_text_6.is_empty() else dialogue_text
 		7:
 			return dialogue_text_7 if not dialogue_text_7.is_empty() else dialogue_text
+		8:
+			return dialogue_text_8 if not dialogue_text_8.is_empty() else dialogue_text
+		9:
+			return dialogue_text_9 if not dialogue_text_9.is_empty() else dialogue_text
 	return dialogue_text
 
 func _open_dialogue(text: String = "") -> void:
+	# The central guard: every tutorial line, whether a walk-in area triggered it
+	# or the player pressed E, funnels through here. Silence once the tutorial is
+	# done, so the hints cannot replay on a later visit.
+	if _hints_are_spent():
+		return
 	_dialogue_open = true
 	_dialogue_box = preload("res://scenes/dialogue_box.tscn").instantiate()
 	_dialogue_box.process_mode = PROCESS_MODE_ALWAYS
@@ -456,8 +506,10 @@ func _close_dialogue() -> void:
 	var box := _dialogue_box
 	_dialogue_box = null
 	box.hide_box()
-	get_tree().create_timer(0.35).timeout.connect(func():
-		if is_instance_valid(box):
-			box.queue_free()
-	)
+	get_tree().create_timer(0.35).timeout.connect(_free_dialogue_box.bind(weakref(box)))
 	_dialogue_open = false
+
+func _free_dialogue_box(box_ref: WeakRef) -> void:
+	var box := box_ref.get_ref() as CanvasLayer
+	if box:
+		box.queue_free()

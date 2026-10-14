@@ -9,7 +9,8 @@ extends CanvasLayer
 ## It carries the on-screen touch controls toggle and a pair of volume sliders.
 ## Auto-detection still picks the controls' starting state (see
 ## mobile_controls.gd) and this switch overrides it for the session; the sliders
-## drive the SFX and Music buses, kept for the session too.
+## drive the SFX and Music buses and the levels they land on are saved through
+## Progress, so the mix survives a restart.
 
 ## Buses the volume sliders drive. Created at startup by _ensure_buses().
 const SFX_BUS := &"SFX"
@@ -24,11 +25,6 @@ var is_open := false
 ## menu happens on an already-paused tree, and that menu expects to still own the
 ## pause when the settings screen is dismissed.
 var _was_paused_before := false
-
-## Slider positions (0..1 linear gain), kept for the session so the levels
-## survive the screen being closed and reopened.
-var _sfx_volume := 1.0
-var _music_volume := 1.0
 
 @onready var _dim: ColorRect = $DimBackground
 @onready var _panel: Control = $CenterContainer/Panel
@@ -46,15 +42,26 @@ func _ready() -> void:
 	_panel.scale = Vector2(0.9, 0.9)
 	_panel.call_deferred("set", "pivot_offset", _panel.size / 2.0)
 	_dim.gui_input.connect(_on_dim_input)
-	# Prime the sliders from the stored levels before connecting, so setting them
-	# does not fire the change handlers, then apply the mix once at startup so it
-	# is right before this screen is ever opened.
-	_sfx_slider.value = _sfx_volume
-	_music_slider.value = _music_volume
+	# Prime the sliders before connecting, so setting them does not fire the
+	# change handlers, then apply the mix once at startup so it is right before
+	# this screen is ever opened. Progress has not read the save yet (see below),
+	# so these are the defaults until _on_audio_settings_loaded corrects them.
+	_sfx_slider.value = Progress.sfx_volume
+	_music_slider.value = Progress.music_volume
 	_sfx_slider.value_changed.connect(_on_sfx_volume_changed)
 	_music_slider.value_changed.connect(_on_music_volume_changed)
 	_sfx_slider.drag_ended.connect(_on_sfx_drag_ended)
 	_ensure_buses()
+	_apply_volumes()
+	# Progress owns the saved levels and reads them in its own _ready, which runs
+	# after this one (autoload order), so adopt them once they have arrived.
+	Progress.audio_settings_loaded.connect(_on_audio_settings_loaded)
+
+## Adopts the levels Progress read from disk. Needed because that autoload's
+## _ready runs after this one, so the sliders were primed from the defaults.
+func _on_audio_settings_loaded() -> void:
+	_sfx_slider.set_value_no_signal(Progress.sfx_volume)
+	_music_slider.set_value_no_signal(Progress.music_volume)
 	_apply_volumes()
 
 func _input(event: InputEvent) -> void:
@@ -139,8 +146,8 @@ func _ensure_buses() -> void:
 ## Pushes the stored slider levels onto their buses, so the mix is applied the
 ## moment the game starts rather than only once a slider is touched.
 func _apply_volumes() -> void:
-	_apply_bus_volume(SFX_BUS, _sfx_volume)
-	_apply_bus_volume(MUSIC_BUS, _music_volume)
+	_apply_bus_volume(SFX_BUS, Progress.sfx_volume)
+	_apply_bus_volume(MUSIC_BUS, Progress.music_volume)
 
 ## A slider at zero mutes the bus rather than asking for -inf dB; anything above
 ## it maps through the usual logarithm, so the travel feels even across the
@@ -156,11 +163,11 @@ func _apply_bus_volume(bus_name: StringName, linear: float) -> void:
 	AudioServer.set_bus_volume_db(idx, linear_to_db(linear))
 
 func _on_sfx_volume_changed(value: float) -> void:
-	_sfx_volume = value
+	Progress.set_sfx_volume(value)
 	_apply_bus_volume(SFX_BUS, value)
 
 func _on_music_volume_changed(value: float) -> void:
-	_music_volume = value
+	Progress.set_music_volume(value)
 	_apply_bus_volume(MUSIC_BUS, value)
 
 ## Blips once the sound-effects slider is let go, so the new level can be heard

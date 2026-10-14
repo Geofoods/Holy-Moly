@@ -287,9 +287,7 @@ func _animate_mole_move() -> void:
 		tween.tween_callback(_set_mole_frame.bind(f))
 		tween.tween_interval(MOVE_STEP)
 	tween.tween_interval(0.04)
-	tween.tween_callback(func() -> void:
-		_mole.position = _hole_positions[_index] + Vector2(0, -10.0)
-	)
+	tween.tween_callback(_settle_mole_position)
 	for f in [4, 3, 2, 1, 0]:
 		tween.tween_callback(_set_mole_frame.bind(f))
 		tween.tween_interval(MOVE_STEP)
@@ -372,7 +370,7 @@ func _do_whack(w: Dictionary, i: int) -> void:
 	tween.tween_property(shovel, "position", target_pos + Vector2(0, -26), STRIKE_DURATION).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_CUBIC)
 	tween.tween_property(shovel, "rotation", -0.1, STRIKE_DURATION).set_ease(Tween.EASE_IN)
 	tween.tween_property(shovel, "position", target_pos + Vector2(0, -200), 0.25).set_ease(Tween.EASE_OUT)
-	tween.tween_callback(func() -> void: shovel.visible = false)
+	tween.tween_callback(_hide_shovel.bind(shovel))
 
 	if hit:
 		_take_damage()
@@ -384,6 +382,13 @@ func _hide_all_whackers() -> void:
 		shovel.visible = false
 	for marker in _markers:
 		marker.visible = false
+
+func _settle_mole_position() -> void:
+	_mole.position = _hole_positions[_index] + Vector2(0, -10.0)
+
+func _hide_shovel(shovel: Sprite2D) -> void:
+	if is_instance_valid(shovel):
+		shovel.visible = false
 
 func _take_damage() -> void:
 	_lives -= 1

@@ -33,10 +33,13 @@ func _ready() -> void:
 	# e.g., upwards and slightly left/right
 	_velocity = Vector2(randf_range(-150.0, 150.0), randf_range(-400.0, -250.0))
 
-	# Delay pickup slightly so player doesn't immediately consume it
-	get_tree().create_timer(0.4).timeout.connect(func():
-		_can_pickup = true
-	)
+	# Delay pickup slightly so player doesn't immediately consume it. The timer
+	# calls a method rather than a lambda: if a scene change frees this item
+	# mid-timer the signal is dropped with it instead of invoking a dead capture.
+	get_tree().create_timer(0.4).timeout.connect(_enable_pickup)
+
+func _enable_pickup() -> void:
+	_can_pickup = true
 
 func _make_placeholder() -> void:
 	var img := Image.create(PLACEHOLDER_SIZE, PLACEHOLDER_SIZE, false, Image.FORMAT_RGBA8)

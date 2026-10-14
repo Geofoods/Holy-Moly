@@ -139,7 +139,11 @@ static func _spawn_dirt_burst(enemy: Node2D) -> void:
 
 	var tree := enemy.get_tree()
 	if tree != null:
+		# Static context, so a held method is unavailable. The lambda captures only
+		# a WeakRef, never the particle node, so a dead node can't be invoked.
+		var burst_ref: WeakRef = weakref(burst)
 		tree.create_timer(DIRT_LIFETIME + 0.4, false).timeout.connect(func() -> void:
-			if is_instance_valid(burst):
-				burst.queue_free()
+			var b := burst_ref.get_ref() as CPUParticles2D
+			if b:
+				b.queue_free()
 		)

@@ -27,11 +27,11 @@ func _ready() -> void:
 
 func arm() -> void:
 	_arming = true
-	get_tree().create_timer(ARM_TIME).timeout.connect(func():
-		if is_instance_valid(self):
-			_armed = true
-			SFX.play("bomb_tick", global_position, -10.0, 0.1)
-	)
+	get_tree().create_timer(ARM_TIME).timeout.connect(_on_armed)
+
+func _on_armed() -> void:
+	_armed = true
+	SFX.play("bomb_tick", global_position, -10.0, 0.1)
 
 func _process(delta: float) -> void:
 	linear_velocity = linear_velocity.move_toward(Vector2.ZERO, 500.0 * delta)

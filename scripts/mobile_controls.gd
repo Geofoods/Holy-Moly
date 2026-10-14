@@ -3,16 +3,13 @@ extends CanvasLayer
 ## On-screen touch controls, shown only when the game is running on a mobile
 ## device (phone or tablet). The left thumb gets a virtual joystick that drives
 ## the ui_* movement actions with analog strength and jumps when it is pushed
-## up; the right thumb gets an E button, which injects a real E key press so
-## moles, chests, doors, ... react exactly as they do to the E key, plus a dig
-## dash button that doubles as the ground pound while airborne, exactly like
-## Shift does on desktop.
+## up; the right thumb gets a dig dash button that doubles as the ground pound
+## while airborne, exactly like Shift does on desktop.
 ##
 ## Touches are turned into input the rest of the game already understands:
 ## buttons and the joystick drive the InputMap actions through Input.action_*
-## (for everything polling Input.*) and through synthetic events - an
-## InputEventKey for the E button, an InputEventAction for the rest (for
-## everything reading events).
+## (for everything polling Input.*) and through synthetic InputEventAction
+## events (for everything reading events).
 ##
 ## Every finger that lands off the controls is turned into an emulated mouse
 ## click: the finger coming down sends a motion and a press, lifting sends the
@@ -50,9 +47,7 @@ const STICK_DEADZONE := 0.18
 ## 1.0, a 45-degree up-forward push about 0.7).
 const JUMP_TRIGGER := 0.5
 const BUTTON_SIZE := 132.0
-const SMALL_BUTTON_SIZE := 112.0
 const SCREEN_MARGIN := 40.0
-const BUTTON_GAP := 24.0
 
 const STICK_ACTIONS: Array[StringName] = [&"ui_left", &"ui_right", &"ui_up", &"ui_down"]
 
@@ -232,7 +227,6 @@ func _build_ui() -> void:
 	_stick_knob = _make_circle(STICK_KNOB_SIZE, 0.85)
 	add_child(_stick_knob)
 	_buttons[&"dig_dash"] = _make_button(&"dig_dash", BURST_ICON, BUTTON_SIZE, "")
-	_buttons[&"interact"] = _make_button(&"interact", null, SMALL_BUTTON_SIZE, "E")
 	_layout()
 
 func _make_circle(size: float, alpha: float) -> TextureRect:
@@ -277,9 +271,7 @@ func _layout() -> void:
 	var vp := get_viewport().get_visible_rect().size
 	_stick_base.position = Vector2(SCREEN_MARGIN, vp.y - SCREEN_MARGIN - STICK_SIZE)
 	var dash: Control = _buttons[&"dig_dash"]
-	var talk: Control = _buttons[&"interact"]
 	dash.position = Vector2(vp.x - SCREEN_MARGIN - BUTTON_SIZE, vp.y - SCREEN_MARGIN - BUTTON_SIZE)
-	talk.position = Vector2(dash.position.x + (BUTTON_SIZE - SMALL_BUTTON_SIZE) * 0.5, dash.position.y - SMALL_BUTTON_SIZE - BUTTON_GAP)
 	_update_knob()
 
 func stick_rect() -> Rect2:
@@ -400,16 +392,23 @@ func _release_pointer(offscreen: bool = false) -> void:
 	_emulate_mouse_button(false, pos)
 	_pointer_index = -1
 
-## Feeds an emulated mouse event through the same path a real one takes, tagged
+## Feeds an emulated mouse event straight into the viewport, tagged
 ## DEVICE_ID_EMULATION so this overlay's own _input skips it (see there) while
 ## the GUI, the mole and the current weapon all receive it unchanged.
+##
+## push_input(), not Input.parse_input_event(): the latter feeds events at the
+## window (embedder) level, so under the project's "viewport" stretch a
+## viewport-space touch position is scaled a second time and the click lands
+## off-target. And because touch handling runs inside _input, an event parsed
+## there is dropped rather than delivered in a real windowed build. push_input
+## dispatches synchronously and, with in_local_coords set, takes the position in
+## the same viewport space the touch positions already use.
 func _emulate_mouse_motion(pos: Vector2) -> void:
 	var ev := InputEventMouseMotion.new()
 	ev.device = InputEvent.DEVICE_ID_EMULATION
 	ev.position = pos
 	ev.global_position = pos
-	Input.parse_input_event(ev)
-	Input.flush_buffered_events()
+	get_viewport().push_input(ev, true)
 
 func _emulate_mouse_button(pressed: bool, pos: Vector2) -> void:
 	var ev := InputEventMouseButton.new()
@@ -419,8 +418,7 @@ func _emulate_mouse_button(pressed: bool, pos: Vector2) -> void:
 	ev.button_mask = MOUSE_BUTTON_MASK_LEFT if pressed else 0
 	ev.position = pos
 	ev.global_position = pos
-	Input.parse_input_event(ev)
-	Input.flush_buffered_events()
+	get_viewport().push_input(ev, true)
 
 func _update_stick(pos: Vector2) -> void:
 	var center := _stick_base.get_global_rect().get_center()
@@ -486,18 +484,6 @@ func _set_axis(action: StringName, strength: float) -> void:
 		_emit_action_event(action, strength > 0.0, 1.0 if strength > 0.0 else 0.0)
 
 func _send(action: StringName, pressed: bool) -> void:
-	# The E control stands in for the E key rather than firing the interact
-	# action directly. The injected key event is what chests (via _input) and
-	# NPCs (via _unhandled_input) match against, and because E is the interact
-	# action's only binding the same event drives that action too. The action
-	# state is set as well so anything polling "interact" still sees the press.
-	if action == &"interact":
-		if pressed:
-			Input.action_press(action, 1.0)
-		else:
-			Input.action_release(action)
-		_send_key(KEY_E, pressed)
-		return
 	if not InputMap.has_action(action):
 		# "dig_dash" only exists once the mole has registered it; a button
 		# press outside a level must not spam errors about it.
@@ -507,16 +493,6 @@ func _send(action: StringName, pressed: bool) -> void:
 	else:
 		Input.action_release(action)
 	_emit_action_event(action, pressed, 1.0 if pressed else 0.0)
-
-## Injects a physical key event, taking the same path a real keyboard press
-## does, so both event readers and action pollers see it. Bound by
-## physical_keycode like the mole's own bindings, so layouts do not matter.
-func _send_key(physical_keycode: Key, pressed: bool) -> void:
-	var ev := InputEventKey.new()
-	ev.physical_keycode = physical_keycode
-	ev.pressed = pressed
-	Input.parse_input_event(ev)
-	Input.flush_buffered_events()
 
 func _emit_action_event(action: StringName, pressed: bool, strength: float) -> void:
 	var ev := InputEventAction.new()

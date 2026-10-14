@@ -219,10 +219,12 @@ func _close_dialogue() -> void:
 	var box := _dialogue_box
 	_dialogue_box = null
 	box.hide_box()
-	get_tree().create_timer(0.35).timeout.connect(func() -> void:
-		if is_instance_valid(box):
-			box.queue_free()
-	)
+	get_tree().create_timer(0.35).timeout.connect(_free_dialogue_box.bind(weakref(box)))
+
+func _free_dialogue_box(box_ref: WeakRef) -> void:
+	var box := box_ref.get_ref() as CanvasLayer
+	if box:
+		box.queue_free()
 
 func _portrait_texture() -> Texture2D:
 	if portrait_texture:

@@ -651,14 +651,16 @@ func _on_dialogue_done() -> void:
 	box.hide_box()
 	# process_always = true, so the reward still plays out if the game is paused
 	# underneath it (the arena starts panning back the moment this emits).
-	get_tree().create_timer(FANFARE_DELAY).timeout.connect(func():
-		if is_instance_valid(box):
-			box.queue_free()
-		_restore_dialogue_camera()
-		_show_reward()
-	)
+	get_tree().create_timer(FANFARE_DELAY).timeout.connect(_finish_dialogue_fanfare.bind(weakref(box)))
 	_dialogue_open = false
 	dialogue_closed.emit()
+
+func _finish_dialogue_fanfare(box_ref: WeakRef) -> void:
+	var box := box_ref.get_ref() as CanvasLayer
+	if box:
+		box.queue_free()
+	_restore_dialogue_camera()
+	_show_reward()
 
 ## Sends a snail off once it has said its line. Hushed immediately, so the prompt
 ## cannot pop back up over the closing box, and the wait is deliberately
@@ -1743,10 +1745,7 @@ func _spawn_boss_ice_laser_impact(world_pos: Vector2) -> void:
 
 	var spark_texture := _make_firework_spark_texture()
 	_spawn_laser_firework_burst(firework, spark_texture, 120, 1.5, 480.0, 980.0, Color(0.36, 0.78, 1.0, 1.0))
-	get_tree().create_timer(0.16).timeout.connect(func():
-		if is_instance_valid(firework):
-			_spawn_laser_firework_burst(firework, spark_texture, 72, 1.25, 260.0, 620.0, Color(0.72, 0.94, 1.0, 1.0))
-	)
+	get_tree().create_timer(0.16).timeout.connect(_delayed_laser_burst.bind(weakref(firework), spark_texture, Color(0.72, 0.94, 1.0, 1.0)))
 
 	_spawn_laser_ground_spray(firework, spark_texture, Color(0.42, 0.8, 1.0, 1.0), Color(0.1, 0.34, 0.7, 0.0))
 	_spawn_laser_impact_column(firework, spark_texture, Color(0.6, 0.9, 1.0, 1.0), Color(0.16, 0.5, 0.9, 0.0))
@@ -2085,10 +2084,7 @@ func _spawn_boss_laser_impact(world_pos: Vector2) -> void:
 
 	var spark_texture := _make_firework_spark_texture()
 	_spawn_laser_firework_burst(firework, spark_texture, 120, 1.5, 480.0, 980.0, Color(0.72, 0.18, 1.0, 1.0))
-	get_tree().create_timer(0.16).timeout.connect(func():
-		if is_instance_valid(firework):
-			_spawn_laser_firework_burst(firework, spark_texture, 72, 1.25, 260.0, 620.0, Color(0.92, 0.62, 1.0, 1.0))
-	)
+	get_tree().create_timer(0.16).timeout.connect(_delayed_laser_burst.bind(weakref(firework), spark_texture, Color(0.92, 0.62, 1.0, 1.0)))
 
 	# The ground spray: sparks hugging the surface at a shallow angle, so they fan
 	# outward along the floor the beam landed on rather than filling a sphere.
@@ -2389,9 +2385,7 @@ func _setup_death_box() -> void:
 	_death_box.show_text(DEATH_CURSE_TEXT, 0, 0, true, false)
 	_death_box.next_button.text = "FINISH"
 	var type_duration := DEATH_CURSE_TEXT.length() * DIALOGUE_TYPE_SPEED
-	get_tree().create_timer(type_duration + 0.2).timeout.connect(func():
-		if is_instance_valid(_death_box):
-			_death_box.skip_typing())
+	get_tree().create_timer(type_duration + 0.2).timeout.connect(_skip_death_box_typing)
 
 func _on_death_dialogue_next() -> void:
 	_death_finale()
@@ -2402,12 +2396,27 @@ func _dismiss_death_box() -> void:
 		return
 	var box := _death_box
 	box.hide_box()
-	get_tree().create_timer(0.4).timeout.connect(func():
-		if is_instance_valid(box):
-			box.queue_free()
-		if _death_box == box:
-			_death_box = null
-		_keep_death_camera_on_snail())
+	get_tree().create_timer(0.4).timeout.connect(_dismiss_death_box_after.bind(weakref(box)))
+
+## The delayed laser impact and its helpers live here so the timers hook plain
+## methods rather than lambdas: a timer that outlives the snail is dropped along
+## with it instead of invoking a lambda whose captured node has been freed.
+func _delayed_laser_burst(firework_ref: WeakRef, spark_texture: Texture2D, tint: Color) -> void:
+	var firework := firework_ref.get_ref() as Node2D
+	if firework:
+		_spawn_laser_firework_burst(firework, spark_texture, 72, 1.25, 260.0, 620.0, tint)
+
+func _skip_death_box_typing() -> void:
+	if is_instance_valid(_death_box):
+		_death_box.skip_typing()
+
+func _dismiss_death_box_after(box_ref: WeakRef) -> void:
+	var box := box_ref.get_ref() as CanvasLayer
+	if box:
+		box.queue_free()
+	if _death_box == box:
+		_death_box = null
+	_keep_death_camera_on_snail()
 
 func _run_death_firework_loop() -> void:
 

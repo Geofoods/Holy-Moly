@@ -239,14 +239,17 @@ static func freeze_node(node: Node2D, duration: float) -> void:
 	node.modulate = Color(0.55, 0.82, 1.2, 0.9)
 	node.set_physics_process(false)
 	node.set_process(false)
+	var node_ref: WeakRef = weakref(node)
 	node.get_tree().create_timer(duration).timeout.connect(func():
-		if is_instance_valid(node):
-			node.set_physics_process(node.get_meta("freeze_restore_physics", true))
-			node.set_process(node.get_meta("freeze_restore_process", true))
-			if node is RigidBody2D:
-				node.set("sleeping", false)
-			if node is Area2D:
-				node.set("monitoring", node.get_meta("freeze_restore_monitoring", true))
-			node.modulate = node.get_meta("freeze_restore_modulate", Color.WHITE)
-			node.remove_meta("frozen")
+		var n := node_ref.get_ref() as Node2D
+		if n == null:
+			return
+		n.set_physics_process(n.get_meta("freeze_restore_physics", true))
+		n.set_process(n.get_meta("freeze_restore_process", true))
+		if n is RigidBody2D:
+			n.set("sleeping", false)
+		if n is Area2D:
+			n.set("monitoring", n.get_meta("freeze_restore_monitoring", true))
+		n.modulate = n.get_meta("freeze_restore_modulate", Color.WHITE)
+		n.remove_meta("frozen")
 	)
