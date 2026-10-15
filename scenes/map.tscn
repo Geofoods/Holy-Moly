@@ -284,6 +284,7 @@ offset_bottom = -1598.0
 [node name="ShopkeeperMole" parent="." instance=ExtResource("20_shopkeeper")]
 position = Vector2(470, -160)
 scale = Vector2(0.25, 0.25)
+unlocks_quest = "buy_from_shop"
 
 [connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
 [connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]

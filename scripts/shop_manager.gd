@@ -2,6 +2,10 @@ extends CanvasLayer
 
 signal coins_changed(amount: int)
 signal loadout_changed
+## Emitted once a purchase really lands (a weapon, ability or item bought for
+## coins). The quest log listens for this so buying anything from the shop can
+## finish the shopping quest.
+signal purchased
 ## Emitted once the shop panel has closed, so a shopkeeper NPC can drop its
 ## "busy" state - the panel pauses the tree, so nothing can poll for this.
 signal shop_closed(shop_type: String)
@@ -218,6 +222,7 @@ func buy(w: WeaponData) -> bool:
 	loadout_changed.emit()
 	_save_data()
 	SFX.play_ui("item_pickup", -4.0, 1.1)
+	purchased.emit()
 	return true
 
 func buy_item(item: ItemData) -> bool:
@@ -232,6 +237,7 @@ func buy_item(item: ItemData) -> bool:
 	coins_changed.emit(coins)
 	_save_data()
 	SFX.play_ui("item_pickup", -4.0, 1.2)
+	purchased.emit()
 	return true
 
 func equip(id: String) -> bool:

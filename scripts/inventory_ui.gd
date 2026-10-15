@@ -18,6 +18,9 @@ var slot_labels: Array = []
 var _placeholder_textures: Dictionary = {}
 var _art_bounds_cache: Dictionary = {}
 var container: Node2D = null
+## Built once and reused, matching the shine the held Golden Shovel carries in
+## the world (see sword.gd) so the hotbar reads the same way.
+var _polish_material: ShaderMaterial = null
 
 func _cropped_texture(tex: Texture2D) -> Texture2D:
 	var key := tex.resource_path
@@ -201,6 +204,17 @@ func _update_slot(idx):
 		tex.pivot_offset = tex.size / 2.0
 		tex.rotation_degrees = 45.0 if item.item_name == "Shovel" else 0.0
 		tex.scale = Vector2.ONE if item.item_name == "Shovel" else Vector2.ONE * 0.62
+		if item.item_name == "Shovel" and Shop:
+			var w := Shop.get_melee()
+			if w != null and w.polished:
+				if _polish_material == null:
+					_polish_material = ShaderMaterial.new()
+					_polish_material.shader = preload("res://shaders/gold_shine.gdshader")
+				tex.material = _polish_material
+			else:
+				tex.material = null
+		else:
+			tex.material = null
 		tex.show()
 		var c = Inventory.slot_counts[idx] if idx < Inventory.slot_counts.size() else 0
 		lbl.text = str(c) if c > 1 else (item.icon_text if item.icon_texture == null and item.icon_text != "" else "")
@@ -209,6 +223,7 @@ func _update_slot(idx):
 		tex.self_modulate = Color.WHITE
 		tex.rotation_degrees = 0.0
 		tex.scale = Vector2.ONE
+		tex.material = null
 		tex.hide()
 		lbl.text = ""
 	panel.add_theme_stylebox_override("panel",style)

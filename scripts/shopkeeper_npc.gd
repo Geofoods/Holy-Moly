@@ -35,6 +35,12 @@ const TALK_DURATION := 4.2
 ## Idle barks played instead of a shop if this is false, e.g. for a flavour
 ## merchant that hangs around a level.
 @export var sells := true
+## Quest revealed the first time the player talks to the merchant, by id. The
+## unlock is granted the moment the talk starts, so the banner lands while his
+## greeting is up. Empty means the merchant has nothing to do with the quest log.
+## Goblin Gilbert points the player at the shop, so his first greeting opens the
+## shopping quest.
+@export var unlocks_quest := ""
 
 var _sprite: AnimatedSprite2D = null
 var _interact_area: Area2D = null
@@ -159,6 +165,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	get_viewport().set_input_as_handled()
 	if _reopen_timer > 0.0:
 		return
+	_unlock_quest()
 	if not _greeted and not greeting_text.is_empty():
 		_greeted = true
 		# The greeting is a doorman, not a conversation: dismissing it opens the
@@ -166,6 +173,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		_open_dialogue(greeting_text, _on_greeting_done)
 		return
 	_interact()
+
+## Hands over this merchant's quest the first time he is talked to. Idempotent,
+## so every later visit is a quiet no-op.
+func _unlock_quest() -> void:
+	if not unlocks_quest.is_empty():
+		Quests.unlock(unlocks_quest)
 
 func _interact() -> void:
 	if not sells:
