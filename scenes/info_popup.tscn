@@ -73,6 +73,30 @@ corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_quest_check_off"]
+bg_color = Color(0.8, 0.68, 0.46, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.42, 0.28, 0.14, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_quest_check_on"]
+bg_color = Color(0.97, 0.91, 0.78, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.42, 0.28, 0.14, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
 [node name="InfoPopup" type="CanvasLayer" unique_id=642113826]
 layer = 999
 script = ExtResource("1_info")
@@ -170,6 +194,19 @@ theme_override_styles/hover_pressed = SubResource("StyleBoxFlat_tab_on")
 toggle_mode = true
 text = "CONTROLS"
 
+[node name="QuestsTab" type="Button" parent="CenterContainer/Panel/Margin/VBox/TabRow" unique_id=900000001]
+custom_minimum_size = Vector2(180, 44)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.32, 0.2, 0.08, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_tab_off")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_tab_on")
+theme_override_styles/hover = SubResource("StyleBoxFlat_tab_on")
+theme_override_styles/hover_pressed = SubResource("StyleBoxFlat_tab_on")
+toggle_mode = true
+text = "QUESTS"
+
 [node name="ContentPanel" type="PanelContainer" parent="CenterContainer/Panel/Margin/VBox" unique_id=1189548140]
 layout_mode = 2
 size_flags_vertical = 3
@@ -226,6 +263,70 @@ theme_override_constants/margin_bottom = 12
 layout_mode = 2
 theme_override_constants/separation = 14
 
+[node name="QuestsView" type="VBoxContainer" parent="CenterContainer/Panel/Margin/VBox/ContentPanel" unique_id=900000002]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="QuestFilterRow" type="HBoxContainer" parent="CenterContainer/Panel/Margin/VBox/ContentPanel/QuestsView" unique_id=900000005]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="IncompleteFilter" type="CheckBox" parent="CenterContainer/Panel/Margin/VBox/ContentPanel/QuestsView/QuestFilterRow" unique_id=900000007]
+custom_minimum_size = Vector2(170, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.32, 0.2, 0.08, 1)
+theme_override_colors/icon_normal_color = Color(0.32, 0.2, 0.08, 1)
+theme_override_colors/icon_hover_color = Color(0.42, 0.28, 0.14, 1)
+theme_override_colors/icon_pressed_color = Color(0.32, 0.2, 0.08, 1)
+theme_override_colors/icon_hover_pressed_color = Color(0.42, 0.28, 0.14, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_quest_check_off")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_quest_check_on")
+theme_override_styles/hover = SubResource("StyleBoxFlat_quest_check_on")
+theme_override_styles/hover_pressed = SubResource("StyleBoxFlat_quest_check_on")
+button_pressed = true
+text = "INCOMPLETE"
+
+[node name="CompleteFilter" type="CheckBox" parent="CenterContainer/Panel/Margin/VBox/ContentPanel/QuestsView/QuestFilterRow" unique_id=900000008]
+custom_minimum_size = Vector2(170, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.32, 0.2, 0.08, 1)
+theme_override_colors/icon_normal_color = Color(0.32, 0.2, 0.08, 1)
+theme_override_colors/icon_hover_color = Color(0.42, 0.28, 0.14, 1)
+theme_override_colors/icon_pressed_color = Color(0.32, 0.2, 0.08, 1)
+theme_override_colors/icon_hover_pressed_color = Color(0.42, 0.28, 0.14, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_quest_check_off")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_quest_check_on")
+theme_override_styles/hover = SubResource("StyleBoxFlat_quest_check_on")
+theme_override_styles/hover_pressed = SubResource("StyleBoxFlat_quest_check_on")
+button_pressed = true
+text = "COMPLETE"
+
+[node name="QuestScroll" type="ScrollContainer" parent="CenterContainer/Panel/Margin/VBox/ContentPanel/QuestsView" unique_id=900000009]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="QuestsMargin" type="MarginContainer" parent="CenterContainer/Panel/Margin/VBox/ContentPanel/QuestsView/QuestScroll" unique_id=900000003]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 12
+
+[node name="QuestsVBox" type="VBoxContainer" parent="CenterContainer/Panel/Margin/VBox/ContentPanel/QuestsView/QuestScroll/QuestsMargin" unique_id=900000004]
+layout_mode = 2
+theme_override_constants/separation = 14
+
 [connection signal="pressed" from="CenterContainer/Panel/Margin/VBox/HeaderRow/CloseButton" to="." method="close"]
 [connection signal="toggled" from="CenterContainer/Panel/Margin/VBox/TabRow/BestiaryTab" to="." method="_on_bestiary_tab_toggled"]
 [connection signal="toggled" from="CenterContainer/Panel/Margin/VBox/TabRow/ControlsTab" to="." method="_on_controls_tab_toggled"]
+[connection signal="toggled" from="CenterContainer/Panel/Margin/VBox/TabRow/QuestsTab" to="." method="_on_quests_tab_toggled"]
+[connection signal="toggled" from="CenterContainer/Panel/Margin/VBox/ContentPanel/QuestsView/QuestFilterRow/IncompleteFilter" to="." method="_on_quest_incomplete_filter_toggled"]
+[connection signal="toggled" from="CenterContainer/Panel/Margin/VBox/ContentPanel/QuestsView/QuestFilterRow/CompleteFilter" to="." method="_on_quest_complete_filter_toggled"]

@@ -41,12 +41,31 @@ var queen_defeated := false
 var corrupted_defeated := false
 var boss_rush_cleared := false
 var arena_completed := false
+## Set the first time the mole buys anything from a shop stall, which is the piece
+## of progress the shopping quest is keyed to.
+var shop_purchased := false
 ## Set when the final boss's death hands off to the credits, which is the one
 ## moment that unambiguously means the campaign was finished. The title screen
 ## gates Boss Rush on this, so it has to survive a quit between beating the boss
 ## and rolling the credits.
 var game_completed := false
 var best_combo := 0
+## Quest ids whose reward the player has already collected. Kept here rather than
+## in the quests manager so reward claiming travels in the same save file as the
+## completion flags it is keyed off - a quest cannot be marked done in one file
+## and claimed in another.
+var claimed_quests := {}
+
+## Quest ids the player has discovered. A quest stays hidden until its area is
+## reached, at which point it is written here so the log and the unlock banner
+## never replay for a quest already known. Persisted alongside the completion
+## flags the quest is keyed off, for the same reason claimed_quests is.
+var unlocked_quests := {}
+
+## Quest completions whose "quest completed" banner has already been shown.
+## Persisted so the banner does not replay on a later session after reloading
+## in the same state.
+var completed_banner_shown := {}
 
 ## Persisted audio levels (0..1 linear gain) for the SFX and Music buses, so the
 ## mix the player dials into the settings screen survives a restart. Kept here
@@ -232,6 +251,51 @@ func mark_arena_completed() -> void:
 func is_arena_completed() -> bool:
 	return arena_completed
 
+## Records that the mole has bought something from a shop, so the shopping quest
+## reads as done. Written the moment the purchase lands, like the other flags.
+func mark_shop_purchased() -> void:
+	if not shop_purchased:
+		shop_purchased = true
+		save_progress()
+
+func is_shop_purchased() -> bool:
+	return shop_purchased
+
+## Whether the reward for a quest has already been handed out. Named as a query so
+## the claim rule lives with the save that backs it rather than at each call site.
+func is_quest_claimed(quest_id: String) -> bool:
+	return claimed_quests.has(quest_id)
+
+## Records that a quest's reward has been collected. Written the moment the reward
+## lands, so quitting right after claiming does not hand it out twice.
+func mark_quest_claimed(quest_id: String) -> void:
+	if quest_id.is_empty() or claimed_quests.has(quest_id):
+		return
+	claimed_quests[quest_id] = true
+	save_progress()
+
+## Whether a quest has been discovered yet. The quest log only lists unlocked
+## quests, so this is what separates "not found yet" from "found, still to do".
+func is_quest_unlocked(quest_id: String) -> bool:
+	return unlocked_quests.has(quest_id)
+
+## Records that a quest has been discovered. Written the moment it opens, so the
+## unlock banner shows exactly once and the log stays populated on a later launch.
+func mark_quest_unlocked(quest_id: String) -> void:
+	if quest_id.is_empty() or unlocked_quests.has(quest_id):
+		return
+	unlocked_quests[quest_id] = true
+	save_progress()
+
+func has_completed_banner_shown(quest_id: String) -> bool:
+	return completed_banner_shown.has(quest_id)
+
+func mark_completed_banner_shown(quest_id: String) -> void:
+	if quest_id.is_empty() or completed_banner_shown.has(quest_id):
+		return
+	completed_banner_shown[quest_id] = true
+	save_progress()
+
 func update_best_combo(value: int) -> void:
 	if value > best_combo:
 		best_combo = value
@@ -297,7 +361,11 @@ func clear_save_data() -> void:
 	boss_rush_cleared = false
 	arena_completed = false
 	game_completed = false
+	shop_purchased = false
 	best_combo = 0
+	claimed_quests.clear()
+	unlocked_quests.clear()
+	completed_banner_shown.clear()
 	respawn_scene = ""
 	respawn_position = Vector2.ZERO
 	respawn_activated = ""
@@ -316,10 +384,17 @@ func save_progress() -> void:
 		cfg.set_value("completed", p, true)
 	for p in visited:
 		cfg.set_value("visited", p, true)
+	for p in claimed_quests:
+		cfg.set_value("quests", p, true)
+	for p in unlocked_quests:
+		cfg.set_value("quests_unlocked", p, true)
+	for p in completed_banner_shown:
+		cfg.set_value("quests_completed_banners", p, true)
 	cfg.set_value("bosses", "queen", queen_defeated)
 	cfg.set_value("bosses", "corrupted", corrupted_defeated)
 	cfg.set_value("bosses", "rush", boss_rush_cleared)
 	cfg.set_value("arena", "completed", arena_completed)
+	cfg.set_value("meta", "shop_purchased", shop_purchased)
 	cfg.set_value("meta", "best_combo", best_combo)
 	cfg.set_value("meta", "game_completed", game_completed)
 	cfg.set_value("respawn", "scene", respawn_scene)
@@ -346,10 +421,20 @@ func load_progress() -> void:
 	if cfg.has_section("visited"):
 		for k in cfg.get_section_keys("visited"):
 			visited[k] = true
+	if cfg.has_section("quests"):
+		for k in cfg.get_section_keys("quests"):
+			claimed_quests[k] = true
+	if cfg.has_section("quests_unlocked"):
+		for k in cfg.get_section_keys("quests_unlocked"):
+			unlocked_quests[k] = true
+	if cfg.has_section("quests_completed_banners"):
+		for k in cfg.get_section_keys("quests_completed_banners"):
+			completed_banner_shown[k] = true
 	queen_defeated = bool(cfg.get_value("bosses", "queen", false))
 	corrupted_defeated = bool(cfg.get_value("bosses", "corrupted", false))
 	boss_rush_cleared = bool(cfg.get_value("bosses", "rush", false))
 	arena_completed = bool(cfg.get_value("arena", "completed", false))
+	shop_purchased = bool(cfg.get_value("meta", "shop_purchased", false))
 	best_combo = int(cfg.get_value("meta", "best_combo", 0))
 	game_completed = bool(cfg.get_value("meta", "game_completed", false))
 	respawn_scene = str(cfg.get_value("respawn", "scene", ""))

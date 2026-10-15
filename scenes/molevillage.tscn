@@ -173,6 +173,7 @@ position = Vector2(121, -190)
 scale = Vector2(0.25, 0.25)
 dialogue_text = "Something has gone terribly wrong. Corruption has taken over all of the animals down below in the deep caverns. Please stop them!"
 npc_name = "Duggy"
+unlocks_quest = "kill_corruption"
 
 [node name="NpcMole2" parent="." unique_id=2043288762 instance=ExtResource("14_3j6u0")]
 modulate = Color(0.49, 0.643, 1, 1)
@@ -205,6 +206,7 @@ skip_if_game_completed = true
 
 [node name="ShopkeeperMole" parent="." unique_id=1821904010 instance=ExtResource("16_bj43u")]
 position = Vector2(4404, -222)
+unlocks_quest = "buy_from_shop"
 
 [node name="MoveHint" type="CanvasLayer" parent="." unique_id=987654321]
 layer = 15

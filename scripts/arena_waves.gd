@@ -86,6 +86,7 @@ func _spawn_next_wave() -> void:
 		_active = false
 		_show_wave_name("CLEARED!")
 		Progress.mark_arena_completed()
+		Quests.announce_completion_if_new("save_snail")
 		cleared.emit()
 		if is_inside_tree():
 			get_tree().create_timer(0.8).timeout.connect(_break_arena_blocks)

@@ -978,6 +978,11 @@ func _hit_feedback() -> void:
 
 func die() -> void:
 	ComboManager.increment()
+	# The heart going down is what the "Kill the Corruption" quest turns on, so it
+	# is recorded here rather than on the exit - the mole walks out of the arena
+	# after the collapse and the quest should already read as done by then.
+	Progress.mark_corrupted_defeated()
+	Quests.announce_completion_if_new("kill_corruption")
 	Shop.drop_coins(global_position, 30, 5)
 	set_physics_process(false)
 	hurtbox.set_deferred("monitorable", false)

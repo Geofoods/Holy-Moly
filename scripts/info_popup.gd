@@ -15,11 +15,17 @@ const DANGER_COLORS := [
 @onready var panel: Control = $CenterContainer/Panel
 @onready var bestiary_tab: Button = $CenterContainer/Panel/Margin/VBox/TabRow/BestiaryTab
 @onready var controls_tab: Button = $CenterContainer/Panel/Margin/VBox/TabRow/ControlsTab
+@onready var quests_tab: Button = $CenterContainer/Panel/Margin/VBox/TabRow/QuestsTab
 @onready var bestiary_view: HBoxContainer = $CenterContainer/Panel/Margin/VBox/ContentPanel/BestiaryView
 @onready var controls_view: ScrollContainer = $CenterContainer/Panel/Margin/VBox/ContentPanel/ControlsView
+@onready var quests_view: VBoxContainer = $CenterContainer/Panel/Margin/VBox/ContentPanel/QuestsView
 @onready var list_vbox: VBoxContainer = $CenterContainer/Panel/Margin/VBox/ContentPanel/BestiaryView/ListScroll/ListVBox
 @onready var detail_vbox: VBoxContainer = $CenterContainer/Panel/Margin/VBox/ContentPanel/BestiaryView/DetailMargin/DetailScroll/DetailVBox
 @onready var controls_vbox: VBoxContainer = $CenterContainer/Panel/Margin/VBox/ContentPanel/ControlsView/ControlsMargin/ControlsVBox
+@onready var quests_vbox: VBoxContainer = $CenterContainer/Panel/Margin/VBox/ContentPanel/QuestsView/QuestScroll/QuestsMargin/QuestsVBox
+@onready var quest_scroll: ScrollContainer = $CenterContainer/Panel/Margin/VBox/ContentPanel/QuestsView/QuestScroll
+@onready var quest_incomplete_filter: CheckBox = $CenterContainer/Panel/Margin/VBox/ContentPanel/QuestsView/QuestFilterRow/IncompleteFilter
+@onready var quest_complete_filter: CheckBox = $CenterContainer/Panel/Margin/VBox/ContentPanel/QuestsView/QuestFilterRow/CompleteFilter
 
 var _font := preload("res://Baby Doll.otf")
 var _browse_music_stream := preload("res://easy-breeze-ra-main-version-33378-02-16.mp3")
@@ -28,6 +34,13 @@ var is_open := false
 var _was_paused_before := false
 var _selected_id := ""
 var _list_buttons: Dictionary = {}
+## Which quests the log lists. Two independent checkboxes rather than one
+## exclusive tab: checking neither hides every quest, checking both shows all.
+var _show_incomplete := true
+var _show_complete := true
+## Quest id -> its card in the log, rebuilt every populate so the guide can jump
+## straight to a quest the player just unlocked or finished.
+var _quest_entries: Dictionary = {}
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -38,6 +51,7 @@ func _ready() -> void:
 	panel.call_deferred("set", "pivot_offset", panel.size / 2.0)
 	_populate_bestiary_list()
 	_populate_controls()
+	_populate_quests()
 	if Bestiary.get_entries().size() > 0:
 		_select_entry(Bestiary.get_entries()[0]["id"])
 
@@ -65,6 +79,9 @@ func open() -> void:
 	LevelMusic.pause()
 	_pause_scene_music()
 	_start_browse_music()
+	# Quest state moves while the guide is closed, so the tab is rebuilt on open
+	# rather than trusting whatever was last drawn.
+	_populate_quests()
 
 func close() -> void:
 	if not is_open:
@@ -88,19 +105,84 @@ func toggle() -> void:
 	else:
 		open()
 
+## Opens the guide straight to the quest log with `quest_id` scrolled into view
+## and flashed, so tapping a quest banner lands the player on that quest.
+func open_quest(quest_id: String) -> void:
+	open()
+	_ensure_quest_visible(quest_id)
+	_show_tab("quests")
+	_focus_quest(quest_id)
+
+## A quest can be hidden by the two filter checkboxes; tick whichever one would
+## hide the quest we are about to jump to.
+func _ensure_quest_visible(quest_id: String) -> void:
+	if Quests.is_complete(quest_id):
+		if not _show_complete:
+			_show_complete = true
+			quest_complete_filter.button_pressed = true
+	elif not _show_incomplete:
+		_show_incomplete = true
+		quest_incomplete_filter.button_pressed = true
+
+func _focus_quest(quest_id: String) -> void:
+	var entry: Control = _quest_entries.get(quest_id)
+	if entry == null:
+		return
+	_scroll_to(entry)
+	_flash_entry(entry)
+
+## The scroll only knows its real extent after the frame that lays the freshly
+## built cards out, so wait a frame before asking it to reveal the card.
+func _scroll_to(entry: Control) -> void:
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if is_instance_valid(entry):
+		quest_scroll.ensure_control_visible(entry)
+
+func _flash_entry(entry: Control) -> void:
+	if not is_instance_valid(entry):
+		return
+	var tween := create_tween()
+	tween.tween_property(entry, "modulate", Color(1.3, 1.18, 0.6, 1), 0.18).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.tween_property(entry, "modulate", Color(1, 1, 1, 1), 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
 func _on_bestiary_tab_toggled(pressed: bool) -> void:
 	if not pressed:
 		return
-	controls_tab.button_pressed = false
-	bestiary_view.visible = true
-	controls_view.visible = false
+	_show_tab("bestiary")
 
 func _on_controls_tab_toggled(pressed: bool) -> void:
 	if not pressed:
 		return
-	bestiary_tab.button_pressed = false
-	bestiary_view.visible = false
-	controls_view.visible = true
+	_show_tab("controls")
+
+func _on_quests_tab_toggled(pressed: bool) -> void:
+	if not pressed:
+		return
+	_show_tab("quests")
+
+func _on_quest_incomplete_filter_toggled(pressed: bool) -> void:
+	_show_incomplete = pressed
+	_populate_quests()
+
+func _on_quest_complete_filter_toggled(pressed: bool) -> void:
+	_show_complete = pressed
+	_populate_quests()
+
+## Switches which content view is showing and which tab reads as selected. The
+## three tabs are plain toggles wired to their own callbacks; this is the one
+## place that keeps them mutually exclusive. Setting a toggle to the value it
+## already holds does not re-emit toggled, so there is no loop back through the
+## per-tab handlers.
+func _show_tab(tab: String) -> void:
+	bestiary_tab.button_pressed = tab == "bestiary"
+	controls_tab.button_pressed = tab == "controls"
+	quests_tab.button_pressed = tab == "quests"
+	bestiary_view.visible = tab == "bestiary"
+	controls_view.visible = tab == "controls"
+	quests_view.visible = tab == "quests"
+	if tab == "quests":
+		_populate_quests()
 
 func _make_heading(text: String, size: int, color: Color) -> Label:
 	var label := Label.new()
@@ -219,6 +301,177 @@ func _populate_controls() -> void:
 			detail_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			row_box.add_child(detail_label)
 		controls_vbox.add_child(HSeparator.new())
+
+## Builds the quest log tab: a header, then one card per quest that passes the
+## current filter. Quest state lives in Progress and the reward rule in Quests;
+## this only draws them.
+func _populate_quests() -> void:
+	for child in quests_vbox.get_children():
+		child.queue_free()
+	_quest_entries.clear()
+
+	quests_vbox.add_child(_make_heading(
+		"QUESTS   %d / %d COMPLETE" % [Quests.completed_count(), Quests.total_count()],
+		22, Color(0.42, 0.28, 0.1, 1)))
+	quests_vbox.add_child(HSeparator.new())
+
+	var shown := _filtered_quests()
+	if shown.is_empty():
+		quests_vbox.add_child(_make_heading(_empty_filter_text(), 18, Color(0.45, 0.35, 0.22, 1)))
+		return
+	for quest in shown:
+		var entry := _make_quest_entry(quest)
+		quests_vbox.add_child(entry)
+		_quest_entries[str(quest["id"])] = entry
+
+## The quests the current checkboxes let through, in log order. Every quest is
+## listed, even ones not discovered yet: an undiscovered quest shows as "???" so
+## the player can see how much is still out there. A locked quest counts as not
+## complete, so it rides the incomplete filter.
+func _filtered_quests() -> Array:
+	var result: Array = []
+	for quest in Quests.get_quests():
+		var complete := Quests.is_complete(str(quest["id"]))
+		if complete and not _show_complete:
+			continue
+		if not complete and not _show_incomplete:
+			continue
+		result.append(quest)
+	return result
+
+func _empty_filter_text() -> String:
+	if not _show_incomplete and not _show_complete:
+		return "No filters checked. Tick a box to see your quests."
+	if _show_complete and not _show_incomplete:
+		return "No quests finished yet. Get out there!"
+	if _show_incomplete and not _show_complete:
+		return "Every quest is done. Nicely played!"
+	return "No quests to show."
+
+func _make_quest_entry(quest: Dictionary) -> Control:
+	var quest_id := str(quest["id"])
+	var locked := not Quests.is_unlocked(quest_id)
+	var complete := Quests.is_complete(quest_id)
+	var rewarded := Quests.is_rewarded(quest_id)
+	var claimable := Quests.can_claim(quest_id)
+
+	var entry := VBoxContainer.new()
+	entry.add_theme_constant_override("separation", 4)
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 16)
+	entry.add_child(row)
+
+	row.add_child(_make_quest_icon(quest, locked))
+
+	var box := VBoxContainer.new()
+	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	box.add_theme_constant_override("separation", 4)
+	row.add_child(box)
+
+	var title_row := HBoxContainer.new()
+	title_row.add_theme_constant_override("separation", 12)
+	box.add_child(title_row)
+
+	var title := _make_heading(
+		"???" if locked else str(quest["title"]), 24,
+		Color(0.5, 0.45, 0.35, 1) if locked else Color(0.32, 0.2, 0.08, 1))
+	title.autowrap_mode = TextServer.AUTOWRAP_OFF
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title_row.add_child(title)
+
+	var status := _make_heading(_quest_status_text(locked, complete, rewarded), 15, _quest_status_color(locked, complete, rewarded))
+	status.autowrap_mode = TextServer.AUTOWRAP_OFF
+	status.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	title_row.add_child(status)
+
+	var desc := _make_heading(
+		"???" if locked else str(quest["description"]), 17,
+		Color(0.55, 0.5, 0.4, 1) if locked else Color(0.2, 0.14, 0.06, 1))
+	desc.custom_minimum_size = Vector2(500, 0)
+	box.add_child(desc)
+
+	var reward := _make_heading(
+		"REWARD: ???" if locked else "REWARD: %d COINS" % int(quest.get("reward_coins", 0)), 17,
+		Color(0.6, 0.55, 0.45, 1) if locked else Color(0.55, 0.35, 0.1, 1))
+	reward.autowrap_mode = TextServer.AUTOWRAP_OFF
+	box.add_child(reward)
+
+	if claimable:
+		var btn := Button.new()
+		btn.text = "COLLECT REWARD"
+		btn.custom_minimum_size = Vector2(240, 46)
+		btn.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		btn.add_theme_font_override("font", _font)
+		btn.add_theme_font_size_override("font_size", 18)
+		btn.add_theme_color_override("font_color", Color(0.06, 0.1, 0.06, 1))
+		btn.add_theme_color_override("font_hover_color", Color(1, 1, 1, 1))
+		btn.add_theme_stylebox_override("normal", _make_claim_style(Color(0.45, 0.7, 0.35)))
+		btn.add_theme_stylebox_override("hover", _make_claim_style(Color(0.55, 0.82, 0.45)))
+		btn.add_theme_stylebox_override("pressed", _make_claim_style(Color(0.35, 0.6, 0.3)))
+		btn.add_theme_stylebox_override("focus", _make_claim_style(Color(0.55, 0.82, 0.45)))
+		btn.pressed.connect(_on_quest_claim_pressed.bind(quest_id))
+		box.add_child(btn)
+
+	entry.add_child(HSeparator.new())
+	return entry
+
+## The quest's artwork for the log. Locked quests show a dim "?" instead of the
+## real icon so an undiscovered quest gives nothing away.
+func _make_quest_icon(quest: Dictionary, locked: bool) -> Control:
+	var slot := Vector2(76, 76)
+	if locked:
+		var mark := _make_heading("?", 46, Color(0.55, 0.5, 0.42, 1))
+		mark.custom_minimum_size = slot
+		mark.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		mark.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		return mark
+
+	var quest_id := str(quest["id"])
+	var icon := TextureRect.new()
+	icon.custom_minimum_size = slot
+	icon.texture = Quests.get_quest_icon(quest_id)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon.modulate = Quests.get_quest_icon_tint(quest_id)
+	return icon
+
+func _quest_status_text(locked: bool, complete: bool, rewarded: bool) -> String:
+	if locked:
+		return "???"
+	if rewarded:
+		return "REWARDED"
+	if complete:
+		return "COMPLETE!"
+	return "IN PROGRESS"
+
+func _quest_status_color(locked: bool, complete: bool, rewarded: bool) -> Color:
+	if locked:
+		return Color(0.5, 0.48, 0.42, 1)
+	if rewarded:
+		return Color(0.35, 0.5, 0.3, 1)
+	if complete:
+		return Color(0.2, 0.55, 0.22, 1)
+	return Color(0.55, 0.45, 0.3, 1)
+
+func _make_claim_style(color: Color) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = color
+	sb.border_color = Color(0.25, 0.4, 0.15, 1)
+	sb.set_border_width_all(2)
+	sb.set_corner_radius_all(8)
+	sb.content_margin_left = 12.0
+	sb.content_margin_right = 12.0
+	sb.content_margin_top = 6.0
+	sb.content_margin_bottom = 6.0
+	return sb
+
+func _on_quest_claim_pressed(quest_id: String) -> void:
+	if not Quests.claim(quest_id):
+		return
+	SFX.play_ui("item_pickup", -4.0, 1.1)
+	_populate_quests()
 
 func _pause_scene_music() -> void:
 	var scene := get_tree().current_scene

@@ -13,6 +13,9 @@ func _ready() -> void:
 		# prisoner off with, so he is cleared here rather than left standing in a
 		# room he has already been saved from.
 		_remove_snail(snail)
+		# A returning player already watched the plea, so make sure the quest it
+		# hands out is on the log; unlock quietly rather than announce it again.
+		Quests.unlock("save_snail", true)
 		return
 
 	var player_camera := get_node_or_null("CharacterBody2D2/Camera2D") as Camera2D
@@ -63,6 +66,10 @@ func _play_intro(player_camera: Camera2D, snail: Node) -> void:
 	pan_back.tween_property(camera, "global_position", player_camera.global_position, PAN_DURATION).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
 	pan_back.tween_property(camera, "zoom", player_camera.zoom, PAN_DURATION).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
 	await pan_back.finished
+
+	# Hearing the prisoner beg for help is what sets the rescue in motion, so the
+	# quest to save him opens as the cutscene hands control back to the mole.
+	Quests.unlock("save_snail")
 
 	# The prisoner's one line is the whole encounter. His own retire fade can be
 	# held up by the cutscene's pause, so the removal is made unconditional here:

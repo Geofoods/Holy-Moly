@@ -2657,6 +2657,7 @@ func _go_to_credits() -> void:
 	# it is recorded here rather than in the credits roll so that quitting
 	# straight out of the fight still counts.
 	Progress.mark_game_completed()
+	Quests.announce_completion_if_new("defeat_corrupted_snail")
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 	get_tree().root.add_child(transition)
 	transition.change_to(DEATH_CREDITS_PATH)

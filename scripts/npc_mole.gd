@@ -39,6 +39,12 @@ const TapInteract := preload("res://scripts/tap_interact.gd")
 @export var npc_name := "Mole"
 @export var portrait_texture: Texture2D = null
 @export var prompt_offset := Vector2(0, -90)
+## Quest revealed once the player hears this mole out, by id. The unlock is
+## granted when the conversation is advanced (Next), not when the box opens, so
+## the announcement lands after the line that sets it up. Empty means the NPC has
+## nothing to do with the quest log. Duggy in Mole Village is the town crier who
+## points the player at the corruption, so finishing his warning opens that quest.
+@export var unlocks_quest := ""
 ## Marks this NPC as the tutorial's guide, whose lines are the step-by-step hints.
 ## Once the mole has finished the tutorial (Progress.tutorial_done) every line -
 ## the walk-in popups and the on-demand press-E greeting alike - stays quiet, so a
@@ -494,7 +500,12 @@ func _portrait_texture() -> Texture2D:
 		return _sprite.sprite_frames.get_frame_texture("walk", 0)
 	return null
 
+## Runs when the player advances the conversation (the dialogue box's Next button
+## or the interact key). The quest is handed over here rather than when the box
+## opens, so the banner lands the moment the player finishes hearing about it.
 func _on_dialogue_done() -> void:
+	if not unlocks_quest.is_empty():
+		Quests.unlock(unlocks_quest)
 	_close_dialogue()
 
 func _close_dialogue() -> void:

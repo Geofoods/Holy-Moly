@@ -32,6 +32,8 @@ SettingsMenu="*res://scenes/settings_menu.tscn"
 MapOverlay="*res://scripts/map_overlay.gd"
 TileDepth="*res://scripts/tilemap_depth_controller.gd"
 Progress="*res://scripts/progress.gd"
+Quests="*res://scripts/quests.gd"
+QuestNotifications="*res://scripts/quest_notifications.gd"
 FrozenTiles="*res://scripts/frozen_tiles.gd"
 Lighting="*res://scripts/scene_lighting.gd"
 
