@@ -73,6 +73,14 @@ const SCENE_MAPS := {
 const MAP_ART_FILL := 0.62
 ## Gap between the map column and the travel list.
 const MAP_COLUMN_GAP := 24
+## How far the panel's inner frame (the double neatline on the sheet) sits from the
+## panel's outer border. Small and fixed, so the frame tracks the panel's size
+## instead of hugging the contents.
+const PANEL_FRAME_INSET := 12
+## Padding inside that frame, so the columns stand PANEL_FRAME_INSET + this from
+## the panel edge: 12 + 78 = 90 on each side, and 12 + 6 = 18 top and bottom.
+const PANEL_SIDE_PADDING := 78
+const PANEL_VERTICAL_PADDING := 6
 ## Height of one destination button, and the gap between entries.
 const PORTAL_BUTTON_HEIGHT := 44
 const PORTAL_BUTTON_SEPARATION := 6
@@ -183,7 +191,17 @@ func _open_map() -> void:
 	# together, which leaves the art its height back.
 	var columns := HBoxContainer.new()
 	columns.add_theme_constant_override("separation", MAP_COLUMN_GAP)
-	panel.add_child(columns)
+
+	# The columns are held off the panel edge by this padding rather than by the
+	# panel's own margins, so the sheet above spans the full inner frame and the
+	# neatline resizes with the panel.
+	var padding := MarginContainer.new()
+	padding.add_theme_constant_override("margin_left", PANEL_SIDE_PADDING)
+	padding.add_theme_constant_override("margin_right", PANEL_SIDE_PADDING)
+	padding.add_theme_constant_override("margin_top", PANEL_VERTICAL_PADDING)
+	padding.add_theme_constant_override("margin_bottom", PANEL_VERTICAL_PADDING)
+	panel.add_child(padding)
+	padding.add_child(columns)
 
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 10)
@@ -525,10 +543,13 @@ func _make_panel_style() -> StyleBoxFlat:
 	sb.set_corner_radius_all(18)
 	sb.shadow_color = Color(0, 0, 0, 0.45)
 	sb.shadow_size = 10
-	sb.content_margin_left = 26.0
-	sb.content_margin_right = 26.0
-	sb.content_margin_top = 18.0
-	sb.content_margin_bottom = 18.0
+	# Only the frame inset here. The bulk of the side spacing lives in an inner
+	# padding container (see _open_map), so the sheet drawn along with the panel
+	# spans the panel and its neatline grows with it.
+	sb.content_margin_left = float(PANEL_FRAME_INSET)
+	sb.content_margin_right = float(PANEL_FRAME_INSET)
+	sb.content_margin_top = float(PANEL_FRAME_INSET)
+	sb.content_margin_bottom = float(PANEL_FRAME_INSET)
 	return sb
 
 func _make_map_style() -> StyleBoxFlat:
@@ -537,6 +558,13 @@ func _make_map_style() -> StyleBoxFlat:
 	sb.border_color = Color(0.6, 0.44, 0.24, 0.6)
 	sb.set_border_width_all(3)
 	sb.set_corner_radius_all(12)
+	# Padding between the frame and the art, so the map reads as mounted on the
+	# sheet rather than running through the frame's edges. Deeper on the left,
+	# where the sheet has spare room.
+	sb.content_margin_left = 36.0
+	sb.content_margin_right = 14.0
+	sb.content_margin_top = 14.0
+	sb.content_margin_bottom = 14.0
 	return sb
 
 func _make_portal_style() -> StyleBoxFlat:

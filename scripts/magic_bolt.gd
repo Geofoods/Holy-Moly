@@ -51,13 +51,38 @@ func _on_body_entered(body: Node) -> void:
 
 func _break_tile(tilemap: TileMap) -> void:
 	var sfx := preload("res://scripts/tile_break_sfx.gd")
-	var tile_pos := tilemap.local_to_map(tilemap.to_local(global_position))
+	var tile_pos := _impact_cell(tilemap)
 	var parent := tilemap.get_parent()
 	if tilemap.get_cell_source_id(0, tile_pos) != -1:
 		sfx.break_tile(tilemap, tile_pos, parent)
 	else:
 		sfx.break_decoration_tile(tilemap, tile_pos, parent)
 	sfx.break_opened_chests_near(parent, global_position)
+
+# The tile collision polygons are far larger than the tiles themselves, so the
+# body_entered signal fires the instant the bolt grazes a wall - often while the
+# bolt's centre is still in the open cell in front of it. Mapping that centre
+# would erase empty space, so step along the flight path to find the block the
+# bolt is actually flying into.
+func _impact_cell(tilemap: TileMap) -> Vector2i:
+	var centre := tilemap.local_to_map(tilemap.to_local(global_position))
+	if tilemap.get_cell_source_id(0, centre) != -1:
+		return centre
+	var dir := _velocity.normalized()
+	if dir == Vector2.ZERO:
+		return centre
+	var step := 40.0
+	if tilemap.tile_set != null:
+		var ts := float(tilemap.tile_set.tile_size.x)
+		if ts > 0.0:
+			step = ts * 0.5
+	var point := global_position
+	for i in 8:
+		point += dir * step
+		var cell := tilemap.local_to_map(tilemap.to_local(point))
+		if tilemap.get_cell_source_id(0, cell) != -1:
+			return cell
+	return centre
 
 func _explode() -> void:
 	SFX.play("swing", global_position, -10.0, 0.1, 2.2)

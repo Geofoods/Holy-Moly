@@ -1,6 +1,0 @@
-[gd_scene format=3 uid="uid://dbyy1gd65ih0l"]
-
-[ext_resource type="Script" path="res://_tmp_map_debug.gd" id="1_dbg"]
-
-[node name="MapDebug" type="Node"]
-script = ExtResource("1_dbg")
