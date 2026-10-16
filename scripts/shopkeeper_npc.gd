@@ -22,8 +22,10 @@ const REOPEN_COOLDOWN := 0.4
 ## After this he goes back to idle even if the box is still up.
 const TALK_DURATION := 4.2
 
-## Which Shop panel to open: "items", "weapons" or "abilities".
-@export var shop_type := "items"
+## Which Shop panel to open. "all" is the unified general store, where the
+## merchant stocks every weapon, ability and item; the narrower "items",
+## "weapons" and "abilities" panels remain available if a stall ever needs one.
+@export var shop_type := "all"
 @export var prompt_text := "PRESS E: SHOP"
 @export var npc_name := "Goblin Gilbert"
 ## Puts the prompt above the awning rather than on the mole's head.
@@ -32,6 +34,14 @@ const TALK_DURATION := 4.2
 ## Shown once, the first time the player talks to the merchant. Leave empty to
 ## skip the greeting and open the shop straight away.
 @export_multiline var greeting_text := "Psst - over here, digger! Fresh bombs, a good drill, holy water if you're leaking. Everything a mole needs to get home in one piece."
+## Shown once the shop closes after the player has bought something, so Gilbert
+## can pitch his buy-back service. Only fires for a purchase made at his own
+## stall (see _on_shop_purchased). Leave empty to skip the thank-you entirely.
+@export_multiline var purchase_thanks_text := "Thank you for buying from me! By the way, I can also buy items from you as well for coins so if you don't want something, I'll take it off your hands!"
+## Quest revealed alongside the purchase thank-you, by id. Gilbert's line pitches
+## his buy-back service, so it opens the selling quest. Empty means the merchant
+## has no follow-up quest.
+@export var unlocks_after_purchase := ""
 ## Idle barks played instead of a shop if this is false, e.g. for a flavour
 ## merchant that hangs around a level.
 @export var sells := true
@@ -50,6 +60,9 @@ var _dialogue_open := false
 var _dialogue_box: CanvasLayer = null
 var _greeted := false
 var _shop_open := false
+## Set when a purchase lands while this merchant's own stall is open; consumed
+## once the shop closes to play the buy-back pitch.
+var _bought_something := false
 var _reopen_timer := 0.0
 var _talk_timer := 0.0
 var _settled := false
@@ -62,6 +75,7 @@ func _ready() -> void:
 		_interact_area.body_entered.connect(_on_body_entered)
 		_interact_area.body_exited.connect(_on_body_exited)
 	Shop.shop_closed.connect(_on_shop_closed)
+	Shop.purchased.connect(_on_shop_purchased)
 	_setup_prompt()
 	_update_animation()
 
@@ -204,6 +218,21 @@ func _on_shop_closed(_closed_type: String) -> void:
 	# Whatever happens next (including a scene change), never leave the stall
 	# stuck behind a panel that is no longer there.
 	_reopen_timer = maxf(_reopen_timer, REOPEN_COOLDOWN)
+	# The panel is gone and the tree unpaused by now, so the thank-you can take
+	# the stage. Only a purchase made at this stall sets the flag.
+	if _bought_something:
+		_bought_something = false
+		if not purchase_thanks_text.is_empty():
+			if not unlocks_after_purchase.is_empty():
+				Quests.unlock(unlocks_after_purchase)
+			_say(purchase_thanks_text)
+
+## A purchase landed. Ignore anything bought away from this stall (another
+## merchant, the pause-menu shop) so Gilbert only pitches once he has really
+## sold something himself.
+func _on_shop_purchased() -> void:
+	if _shop_open:
+		_bought_something = true
 
 func _say(text: String) -> void:
 	_open_dialogue(text, _close_dialogue)

@@ -41,6 +41,7 @@ enum BlockState { AIR, MINEABLE, UNMINEABLE }
 
 var tile_highlight: Sprite2D
 var _highlight_tween: Tween = null
+var _highlight_dig_size := 0
 
 func _ready() -> void:
 	_tilemap_refresh()
@@ -60,6 +61,16 @@ func _apply_weapon_visual() -> void:
 	var w := Shop.get_melee()
 	sprite.self_modulate = w.icon_color if w else Color.WHITE
 	_apply_polish(w != null and w.polished)
+	# A wider tool needs a wider grid cursor, so the outline is rebuilt whenever
+	# the equipped melee footprint changes.
+	if tile_highlight and _highlight_dig_size != _dig_size():
+		_refresh_highlight_texture()
+
+## How many tiles across the equipped melee tool digs. Falls back to a single
+## tile so an unknown or missing weapon always behaves like the shovel.
+func _dig_size() -> int:
+	var w := Shop.get_melee()
+	return maxi(1, w.dig_size) if w else 1
 
 ## Puts the shine on, or takes it back off again. Anything else - swapping back to
 ## the trusty shovel mid-run - has to drop the material rather than just leave it,
@@ -95,19 +106,8 @@ func _setup_tile_highlight() -> void:
 	if not tilemap:
 		return
 	var world := get_parent().get_parent()
-	var tile_world := Vector2(tilemap.tile_set.tile_size) * tilemap.scale
-	var tex_size := Vector2i(maxi(1, roundi(tile_world.x)), maxi(1, roundi(tile_world.y)))
-	var border := maxi(2, roundi(HIGHLIGHT_WIDTH))
-	var image := Image.create(tex_size.x, tex_size.y, false, Image.FORMAT_RGBA8)
-	image.fill(Color(0, 0, 0, 0))
-	for y in tex_size.y:
-		for x in tex_size.x:
-			if x < border or x >= tex_size.x - border or y < border or y >= tex_size.y - border:
-				image.set_pixel(x, y, Color.WHITE)
-	var tex := ImageTexture.create_from_image(image)
 	tile_highlight = Sprite2D.new()
 	tile_highlight.name = "TileHighlight"
-	tile_highlight.texture = tex
 	tile_highlight.centered = true
 	tile_highlight.z_index = 0
 	tile_highlight.z_as_relative = false
@@ -115,9 +115,33 @@ func _setup_tile_highlight() -> void:
 	world.add_child.call_deferred(tile_highlight)
 	tile_highlight.hide()
 
+	_refresh_highlight_texture()
+
 	_highlight_tween = create_tween().set_loops()
 	_highlight_tween.tween_property(tile_highlight, "modulate:a", HIGHLIGHT_MIN_ALPHA, HIGHLIGHT_FLASH_TIME).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	_highlight_tween.tween_property(tile_highlight, "modulate:a", 1.0, HIGHLIGHT_FLASH_TIME).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+## Outlines the block a strike would break: a single tile for the shovel, a 2x2
+## block for the pickaxe. Rebuilt on a weapon swap so the cursor always matches
+## the tool's actual footprint.
+func _refresh_highlight_texture() -> void:
+	if not tile_highlight:
+		return
+	var tilemap := _tilemap_refresh()
+	if not tilemap:
+		return
+	var dig := _dig_size()
+	_highlight_dig_size = dig
+	var tile_world := Vector2(tilemap.tile_set.tile_size) * tilemap.scale
+	var tex_size := Vector2i(maxi(1, roundi(tile_world.x * dig)), maxi(1, roundi(tile_world.y * dig)))
+	var border := maxi(2, roundi(HIGHLIGHT_WIDTH))
+	var image := Image.create(tex_size.x, tex_size.y, false, Image.FORMAT_RGBA8)
+	image.fill(Color(0, 0, 0, 0))
+	for y in tex_size.y:
+		for x in tex_size.x:
+			if x < border or x >= tex_size.x - border or y < border or y >= tex_size.y - border:
+				image.set_pixel(x, y, Color.WHITE)
+	tile_highlight.texture = ImageTexture.create_from_image(image)
 
 func _update_tile_highlight() -> void:
 	if not tile_highlight:
@@ -141,7 +165,14 @@ func _update_tile_highlight() -> void:
 	tile_highlight.modulate.r = col.r
 	tile_highlight.modulate.g = col.g
 	tile_highlight.modulate.b = col.b
-	tile_highlight.global_position = tilemap.to_global(tilemap.map_to_local(tile_pos))
+	# The strike breaks cells starting at the aimed tile minus a half-footprint,
+	# so the outline is nudged to sit over that whole swath (equal for a 1x1, half
+	# a block across for a 2x2).
+	var dig := _dig_size()
+	var lo := (dig - 1) / 2
+	var offset := (dig - 1) / 2.0 - lo
+	var center := Vector2(tilemap.map_to_local(tile_pos)) + Vector2(tilemap.tile_set.tile_size) * offset
+	tile_highlight.global_position = tilemap.to_global(center)
 	tile_highlight.show()
 
 func _highlight_color(tilemap: TileMap, tile_pos: Vector2i) -> Color:
@@ -238,9 +269,13 @@ func _unhandled_input(event: InputEvent) -> void:
 func _do_attack() -> void:
 	if not visible:
 		return
+	# Digging rides the swing, so a tool cannot chew through tiles faster than it
+	# attacks: the pickaxe's slow, heavy swing paces its 2x2 dig just as the
+	# shovel's quick jab paces its single tile.
+	if is_swinging:
+		return
 	_break_tile_at_mouse()
-	if not is_swinging:
-		swing()
+	swing()
 
 func swing() -> void:
 	var w := Shop.get_melee()
@@ -363,17 +398,30 @@ func _break_tile_at_mouse() -> void:
 	if not tilemap:
 		return
 	var tile_pos = tilemap.local_to_map(tilemap.to_local(mouse_global))
-	var source_id := tilemap.get_cell_source_id(0, tile_pos)
+	# The aimed tile is the top-left of the footprint, so a 2x2 pickaxe digs the
+	# aimed block and the three to its right and below.
+	var dig := _dig_size()
+	var lo := (dig - 1) / 2
 	var broke_tile := false
-	if source_id != -1:
-		sfx.break_tile(tilemap, tile_pos, world)
-		broke_tile = true
-	elif tilemap.get_layers_count() >= 2 and tilemap.get_cell_source_id(1, tile_pos) != -1:
-		sfx.break_decoration_tile(tilemap, tile_pos, world)
-		broke_tile = true
+	for dy in dig:
+		for dx in dig:
+			var cell := Vector2i(tile_pos.x - lo + dx, tile_pos.y - lo + dy)
+			if _break_cell(tilemap, cell, sfx, world):
+				broke_tile = true
 	if broke_tile:
 		TutorialEvents.block_broken.emit()
 		var mole = get_parent()
 		if mole and mole.has_method("spawn_dirt_particles"):
 			var tile_world = tilemap.to_global(tilemap.map_to_local(tile_pos))
 			mole.spawn_dirt_particles(tile_world)
+
+## Breaks one block (or the decoration on it) in place. Split out so a wide tool
+## can sweep several cells with the same rule the shovel used for one.
+func _break_cell(tilemap: TileMap, cell: Vector2i, sfx, world) -> bool:
+	if tilemap.get_cell_source_id(0, cell) != -1:
+		sfx.break_tile(tilemap, cell, world)
+		return true
+	if tilemap.get_layers_count() >= 2 and tilemap.get_cell_source_id(1, cell) != -1:
+		sfx.break_decoration_tile(tilemap, cell, world)
+		return true
+	return false

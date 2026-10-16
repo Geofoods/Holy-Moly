@@ -20,6 +20,10 @@ var projectile_speed := 1500.0
 
 var icon_color := Color.WHITE
 
+## How many tiles across a melee tool digs per strike: 1 breaks the aimed tile on
+## its own, 2 carves out a 2x2 block. Only read for melee weapons.
+var dig_size := 1
+
 ## Set on a weapon that should look polished rather than merely tinted - it gets
 ## the shine shader over its sprite, so the gold shovel catches the light instead
 ## of just being a gold-coloured shovel.

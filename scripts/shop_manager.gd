@@ -6,6 +6,10 @@ signal loadout_changed
 ## coins). The quest log listens for this so buying anything from the shop can
 ## finish the shopping quest.
 signal purchased
+## Emitted once an item is sold back to a merchant, carrying the item and the
+## coins paid out. The quest log listens for this so selling anything can finish
+## the buy-back quest.
+signal sold(item: ItemData, amount: int)
 ## Emitted once the shop panel has closed, so a shopkeeper NPC can drop its
 ## "busy" state - the panel pauses the tree, so nothing can poll for this.
 signal shop_closed(shop_type: String)
@@ -23,9 +27,19 @@ var weapon_catalog: Array[WeaponData] = []
 var ability_catalog: Array[WeaponData] = []
 var item_catalog: Array[ItemData] = []
 var item_prices: Dictionary = {}
+## The full buy-back price list, in coins, keyed by item name. A merchant pays
+## half of this when the player sells (see get_sell_price). It covers the items
+## the shop stocks plus everything the mole can pick up out in the world, so the
+## sell tab can price loot the shop never sells.
+var item_values: Dictionary = {}
 var owned: Array[String] = []
 var equipped_melee_id := "shovel"
 var equipped_ranged_id := ""
+## Which weapon the mole is holding: false = the melee tool, true = the equipped
+## ranged weapon. The mole reads this for its held sprite, the HUD for the weapon
+## slot, and the swap key (Q) toggles it. Kept here rather than on the mole so the
+## HUD and the mole share one source of truth across scenes.
+var ranged_active := false
 
 var _coin_label: Label = null
 var _coin_icon: Control = null
@@ -37,6 +51,7 @@ func _ready() -> void:
 	layer = 85
 	_build_catalog()
 	_build_item_catalog()
+	_build_item_values()
 	_load_data()
 	_setup_coin_hud()
 	_loadout_refresh()
@@ -56,6 +71,8 @@ func _build_catalog() -> void:
 	catalog = [
 		_make_melee("shovel", "Shovel", "The trusty starting tool.", 0, 5.0, 10.0, 2.4, 0.3, Color(0.9, 0.8, 0.55)),
 		_make_melee("gold_shovel", "Golden Shovel", "Wide arc, quick swing, double damage.", 160, 10.0, 20.0, 2.8, 0.2, Color(1.0, 0.8, 0.2), true),
+		_make_melee("pickaxe", "Pickaxe", "Slow, heavy swings dig a 2x2 block for double damage.", 1000, 10.0, 20.0, 2.4, 0.75, Color(0.72, 0.76, 0.85), false, 2),
+		_make_ranged("wizard_staff", "Wizard Staff", "Fires magic bolts that damage enemies and break blocks from a distance.", 400, 8.0, 14.0, 0.55, 900.0, Color(0.7, 0.35, 1.0)),
 	]
 	weapon_catalog.clear()
 	ability_catalog.clear()
@@ -69,9 +86,8 @@ func _build_catalog() -> void:
 ## resources) rather than weapons. Prices are tuned against the coins enemies
 ## drop, so the cheap staples are always reachable within a couple of levels.
 func _build_item_catalog() -> void:
-	# One page worth of stocking only (see shop_ui.ITEMS_PER_PAGE): the item shop
-	# deliberately sells the four staples and nothing else, so the pager never
-	# appears and the panel stays a quick read.
+	# The unified general store lists the weapons first and these staples after,
+	# so the pager can appear; these four are still the whole item shelf.
 	var defs := [
 		# Tools
 		{"name": "Drill", "price": 70},
@@ -122,6 +138,37 @@ func _find_item(item_name: String) -> ItemData:
 		return null
 	return load(path) as ItemData
 
+## The merchant's buy-back price list. `item_prices` (the shop's stocking) wins
+## where present, so those four items always sell for exactly half his shelf
+## price; everything else gets a flat price tuned against what the loot is worth
+## in a level. Items left out (the starting shovel, the story-granted grappling
+## hook) are not sellable at all and read as value 0.
+func _build_item_values() -> void:
+	item_values = {
+		"Miner's Rations": 20,
+		"Potted Honeycomb": 40,
+		"Golden Bomb": 130,
+		"Mine": 65,
+		"Stink Bomb": 75,
+		"Spark Bomb": 90,
+		"Flare": 35,
+		"Coal Lump": 25,
+		"Vacuum Jelly": 45,
+		"Bounce Mushroom": 45,
+		"Shiny Lure": 50,
+		"Compass Charm": 55,
+		"Shop Token": 120,
+		"Grub Stick": 30,
+		"Tunnel Gloves": 60,
+		"Shelled Backpack": 60,
+		"Climbing Talons": 60,
+		"Lantern Charm": 60,
+		"Rebound Hook": 60,
+		"Wax Cache": 70,
+		"Earthquake Boots": 65,
+		"Mol-dozer Ram": 70,
+	}
+
 func _make_ability(id: String, name: String, desc: String, price: int, color: Color) -> WeaponData:
 	var w := WeaponData.new()
 	w.id = id
@@ -132,7 +179,7 @@ func _make_ability(id: String, name: String, desc: String, price: int, color: Co
 	w.icon_color = color
 	return w
 
-func _make_melee(id: String, name: String, desc: String, price: int, dmg_min: float, dmg_max: float, arc: float, dur: float, color: Color, polished := false) -> WeaponData:
+func _make_melee(id: String, name: String, desc: String, price: int, dmg_min: float, dmg_max: float, arc: float, dur: float, color: Color, polished := false, dig_size := 1) -> WeaponData:
 	var w := WeaponData.new()
 	w.id = id
 	w.display_name = name
@@ -145,6 +192,7 @@ func _make_melee(id: String, name: String, desc: String, price: int, dmg_min: fl
 	w.swing_duration = dur
 	w.icon_color = color
 	w.polished = polished
+	w.dig_size = dig_size
 	return w
 
 func _make_ranged(id: String, name: String, desc: String, price: int, dmg_min: float, dmg_max: float, cooldown: float, speed: float, color: Color) -> WeaponData:
@@ -183,6 +231,13 @@ func get_ranged() -> WeaponData:
 func has_ranged_weapon() -> bool:
 	return equipped_ranged_id != "" and owns(equipped_ranged_id)
 
+## True when this weapon is the one currently held in the shared weapon slot:
+## the ranged weapon while it is out, otherwise the melee tool.
+func is_active_weapon(id: String) -> bool:
+	if ranged_active:
+		return id == equipped_ranged_id
+	return id == equipped_melee_id
+
 func has_dash_ability() -> bool:
 	return owns("dash_ability")
 
@@ -216,8 +271,12 @@ func buy(w: WeaponData) -> bool:
 	_owned_append(w.id)
 	if w.weapon_type == WeaponData.Type.MELEE:
 		equipped_melee_id = w.id
+		ranged_active = false
 	elif w.weapon_type == WeaponData.Type.RANGED:
 		equipped_ranged_id = w.id
+		# Buying a ranged weapon brings it straight out, so the purchase is
+		# visible in the HUD's weapon slot instead of silently tucked away.
+		ranged_active = true
 	coins_changed.emit(coins)
 	loadout_changed.emit()
 	_save_data()
@@ -240,14 +299,55 @@ func buy_item(item: ItemData) -> bool:
 	purchased.emit()
 	return true
 
+## What a merchant would ask for this item, used as the basis of the sell price.
+## The shop's own stock prices take priority, then the wider buy-back list.
+## Returns 0 for anything a merchant will not trade in.
+func get_item_value(item: ItemData) -> int:
+	if item == null:
+		return 0
+	if item_prices.has(item.item_name):
+		return int(item_prices[item.item_name])
+	return int(item_values.get(item.item_name, 0))
+
+## What a merchant pays for one unit: half of get_item_value(), rounded down and
+## never below one coin. Returns 0 for untradeable items so callers can disable
+## their sell button.
+func get_sell_price(item: ItemData) -> int:
+	var value := get_item_value(item)
+	if value <= 0:
+		return 0
+	return maxi(1, value / 2)
+
+## Sells one unit out of an inventory slot and pays the seller half its value.
+## Returns false when the slot is empty or the item cannot be traded, so a
+## disabled button and a dead click behave the same way.
+func sell_inventory_slot(slot: int) -> bool:
+	if slot < 0 or slot >= Inventory.MAX_SLOTS:
+		return false
+	var item: ItemData = Inventory.slots[slot]
+	if item == null:
+		return false
+	var price := get_sell_price(item)
+	if price <= 0:
+		return false
+	Inventory.remove_one(slot)
+	coins += price
+	coins_changed.emit(coins)
+	_save_data()
+	SFX.play_ui("coin", -6.0, 1.1)
+	sold.emit(item, price)
+	return true
+
 func equip(id: String) -> bool:
 	var w := get_weapon(id)
 	if w == null or not owns(id) or w.weapon_type == WeaponData.Type.ABILITY:
 		return false
 	if w.weapon_type == WeaponData.Type.MELEE:
 		equipped_melee_id = id
+		ranged_active = false
 	else:
 		equipped_ranged_id = id
+		ranged_active = true
 	loadout_changed.emit()
 	_save_data()
 	SFX.play_ui("ui_click", -12.0, 1.2)
@@ -278,14 +378,34 @@ func drop_coins(world_pos: Vector2, count: int, value_per_coin: int = 1) -> void
 
 # --- Shop UI --------------------------------------------------------------
 
+## The stock a shop panel shows. "all" is the unified merchant's shelf: every
+## weapon and ability the shop sells, then the consumable items.
+func get_shop_list(shop_type: String) -> Array:
+	match shop_type:
+		"abilities":
+			return ability_catalog
+		"items":
+			return item_catalog
+		"all":
+			var list: Array = []
+			list.append_array(weapon_catalog)
+			list.append_array(ability_catalog)
+			list.append_array(item_catalog)
+			return list
+		_:
+			return weapon_catalog
+
 func is_shop_open(shop_type: String = "") -> bool:
 	if _panel == null or not is_instance_valid(_panel):
 		return false
 	return shop_type.is_empty() or String(_panel.get("shop_type")) == shop_type
 
-func open_shop(shop_type: String = "weapons") -> void:
-	if shop_type not in ["weapons", "abilities", "items"]:
-		shop_type = "weapons"
+## Opens a shop panel. "all" is the single merchant's full stock (weapons,
+## abilities and items) and is the default; the narrower types remain for
+## anything that wants a single-category panel.
+func open_shop(shop_type: String = "all") -> void:
+	if shop_type not in ["all", "weapons", "abilities", "items"]:
+		shop_type = "all"
 	if _panel != null and is_instance_valid(_panel):
 		if String(_panel.get("shop_type")) == shop_type:
 			return
@@ -315,6 +435,8 @@ func _loadout_refresh() -> void:
 		equipped_melee_id = "shovel"
 	if equipped_ranged_id != "" and not owns(equipped_ranged_id):
 		equipped_ranged_id = ""
+	if not has_ranged_weapon():
+		ranged_active = false
 
 	# Base moveset, granted on every boot like the shovel so existing saves pick
 	# it up too. The wall jump is not an unlock any more - it is part of how the
@@ -331,6 +453,7 @@ func clear_save_data() -> void:
 	owned.clear()
 	equipped_melee_id = "shovel"
 	equipped_ranged_id = ""
+	ranged_active = false
 	_loadout_refresh()
 	coins_changed.emit(coins)
 	_save_data()

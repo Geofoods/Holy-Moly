@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://btmpmapdebug0002"]
+
+[ext_resource type="Script" path="res://_tmp_map_debug.gd" id="1_dbg"]
+
+[node name="MapDebug" type="Node"]
+script = ExtResource("1_dbg")

@@ -21,6 +21,13 @@ var container: Node2D = null
 ## Built once and reused, matching the shine the held Golden Shovel carries in
 ## the world (see sword.gd) so the hotbar reads the same way.
 var _polish_material: ShaderMaterial = null
+## The pop-up weapon list, shown when the melee slot is clicked. Null while the
+## list is closed. It carries a full-screen catcher so a click anywhere else
+## dismisses the list rather than swinging the shovel.
+var _weapon_picker: Control = null
+## The drawn ranged-weapon icon that replaces the melee sprite in slot 0 while
+## the staff is held (Q swaps). Null until the hotbar is built.
+var _ranged_icon: Control = null
 
 func _cropped_texture(tex: Texture2D) -> Texture2D:
 	var key := tex.resource_path
@@ -99,10 +106,7 @@ func _build_ui() -> void:
 		var slot_idx := i
 		panel.gui_input.connect(func(event: InputEvent):
 			if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-				if Inventory.selected_slot == slot_idx:
-					Inventory.selected_slot = -1
-				else:
-					Inventory.selected_slot = slot_idx
+				_on_slot_pressed(slot_idx)
 		)
 		var style := StyleBoxFlat.new()
 		style.bg_color = PARCHMENT_BG
@@ -147,7 +151,18 @@ func _build_ui() -> void:
 		icon_label.mouse_filter = Control.MOUSE_FILTER_PASS
 		panel.add_child(icon_label)
 
-
+		# Slot 0 is the weapon slot: while the ranged weapon is held this drawn
+		# icon takes the place of the melee sprite (see _update_slot).
+		if i == 0:
+			var ranged_icon := Control.new()
+			ranged_icon.name = "RangedIcon"
+			ranged_icon.size = Vector2(64, 64)
+			ranged_icon.position = Vector2((SLOT_SIZE.x - 64) / 2, (SLOT_SIZE.y - 64) / 2)
+			ranged_icon.mouse_filter = Control.MOUSE_FILTER_PASS
+			ranged_icon.set_script(preload("res://scripts/weapon_icon.gd"))
+			ranged_icon.hide()
+			panel.add_child(ranged_icon)
+			_ranged_icon = ranged_icon
 
 		container.add_child(panel)
 		slot_panels.append(panel)
@@ -198,6 +213,21 @@ func _update_slot(idx):
 		style.border_width_top=2
 		style.border_width_right=2
 		style.border_width_bottom=2
+	# The weapon slot (slot 0) shows whichever weapon is active: the melee sprite
+	# while the tool is in hand, the drawn ranged icon while the staff is out.
+	if _ranged_icon and idx == 0:
+		_ranged_icon.hide()
+	if idx == 0 and _ranged_icon and Shop != null and Shop.ranged_active and Shop.has_ranged_weapon():
+		var rw: WeaponData = Shop.get_ranged()
+		_ranged_icon.icon_color = rw.icon_color if rw else Color(0.7, 0.35, 1.0)
+		_ranged_icon.queue_redraw()
+		_ranged_icon.show()
+		tex.texture = null
+		tex.material = null
+		tex.hide()
+		lbl.text = ""
+		panel.add_theme_stylebox_override("panel",style)
+		return
 	if item:
 		tex.texture = _cropped_texture(item.icon_texture) if item.icon_texture else _make_colored_texture(item.icon_color)
 		tex.self_modulate = item.icon_color if item.icon_texture and item.item_name == "Shovel" else Color.WHITE
@@ -227,3 +257,131 @@ func _update_slot(idx):
 		tex.hide()
 		lbl.text = ""
 	panel.add_theme_stylebox_override("panel",style)
+
+## Slot 0 is the shared weapon slot for every held weapon, melee and ranged
+## alike. Once more than one is owned, clicking it opens the picker instead of
+## just toggling selection; every other slot keeps the plain select/deselect
+## behaviour.
+func _on_slot_pressed(slot_idx: int) -> void:
+	if slot_idx == 0 and _owned_weapons().size() > 1:
+		_open_weapon_picker()
+		return
+	if Inventory.selected_slot == slot_idx:
+		Inventory.selected_slot = -1
+	else:
+		Inventory.selected_slot = slot_idx
+
+## Every held weapon the mole owns, melee and ranged alike, in catalog order -
+## the order the picker lists them. The staff sits in the same list as the
+## shovel and the pickaxe because they all share slot 0.
+func _owned_weapons() -> Array:
+	var list: Array = []
+	if Shop == null:
+		return list
+	for w in Shop.weapon_catalog:
+		if Shop.owns(w.id):
+			list.append(w)
+	return list
+
+func _open_weapon_picker() -> void:
+	if Shop == null or _weapon_picker != null:
+		return
+	var weapons := _owned_weapons()
+	if weapons.is_empty():
+		return
+	# Choosing a weapon makes it the held weapon, so make slot 0 the active slot.
+	Inventory.selected_slot = 0
+
+	var view := get_viewport().get_visible_rect().size
+	var width := 236.0
+	var row_h := 48.0
+	var title_h := 36.0
+	var pad := 12.0
+	var height := title_h + weapons.size() * row_h + pad
+
+	_weapon_picker = Control.new()
+	_weapon_picker.name = "WeaponPicker"
+	_weapon_picker.size = view
+	_weapon_picker.mouse_filter = Control.MOUSE_FILTER_STOP
+	_weapon_picker.gui_input.connect(func(event: InputEvent) -> void:
+		if event is InputEventMouseButton and event.pressed:
+			_close_weapon_picker()
+	)
+	add_child(_weapon_picker)
+
+	var panel := Panel.new()
+	panel.size = Vector2(width, height)
+	panel.position = _picker_panel_position(width, height)
+	panel.add_theme_stylebox_override("panel", _picker_panel_style())
+	_weapon_picker.add_child(panel)
+
+	var title := Label.new()
+	title.text = "WEAPONS"
+	title.size = Vector2(width, title_h)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	title.add_theme_font_override("font", HOTBAR_FONT)
+	title.add_theme_font_size_override("font_size", 20)
+	title.add_theme_color_override("font_color", PARCHMENT_TEXT)
+	panel.add_child(title)
+
+	for i in weapons.size():
+		panel.add_child(_make_weapon_row(weapons[i], Vector2(pad, title_h + i * row_h), width - pad * 2.0, row_h - 8.0))
+
+func _make_weapon_row(w: WeaponData, pos: Vector2, row_width: float, row_h: float) -> Button:
+	var equipped := Shop.is_active_weapon(w.id)
+	var btn := Button.new()
+	btn.position = pos
+	btn.size = Vector2(row_width, row_h)
+	btn.text = w.display_name + ("  -  equipped" if equipped else "")
+	btn.tooltip_text = w.description
+	btn.add_theme_font_override("font", HOTBAR_FONT)
+	btn.add_theme_font_size_override("font_size", 18)
+	btn.add_theme_color_override("font_color", PARCHMENT_TEXT)
+	btn.add_theme_color_override("font_hover_color", PARCHMENT_TEXT)
+	btn.add_theme_color_override("font_pressed_color", PARCHMENT_TEXT)
+	var bg := Color(0.86, 0.95, 0.82) if equipped else PARCHMENT_BG
+	btn.add_theme_stylebox_override("normal", _picker_row_style(bg))
+	btn.add_theme_stylebox_override("hover", _picker_row_style(bg.lightened(0.12)))
+	btn.add_theme_stylebox_override("pressed", _picker_row_style(bg.darkened(0.08)))
+	btn.add_theme_stylebox_override("focus", _picker_row_style(Color(0, 0, 0, 0)))
+	btn.pressed.connect(func() -> void:
+		Shop.equip(w.id)
+		_close_weapon_picker()
+	)
+	return btn
+
+## Sits the list just above the melee slot, kept on screen when the hotbar is
+## near an edge.
+func _picker_panel_position(width: float, height: float) -> Vector2:
+	var slot0: Control = slot_panels[0]
+	var center_x := container.position.x + slot0.position.x + slot0.size.x / 2.0
+	var view := get_viewport().get_visible_rect().size
+	var pos := Vector2(
+		center_x - width / 2.0,
+		container.position.y + slot0.position.y - height - 10.0)
+	pos.x = clampf(pos.x, 8.0, maxf(8.0, view.x - width - 8.0))
+	pos.y = maxf(8.0, pos.y)
+	return pos
+
+func _close_weapon_picker() -> void:
+	if _weapon_picker == null:
+		return
+	_weapon_picker.queue_free()
+	_weapon_picker = null
+
+func _picker_panel_style() -> StyleBoxFlat:
+	var s := StyleBoxFlat.new()
+	s.bg_color = PARCHMENT_BG_ACTIVE
+	s.border_color = PARCHMENT_BORDER
+	s.set_border_width_all(3)
+	s.set_corner_radius_all(8)
+	return s
+
+func _picker_row_style(bg: Color) -> StyleBoxFlat:
+	var s := StyleBoxFlat.new()
+	s.bg_color = bg
+	s.border_color = PARCHMENT_BORDER
+	s.set_border_width_all(2)
+	s.set_corner_radius_all(6)
+	return s

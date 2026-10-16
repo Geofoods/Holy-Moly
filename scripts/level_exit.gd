@@ -43,6 +43,7 @@ func _mark_tutorial_done_if_leaving() -> void:
 	var cs := get_tree().current_scene
 	if cs != null and str(cs.scene_file_path).ends_with("tutorial.tscn"):
 		Progress.mark_tutorial_done()
+		Quests.announce_completion_if_new("complete_tutorial")
 
 func _on_body_exited(body: Node) -> void:
 	if body.is_in_group("mole"):

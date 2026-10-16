@@ -44,6 +44,9 @@ var arena_completed := false
 ## Set the first time the mole buys anything from a shop stall, which is the piece
 ## of progress the shopping quest is keyed to.
 var shop_purchased := false
+## Set the first time the mole sells something back to a merchant, which is the
+## piece of progress the buy-back quest is keyed to.
+var item_sold := false
 ## Set when the final boss's death hands off to the credits, which is the one
 ## moment that unambiguously means the campaign was finished. The title screen
 ## gates Boss Rush on this, so it has to survive a quit between beating the boss
@@ -261,6 +264,16 @@ func mark_shop_purchased() -> void:
 func is_shop_purchased() -> bool:
 	return shop_purchased
 
+## Records that the mole has sold something to a merchant, so the buy-back quest
+## reads as done. Written the moment the sale lands, like the other flags.
+func mark_item_sold() -> void:
+	if not item_sold:
+		item_sold = true
+		save_progress()
+
+func is_item_sold() -> bool:
+	return item_sold
+
 ## Whether the reward for a quest has already been handed out. Named as a query so
 ## the claim rule lives with the save that backs it rather than at each call site.
 func is_quest_claimed(quest_id: String) -> bool:
@@ -362,6 +375,7 @@ func clear_save_data() -> void:
 	arena_completed = false
 	game_completed = false
 	shop_purchased = false
+	item_sold = false
 	best_combo = 0
 	claimed_quests.clear()
 	unlocked_quests.clear()
@@ -395,6 +409,7 @@ func save_progress() -> void:
 	cfg.set_value("bosses", "rush", boss_rush_cleared)
 	cfg.set_value("arena", "completed", arena_completed)
 	cfg.set_value("meta", "shop_purchased", shop_purchased)
+	cfg.set_value("meta", "item_sold", item_sold)
 	cfg.set_value("meta", "best_combo", best_combo)
 	cfg.set_value("meta", "game_completed", game_completed)
 	cfg.set_value("respawn", "scene", respawn_scene)
@@ -435,6 +450,7 @@ func load_progress() -> void:
 	boss_rush_cleared = bool(cfg.get_value("bosses", "rush", false))
 	arena_completed = bool(cfg.get_value("arena", "completed", false))
 	shop_purchased = bool(cfg.get_value("meta", "shop_purchased", false))
+	item_sold = bool(cfg.get_value("meta", "item_sold", false))
 	best_combo = int(cfg.get_value("meta", "best_combo", 0))
 	game_completed = bool(cfg.get_value("meta", "game_completed", false))
 	respawn_scene = str(cfg.get_value("respawn", "scene", ""))

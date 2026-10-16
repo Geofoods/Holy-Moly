@@ -46,10 +46,25 @@ const QUESTS: Array[Dictionary] = [
 		"icon_tint": Color(0.62, 0.34, 0.85, 1),
 	},
 	{
+		"id": "complete_tutorial",
+		"title": "Learn the Ways",
+		"description": "Grub offered to teach you the ways. Head down into the Surface Caves, pick up the basics of digging, fighting and exploring, and make it out the other side.",
+		"reward_coins": 100,
+		"icon": "res://Untitled design (1)/tutorial.png",
+	},
+	{
 		"id": "buy_from_shop",
 		"title": "Go Shopping",
 		"description": "Goblin Gilbert has set up his stall. Buy anything from him to prove you're a paying customer.",
 		"reward_coins": 100,
+		"icon": "res://sprites/shopt.png",
+		"icon_region": Rect2(0, 0, 560, 560),
+	},
+	{
+		"id": "sell_items",
+		"title": "Sell Some Loot",
+		"description": "Goblin Gilbert buys anything off your hands. Open the shop's Sell tab and trade in a piece of loot you don't need.",
+		"reward_coins": 150,
 		"icon": "res://sprites/shopt.png",
 		"icon_region": Rect2(0, 0, 560, 560),
 	},
@@ -61,8 +76,11 @@ const QUESTS: Array[Dictionary] = [
 ## rather than laying out the whole game up front. Quests revealed some other way
 ## are not here: kill_corruption is handed over by an NPC's `unlocks_quest` (see
 ## npc_mole.gd), save_snail is handed over when the level 5 cutscene ends (see
-## level_05_intro.gd), and buy_from_shop is handed over by Goblin Gilbert's own
-## `unlocks_quest` the first time the player talks to him (see shopkeeper_npc.gd).
+## level_05_intro.gd), buy_from_shop is handed over by Goblin Gilbert's own
+## `unlocks_quest` the first time the player talks to him (see shopkeeper_npc.gd),
+## sell_items is handed over by his `unlocks_after_purchase` when the post-purchase
+## thank-you plays, and complete_tutorial is handed over by Grub in Mole Village
+## the same way.
 const UNLOCK_SCENES := {
 	"defeat_corrupted_snail": ["res://scenes/level_10.tscn"],
 }
@@ -70,6 +88,7 @@ const UNLOCK_SCENES := {
 func _ready() -> void:
 	get_tree().scene_changed.connect(_on_scene_changed)
 	Shop.purchased.connect(_on_shop_purchased)
+	Shop.sold.connect(_on_shop_sold)
 	_unlock_already_met()
 
 ## Every quest in log order. Read-only by convention; callers should not mutate it.
@@ -128,6 +147,10 @@ func is_complete(quest_id: String) -> bool:
 			return Progress.is_game_completed()
 		"buy_from_shop":
 			return Progress.is_shop_purchased()
+		"sell_items":
+			return Progress.is_item_sold()
+		"complete_tutorial":
+			return Progress.tutorial_done
 	return false
 
 ## Whether a quest has been discovered. Finishing a quest always counts as having
@@ -214,6 +237,12 @@ func claim(quest_id: String) -> bool:
 func _on_shop_purchased() -> void:
 	Progress.mark_shop_purchased()
 	announce_completion_if_new("buy_from_shop")
+
+## An item was sold back, so the buy-back quest is done. Records the flag and
+## posts the completion banner the first time; every later sale is a quiet no-op.
+func _on_shop_sold(_item: ItemData, _amount: int) -> void:
+	Progress.mark_item_sold()
+	announce_completion_if_new("sell_items")
 
 ## Announces a quest's completion if it became finished just now. Call this
 ## once in the place that first sets the completion flag. It unlocks silently if

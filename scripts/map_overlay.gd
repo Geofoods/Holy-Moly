@@ -100,6 +100,8 @@ var _traveling := false
 var _root: Control = null
 var _holder: Control = null
 var _art: Texture2D = null
+## Rendered pin textures, one per destination state, built once and reused.
+var _pin_cache := {}
 
 func _init() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -154,7 +156,7 @@ func _open_map() -> void:
 	add_child(_root)
 
 	var dim := ColorRect.new()
-	dim.color = Color(0.05, 0.05, 0.08, 0.82)
+	dim.color = Color(0, 0, 0, 0.6)
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_root.add_child(dim)
@@ -167,6 +169,12 @@ func _open_map() -> void:
 	var panel := PanelContainer.new()
 	panel.add_theme_stylebox_override("panel", _make_panel_style())
 	center.add_child(panel)
+
+	# Drawn cartography furniture behind the content: a scatter of age stains and
+	# a double neatline, so the sheet reads as a chart rather than a plain panel.
+	var sheet := MapSheet.new()
+	sheet.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(sheet)
 
 	# The map and the travel list sit side by side rather than one above the other:
 	# the map is close to square, so stacking the list underneath made a column far
@@ -182,11 +190,21 @@ func _open_map() -> void:
 	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	columns.add_child(vbox)
 
+	var title_row := CenterContainer.new()
+	title_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.add_child(title_row)
+
+	# The title sits on a cartouche - a little bordered plaque - the way a map's
+	# name is boxed on the sheet itself.
+	var cartouche := PanelContainer.new()
+	cartouche.add_theme_stylebox_override("panel", _make_cartouche_style())
+	title_row.add_child(cartouche)
+
 	var title := Label.new()
 	title.text = "MAP"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_style_label(title, 44, Color(1.0, 0.92, 0.72, 1))
-	vbox.add_child(title)
+	_style_label(title, 40, Color(0.32, 0.2, 0.08, 1))
+	cartouche.add_child(title)
 
 	var map_box := PanelContainer.new()
 	map_box.add_theme_stylebox_override("panel", _make_map_style())
@@ -209,16 +227,23 @@ func _open_map() -> void:
 	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_holder.add_child(art)
 
+	# Graticule and compass drawn over the picture, so the level reads as a
+	# charted region rather than a screenshot.
+	var furniture := MapFurniture.new()
+	furniture.set_anchors_preset(Control.PRESET_FULL_RECT)
+	furniture.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_holder.add_child(furniture)
+
 	var checkpoint := Label.new()
 	checkpoint.text = _checkpoint_status_text()
 	checkpoint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_style_label(checkpoint, 22, Color(0.55, 0.9, 1.0, 1.0) if not Progress.respawn_activated.is_empty() else Color(0.68, 0.68, 0.72, 1.0))
+	_style_label(checkpoint, 22, Color(0.25, 0.5, 0.15, 1.0) if not Progress.respawn_activated.is_empty() else Color(0.55, 0.48, 0.36, 1.0))
 	vbox.add_child(checkpoint)
 
 	var hint := Label.new()
 	hint.text = "PRESS M TO CLOSE"
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_style_label(hint, 20, Color(0.8, 0.8, 0.8, 0.9))
+	_style_label(hint, 20, Color(0.5, 0.4, 0.26, 0.9))
 	vbox.add_child(hint)
 
 	# Centred against the map rather than pinned to the top, so the list reads as
@@ -248,7 +273,7 @@ func _build_portal_panel() -> Control:
 	var title := Label.new()
 	title.text = "TRAVEL"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_style_label(title, 24, Color(0.62, 0.9, 1.0, 1))
+	_style_label(title, 24, Color(0.42, 0.28, 0.1, 1))
 	vbox.add_child(title)
 
 	# The entries scroll inside a capped box rather than stretching the panel.
@@ -293,10 +318,16 @@ func _make_portal_button(scene_path: String, label: String, state: int) -> Butto
 	var button := Button.new()
 	button.text = _portal_button_text(label, state)
 	button.custom_minimum_size = Vector2(PORTAL_PANEL_WIDTH, PORTAL_BUTTON_HEIGHT)
+	# A drawn pin marks each destination, the way a map drops markers on the
+	# places it can send you.
+	button.icon = _pin_for_state(state)
+	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	button.add_theme_constant_override("icon_max_width", 14)
+	button.add_theme_constant_override("h_separation", 8)
 	button.add_theme_font_override("font", load(FONT_PATH) as Font)
 	button.add_theme_font_size_override("font_size", 19)
 	button.add_theme_color_override("font_color", _portal_text_color(state))
-	button.add_theme_color_override("font_hover_color", Color(1, 1, 1, 1))
+	button.add_theme_color_override("font_hover_color", Color(0.15, 0.1, 0.03, 1))
 	# HERE and LOCKED are both disabled, and a disabled Button reads this slot
 	# rather than font_color, so it has to be set for the states to look right.
 	button.add_theme_color_override("font_disabled_color", _portal_text_color(state))
@@ -325,11 +356,11 @@ func _portal_button_text(label: String, state: int) -> String:
 func _portal_text_color(state: int) -> Color:
 	match state:
 		STATE_HERE:
-			return Color(0.72, 0.66, 0.58, 1)
+			return Color(0.5, 0.4, 0.26, 1)
 		STATE_LOCKED:
-			return Color(0.48, 0.5, 0.54, 1)
+			return Color(0.63, 0.55, 0.42, 1)
 		_:
-			return Color(0.98, 0.94, 0.86, 1)
+			return Color(0.32, 0.2, 0.08, 1)
 
 func _on_portal_hovered() -> void:
 	SFX.play_ui("ui_hover", -18.0, 1.8)
@@ -485,17 +516,15 @@ func _style_label(label: Label, size: int, color: Color) -> void:
 		label.add_theme_font_override("font", font)
 	label.add_theme_font_size_override("font_size", size)
 	label.add_theme_color_override("font_color", color)
-	label.add_theme_constant_override("outline_size", 4)
-	label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
 
 func _make_panel_style() -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.2, 0.14, 0.09, 0.97)
-	sb.border_color = Color(0.62, 0.45, 0.22, 1)
-	sb.set_border_width_all(4)
-	sb.set_corner_radius_all(14)
-	sb.shadow_color = Color(0, 0, 0, 0.6)
-	sb.shadow_size = 20
+	sb.bg_color = Color(0.93, 0.85, 0.66, 1)
+	sb.border_color = Color(0.42, 0.28, 0.14, 1)
+	sb.set_border_width_all(5)
+	sb.set_corner_radius_all(18)
+	sb.shadow_color = Color(0, 0, 0, 0.45)
+	sb.shadow_size = 10
 	sb.content_margin_left = 26.0
 	sb.content_margin_right = 26.0
 	sb.content_margin_top = 18.0
@@ -504,18 +533,18 @@ func _make_panel_style() -> StyleBoxFlat:
 
 func _make_map_style() -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.1, 0.08, 0.05, 1)
-	sb.border_color = Color(0.7, 0.52, 0.26, 1)
+	sb.bg_color = Color(0.97, 0.91, 0.78, 1)
+	sb.border_color = Color(0.6, 0.44, 0.24, 0.6)
 	sb.set_border_width_all(3)
-	sb.set_corner_radius_all(8)
+	sb.set_corner_radius_all(12)
 	return sb
 
 func _make_portal_style() -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.13, 0.12, 0.15, 0.97)
-	sb.border_color = Color(0.35, 0.58, 0.68, 1)
+	sb.bg_color = Color(0.8, 0.68, 0.46, 1)
+	sb.border_color = Color(0.42, 0.28, 0.14, 1)
 	sb.set_border_width_all(2)
-	sb.set_corner_radius_all(10)
+	sb.set_corner_radius_all(12)
 	sb.content_margin_left = 12.0
 	sb.content_margin_right = 12.0
 	sb.content_margin_top = 10.0
@@ -529,14 +558,14 @@ func _make_portal_button_style(state: int) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
 	match state:
 		STATE_HERE:
-			sb.bg_color = Color(0.1, 0.12, 0.15, 1)
-			sb.border_color = Color(0.28, 0.32, 0.36, 1)
+			sb.bg_color = Color(0.97, 0.91, 0.78, 1)
+			sb.border_color = Color(0.6, 0.44, 0.24, 1)
 		STATE_LOCKED:
-			sb.bg_color = Color(0.08, 0.08, 0.1, 1)
-			sb.border_color = Color(0.22, 0.23, 0.26, 1)
+			sb.bg_color = Color(0.72, 0.63, 0.46, 1)
+			sb.border_color = Color(0.55, 0.42, 0.26, 1)
 		_:
-			sb.bg_color = Color(0.2, 0.29, 0.34, 1)
-			sb.border_color = Color(0.55, 0.82, 0.95, 1)
+			sb.bg_color = Color(0.8, 0.68, 0.46, 1)
+			sb.border_color = Color(0.42, 0.28, 0.14, 1)
 	sb.set_border_width_all(2)
 	sb.set_corner_radius_all(8)
 	sb.content_margin_left = 8.0
@@ -544,3 +573,104 @@ func _make_portal_button_style(state: int) -> StyleBoxFlat:
 	sb.content_margin_top = 4.0
 	sb.content_margin_bottom = 4.0
 	return sb
+
+## Plaque the map's name sits on, boxed like the cartouche on a real chart.
+func _make_cartouche_style() -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.8, 0.68, 0.46, 1)
+	sb.border_color = Color(0.42, 0.28, 0.14, 1)
+	sb.set_border_width_all(2)
+	sb.set_corner_radius_all(6)
+	sb.content_margin_left = 36.0
+	sb.content_margin_right = 36.0
+	sb.content_margin_top = 4.0
+	sb.content_margin_bottom = 4.0
+	return sb
+
+## The pin a destination wears. Cached per state so the diamond is drawn once
+## rather than for every entry every time the map opens.
+func _pin_for_state(state: int) -> ImageTexture:
+	if _pin_cache.has(state):
+		return _pin_cache[state]
+	var pin := _make_pin_texture(_portal_text_color(state))
+	_pin_cache[state] = pin
+	return pin
+
+## A small diamond marker rasterised into a texture at runtime, so the travel
+## list gets map pins without an icon asset being shipped for it.
+func _make_pin_texture(color: Color) -> ImageTexture:
+	var pin_size := 14
+	var img := Image.create(pin_size, pin_size, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	var centre := float(pin_size - 1) * 0.5
+	var reach := centre - 0.5
+	for y in range(pin_size):
+		for x in range(pin_size):
+			if absf(float(x) - centre) + absf(float(y) - centre) <= reach:
+				img.set_pixel(x, y, color)
+	return ImageTexture.create_from_image(img)
+
+## The sheet behind the map: age stains and a double neatline, all drawn so the
+## parchment read survives without a texture for it.
+class MapSheet:
+	extends Control
+
+	const INK := Color(0.42, 0.28, 0.14, 1)
+
+	func _draw() -> void:
+		var s := size
+		if s.x < 16.0 or s.y < 16.0:
+			return
+		# Fixed stains, not random ones: the sheet must not shimmer between opens.
+		var stains := [
+			Vector3(0.16, 0.2, 26.0),
+			Vector3(0.84, 0.3, 18.0),
+			Vector3(0.62, 0.79, 34.0),
+			Vector3(0.33, 0.6, 22.0),
+		]
+		for stain in stains:
+			var c := Vector2(s.x * stain.x, s.y * stain.y)
+			draw_circle(c, stain.z, Color(INK.r, INK.g, INK.b, 0.05))
+		var outer := Color(INK.r, INK.g, INK.b, 0.5)
+		var inner := Color(INK.r, INK.g, INK.b, 0.28)
+		draw_rect(Rect2(Vector2(4, 4), s - Vector2(8, 8)), outer, false, 3.0)
+		draw_rect(Rect2(Vector2(11, 11), s - Vector2(22, 22)), inner, false, 1.0)
+
+## Map furniture over the level art: a faint graticule of latitude and longitude
+## lines and a compass rose, so the picture reads as a charted region.
+class MapFurniture:
+	extends Control
+
+	const INK := Color(0.42, 0.28, 0.14, 1)
+
+	func _draw() -> void:
+		var s := size
+		if s.x < 48.0 or s.y < 48.0:
+			return
+		var grid := Color(INK.r, INK.g, INK.b, 0.12)
+		for i in range(1, 8):
+			var x := s.x * float(i) / 8.0
+			draw_line(Vector2(x, 0), Vector2(x, s.y), grid, 1.0)
+		for j in range(1, 6):
+			var y := s.y * float(j) / 6.0
+			draw_line(Vector2(0, y), Vector2(s.x, y), grid, 1.0)
+		var radius := clampf(minf(s.x, s.y) * 0.11, 18.0, 34.0)
+		_draw_compass(Vector2(s.x - radius - 16.0, s.y - radius - 16.0), radius)
+
+	func _draw_compass(centre: Vector2, radius: float) -> void:
+		var ink := Color(INK.r, INK.g, INK.b, 0.85)
+		var faint := Color(INK.r, INK.g, INK.b, 0.4)
+		draw_circle(centre, radius, Color(0.97, 0.91, 0.78, 0.55))
+		draw_arc(centre, radius, 0.0, TAU, 48, ink, 1.5, true)
+		draw_arc(centre, radius * 0.7, 0.0, TAU, 40, faint, 1.0, true)
+		for k in range(8):
+			var ang := float(k) * TAU / 8.0 - PI / 2.0
+			var dir := Vector2(cos(ang), sin(ang))
+			var near := centre + dir * (radius * 0.2)
+			if k % 2 == 0:
+				draw_line(near, centre + dir * radius, ink, 2.0)
+			else:
+				draw_line(near, centre + dir * (radius * 0.72), faint, 1.0)
+		# North spoke in ink-red, the way a drawn compass points the way.
+		draw_line(centre, centre + Vector2(0, -radius), Color(0.62, 0.16, 0.12, 0.9), 3.0)
+		draw_circle(centre, 3.0, ink)

@@ -127,7 +127,6 @@ var shield_active := false
 var hurt_anim_time_left := 0.0
 var air_time := 0.0
 var launched_from_jump := false
-var using_ranged := false
 var _coyote_timer := 0.0
 var _jump_held := false
 var _wall_jump_lock_timer := 0.0
@@ -444,9 +443,9 @@ func _update_held_item() -> void:
 	var melee_active := slot == 0 or item == null
 
 	if has_node("Weapon"):
-		$Weapon.visible = melee_active and Inventory.slots[0] != null and can_break and not using_ranged
+		$Weapon.visible = melee_active and Inventory.slots[0] != null and can_break and not Shop.ranged_active
 	if has_node("RangedWeapon"):
-		$RangedWeapon.visible = using_ranged and Shop.has_ranged_weapon()
+		$RangedWeapon.visible = Shop.ranged_active and Shop.has_ranged_weapon()
 
 	if has_node("HeldBomb"):
 		$HeldBomb.visible = (item != null and item.item_name in ["Bomb", "Golden Bomb", "Mine", "Coal Lump", "Stink Bomb", "Flare", "Spark Bomb"])
@@ -768,8 +767,11 @@ func _is_touching_unbreakable_wall() -> bool:
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("swap_weapon") and not event.echo:
 		if Shop.has_ranged_weapon():
-			using_ranged = not using_ranged
-			_refresh_weapon_visibility()
+			# The active weapon lives on Shop so the HUD and this mole (and the
+			# next scene's mole) all read the same value. loadout_changed refreshes
+			# the held sprite down here and the weapon slot up in the HUD.
+			Shop.ranged_active = not Shop.ranged_active
+			Shop.loadout_changed.emit()
 			SFX.play_ui("ui_click", -12.0, 1.2)
 		get_viewport().set_input_as_handled()
 		return
@@ -1658,7 +1660,7 @@ func _dash_cancel_into_attack() -> void:
 	velocity.x = tunnel_direction * SPEED * 0.5
 	velocity.y = -200.0
 	_update_held_item()
-	if using_ranged:
+	if Shop.ranged_active:
 		return
 	if has_node("Weapon") and $Weapon.visible:
 		if $Weapon.has_method("dig_slash"):

@@ -130,6 +130,18 @@ func remove_item(slot: int) -> void:
 		slot_counts[slot] = 0
 		slots_changed.emit([slot])
 
+## Takes a single unit out of a slot, clearing it only once the stack runs out.
+## The shop's sell tab calls this rather than remove_item() so selling one of a
+## stack of bombs leaves the rest of the stack in place.
+func remove_one(slot: int) -> void:
+	if slot < 0 or slot >= MAX_SLOTS or slots[slot] == null:
+		return
+	slot_counts[slot] -= 1
+	if slot_counts[slot] <= 0:
+		remove_item(slot)
+	else:
+		slots_changed.emit([slot])
+
 func use_item(slot: int) -> bool:
 	if slot < 0 or slot >= MAX_SLOTS or slots[slot] == null:
 		return false
