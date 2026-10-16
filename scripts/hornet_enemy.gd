@@ -273,7 +273,7 @@ func _on_hurtbox_area_entered(area: Area2D) -> void:
 		if state == State.DASH or state == State.AIM:
 			_enter_recover()
 			cooldown_timer = DASH_COOLDOWN
-		velocity = (global_position - parent.global_position).normalized() * 500.0 + Vector2(0, -200)
+		velocity = ((global_position - parent.global_position).normalized() * 500.0 + Vector2(0, -200)) * parent.get_knockback_multiplier()
 		take_damage(parent.get_damage(self))
 
 ## Direction the last hit pushed this enemy, so its death fragments are blown

@@ -223,7 +223,7 @@ func _on_hurtbox_area_entered(area: Area2D) -> void:
 		var mole = get_tree().get_first_node_in_group("mole")
 		if mole:
 			swing_dir = (global_position - mole.global_position).normalized()
-			velocity = swing_dir * 600.0 + Vector2(0, -250)
+			velocity = (swing_dir * 600.0 + Vector2(0, -250)) * parent.get_knockback_multiplier()
 			_stun_timer = 0.25
 		take_damage(parent.get_damage(self), swing_dir)
 

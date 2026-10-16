@@ -28,3 +28,7 @@ var dig_size := 1
 ## the shine shader over its sprite, so the gold shovel catches the light instead
 ## of just being a gold-coloured shovel.
 var polished := false
+
+## Multiplies the knockback this tool deals to enemies and NPCs. Ordinary tools
+## land with 1x force; the pickaxe's heavy head shoves everything back at 2x.
+var knockback_multiplier := 1.0

@@ -55,6 +55,14 @@ func get_damage(target: Node = null) -> float:
 	var base := randf_range(w.min_damage, w.max_damage) if w else randf_range(5.0, 10.0)
 	return base * ComboManager.get_damage_multiplier(target)
 
+## How hard the equipped melee tool shoves whatever it hits. Every tool lands at
+## 1x except the pickaxe, whose heavy head doubles the knockback. Read by the
+## hurtbox handlers here and on the enemies so a swing's push always matches the
+## tool that landed it.
+func get_knockback_multiplier() -> float:
+	var w := Shop.get_melee()
+	return w.knockback_multiplier if w else 1.0
+
 func _apply_weapon_visual() -> void:
 	if not sprite:
 		return
@@ -342,11 +350,12 @@ func _on_hitbox_area_entered(area: Area2D) -> void:
 			var mole = get_parent()
 			if npc is CharacterBody2D and mole:
 				var knockback_dir = (npc.global_position - mole.global_position).normalized()
+				var kb := get_knockback_multiplier()
 				if npc.has_method("apply_knockback"):
-					npc.apply_knockback(knockback_dir * 700.0 + Vector2(0, -80.0))
+					npc.apply_knockback((knockback_dir * 700.0 + Vector2(0, -80.0)) * kb)
 				else:
-					npc.velocity = knockback_dir * 700.0
-					npc.velocity.y = -250.0
+					npc.velocity = knockback_dir * (700.0 * kb)
+					npc.velocity.y = -250.0 * kb
 		return
 	if area.is_in_group("enemy_hurtbox"):
 		var enemy = area.get_parent()
@@ -358,8 +367,9 @@ func _on_hitbox_area_entered(area: Area2D) -> void:
 				mole.screen_shake(8.0, 0.15)
 			if enemy is CharacterBody2D:
 				var knockback_dir = (enemy.global_position - mole.global_position).normalized()
-				enemy.velocity = knockback_dir * 600.0
-				enemy.velocity.y = -250.0
+				var kb := get_knockback_multiplier()
+				enemy.velocity = knockback_dir * (600.0 * kb)
+				enemy.velocity.y = -250.0 * kb
 
 func dig_slash() -> void:
 	if is_swinging:

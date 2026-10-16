@@ -71,7 +71,7 @@ func _build_catalog() -> void:
 	catalog = [
 		_make_melee("shovel", "Shovel", "The trusty starting tool.", 0, 5.0, 10.0, 2.4, 0.3, Color(0.9, 0.8, 0.55)),
 		_make_melee("gold_shovel", "Golden Shovel", "Wide arc, quick swing, double damage.", 160, 10.0, 20.0, 2.8, 0.2, Color(1.0, 0.8, 0.2), true),
-		_make_melee("pickaxe", "Pickaxe", "Slow, heavy swings dig a 2x2 block for double damage.", 1000, 10.0, 20.0, 2.4, 0.75, Color(0.72, 0.76, 0.85), false, 2),
+		_make_melee("pickaxe", "Pickaxe", "Slow, heavy swings dig a 2x2 block for double damage and send foes flying with double knockback.", 1000, 10.0, 20.0, 2.4, 0.75, Color(0.72, 0.76, 0.85), false, 2, 2.0),
 		_make_ranged("wizard_staff", "Wizard Staff", "Fires magic bolts that damage enemies and break blocks from a distance.", 400, 8.0, 14.0, 0.55, 900.0, Color(0.7, 0.35, 1.0)),
 	]
 	weapon_catalog.clear()
@@ -179,7 +179,7 @@ func _make_ability(id: String, name: String, desc: String, price: int, color: Co
 	w.icon_color = color
 	return w
 
-func _make_melee(id: String, name: String, desc: String, price: int, dmg_min: float, dmg_max: float, arc: float, dur: float, color: Color, polished := false, dig_size := 1) -> WeaponData:
+func _make_melee(id: String, name: String, desc: String, price: int, dmg_min: float, dmg_max: float, arc: float, dur: float, color: Color, polished := false, dig_size := 1, knockback := 1.0) -> WeaponData:
 	var w := WeaponData.new()
 	w.id = id
 	w.display_name = name
@@ -193,6 +193,7 @@ func _make_melee(id: String, name: String, desc: String, price: int, dmg_min: fl
 	w.icon_color = color
 	w.polished = polished
 	w.dig_size = dig_size
+	w.knockback_multiplier = knockback
 	return w
 
 func _make_ranged(id: String, name: String, desc: String, price: int, dmg_min: float, dmg_max: float, cooldown: float, speed: float, color: Color) -> WeaponData:
