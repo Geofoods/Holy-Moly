@@ -6,9 +6,14 @@ const MIN_BOUNCE_VELOCITY := 30.0
 
 @export var item_data: ItemData
 
+## Set by the level editor for an authored pickup: it hovers where it was placed
+## and can be collected straight away, instead of being flung out of a chest.
+@export var start_floating := false
+
 var _velocity := Vector2.ZERO
 var _is_floating := false
 var _float_time := 0.0
+var _float_anchored := false
 var _can_pickup := false
 var _y_start_float := 0.0
 var _notification_cooldown := 0.0
@@ -28,6 +33,13 @@ func _ready() -> void:
 	var player = get_tree().get_first_node_in_group("mole")
 	if player:
 		add_collision_exception_with(player)
+
+	if start_floating:
+		# An authored pickup bobs in place from the first frame. The bob anchor
+		# is taken in _physics_process, once the parent has placed us.
+		_is_floating = true
+		_can_pickup = true
+		return
 
 	# Spawn with some random velocity popped out of the chest
 	# e.g., upwards and slightly left/right
@@ -86,6 +98,11 @@ func _physics_process(delta: float) -> void:
 				_y_start_float = global_position.y
 				_velocity = Vector2.ZERO
 	else:
+		if not _float_anchored:
+			# Take the bob's centre on the first floating frame, so an authored
+			# pickup bobs around where it was placed rather than around y = 0.
+			_float_anchored = true
+			_y_start_float = global_position.y
 		# Floating bobbing animation
 		_float_time += delta
 		global_position.y = _y_start_float + sin(_float_time * 4.0) * 6.0

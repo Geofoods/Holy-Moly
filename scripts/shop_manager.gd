@@ -22,6 +22,11 @@ const HUD_SHOW_TIME := 1.8
 
 var coins := 0
 
+## While true the shop only changes in memory. The level editor holds it up for
+## the duration of a playtest so a previewed weapon pickup, or coins dropped by a
+## previewed enemy, cannot rewrite the player's real loadout on disk.
+var suppress_save := false
+
 var catalog: Array[WeaponData] = []
 var weapon_catalog: Array[WeaponData] = []
 var ability_catalog: Array[WeaponData] = []
@@ -507,6 +512,11 @@ func clear_save_data() -> void:
 	_save_data()
 
 func _save_data() -> void:
+	# The level editor raises this for the duration of a playtest: previewing a
+	# level must not hand the player permanent unlocks or bank the coins a
+	# previewed enemy dropped.
+	if suppress_save:
+		return
 	var cfg := ConfigFile.new()
 	cfg.set_value("shop", "version", SAVE_VERSION)
 	cfg.set_value("shop", "coins", coins)

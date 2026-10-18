@@ -56,16 +56,34 @@ mode.
 LEVEL EDITOR:
 
 The LEVEL EDITOR button on the title screen opens Level Forge. Paint blocks
-straight out of the game's own tileset, drop in enemies from the campaign, then
-press PLAY to test the level in place with the real mole. ESC returns to
-editing.
+straight out of the game's own tileset, drop in enemies, chests and items from
+the campaign, then press PLAY to test the level in place with the real mole. A
+health bar in the bottom-left tracks the mole's hearts for the duration of the
+test, and is gone again once you return to editing with ESC.
 
-LEFT CLICK: Paint the selected block, or place the selected enemy
-RIGHT CLICK: Erase a block or enemy
+The palette switches between three tabs. BLOCKS is every solid tile in the
+game's tileset. ENEMIES holds the campaign's creatures. ITEMS holds a Chest,
+which rolls its own loot exactly like the ones in the campaign, the four items
+the merchant actually stocks -- Drill, Bomb, Ice Bomb and Holy Water -- and the
+four weapons: Shovel, Golden Shovel, Pickaxe and Wizard Staff. An item is placed
+as a floating pickup that hovers where you put it until the mole walks into it;
+a weapon is placed as a pickup that hands the weapon over, and puts it in hand,
+the moment the mole touches it. A weapon the player already owns is left lying
+there. Whatever a playtest changes -- dug tiles, opened chests, collected items,
+weapons found in the preview, coins a previewed enemy dropped -- is put back when
+you stop.
+
+LEFT CLICK: Paint the selected block, or place the selected enemy, chest or item
+RIGHT CLICK: Erase a block, enemy, chest or item
 MIDDLE MOUSE DRAG / WASD: Pan the view
 MOUSE WHEEL: Zoom
 CTRL+Z / CTRL+Y: Undo / redo
 G: Toggle the grid
+
+The WORLD panel on the right sets the level's look. Pick one of the three
+parallax backdrops (Teal, Purple, Red), then drag the VIGNETTE slider to choose
+how hard the filter bites: 0% leaves the screen clean, 100% blacks the corners
+out completely. Both settings are previewed live and saved with the level.
 
 Levels are saved under the game's user data folder as small JSON files, and the
 editor autosaves a working copy after every edit, so a playtest that ends in a

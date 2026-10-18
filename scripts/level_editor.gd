@@ -13,19 +13,31 @@ extends Node2D
 ## Controls: left click paints, right click erases, the middle mouse button
 ## drags the view (WASD/arrows pan too), the wheel zooms, Ctrl+Z undoes and G
 ## toggles the grid.
+##
+## The WORLD panel picks which parallax backdrop the level uses and how hard
+## the vignette filter bites, so a level's look is authored right alongside its
+## geometry.
 
 const TOOL_BLOCK := 0
 const TOOL_ENEMY := 1
 const TOOL_ERASE := 2
 const TOOL_SPAWN := 3
+const TOOL_CHEST := 4
+const TOOL_ITEM := 5
 
 const TAB_BLOCKS := 0
 const TAB_ENEMIES := 1
+const TAB_ITEMS := 2
 
 const TILE_LAYER := 0
 const TERRAIN_SOURCE := 0
 
 const MOLE_SCENE := preload("res://scenes/mole.tscn")
+const HEART_SCENE := preload("res://scenes/heart.tscn")
+const CHEST_SCENE := preload("res://chest.tscn")
+const DROPPED_ITEM_SCENE := preload("res://scenes/dropped_item.tscn")
+const WEAPON_PICKUP_SCENE := preload("res://scenes/weapon_pickup.tscn")
+const CHEST_ICON := preload("res://chest.webp")
 const UI_FONT := preload("res://Baby Doll.otf")
 
 const SAVE_DIR := "user://levels"
@@ -39,6 +51,10 @@ const MOLE_SCALE := Vector2(0.25, 0.25)
 const MOLE_CAMERA_SCALE := Vector2(4.0, 4.0)
 const MOLE_CAMERA_ZOOM := Vector2(0.65, 0.65)
 
+## The campaign levels hand-place the heart HUD at this scale; its own script
+## then shrinks it by a further 0.75 and parks it in the bottom-left corner.
+const HEART_SCALE := Vector2(0.24147864, 0.24147864)
+
 const PAN_SPEED := 900.0
 const MIN_ZOOM := 0.25
 const MAX_ZOOM := 2.5
@@ -50,15 +66,43 @@ const DEFAULT_SPAWN_CELL := Vector2i(6, 1)
 
 const ENEMY_CATALOG := [
 	{"name": "Ant", "scene": "res://scenes/antenemy.tscn"},
-	{"name": "Bat", "scene": "res://scenes/bat_enemy.tscn"},
 	{"name": "Beetle", "scene": "res://scenes/beetleenemy.tscn"},
 	{"name": "Goblin", "scene": "res://scenes/goblinenemy.tscn"},
 	{"name": "Hornet", "scene": "res://scenes/hornet_enemy.tscn"},
-	{"name": "Mushroom", "scene": "res://scenes/mushroom_enemy.tscn"},
 	{"name": "Slime", "scene": "res://scenes/slimeenemy.tscn"},
-	{"name": "Snake", "scene": "res://scenes/snake_enemy.tscn"},
-	{"name": "Worm", "scene": "res://scenes/worm_enemy.tscn"},
 ]
+
+## What the ITEMS tab offers, in the order it lists them.
+##
+## The four items are the whole of the merchant's item shelf (see the shop's
+## _build_item_catalog): they are ItemData resources, placed as pickups that
+## hover where they are put and are collected by walking into them.
+##
+## The weapons are the shop's WEAPONS list. They reach the player by purchase or
+## story unlock in the campaign, so out in a level they are placed as pickups
+## that hand over the weapon when the mole touches them.
+const ITEM_CATALOG := [
+	{"kind": "item", "name": "Drill", "value": "res://resources/drill.tres"},
+	{"kind": "item", "name": "Bomb", "value": "res://resources/bomb.tres"},
+	{"kind": "item", "name": "Ice Bomb", "value": "res://resources/ice_bomb.tres"},
+	{"kind": "item", "name": "Holy Water", "value": "res://resources/holy_water.tres"},
+	{"kind": "weapon", "name": "Shovel", "value": "shovel"},
+	{"kind": "weapon", "name": "Golden Shovel", "value": "gold_shovel"},
+	{"kind": "weapon", "name": "Pickaxe", "value": "pickaxe"},
+	{"kind": "weapon", "name": "Wizard Staff", "value": "wizard_staff"},
+]
+
+## The campaign's three parallax backdrops. Index 0 is the scene's own
+## ParallaxBackground, so the extra two are only instantiated when needed.
+const BACKGROUND_CATALOG := [
+	{"name": "Teal", "scene": "res://scenes/parallax_background.tscn", "tint": Color(0.36, 0.72, 0.82)},
+	{"name": "Purple", "scene": "res://scenes/parallax_background2.tscn", "tint": Color(0.94, 0.58, 0.95)},
+	{"name": "Red", "scene": "res://scenes/parallax_background3.tscn", "tint": Color(0.98, 0.38, 0.16)},
+]
+
+## Matches the 0.55 the campaign levels use, so a fresh level starts out with
+## the look the player will actually see.
+const DEFAULT_VIGNETTE := 0.55
 
 const PANEL_BG := Color(0.10, 0.075, 0.07, 0.94)
 const PANEL_BORDER := Color(0.62, 0.44, 0.28, 1.0)
@@ -74,19 +118,27 @@ const ACCENT := Color(1.0, 0.84, 0.45, 1.0)
 @onready var _overlay: Node2D = $Overlay
 @onready var _editor_camera: Camera2D = $EditorCamera
 @onready var _hud: CanvasLayer = $HUD
+@onready var _background: Node2D = $ParallaxBackground
+@onready var _vignette_rect: ColorRect = $VignetteLayer/VignetteRect
 
 ## World size of one cell (tile_size * the TileMap's scale).
 var _tile_world := 80.0
 
 var _tiles: Dictionary = {}
 var _enemies: Array = []
+## Chests and placed item pickups, kept apart from enemies because they carry a
+## resource path as well as a position.
+var _props: Array = []
 var _spawn_point := Vector2.ZERO
 var _level_name := DEFAULT_LEVEL_NAME
+var _background_index := 0
+var _vignette := DEFAULT_VIGNETTE
 
 var _tool := TOOL_BLOCK
 var _tab := TAB_BLOCKS
 var _selected_block := Vector2i.ZERO
 var _selected_enemy := 0
+var _selected_item := 0
 var _show_grid := true
 
 var _hover_cell := Vector2i(999999, 999999)
@@ -101,6 +153,16 @@ var _playing := false
 var _mole: Node = null
 var _mole_camera: Camera2D = null
 var _pit: Area2D = null
+var _heart_layer: CanvasLayer = null
+## Campaign state borrowed for the playtest: the mole banks its health and the
+## level it died in into Inventory on death, so both are snapshotted here and
+## put back when the author returns to editing.
+var _saved_level_path := ""
+var _saved_health := 0.0
+## The shop's loadout and purse, likewise borrowed: a previewed weapon pickup
+## grants a weapon, and a previewed enemy drops coins, neither of which should
+## follow the author back out of a playtest. See _snapshot_shop().
+var _saved_shop: Dictionary = {}
 ## Nodes the borrowed mole parents above itself -- swing ghosts, the dig cursor,
 ## stray projectiles -- all land back inside this scene, so the child list is
 ## snapshotted around a playtest and the additions are swept up when it ends.
@@ -118,15 +180,25 @@ var _toast_label: Label = null
 var _name_edit: LineEdit = null
 var _block_grid: GridContainer = null
 var _enemy_grid: GridContainer = null
+var _items_box: VBoxContainer = null
+var _item_grid: GridContainer = null
+var _weapon_grid: GridContainer = null
 var _blocks_tab: Button = null
 var _enemies_tab: Button = null
+var _items_tab: Button = null
+var _chest_btn: Button = null
 var _erase_btn: Button = null
 var _spawn_btn: Button = null
 var _grid_btn: Button = null
+var _world_panel: PanelContainer = null
+var _vignette_slider: HSlider = null
+var _vignette_value: Label = null
 var _load_overlay: Control = null
 var _load_list: VBoxContainer = null
 var _block_buttons: Dictionary = {}
 var _enemy_buttons: Array = []
+var _item_buttons: Array = []
+var _background_buttons: Array = []
 
 
 func _ready() -> void:
@@ -141,6 +213,7 @@ func _ready() -> void:
 
 	_build_ui()
 	_setup_palette()
+	_setup_backgrounds()
 
 	if FileAccess.file_exists(AUTOSAVE_PATH):
 		load_level(AUTOSAVE_PATH)
@@ -166,13 +239,17 @@ func _exit_tree() -> void:
 func _new_level(with_floor: bool) -> void:
 	_tiles.clear()
 	_enemies.clear()
+	_props.clear()
 	_level_name = DEFAULT_LEVEL_NAME
 	if _name_edit != null:
 		_name_edit.text = _level_name
+	_background_index = 0
+	_vignette = DEFAULT_VIGNETTE
 	if with_floor:
 		for x in NEW_FLOOR_WIDTH:
 			_tiles[Vector2i(x, NEW_FLOOR_ROW)] = Vector3i(TERRAIN_SOURCE, 0, 0)
 	_apply_level()
+	_apply_world()
 	_spawn_point = _cell_center(DEFAULT_SPAWN_CELL) + Vector2(0.0, _tile_world * 0.15)
 	if _editor_camera != null:
 		_editor_camera.position = _spawn_point
@@ -184,11 +261,14 @@ func _apply_level() -> void:
 	for cell in _tiles:
 		var t: Vector3i = _tiles[cell]
 		_tilemap.set_cell(TILE_LAYER, cell, t.x, Vector2i(t.y, t.z))
-	_rebuild_enemy_nodes()
+	_rebuild_entity_nodes()
 	_overlay.queue_redraw()
 
 
-func _rebuild_enemy_nodes() -> void:
+## Rebuilds every placed enemy, chest and item from the authored data, which is
+## what rolls a playtest's wandering, opened chests and collected pickups back to
+## what the level actually holds.
+func _rebuild_entity_nodes() -> void:
 	for child in _entities.get_children():
 		_entities.remove_child(child)
 		child.queue_free()
@@ -198,7 +278,29 @@ func _rebuild_enemy_nodes() -> void:
 			continue
 		_entities.add_child(node)
 		node.global_position = entry["position"]
-		node.process_mode = Node.PROCESS_MODE_DISABLED
+		_freeze_entity(node)
+	for prop in _props:
+		var node := _make_prop_node(prop)
+		if node == null:
+			continue
+		_entities.add_child(node)
+		node.global_position = prop["position"]
+		_freeze_entity(node)
+
+
+## Edit mode has to hold everything still: CharacterBody2D enemies stop taking
+## physics steps, and a chest -- a RigidBody2D in the campaign -- is frozen so it
+## does not slide off the tile it was dropped on while the author works.
+func _freeze_entity(node: Node) -> void:
+	node.process_mode = Node.PROCESS_MODE_DISABLED
+	if node is RigidBody2D:
+		(node as RigidBody2D).freeze = true
+
+
+func _resume_entity(node: Node) -> void:
+	node.process_mode = Node.PROCESS_MODE_INHERIT
+	if node is RigidBody2D:
+		(node as RigidBody2D).freeze = false
 
 
 func _make_enemy_node(enemy_name: String) -> Node2D:
@@ -208,6 +310,100 @@ func _make_enemy_node(enemy_name: String) -> Node2D:
 			if packed != null:
 				return packed.instantiate() as Node2D
 	return null
+
+
+func _make_prop_node(prop: Dictionary) -> Node2D:
+	match str(prop["kind"]):
+		"chest":
+			# No item exported, exactly like every chest in the campaign: the
+			# chest rolls its own loot when it is opened.
+			return CHEST_SCENE.instantiate() as Node2D
+		"item":
+			var item := load(str(prop["value"])) as ItemData
+			if item == null:
+				return null
+			var node = DROPPED_ITEM_SCENE.instantiate()
+			node.item_data = item
+			# Hover where it was placed instead of arcing out of a chest.
+			node.start_floating = true
+			return node as Node2D
+		"weapon":
+			var pickup = WEAPON_PICKUP_SCENE.instantiate()
+			pickup.weapon_id = str(prop["value"])
+			return pickup as Node2D
+	return null
+
+
+func _is_known_enemy(enemy_name: String) -> bool:
+	for spec in ENEMY_CATALOG:
+		if str(spec["name"]) == enemy_name:
+			return true
+	return false
+
+
+## A prop is only kept if what it holds still exists: an item path that no longer
+## resolves, or a weapon the shop no longer sells, is dropped rather than left in
+## the level as an invisible thing that cannot be placed again.
+func _is_known_prop_value(kind: String, value: String) -> bool:
+	for spec in ITEM_CATALOG:
+		if str(spec["kind"]) != kind:
+			continue
+		if str(spec["value"]) == value:
+			return true
+	return false
+
+
+# ------------------------------------------------------------------ world look
+
+## Index 0 is the backdrop already authored into the scene; the remaining
+## backdrops are instantiated once and hidden, so switching is just a visibility
+## flip and the editor's child list stays stable across a playtest.
+func _setup_backgrounds() -> void:
+	for i in range(1, BACKGROUND_CATALOG.size()):
+		var packed := load(str(BACKGROUND_CATALOG[i]["scene"])) as PackedScene
+		if packed == null:
+			continue
+		var node := packed.instantiate() as Node2D
+		node.name = "Background%d" % i
+		node.visible = false
+		add_child(node)
+	_apply_world()
+
+
+func _apply_world() -> void:
+	_apply_background()
+	_apply_vignette()
+	_refresh_world_ui()
+
+
+func _apply_background() -> void:
+	_background_index = clampi(_background_index, 0, BACKGROUND_CATALOG.size() - 1)
+	for i in BACKGROUND_CATALOG.size():
+		var node := _background_for(i)
+		if node != null:
+			node.visible = i == _background_index
+
+
+func _background_for(index: int) -> Node2D:
+	if index <= 0:
+		return _background
+	return get_node_or_null("Background%d" % index) as Node2D
+
+
+func _apply_vignette() -> void:
+	var material := _vignette_rect.material as ShaderMaterial
+	if material != null:
+		material.set_shader_parameter("darkness", _vignette)
+
+
+func _refresh_world_ui() -> void:
+	for i in _background_buttons.size():
+		var button: Button = _background_buttons[i]
+		button.button_pressed = i == _background_index
+	if _vignette_slider != null:
+		_vignette_slider.set_value_no_signal(_vignette)
+	if _vignette_value != null:
+		_vignette_value.text = "%d%%" % roundi(_vignette * 100.0)
 
 
 # ------------------------------------------------------------------- painting
@@ -220,7 +416,18 @@ func _paint(cell: Vector2i) -> void:
 		TOOL_ENEMY:
 			var spec: Dictionary = ENEMY_CATALOG[_selected_enemy]
 			_enemies.append({"name": str(spec["name"]), "position": _enemy_spot(cell)})
-			_rebuild_enemy_nodes()
+			_rebuild_entity_nodes()
+		TOOL_CHEST:
+			_props.append({"kind": "chest", "value": "", "position": _cell_center(cell)})
+			_rebuild_entity_nodes()
+		TOOL_ITEM:
+			var choice: Dictionary = ITEM_CATALOG[_selected_item]
+			_props.append({
+				"kind": str(choice["kind"]),
+				"value": str(choice["value"]),
+				"position": _cell_center(cell),
+			})
+			_rebuild_entity_nodes()
 		TOOL_SPAWN:
 			_spawn_point = _cell_center(cell) + Vector2(0.0, _tile_world * 0.15)
 		TOOL_ERASE:
@@ -233,10 +440,24 @@ func _erase_cell(cell: Vector2i) -> void:
 	var index := _enemy_index_at(_cell_center(cell))
 	if index >= 0:
 		_enemies.remove_at(index)
-		_rebuild_enemy_nodes()
+		_rebuild_entity_nodes()
+		return
+	var prop := _prop_index_at(_cell_center(cell))
+	if prop >= 0:
+		_props.remove_at(prop)
+		_rebuild_entity_nodes()
 		return
 	if _tiles.erase(cell):
 		_tilemap.erase_cell(TILE_LAYER, cell)
+
+
+func _prop_index_at(point: Vector2) -> int:
+	var radius := _tile_world * 0.7
+	for i in range(_props.size() - 1, -1, -1):
+		var position: Vector2 = _props[i]["position"]
+		if position.distance_to(point) <= radius:
+			return i
+	return -1
 
 
 func _enemy_index_at(point: Vector2) -> int:
@@ -266,6 +487,7 @@ func _snapshot() -> Dictionary:
 	return {
 		"tiles": _tiles.duplicate(true),
 		"enemies": _enemies.duplicate(true),
+		"props": _props.duplicate(true),
 		"spawn": _spawn_point,
 		"name": _level_name,
 	}
@@ -281,6 +503,7 @@ func _push_undo() -> void:
 func _restore(snapshot: Dictionary) -> void:
 	_tiles = snapshot["tiles"].duplicate(true)
 	_enemies = snapshot["enemies"].duplicate(true)
+	_props = snapshot["props"].duplicate(true)
 	_spawn_point = snapshot["spawn"]
 	_level_name = str(snapshot["name"])
 	if _name_edit != null:
@@ -317,12 +540,19 @@ func to_dict() -> Dictionary:
 	for entry in _enemies:
 		var position: Vector2 = entry["position"]
 		enemies.append([str(entry["name"]), position.x, position.y])
+	var props: Array = []
+	for entry in _props:
+		var position: Vector2 = entry["position"]
+		props.append([str(entry["kind"]), str(entry["value"]), position.x, position.y])
 	return {
-		"version": 1,
+		"version": 3,
 		"name": _level_name,
 		"spawn": [_spawn_point.x, _spawn_point.y],
 		"blocks": blocks,
 		"enemies": enemies,
+		"props": props,
+		"background": _background_index,
+		"vignette": _vignette,
 	}
 
 
@@ -331,16 +561,37 @@ func from_dict(data: Dictionary) -> bool:
 		return false
 	_tiles.clear()
 	_enemies.clear()
+	_props.clear()
 	for row in data["blocks"]:
 		if row is Array and row.size() >= 5:
 			var cell := Vector2i(int(row[3]), int(row[4]))
 			_tiles[cell] = Vector3i(int(row[0]), int(row[1]), int(row[2]))
 	for row in data["enemies"]:
 		if row is Array and row.size() >= 3:
+			var enemy_name := str(row[0])
+			# An enemy that has since been taken out of the editor is dropped
+			# rather than kept as an entry that can never be seen or placed.
+			if not _is_known_enemy(enemy_name):
+				continue
 			_enemies.append({
-				"name": str(row[0]),
+				"name": enemy_name,
 				"position": Vector2(float(row[1]), float(row[2])),
 			})
+	# Absent from anything saved before chests and items existed.
+	for row in data.get("props", []):
+		if not (row is Array and row.size() >= 4):
+			continue
+		var kind := str(row[0])
+		var value := str(row[1])
+		if kind == "chest":
+			value = ""
+		elif not _is_known_prop_value(kind, value):
+			continue
+		_props.append({
+			"kind": kind,
+			"value": value,
+			"position": Vector2(float(row[2]), float(row[3])),
+		})
 	var spawn = data.get("spawn", null)
 	if spawn is Array and spawn.size() >= 2:
 		_spawn_point = Vector2(float(spawn[0]), float(spawn[1]))
@@ -349,7 +600,10 @@ func from_dict(data: Dictionary) -> bool:
 	_level_name = str(data.get("name", DEFAULT_LEVEL_NAME))
 	if _name_edit != null:
 		_name_edit.text = _level_name
+	_background_index = clampi(int(data.get("background", 0)), 0, BACKGROUND_CATALOG.size() - 1)
+	_vignette = clampf(float(data.get("vignette", DEFAULT_VIGNETTE)), 0.0, 1.0)
 	_apply_level()
+	_apply_world()
 	return true
 
 
@@ -421,11 +675,20 @@ func start_playtest() -> void:
 	_toolbar.visible = false
 	_palette.visible = false
 	_hint_panel.visible = false
+	_world_panel.visible = false
 	_play_bar.visible = true
 	_overlay.visible = false
-	_rebuild_enemy_nodes()
+	_rebuild_entity_nodes()
 	for child in _entities.get_children():
-		child.process_mode = Node.PROCESS_MODE_INHERIT
+		_resume_entity(child)
+	# A playtest is always a fresh run: the mole reads its health out of
+	# Inventory, so a previous run left at three hearts would otherwise carry
+	# straight over. The banked values go back untouched on stop.
+	_saved_level_path = Inventory.current_level_path
+	_saved_health = Inventory.player_health
+	Inventory.player_health = Inventory.MAX_HEALTH
+	_snapshot_shop()
+	_create_playtest_hud()
 	_spawn_preview_mole()
 	_create_pit()
 	_overlay.queue_redraw()
@@ -436,7 +699,11 @@ func stop_playtest() -> void:
 		return
 	_playing = false
 	_clear_pit()
+	_clear_playtest_hud()
 	_clear_preview_mole()
+	Inventory.current_level_path = _saved_level_path
+	Inventory.player_health = _saved_health
+	_restore_shop()
 	Engine.time_scale = 1.0
 	# A playtest is a preview: digging, broken tiles and enemies that wandered
 	# off are all rolled back to what the author actually placed.
@@ -444,11 +711,44 @@ func stop_playtest() -> void:
 	_toolbar.visible = true
 	_palette.visible = true
 	_hint_panel.visible = true
+	_world_panel.visible = true
 	_play_bar.visible = false
 	_overlay.visible = true
 	_editor_camera.make_current()
 	_overlay.queue_redraw()
 	_save_now()
+
+
+## The shop's loadout and purse are borrowed for the playtest the same way the
+## mole's health is. A weapon pickup found in the preview, or coins a previewed
+## enemy drops, would otherwise be banked into the player's real save.
+func _snapshot_shop() -> void:
+	_saved_shop = {
+		"owned": Shop.owned.duplicate(),
+		"melee": Shop.equipped_melee_id,
+		"ranged": Shop.equipped_ranged_id,
+		"ranged_active": Shop.ranged_active,
+		"coins": Shop.coins,
+	}
+	# Held for the whole playtest so nothing mid-run rewrites the save file
+	# either; the values above put the in-memory state back on the way out.
+	Shop.suppress_save = true
+
+
+func _restore_shop() -> void:
+	if _saved_shop.is_empty():
+		return
+	Shop.owned = _saved_shop["owned"]
+	Shop.equipped_melee_id = str(_saved_shop["melee"])
+	Shop.equipped_ranged_id = str(_saved_shop["ranged"])
+	Shop.ranged_active = bool(_saved_shop["ranged_active"])
+	Shop.coins = int(_saved_shop["coins"])
+	Shop.suppress_save = false
+	# The coin HUD is permanent, so it has to be told the purse went back. The
+	# loadout signal deliberately stays quiet: the preview mole has already been
+	# detached by now, and its sword is the only listener an editor run has.
+	Shop.coins_changed.emit(Shop.coins)
+	_saved_shop = {}
 
 
 func _spawn_preview_mole() -> void:
@@ -493,6 +793,30 @@ func _free_preview_orphans() -> void:
 		remove_child(child)
 		child.queue_free()
 	_children_before = []
+
+
+## The campaign's bottom-left heart plus its HP bar. It reads Inventory each
+## frame, so it tracks the borrowed mole for free, and it hangs off a
+## CanvasLayer named "CanvasLayer" with a "heart" child because that is exactly
+## the path the mole's health setter looks up to play its damage animation.
+func _create_playtest_hud() -> void:
+	_clear_playtest_hud()
+	var layer := CanvasLayer.new()
+	layer.name = "CanvasLayer"
+	layer.layer = 99
+	add_child(layer)
+	var heart := HEART_SCENE.instantiate() as Node2D
+	heart.name = "heart"
+	heart.scale = HEART_SCALE
+	layer.add_child(heart)
+	_heart_layer = layer
+
+
+func _clear_playtest_hud() -> void:
+	if is_instance_valid(_heart_layer):
+		remove_child(_heart_layer)
+		_heart_layer.queue_free()
+	_heart_layer = null
 
 
 func _create_pit() -> void:
@@ -603,12 +927,15 @@ func _update_hover() -> void:
 		_overlay.queue_redraw()
 
 
-func _text_focused() -> bool:
-	return get_viewport().gui_get_focus_owner() is LineEdit
+func _ui_holds_arrows() -> bool:
+	# The slider takes the arrow keys when it has focus, so panning stays off
+	# while a LineEdit or the vignette slider is the focus owner.
+	var focused := get_viewport().gui_get_focus_owner()
+	return focused is LineEdit or focused is Slider
 
 
 func _process(delta: float) -> void:
-	if _playing or _panning or _load_overlay.visible or _text_focused():
+	if _playing or _panning or _load_overlay.visible or _ui_holds_arrows():
 		return
 	var axis := Vector2(
 		Input.get_axis("ui_left", "ui_right"),
@@ -689,6 +1016,7 @@ func _build_ui() -> void:
 	_build_toolbar()
 	_build_play_bar()
 	_build_palette()
+	_build_world_panel()
 	_build_hint()
 	_build_load_overlay()
 
@@ -808,15 +1136,23 @@ func _build_palette() -> void:
 	tabs.add_theme_constant_override("separation", 8)
 	column.add_child(tabs)
 
-	_blocks_tab = _make_button("BLOCKS", Vector2(136.0, 40.0))
+	_blocks_tab = _make_button("BLOCKS", Vector2(86.0, 40.0))
 	_blocks_tab.toggle_mode = true
+	_blocks_tab.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_blocks_tab.pressed.connect(_set_tab.bind(TAB_BLOCKS))
 	tabs.add_child(_blocks_tab)
 
-	_enemies_tab = _make_button("ENEMIES", Vector2(136.0, 40.0))
+	_enemies_tab = _make_button("ENEMIES", Vector2(86.0, 40.0))
 	_enemies_tab.toggle_mode = true
+	_enemies_tab.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_enemies_tab.pressed.connect(_set_tab.bind(TAB_ENEMIES))
 	tabs.add_child(_enemies_tab)
+
+	_items_tab = _make_button("ITEMS", Vector2(86.0, 40.0))
+	_items_tab.toggle_mode = true
+	_items_tab.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_items_tab.pressed.connect(_set_tab.bind(TAB_ITEMS))
+	tabs.add_child(_items_tab)
 
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -836,13 +1172,45 @@ func _build_palette() -> void:
 	_enemy_grid.visible = false
 	scroll.add_child(_enemy_grid)
 
+	_items_box = VBoxContainer.new()
+	_items_box.add_theme_constant_override("separation", 6)
+	_items_box.visible = false
+	scroll.add_child(_items_box)
+
+	_items_box.add_child(_heading_label("CHESTS"))
+
+	_chest_btn = _make_button("Chest", Vector2(136.0, 52.0))
+	_chest_btn.toggle_mode = true
+	_chest_btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_chest_btn.icon = CHEST_ICON
+	_chest_btn.tooltip_text = "A chest with random loot, like the ones in the campaign"
+	_chest_btn.add_theme_constant_override("icon_max_width", 40)
+	_chest_btn.pressed.connect(_on_chest_selected)
+	_items_box.add_child(_chest_btn)
+
+	_items_box.add_child(_heading_label("ITEMS"))
+
+	_item_grid = GridContainer.new()
+	_item_grid.columns = 1
+	_item_grid.add_theme_constant_override("h_separation", 6)
+	_item_grid.add_theme_constant_override("v_separation", 6)
+	_items_box.add_child(_item_grid)
+
+	_items_box.add_child(_heading_label("WEAPONS"))
+
+	_weapon_grid = GridContainer.new()
+	_weapon_grid.columns = 1
+	_weapon_grid.add_theme_constant_override("h_separation", 6)
+	_weapon_grid.add_theme_constant_override("v_separation", 6)
+	_items_box.add_child(_weapon_grid)
+
 	var tools := HBoxContainer.new()
 	tools.add_theme_constant_override("separation", 8)
 	column.add_child(tools)
 
 	_erase_btn = _make_button("ERASE", Vector2(88.0, 38.0))
 	_erase_btn.toggle_mode = true
-	_erase_btn.tooltip_text = "Remove blocks and enemies (right click also erases)"
+	_erase_btn.tooltip_text = "Remove blocks, enemies, chests and items (right click also erases)"
 	_erase_btn.pressed.connect(_select_tool.bind(TOOL_ERASE))
 	tools.add_child(_erase_btn)
 
@@ -860,6 +1228,88 @@ func _build_palette() -> void:
 		_overlay.queue_redraw()
 	)
 	tools.add_child(_grid_btn)
+
+
+func _build_world_panel() -> void:
+	_world_panel = _make_panel()
+	_world_panel.set_anchors_preset(Control.PRESET_RIGHT_WIDE)
+	_world_panel.offset_left = -276.0
+	_world_panel.offset_top = 82.0
+	_world_panel.offset_right = -12.0
+	_world_panel.offset_bottom = -96.0
+	_ui_root.add_child(_world_panel)
+
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 8)
+	_world_panel.add_child(column)
+
+	var title := _section_label("WORLD")
+	column.add_child(title)
+
+	column.add_child(_heading_label("BACKGROUND"))
+
+	for i in BACKGROUND_CATALOG.size():
+		var spec: Dictionary = BACKGROUND_CATALOG[i]
+		var button := _make_button(str(spec["name"]), Vector2(232.0, 44.0))
+		button.toggle_mode = true
+		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.tooltip_text = "Use the %s parallax backdrop" % str(spec["name"]).to_lower()
+		button.icon = _swatch(spec["tint"])
+		button.add_theme_constant_override("icon_max_width", 24)
+		button.pressed.connect(_on_background_selected.bind(i))
+		column.add_child(button)
+		_background_buttons.append(button)
+
+	column.add_child(_heading_label("VIGNETTE"))
+
+	var slider := HSlider.new()
+	slider.min_value = 0.0
+	slider.max_value = 1.0
+	slider.step = 0.05
+	slider.value = DEFAULT_VIGNETTE
+	slider.custom_minimum_size = Vector2(232.0, 28.0)
+	slider.tooltip_text = "How dark the corners of the screen get"
+	slider.add_theme_stylebox_override("slider", _style(BUTTON_BG, PANEL_BORDER, 4))
+	slider.value_changed.connect(_on_vignette_changed)
+	column.add_child(slider)
+	_vignette_slider = slider
+
+	_vignette_value = Label.new()
+	_vignette_value.add_theme_font_override("font", UI_FONT)
+	_vignette_value.add_theme_font_size_override("font_size", 20)
+	_vignette_value.add_theme_color_override("font_color", ACCENT)
+	_vignette_value.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	column.add_child(_vignette_value)
+
+
+func _section_label(text: String) -> Label:
+	var label := Label.new()
+	label.text = text
+	label.add_theme_font_override("font", UI_FONT)
+	label.add_theme_font_size_override("font_size", 28)
+	label.add_theme_color_override("font_color", ACCENT)
+	label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	label.add_theme_constant_override("outline_size", 4)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	return label
+
+
+func _heading_label(text: String) -> Label:
+	var label := Label.new()
+	label.text = text
+	label.add_theme_font_override("font", UI_FONT)
+	label.add_theme_font_size_override("font_size", 19)
+	label.add_theme_color_override("font_color", Color(0.84, 0.76, 0.64))
+	return label
+
+
+## A flat colour chip used as a button icon. The campaign's backdrops are mostly
+## a single tint over blurred art, so for those a swatch reads clearer than a
+## thumbnail of the raw texture would; items without artwork borrow it too.
+func _swatch(color: Color, size: int = 8) -> Texture2D:
+	var image := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	image.fill(color)
+	return ImageTexture.create_from_image(image)
 
 
 func _build_hint() -> void:
@@ -1038,6 +1488,57 @@ func _setup_palette() -> void:
 		_enemy_grid.add_child(button)
 		_enemy_buttons.append(button)
 
+	for i in ITEM_CATALOG.size():
+		var spec: Dictionary = ITEM_CATALOG[i]
+		var kind := str(spec["kind"])
+		var button := Button.new()
+		button.text = str(spec["name"])
+		if kind == "item":
+			var item := load(str(spec["value"])) as ItemData
+			if item != null:
+				button.icon = _item_icon(item)
+		else:
+			var weapon: WeaponData = Shop.get_weapon(str(spec["value"]))
+			if weapon != null:
+				button.icon = _weapon_icon(weapon)
+		button.toggle_mode = true
+		# One full-width row per entry. The palette's inner width is what the enemy
+		# grid's two 136px columns add up to, and these names run long enough
+		# ("Earthquake Boots" no longer, but "Golden Shovel") that halving it would
+		# cut them off.
+		button.custom_minimum_size = Vector2(136.0 * 2.0 + 6.0, 52.0)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.clip_text = true
+		button.add_theme_font_override("font", UI_FONT)
+		button.add_theme_font_size_override("font_size", 19)
+		button.add_theme_color_override("font_color", TEXT_COLOR)
+		button.add_theme_constant_override("icon_max_width", 40)
+		button.add_theme_stylebox_override("normal", _style(BUTTON_BG, PANEL_BORDER, 4))
+		button.add_theme_stylebox_override("hover", _style(BUTTON_HOVER, ACCENT, 4))
+		button.add_theme_stylebox_override("pressed", _style(BUTTON_PRESSED, ACCENT, 4))
+		button.add_theme_stylebox_override("focus", _style(BUTTON_HOVER, ACCENT, 4))
+		button.pressed.connect(_on_item_selected.bind(i))
+		if kind == "item":
+			_item_grid.add_child(button)
+		else:
+			_weapon_grid.add_child(button)
+		_item_buttons.append(button)
+
+
+## Items that ship an icon texture show it; the rest get a chip of their own
+## icon colour, which is what the dropped pickup falls back to in game too.
+func _item_icon(item: ItemData) -> Texture2D:
+	if item.icon_texture != null:
+		return item.icon_texture
+	return _swatch(item.icon_color, 32)
+
+
+## Weapons have no artwork at all, only a tint, so their button wears the same
+## colour chip the pickup in the world does.
+func _weapon_icon(weapon: WeaponData) -> Texture2D:
+	return _swatch(weapon.icon_color, 32)
+
 
 func _enemy_icon(enemy_name: String) -> Texture2D:
 	var node := _make_enemy_node(enemy_name)
@@ -1113,6 +1614,17 @@ func _on_enemy_selected(index: int) -> void:
 	_refresh_tool_buttons()
 
 
+func _on_chest_selected() -> void:
+	_tool = TOOL_CHEST
+	_refresh_tool_buttons()
+
+
+func _on_item_selected(index: int) -> void:
+	_selected_item = index
+	_tool = TOOL_ITEM
+	_refresh_tool_buttons()
+
+
 func _select_tool(tool: int) -> void:
 	_tool = tool
 	_refresh_tool_buttons()
@@ -1122,27 +1634,53 @@ func _set_tab(tab: int) -> void:
 	_tab = tab
 	_block_grid.visible = tab == TAB_BLOCKS
 	_enemy_grid.visible = tab == TAB_ENEMIES
-	_tool = TOOL_BLOCK if tab == TAB_BLOCKS else TOOL_ENEMY
+	_items_box.visible = tab == TAB_ITEMS
+	match tab:
+		TAB_ENEMIES:
+			_tool = TOOL_ENEMY
+		TAB_ITEMS:
+			_tool = TOOL_ITEM
+		_:
+			_tool = TOOL_BLOCK
 	_refresh_tool_buttons()
 
 
 func _refresh_tool_buttons() -> void:
 	_blocks_tab.button_pressed = _tab == TAB_BLOCKS
 	_enemies_tab.button_pressed = _tab == TAB_ENEMIES
+	_items_tab.button_pressed = _tab == TAB_ITEMS
 	_erase_btn.button_pressed = _tool == TOOL_ERASE
 	_spawn_btn.button_pressed = _tool == TOOL_SPAWN
+	_chest_btn.button_pressed = _tool == TOOL_CHEST
 	for coords in _block_buttons:
 		var button: Button = _block_buttons[coords]
 		button.button_pressed = _tool == TOOL_BLOCK and coords == _selected_block
 	for i in _enemy_buttons.size():
 		var button: Button = _enemy_buttons[i]
 		button.button_pressed = _tool == TOOL_ENEMY and i == _selected_enemy
+	for i in _item_buttons.size():
+		var button: Button = _item_buttons[i]
+		button.button_pressed = _tool == TOOL_ITEM and i == _selected_item
 
 
 # -------------------------------------------------------------- UI handlers
 
 func _on_name_changed(text: String) -> void:
 	_level_name = text
+	_mark_dirty()
+
+
+func _on_background_selected(index: int) -> void:
+	_background_index = index
+	_apply_world()
+	_mark_dirty()
+
+
+func _on_vignette_changed(value: float) -> void:
+	_vignette = value
+	_apply_vignette()
+	if _vignette_value != null:
+		_vignette_value.text = "%d%%" % roundi(value * 100.0)
 	_mark_dirty()
 
 
