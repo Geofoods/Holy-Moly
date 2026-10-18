@@ -36,6 +36,7 @@ Quests="*res://scripts/quests.gd"
 QuestNotifications="*res://scripts/quest_notifications.gd"
 FrozenTiles="*res://scripts/frozen_tiles.gd"
 Lighting="*res://scripts/scene_lighting.gd"
+Net="*res://scripts/net.gd"
 
 [display]
 

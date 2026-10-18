@@ -66,6 +66,11 @@ func _explode() -> void:
 	if tilemap:
 		_freeze_tiles(tilemap)
 
+	# The cold snap cracks a closed chest open too, so an ice bomb gets at loot
+	# behind one the same way a fire bomb does - rather than only the opened
+	# chests the tile sweep can reach.
+	TileBreakSFX.force_open_chests_near(get_parent(), global_position, explosion_radius)
+
 	var tween := create_tween()
 	tween.tween_property(self, "scale", Vector2.ZERO, 0.2).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_BACK)
 	tween.tween_callback(queue_free)

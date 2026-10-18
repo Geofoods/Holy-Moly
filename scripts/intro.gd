@@ -13,6 +13,9 @@ const BOSS_RUSH_SCENE := "res://scenes/level_09.tscn"
 ## The credits roll. Reachable from here as well as from the win screen, so the
 ## roll can be watched without having to finish the game to find it.
 const CREDITS_SCENE := "res://scenes/credits.tscn"
+## The in-game level editor ("Level Forge"), where players build their own
+## levels out of blocks and enemies and playtest them in place.
+const EDITOR_SCENE := "res://scenes/level_editor.tscn"
 
 var _last_hop_index := -1
 var _intro_music: AudioStreamPlayer = null
@@ -34,18 +37,24 @@ func _ready():
 	var play_btn = $CenterContainer/VBoxContainer/ButtonContainer/PlayButton
 	var field_guide_btn = $CenterContainer/VBoxContainer/ButtonContainer/FieldGuideButton
 	var boss_rush_btn = $CenterContainer/VBoxContainer/ButtonContainer/BossRushButton
+	var multiplayer_btn = $CenterContainer/VBoxContainer/ButtonContainer/MultiplayerButton
 	var clear_save_btn = $CenterContainer/VBoxContainer/BottomRow/ClearSaveButton
 	var credits_btn = $CenterContainer/VBoxContainer/BottomRow/CreditsButton
 	play_btn.mouse_entered.connect(_on_button_hover.bind(play_btn))
 	play_btn.mouse_exited.connect(_on_button_unhover.bind(play_btn))
 	boss_rush_btn.mouse_entered.connect(_on_button_hover.bind(boss_rush_btn))
 	boss_rush_btn.mouse_exited.connect(_on_button_unhover.bind(boss_rush_btn))
+	multiplayer_btn.mouse_entered.connect(_on_button_hover.bind(multiplayer_btn))
+	multiplayer_btn.mouse_exited.connect(_on_button_unhover.bind(multiplayer_btn))
 	field_guide_btn.mouse_entered.connect(_on_button_hover.bind(field_guide_btn))
 	field_guide_btn.mouse_exited.connect(_on_button_unhover.bind(field_guide_btn))
 	clear_save_btn.mouse_entered.connect(_on_button_hover.bind(clear_save_btn))
 	clear_save_btn.mouse_exited.connect(_on_button_unhover.bind(clear_save_btn))
 	credits_btn.mouse_entered.connect(_on_button_hover.bind(credits_btn))
 	credits_btn.mouse_exited.connect(_on_button_unhover.bind(credits_btn))
+	var editor_btn = $CenterContainer/VBoxContainer/BottomRow/EditorButton
+	editor_btn.mouse_entered.connect(_on_button_hover.bind(editor_btn))
+	editor_btn.mouse_exited.connect(_on_button_unhover.bind(editor_btn))
 	var settings_btn = $CenterContainer/VBoxContainer/BottomRow/SettingsButton
 	settings_btn.mouse_entered.connect(_on_button_hover.bind(settings_btn))
 	settings_btn.mouse_exited.connect(_on_button_unhover.bind(settings_btn))
@@ -171,14 +180,21 @@ func _set_buttons_enabled(enabled: bool) -> void:
 	var play_btn = $CenterContainer/VBoxContainer/ButtonContainer/PlayButton
 	var field_guide_btn = $CenterContainer/VBoxContainer/ButtonContainer/FieldGuideButton
 	var boss_rush_btn = $CenterContainer/VBoxContainer/ButtonContainer/BossRushButton
+	var multiplayer_btn = $CenterContainer/VBoxContainer/ButtonContainer/MultiplayerButton
 	var clear_save_btn = $CenterContainer/VBoxContainer/BottomRow/ClearSaveButton
 	var credits_btn = $CenterContainer/VBoxContainer/BottomRow/CreditsButton
+	var editor_btn = $CenterContainer/VBoxContainer/BottomRow/EditorButton
 	var settings_btn = $CenterContainer/VBoxContainer/BottomRow/SettingsButton
 	play_btn.disabled = not enabled
 	field_guide_btn.disabled = not enabled
 	clear_save_btn.disabled = not enabled
 	credits_btn.disabled = not enabled
+	editor_btn.disabled = not enabled
 	settings_btn.disabled = not enabled
+	# The PvP mode runs on Godot's built-in ENet, which needs a real UDP socket;
+	# a browser page has none, so the entry stays shut in the web export rather
+	# than leading to a lobby that cannot connect.
+	multiplayer_btn.disabled = not enabled or OS.has_feature("web")
 	# Boss Rush carries its own save-flag gate on top of the intro reveal, so it
 	# has to be re-derived here rather than simply flipped with the others -
 	# otherwise the reveal pass would unlock it on a fresh save. A disabled Button
@@ -190,8 +206,10 @@ func _set_buttons_enabled(enabled: bool) -> void:
 		play_btn.pivot_offset = play_btn.size / 2.0
 		boss_rush_btn.pivot_offset = boss_rush_btn.size / 2.0
 		field_guide_btn.pivot_offset = field_guide_btn.size / 2.0
+		multiplayer_btn.pivot_offset = multiplayer_btn.size / 2.0
 		clear_save_btn.pivot_offset = clear_save_btn.size / 2.0
 		credits_btn.pivot_offset = credits_btn.size / 2.0
+		editor_btn.pivot_offset = editor_btn.size / 2.0
 		settings_btn.pivot_offset = settings_btn.size / 2.0
 
 func _on_button_hover(button: Button) -> void:
@@ -258,6 +276,14 @@ func _on_field_guide_pressed() -> void:
 	if info_popup:
 		info_popup.open()
 
+## Opens the online PvP lobby. There is no run behind this button, so nothing is
+## banked or carried over: scripts/net.gd keeps the mode's state entirely to
+## itself and the campaign autoloads are never read.
+func _on_multiplayer_pressed() -> void:
+	SFX.play_ui("ui_click", -6.0, 1.2)
+	_fade_out_menu_music()
+	Net.change_scene(Net.MENU_SCENE)
+
 ## Opens the credits roll. The same scene the win screen plays, reached from the
 ## title screen so it can be watched without finishing the game first. The menu
 ## music is faded out first for the same reason as the other exits: the roll brings
@@ -270,6 +296,18 @@ func _on_credits_pressed() -> void:
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 	get_tree().root.add_child(transition)
 	transition.change_to(CREDITS_SCENE)
+
+## Opens the level editor. It is a self-contained scene: it brings its own
+## TileSet palette, enemy roster and playtest camera, so the only campaign state
+## it touches is the mole it borrows for a playtest.
+func _on_editor_pressed() -> void:
+	SFX.play_ui("ui_click", -6.0, 1.2)
+	_fade_out_menu_music()
+	var editor_btn = $CenterContainer/VBoxContainer/BottomRow/EditorButton
+	editor_btn.disabled = true
+	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
+	get_tree().root.add_child(transition)
+	transition.change_to(EDITOR_SCENE)
 
 func _on_clear_save_pressed() -> void:
 	SFX.play_ui("ui_click", -6.0, 1.2)

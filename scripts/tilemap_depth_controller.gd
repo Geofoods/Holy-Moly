@@ -9,6 +9,10 @@ func _process(_delta: float) -> void:
 	if scene == null or scene == _tracked_scene:
 		return
 	_tracked_scene = scene
+	# The level editor draws its own grid and hosts a live TileMap its author
+	# paints into, so the campaign's depth shade is left off it.
+	if str(scene.scene_file_path).ends_with("level_editor.tscn"):
+		return
 	_apply_depth(scene)
 
 func _apply_depth(scene: Node) -> void:

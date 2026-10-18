@@ -81,6 +81,9 @@ const PANEL_FRAME_INSET := 12
 ## the panel edge: 12 + 78 = 90 on each side, and 12 + 6 = 18 top and bottom.
 const PANEL_SIDE_PADDING := 78
 const PANEL_VERTICAL_PADDING := 6
+## How far the "MAP" title is lifted above its normal slot, so it sits over the
+## panel's top neatline like a nameplate on the frame rather than under it.
+const TITLE_RAISE := 16
 ## Height of one destination button, and the gap between entries.
 const PORTAL_BUTTON_HEIGHT := 44
 const PORTAL_BUTTON_SEPARATION := 6
@@ -208,14 +211,26 @@ func _open_map() -> void:
 	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	columns.add_child(vbox)
 
+	# The title is lifted out of its slot by TITLE_RAISE: the wrapper's top margin
+	# is pulled up while the bottom margin grows to match, so only the title moves
+	# and nothing below it is disturbed.
+	var title_wrap := MarginContainer.new()
+	title_wrap.add_theme_constant_override("margin_top", -TITLE_RAISE)
+	title_wrap.add_theme_constant_override("margin_bottom", TITLE_RAISE)
+	vbox.add_child(title_wrap)
+
 	var title_row := CenterContainer.new()
 	title_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	vbox.add_child(title_row)
+	title_wrap.add_child(title_row)
 
 	# The title sits on a cartouche - a little bordered plaque - the way a map's
 	# name is boxed on the sheet itself.
 	var cartouche := PanelContainer.new()
 	cartouche.add_theme_stylebox_override("panel", _make_cartouche_style())
+	# Drawn over the sheet's neatline rather than under it, so lifting the title
+	# up onto the frame reads as a nameplate on top of it.
+	cartouche.z_as_relative = false
+	cartouche.z_index = 1
 	title_row.add_child(cartouche)
 
 	var title := Label.new()
@@ -252,11 +267,15 @@ func _open_map() -> void:
 	furniture.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_holder.add_child(furniture)
 
-	var checkpoint := Label.new()
-	checkpoint.text = _checkpoint_status_text()
-	checkpoint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_style_label(checkpoint, 22, Color(0.25, 0.5, 0.15, 1.0) if not Progress.respawn_activated.is_empty() else Color(0.55, 0.48, 0.36, 1.0))
-	vbox.add_child(checkpoint)
+	# Only shown once a checkpoint has actually been banked. With none set the map
+	# simply leaves the line out rather than announcing the absence.
+	var checkpoint_text := _checkpoint_status_text()
+	if not checkpoint_text.is_empty():
+		var checkpoint := Label.new()
+		checkpoint.text = checkpoint_text
+		checkpoint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_style_label(checkpoint, 22, Color(0.25, 0.5, 0.15, 1.0))
+		vbox.add_child(checkpoint)
 
 	var hint := Label.new()
 	hint.text = "PRESS M TO CLOSE"
@@ -446,11 +465,12 @@ func _current_scene_path() -> String:
 	return "" if current == null else str(current.scene_file_path)
 
 ## Reports the saved checkpoint on the map so activation is visible outside the
-## level where the station itself is glowing.
+## level where the station itself is glowing. Returns "" when nothing has been
+## banked, so the map stays quiet instead of saying "NO CHECKPOINT SET".
 func _checkpoint_status_text() -> String:
 	var checkpoint_scene := Progress.respawn_activated
 	if checkpoint_scene.is_empty():
-		return "NO CHECKPOINT SET"
+		return ""
 	# Prefer the game's own display name for the place (LevelData carries the
 	# level names and the hub/room titles), so a checkpoint in Surface Caves reads
 	# by the name the player knows rather than the file it lives in. Tidied file
@@ -683,7 +703,7 @@ class MapFurniture:
 			var y := s.y * float(j) / 6.0
 			draw_line(Vector2(0, y), Vector2(s.x, y), grid, 1.0)
 		var radius := clampf(minf(s.x, s.y) * 0.11, 18.0, 34.0)
-		_draw_compass(Vector2(s.x - radius - 16.0, s.y - radius - 16.0), radius)
+		_draw_compass(Vector2(radius + 16.0, s.y - radius - 16.0), radius)
 
 	func _draw_compass(centre: Vector2, radius: float) -> void:
 		var ink := Color(INK.r, INK.g, INK.b, 0.85)

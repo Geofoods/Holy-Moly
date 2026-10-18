@@ -25,6 +25,10 @@ var player_nearby := false
 
 func _ready() -> void:
 	TapInteract.register(chest_sprite)
+	# Registered while still closed, so a blast or a drill bit can find an
+	# untouched chest and crack it without the player pressing the interact key.
+	# Membership moves to "opened_chest" once it is open (see _open_chest).
+	add_to_group("chest")
 
 func _first(candidates: Array[String]) -> Node:
 	for path in candidates:
@@ -92,6 +96,7 @@ func _open_chest() -> void:
 	is_open = true
 	TutorialEvents.chest_opened.emit()
 	add_to_group("opened_chest")
+	remove_from_group("chest")
 	SFX.play("chest_open", global_position)
 	var spr = get_node_or_null("../AnimatedSprite2D")
 	if spr is AnimatedSprite2D:
@@ -123,6 +128,16 @@ func break_as_block() -> void:
 	SFX.play("break_wood", global_position, -4.0, 0.08)
 
 	_play_break_shatter()
+
+## Cracks the chest open from the outside - a bomb blast or a drill bit instead
+## of the interact key. Same result as _open_chest: the lid flips and the loot
+## drops. Chests already open (or already coming apart) are left alone, so a
+## blast can sweep a whole level's closed chests without double-firing on one it
+## has just cracked.
+func force_open() -> void:
+	if is_open or is_breaking:
+		return
+	_open_chest()
 
 func _get_loot_item() -> ItemData:
 	if item != null:

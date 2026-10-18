@@ -84,6 +84,7 @@ func _acquire_2d() -> AudioStreamPlayer2D:
 	else:
 		p = _pool_2d.pop_back()
 	p.process_mode = Node.PROCESS_MODE_ALWAYS
+	p.bus = &"SFX"
 	return p
 
 func _release_2d(p: AudioStreamPlayer2D) -> void:
@@ -117,6 +118,7 @@ func _acquire_ui() -> AudioStreamPlayer:
 	else:
 		p = _pool_ui.pop_back()
 	p.process_mode = Node.PROCESS_MODE_ALWAYS
+	p.bus = &"SFX"
 	return p
 
 func _release_ui(p: AudioStreamPlayer) -> void:

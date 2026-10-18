@@ -163,6 +163,11 @@ func _explode() -> void:
 					TileBreakSFX.break_decoration_tile(tilemap, tp, get_parent())
 		TileBreakSFX.break_opened_chests_near(get_parent(), global_position, explosion_radius)
 
+	# A closed chest caught in the blast is cracked open, loot and all. Runs after
+	# the opened-chest sweep above so a chest this blast just opened is not then
+	# shattered in the same instant.
+	TileBreakSFX.force_open_chests_near(get_parent(), global_position, explosion_radius)
+
 	_damage_enemies_in_blast(global_position, explosion_radius, _rolled_blast_damage())
 
 	var tween := create_tween()

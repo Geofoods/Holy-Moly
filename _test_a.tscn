@@ -1,0 +1,38 @@
+[gd_scene inherit="res://scenes/mole.tscn"]
+
+[ext_resource type="Script" path="res://scripts/pvp_player.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://scenes/weapon.tscn" id="1_weapon"]
+[ext_resource type="SceneReplicationConfig" path="res://resources/pvp_player_sync.tres" id="2_sync"]
+[ext_resource type="FontFile" path="res://Baby Doll.otf" id="3_font"]
+
+[sub_resource type="RectangleShape2D" id="HitboxShape"]
+size = Vector2(140, 160)
+
+[node name="Weapon" type="Node2D" parent="."]
+position = Vector2(0, -30)
+
+[node name="Hitbox" type="Area2D" parent="Weapon"]
+collision_layer = 0
+collision_mask = 4
+monitoring = false
+monitorable = false
+
+[node name="HitboxShape" type="CollisionShape2D" parent="Weapon/Hitbox"]
+shape = SubResource("HitboxShape")
+
+[node name="Synchronizer" type="MultiplayerSynchronizer" parent="."]
+replication_config = ExtResource("2_sync")
+
+[node name="Nameplate" type="Label" parent="."]
+offset_left = -120.0
+offset_top = -216.0
+offset_right = 120.0
+offset_bottom = -178.0
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 26
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+text = "MOLE"

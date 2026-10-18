@@ -1,0 +1,9 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://_pvp_dump.gd" id="1_dump"]
+[ext_resource type="PackedScene" path="res://scenes/pvp_arena.tscn" id="2_arena"]
+
+[node name="Dump" type="Node"]
+script = ExtResource("1_dump")
+
+[node name="Arena" parent="." instance=ExtResource("2_arena")]

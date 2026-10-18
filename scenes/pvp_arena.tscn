@@ -1,0 +1,17 @@
+[gd_scene format=3 uid="uid://bbm1t83ysmudh"]
+
+[ext_resource type="Script" uid="uid://bqhtx4w6w41wv" path="res://scripts/pvp_arena.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="2_22w8l"]
+[ext_resource type="PackedScene" uid="uid://cc3uivb5mk5x5" path="res://scenes/parallax_background.tscn" id="4_fufj5"]
+
+[node name="PvpArena" type="Node2D" unique_id=1285162457]
+script = ExtResource("1_script")
+
+[node name="Players" type="Node2D" parent="." unique_id=1174028147]
+
+[node name="FireflySpawner" type="Node2D" parent="." unique_id=984180494]
+script = ExtResource("2_22w8l")
+firefly_color = Color(0.890196, 0.392157, 0.0784314, 0.9)
+
+[node name="ParallaxBackground" parent="." unique_id=285942024 instance=ExtResource("4_fufj5")]
+z_index = -95

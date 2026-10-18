@@ -21,6 +21,12 @@ const REOPEN_COOLDOWN := 0.4
 ## How long he keeps flapping his mouth once a dialogue opens, in seconds.
 ## After this he goes back to idle even if the box is still up.
 const TALK_DURATION := 4.2
+## The stall art, used to carve a close-up of the shopkeeper for the shop
+## panel's top-left portrait.
+const SHOP_ART: Texture2D = preload("res://sprites/shopt.png")
+## Region of the idle frame (see shopt.png) around the shopkeeper's head. The
+## full frame is the whole stall; this narrows it to Gilbert himself.
+const SHOP_PORTRAIT_REGION := Rect2(165, 258, 270, 125)
 
 ## Which Shop panel to open. "all" is the unified general store, where the
 ## merchant stocks every weapon, ability and item; the narrower "items",
@@ -38,6 +44,22 @@ const TALK_DURATION := 4.2
 ## can pitch his buy-back service. Only fires for a purchase made at his own
 ## stall (see _on_shop_purchased). Leave empty to skip the thank-you entirely.
 @export_multiline var purchase_thanks_text := "Thank you for buying from me! By the way, I can also buy items from you as well for coins so if you don't want something, I'll take it off your hands!"
+## Short line the merchant speaks in the shop panel's speech bubble while the
+## player browses his stock. Leave empty to use the panel's default greeting.
+@export_multiline var shop_greeting_text := "Fresh stock in, digger. Take a look!"
+## Fallback line the merchant speaks each time the player buys something from him
+## while the shop panel is still open, used for any item the panel has no
+## item-specific line for (see BUY_LINES in shop_ui.gd). The longer
+## purchase_thanks_text still plays once the panel closes.
+@export_multiline var shop_thanks_text := "Pleasure doing business, digger!"
+## Short line the merchant speaks in the shop panel's speech bubble when the
+## player opens the sell tab, pitching his buy-back service. Leave empty to use
+## the panel's default pitch.
+@export_multiline var shop_sell_pitch_text := "Loot to unload? I pay half of what it's worth, digger."
+## Fallback line the merchant speaks each time he buys a piece of the mole's loot
+## back, used for any item the panel has no item-specific line for (see
+## SELL_LINES in shop_ui.gd). Leave empty to use the panel's default thank-you.
+@export_multiline var shop_sell_text := "Sold! Always glad to take that off your hands."
 ## Quest revealed alongside the purchase thank-you, by id. Gilbert's line pitches
 ## his buy-back service, so it opens the selling quest. Empty means the merchant
 ## has no follow-up quest.
@@ -202,7 +224,16 @@ func _interact() -> void:
 
 func _open_shop() -> void:
 	_reopen_timer = REOPEN_COOLDOWN
-	Shop.open_shop(shop_type)
+	# Hand the panel who is minding the stall, so it can show his face top-left
+	# and speak his greetings and thank-yous as the player buys and sells.
+	Shop.open_shop(shop_type, {
+		"name": npc_name,
+		"portrait": _shop_portrait_texture(),
+		"greeting": shop_greeting_text,
+		"thanks": shop_thanks_text,
+		"sell_pitch": shop_sell_pitch_text,
+		"sell": shop_sell_text,
+	})
 	# open_shop can decline (no current scene, a panel of this type already up),
 	# and the panel pauses the tree so _process cannot hide the prompt. Only
 	# report "busy" when a panel really opened, and do the hiding here.
@@ -274,3 +305,11 @@ func _portrait_texture() -> Texture2D:
 	if _sprite and _sprite.sprite_frames and _sprite.sprite_frames.has_animation("idle"):
 		return _sprite.sprite_frames.get_frame_texture("idle", 0)
 	return null
+
+## A close-up of the shopkeeper's head for the shop panel's top-left portrait,
+## carved out of the idle stall frame so it shows Gilbert rather than the stall.
+func _shop_portrait_texture() -> Texture2D:
+	var atlas := AtlasTexture.new()
+	atlas.atlas = SHOP_ART
+	atlas.region = SHOP_PORTRAIT_REGION
+	return atlas

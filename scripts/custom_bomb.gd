@@ -128,6 +128,9 @@ func _break_tiles_in_radius() -> void:
 			elif tilemap.get_layers_count() > 1 and tilemap.get_cell_source_id(1, tp) != -1:
 				TileBreakSFX.break_decoration_tile(tilemap, tp, get_parent())
 	TileBreakSFX.break_opened_chests_near(get_parent(), global_position, blast_radius)
+	# Cracks a still-closed chest in the blast open (loot included) - after the
+	# opened-chest sweep, so it is not immediately smashed in the same detonation.
+	TileBreakSFX.force_open_chests_near(get_parent(), global_position, blast_radius)
 
 func _blast_particles() -> void:
 	var smoke := CPUParticles2D.new()

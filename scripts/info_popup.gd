@@ -11,6 +11,13 @@ const DANGER_COLORS := [
 	Color(0.9, 0.3, 0.8, 1),
 ]
 
+## The coin the reward burst is built from, and how many of them fly. Reusing the
+## HUD icon's script keeps the flying coins identical to the counter they land on,
+## including the fall-back drawing when the artwork is missing.
+const REWARD_COIN_SCRIPT := preload("res://scripts/coin_hud_icon.gd")
+const REWARD_COIN_COUNT := 14
+const REWARD_COIN_SIZE := 44.0
+
 @onready var dim_background: ColorRect = $DimBackground
 @onready var panel: Control = $CenterContainer/Panel
 @onready var bestiary_tab: Button = $CenterContainer/Panel/Margin/VBox/TabRow/BestiaryTab
@@ -41,6 +48,9 @@ var _show_complete := true
 ## Quest id -> its card in the log, rebuilt every populate so the guide can jump
 ## straight to a quest the player just unlocked or finished.
 var _quest_entries: Dictionary = {}
+## Full-screen control the collect-reward coins and "+N" text fly across. Built
+## lazily on the first claim and reused, so it always sits above the panel.
+var _burst_layer: Control = null
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -410,7 +420,7 @@ func _make_quest_entry(quest: Dictionary) -> Control:
 		btn.add_theme_stylebox_override("hover", _make_claim_style(Color(0.55, 0.82, 0.45)))
 		btn.add_theme_stylebox_override("pressed", _make_claim_style(Color(0.35, 0.6, 0.3)))
 		btn.add_theme_stylebox_override("focus", _make_claim_style(Color(0.55, 0.82, 0.45)))
-		btn.pressed.connect(_on_quest_claim_pressed.bind(quest_id))
+		btn.pressed.connect(_on_quest_claim_pressed.bind(quest_id, btn))
 		box.add_child(btn)
 
 	entry.add_child(HSeparator.new())
@@ -467,11 +477,106 @@ func _make_claim_style(color: Color) -> StyleBoxFlat:
 	sb.content_margin_bottom = 6.0
 	return sb
 
-func _on_quest_claim_pressed(quest_id: String) -> void:
+func _on_quest_claim_pressed(quest_id: String, button: Button = null) -> void:
+	# Read the reward and the button's screen spot before claiming: claiming
+	# rebuilds the log, which queues the button for deletion.
+	var reward := int(Quests.get_quest(quest_id).get("reward_coins", 0))
+	var origin := Vector2.ZERO
+	if button != null and is_instance_valid(button):
+		origin = button.get_global_rect().get_center()
 	if not Quests.claim(quest_id):
 		return
 	SFX.play_ui("item_pickup", -4.0, 1.1)
 	_populate_quests()
+	if reward > 0:
+		_play_reward_burst(origin, reward)
+
+## The collect-reward flourish: a fistful of coins bursts out of the button and
+## swoops to the coin counter, with a "+N" that floats up and fades. It runs on
+## the guide's own always-processing node so the tweens keep going while the menu
+## holds the tree paused.
+func _play_reward_burst(origin: Vector2, amount: int) -> void:
+	var layer := _burst_layer_node()
+	var target := Shop.reveal_coin_hud()
+	if target == Vector2.ZERO:
+		# No counter to land on (a HUD-less scene): drift toward the top-left
+		# corner where it normally lives so the coin still reads as collected.
+		target = Vector2(96.0, 40.0)
+	if origin == Vector2.ZERO:
+		origin = target
+	SFX.play_ui("coin", -6.0, 1.15)
+	for i in REWARD_COIN_COUNT:
+		_spawn_reward_coin(layer, origin, target, i)
+	_spawn_reward_text(layer, origin, amount)
+
+## The shared layer the burst draws in, created on first use. A plain full-rect
+## Control ignores the mouse, so it never swallows a click on the panel beneath.
+func _burst_layer_node() -> Control:
+	if _burst_layer != null and is_instance_valid(_burst_layer):
+		return _burst_layer
+	_burst_layer = Control.new()
+	_burst_layer.name = "RewardBurst"
+	_burst_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_burst_layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(_burst_layer)
+	_burst_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	return _burst_layer
+
+## One coin: it pops out on its own random spoke, pauses a beat, then curves in
+## toward the counter. `index` staggers the swoop so the coins arrive as a stream
+## rather than a single clump.
+func _spawn_reward_coin(layer: Control, origin: Vector2, target: Vector2, index: int) -> void:
+	var coin := Control.new()
+	coin.set_script(REWARD_COIN_SCRIPT)
+	coin.custom_minimum_size = Vector2(REWARD_COIN_SIZE, REWARD_COIN_SIZE)
+	coin.size = Vector2(REWARD_COIN_SIZE, REWARD_COIN_SIZE)
+	coin.pivot_offset = coin.size * 0.5
+	coin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	coin.modulate.a = 0.0
+	coin.scale = Vector2(0.2, 0.2)
+	layer.add_child(coin)
+	coin.global_position = origin - coin.size * 0.5
+
+	var half := coin.size * 0.5
+	var burst := origin + Vector2.from_angle(randf_range(0.0, TAU)) * randf_range(80.0, 160.0)
+	var mid := (burst + target) * 0.5 + Vector2(randf_range(-50.0, 50.0), randf_range(-70.0, -10.0))
+
+	var tw := create_tween()
+	# Explode outward and pop into view.
+	tw.tween_property(coin, "global_position", burst - half, 0.3).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(coin, "modulate:a", 1.0, 0.14)
+	tw.parallel().tween_property(coin, "scale", Vector2.ONE, 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	# Hang for a beat, staggered per coin, then swoop to the counter.
+	tw.tween_interval(0.22 + index * 0.03)
+	tw.tween_property(coin, "global_position", mid - half, 0.26).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_property(coin, "global_position", target - half, 0.34).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	# Shrink and fade out as it lands, so it reads as pouring into the counter.
+	tw.parallel().tween_property(coin, "modulate:a", 0.0, 0.3)
+	tw.parallel().tween_property(coin, "scale", Vector2(0.35, 0.35), 0.3)
+	tw.tween_callback(coin.queue_free)
+
+## The "+N" that rises off the button and fades, naming the payout the coins are
+## carrying.
+func _spawn_reward_text(layer: Control, origin: Vector2, amount: int) -> void:
+	var label := Label.new()
+	label.text = "+%d" % amount
+	label.add_theme_font_override("font", _font)
+	label.add_theme_font_size_override("font_size", 40)
+	label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.35, 1))
+	label.add_theme_constant_override("outline_size", 6)
+	label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(label)
+	label.size = label.get_minimum_size()
+	label.pivot_offset = label.size * 0.5
+	label.global_position = origin - label.size * 0.5
+
+	var tw := create_tween()
+	tw.tween_property(label, "scale", Vector2(1.15, 1.15), 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(label, "global_position:y", label.global_position.y - 72.0, 0.95).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(label, "scale", Vector2.ONE, 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_property(label, "modulate:a", 0.0, 0.35)
+	tw.tween_callback(label.queue_free)
 
 func _pause_scene_music() -> void:
 	var scene := get_tree().current_scene

@@ -26,8 +26,12 @@ const CONTACT_DAMAGE := 1.0
 ## Sting damage plus the venom slow, matching the Cave Snake globs.
 const STING_DAMAGE := 1.0
 const STING_SLOW_DURATION := 2.5
-## Tiles a single charge is allowed to smash before it stalls on bedrock or a door.
+## Impacts a single charge is allowed to smash through before it stalls on
+## bedrock or a door.
 const DASH_MAX_BREAKS := 6
+## Radius (in tiles) of the brush a dash clears around each impact, so a charge
+## carves a wide tunnel instead of a one-block-wide slot.
+const DASH_BREAK_RADIUS := 1
 
 const EnemyDamage := preload("res://scripts/enemy.gd")
 const TileBreakSFX := preload("res://scripts/tile_break_sfx.gd")
@@ -168,16 +172,28 @@ func _dash_break_tiles() -> bool:
 		# rather than the empty cell the dash is about to travel into.
 		var probe := collision.get_position() + collision.get_normal() * -8.0
 		var tile_pos := tilemap.local_to_map(tilemap.to_local(probe))
-		var source_id := tilemap.get_cell_source_id(0, tile_pos)
-		if source_id == -1:
-			TileBreakSFX.break_decoration_tile(tilemap, tile_pos, world)
-			continue
-		var tile_data := tilemap.get_cell_tile_data(0, tile_pos)
-		if tile_data and tile_data.get_custom_data("bedrock"):
-			continue
-		TileBreakSFX.break_tile(tilemap, tile_pos, world)
-		_dash_breaks += 1
-		broke_solid = true
+		# Smash a small brush of tiles around the impact so a charge tears a
+		# wide hole instead of clipping a single block.
+		if _smash_tiles_around(tilemap, tile_pos, world):
+			_dash_breaks += 1
+			broke_solid = true
+	return broke_solid
+
+## Clears the solid tiles (plus any decoration) in a square brush centered on
+## tile_pos. Bedrock is left untouched. Returns true when a solid tile broke.
+func _smash_tiles_around(tilemap: TileMap, tile_pos: Vector2i, world: Node) -> bool:
+	var broke_solid := false
+	for dx in range(-DASH_BREAK_RADIUS, DASH_BREAK_RADIUS + 1):
+		for dy in range(-DASH_BREAK_RADIUS, DASH_BREAK_RADIUS + 1):
+			var cell := Vector2i(tile_pos.x + dx, tile_pos.y + dy)
+			if tilemap.get_cell_source_id(0, cell) == -1:
+				TileBreakSFX.break_decoration_tile(tilemap, cell, world)
+				continue
+			var tile_data := tilemap.get_cell_tile_data(0, cell)
+			if tile_data and tile_data.get_custom_data("bedrock"):
+				continue
+			TileBreakSFX.break_tile(tilemap, cell, world)
+			broke_solid = true
 	return broke_solid
 
 func _enter_recover() -> void:

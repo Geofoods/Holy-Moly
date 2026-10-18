@@ -47,6 +47,19 @@ var _coin_hud: Control = null
 var _hide_timer: Timer = null
 var _panel: CanvasLayer = null
 
+## Who is pictured (and voiced) by the currently open shop panel. The shopkeeper
+## NPC fills these in when it opens its own stall; the portable shop from a Shop
+## Token leaves them blank, so no face is shown. Cleared when the panel closes.
+var merchant_name := ""
+var merchant_portrait: Texture2D = null
+var merchant_greeting := ""
+var merchant_thanks := ""
+## Lines for the sell tab: the pitch spoken when it is opened, and the thanks
+## spoken each time a piece of loot is bought back. Same lifecycle as the lines
+## above - filled by the shopkeeper NPC, cleared with the panel.
+var merchant_sell_pitch := ""
+var merchant_sell := ""
+
 func _ready() -> void:
 	layer = 85
 	_build_catalog()
@@ -389,12 +402,24 @@ func get_shop_list(shop_type: String) -> Array:
 			return item_catalog
 		"all":
 			var list: Array = []
-			list.append_array(weapon_catalog)
+			list.append_array(_for_sale(weapon_catalog))
 			list.append_array(ability_catalog)
 			list.append_array(item_catalog)
 			return list
 		_:
-			return weapon_catalog
+			return _for_sale(weapon_catalog)
+
+## The weapons a merchant is willing to stock. The golden shovel is held back: it
+## is a reward from the Arena snail (see The Arena.tscn), not shelf stock, so it is
+## filtered out here even though it stays in `weapon_catalog` for the loadout
+## picker (inventory_ui.gd) and in `catalog` for get_weapon() lookups.
+func _for_sale(weapons: Array) -> Array:
+	var out: Array = []
+	for w in weapons:
+		if w.id == "gold_shovel":
+			continue
+		out.append(w)
+	return out
 
 func is_shop_open(shop_type: String = "") -> bool:
 	if _panel == null or not is_instance_valid(_panel):
@@ -404,7 +429,12 @@ func is_shop_open(shop_type: String = "") -> bool:
 ## Opens a shop panel. "all" is the single merchant's full stock (weapons,
 ## abilities and items) and is the default; the narrower types remain for
 ## anything that wants a single-category panel.
-func open_shop(shop_type: String = "all") -> void:
+##
+## `merchant` optionally describes who is running the stall, so the panel can
+## picture them in its top-left corner and thank the player as they buy. Keys:
+## "name", "portrait", "greeting", "thanks", "sell_pitch" and "sell"; anything
+## missing just stays blank (the panel falls back to its own defaults).
+func open_shop(shop_type: String = "all", merchant: Dictionary = {}) -> void:
 	if shop_type not in ["all", "weapons", "abilities", "items"]:
 		shop_type = "all"
 	if _panel != null and is_instance_valid(_panel):
@@ -414,16 +444,33 @@ func open_shop(shop_type: String = "all") -> void:
 	var scene := get_tree().current_scene
 	if scene == null:
 		return
+	merchant_name = str(merchant.get("name", ""))
+	merchant_portrait = merchant.get("portrait", null) as Texture2D
+	merchant_greeting = str(merchant.get("greeting", ""))
+	merchant_thanks = str(merchant.get("thanks", ""))
+	merchant_sell_pitch = str(merchant.get("sell_pitch", ""))
+	merchant_sell = str(merchant.get("sell", ""))
 	var panel: CanvasLayer = preload("res://scripts/shop_ui.gd").new()
 	panel.set("shop_type", shop_type)
 	panel.tree_exited.connect(func() -> void:
 		if _panel != panel:
 			return
 		_panel = null
+		_clear_merchant()
 		shop_closed.emit(shop_type)
 	)
 	scene.add_child(panel)
 	_panel = panel
+
+## Wipes the pictured merchant once their panel is gone, so a later Shop Token
+## panel does not inherit Gilbert's face and lines.
+func _clear_merchant() -> void:
+	merchant_name = ""
+	merchant_portrait = null
+	merchant_greeting = ""
+	merchant_thanks = ""
+	merchant_sell_pitch = ""
+	merchant_sell = ""
 
 # --- Persistence ----------------------------------------------------------
 
@@ -555,6 +602,24 @@ func _poke_coin_hud() -> void:
 		var tw := create_tween()
 		tw.tween_property(_coin_hud, "modulate:a", 1.0, 0.12)
 	_hide_timer.start(HUD_SHOW_TIME)
+
+## Brings the coin counter on screen at full opacity right away and holds it,
+## for reward animations that play while the tree is paused: both the fade-in
+## tween above and the auto-hide timer stand still under a pause, so the quest
+## log cannot use _poke_coin_hud. Returns the counter's centre in screen space so
+## a caller can aim a flying-coin animation at it, or Vector2.ZERO when there is
+## no counter to aim at.
+func reveal_coin_hud() -> Vector2:
+	if _coin_hud == null:
+		return Vector2.ZERO
+	_coin_hud.visible = true
+	_coin_hud.modulate.a = 1.0
+	if _hide_timer != null:
+		# Restarted rather than left running: under the pause it does not tick, so
+		# once the menu closes the counter lingers for the usual window and then
+		# fades itself out on its own.
+		_hide_timer.start(HUD_SHOW_TIME)
+	return _coin_hud.get_global_rect().get_center()
 
 func _hide_coin_hud() -> void:
 	if _coin_hud == null:

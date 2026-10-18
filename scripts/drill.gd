@@ -35,6 +35,10 @@ func _on_area_entered(area: Area2D) -> void:
 	if area.is_in_group("opened_chest"):
 		area.call("break_as_block")
 		return
+	# A closed chest the drill bit reaches is cracked open rather than left shut.
+	if area.is_in_group("chest"):
+		area.call("force_open")
+		return
 	if not area.is_in_group("enemy_hurtbox"):
 		return
 	var enemy := area.get_parent()

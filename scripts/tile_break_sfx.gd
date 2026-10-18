@@ -376,6 +376,26 @@ static func break_opened_chest_from_node(node: Node) -> bool:
 static func break_opened_chests_near(parent: Node, world_pos: Vector2, radius: float = 120.0) -> void:
 	_break_opened_chests_near(parent, world_pos, radius)
 
+## Forces any still-closed chest within `radius` of a blast or a drill bit open,
+## so an item can crack a chest the player never walked up to. The loot drops
+## exactly as it does from a normal open.
+##
+## Safe to run right after break_opened_chests_near: that sweep only sees chests
+## already in "opened_chest", and force_open skips anything already open, so a
+## chest this same blast just cracked is not then shattered by the sweep.
+static func force_open_chests_near(parent: Node, world_pos: Vector2, radius: float = 120.0) -> void:
+	if not is_instance_valid(parent):
+		return
+	var tree := parent.get_tree()
+	if tree == null:
+		return
+	for chest in tree.get_nodes_in_group("chest"):
+		if not is_instance_valid(chest):
+			continue
+		if chest is Node2D and chest.global_position.distance_to(world_pos) <= radius:
+			if chest.has_method("force_open"):
+				chest.call("force_open")
+
 static func _break_decoration_tile(tilemap: TileMap, tile_pos: Vector2i, parent: Node, debris_z: int = DEBRIS_Z, suction_center: Vector2 = Vector2.ZERO, suction: bool = false, layer_index: int = 1) -> void:
 	if layer_index < 1 or tilemap.get_layers_count() <= layer_index:
 		return
@@ -506,6 +526,7 @@ static func _acquire_player(parent: Node) -> AudioStreamPlayer2D:
 	else:
 		p = _pool.pop_back()
 	p.process_mode = Node.PROCESS_MODE_ALWAYS
+	p.bus = &"SFX"
 	parent.add_child(p)
 	return p
 

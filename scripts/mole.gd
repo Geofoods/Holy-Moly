@@ -1,3 +1,4 @@
+class_name Mole
 extends CharacterBody2D
 
 const TapInteract = preload("res://scripts/tap_interact.gd")

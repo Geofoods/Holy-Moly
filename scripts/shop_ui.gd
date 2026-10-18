@@ -19,6 +19,62 @@ const COL_BTN_DISABLED := Color(0.72, 0.64, 0.5, 1)
 const COL_DISABLED_TEXT := Color(0.55, 0.45, 0.32, 1)
 const COL_CLOSE := Color(0.72, 0.1, 0.18, 1)
 const COL_CLOSE_HOT := Color(0.9, 0.15, 0.25, 1)
+const COL_SPEECH_BG := Color(0.99, 0.96, 0.88, 1)
+const COL_SPEECH_BORDER := Color(0.5, 0.34, 0.16, 1)
+
+## Fallback lines for the merchant's speech bubble when a shopkeeper does not
+## supply its own (see Shop.merchant_greeting / merchant_thanks).
+const DEFAULT_MERCHANT_GREETING := "Have a browse, digger!"
+const DEFAULT_MERCHANT_THANKS := "Pleasure doing business, digger!"
+## Fallback lines for the sell tab: the pitch spoken when it is opened, and the
+## thanks spoken each time the merchant buys a piece of loot back. Mirrors
+## Shop.merchant_sell_pitch / merchant_sell.
+const DEFAULT_MERCHANT_SELL_PITCH := "Loot to unload? I pay half of what it's worth, digger."
+const DEFAULT_MERCHANT_SELL := "Sold! Always glad to take that off your hands."
+## Flavour the merchant speaks for a specific trade, keyed by the item or weapon
+## name. Buying and selling have their own tables so the same thing can get a
+## different line depending on which way the coins are going. Anything not listed
+## falls back to the merchant's one-line thanks (see Shop.merchant_thanks /
+## merchant_sell), so a stall never falls quiet over an item nobody wrote for.
+const BUY_LINES := {
+	"Drill": "A good drill, that. Bites through stone like it owes me money.",
+	"Bomb": "Mind the fuse, digger. Blow a hole in anything that annoys you.",
+	"Ice Bomb": "Frozen solid in a jar. Chills a room right through, and the mood with it.",
+	"Holy Water": "Blessed this batch myself. Heals what ails you, and a few things that don't.",
+	"Pickaxe": "Heavy as sin and twice as mean. Swing it and the whole wall gives up.",
+	"Wizard Staff": "Zaps from a distance. No idea how it works, I just sell the things.",
+}
+const SELL_LINES := {
+	"Miner's Rations": "Rations, eh? Half-chewed, but I know a mole who'll take 'em.",
+	"Potted Honeycomb": "Ooh, honeycomb. Sticky stuff, but there's a market for sweet.",
+	"Drill": "A drill, lightly used. I'll polish it up and put a price on it.",
+	"Bomb": "A live bomb! Careful with that on my counter, digger.",
+	"Ice Bomb": "An ice bomb. I'll keep it somewhere cold. Obviously.",
+	"Golden Bomb": "Golden?! Now that's a find. Coins for it, gladly.",
+	"Holy Water": "You're selling holy water back to me? Fine, but don't tell the snail.",
+	"Mine": "A mine, still ticking? Delightful. I'll store it very carefully.",
+	"Stink Bomb": "A stink bomb. Wrap it twice before it goes under my counter.",
+	"Spark Bomb": "Sparkly little thing. Somebody'll pay plenty for that bang.",
+	"Flare": "A flare. Useful, cheerful, and worth a few coins to me.",
+	"Coal Lump": "A lump of coal. Not glamorous, but it burns.",
+	"Vacuum Jelly": "Wobbles about, this one. Odd stuff, but I'll take it off your hands.",
+	"Bounce Mushroom": "A bouncy one! The kids round here love these. I'll price it high.",
+	"Shiny Lure": "Shiny enough to fool a fish. I'll find it a good home.",
+	"Compass Charm": "A compass charm? I'll point it at my coin purse and sell it on.",
+	"Shop Token": "A shop token, back to me! Coin it in, digger.",
+	"Grub Stick": "Grub stick. Chewy. Somebody out there wants it, I promise.",
+	"Tunnel Gloves": "Tunnel gloves, barely scuffed. A tidy little trade.",
+	"Shelled Backpack": "A shelled pack. Rugged. I'll get a good price for that.",
+	"Climbing Talons": "Talons! Those I can sell to anyone with a wall to climb.",
+	"Lantern Charm": "A lantern charm - handy when the dark gets thick. I'll take it.",
+	"Rebound Hook": "A rebound hook. Returns to you - now it returns to my shelf.",
+	"Wax Cache": "Wax cache. Sealed tight? Good. I'll shift it by nightfall.",
+	"Earthquake Boots": "Earthquake boots! Mind the tremors on my floorboards.",
+	"Mol-dozer Ram": "A ram for headbutting rock. Sold before I even price it.",
+}
+## Seconds per character the merchant's bubble takes to type a line, matching
+## dialogue_box.gd so his talk reads the same here as it does in a conversation.
+const TYPE_SPEED := 0.018
 
 var _font := preload("res://Baby Doll.otf")
 var _rows: VBoxContainer = null
@@ -37,13 +93,20 @@ var shop_type := "weapons"
 var _tab := "buy"
 var _tab_buy: Button = null
 var _tab_sell: Button = null
-var _title: Label = null
 var _hint: Label = null
 var _page_label: Label = null
 var _prev_btn: Button = null
 var _next_btn: Button = null
 var _pager: HBoxContainer = null
 var _button_tweens: Dictionary = {}
+## Merchant portrait and speech bubble in the panel's top-left corner. The bubble
+## line types itself out, then flips to a thank-you each time the player buys or
+## sells with the pictured person.
+var _speech: Label = null
+## The whole line being typed; _speech holds only the part shown so far.
+var _speech_full := ""
+var _speech_type_tween: Tween = null
+var _speech_flash_tween: Tween = null
 
 func _ready() -> void:
 	layer = 100
@@ -93,16 +156,38 @@ func _build_ui() -> void:
 	vbox.add_theme_constant_override("separation", 14)
 	margin.add_child(vbox)
 
-	var header := HBoxContainer.new()
-	vbox.add_child(header)
+	# Top row: the merchant pictured on the left when a stallkeeper opened the
+	# panel, the coin purse beside him, and the close button pinned to the right.
+	# There is no shop title - the shopkeeper standing there is the storefront.
+	var top_row := HBoxContainer.new()
+	top_row.add_theme_constant_override("separation", 14)
+	vbox.add_child(top_row)
 
-	var title := Label.new()
-	title.text = _buy_title()
-	title.add_theme_color_override("font_color", COL_TEXT)
-	title.add_theme_font_size_override("font_size", 36)
-	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	header.add_child(title)
-	_title = title
+	_build_merchant_block(top_row)
+
+	# The coin purse sits to the right of the shopkeeper: a coin drawing plus the
+	# running total, so the player can price a purchase up at a glance.
+	var purse := HBoxContainer.new()
+	purse.add_theme_constant_override("separation", 6)
+	purse.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	top_row.add_child(purse)
+
+	var coin_icon := Control.new()
+	coin_icon.custom_minimum_size = Vector2(28, 28)
+	coin_icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	coin_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	coin_icon.set_script(preload("res://scripts/coin_hud_icon.gd"))
+	purse.add_child(coin_icon)
+
+	_coin_label = Label.new()
+	_coin_label.add_theme_color_override("font_color", COL_GOLD)
+	_coin_label.add_theme_font_size_override("font_size", 26)
+	_coin_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	purse.add_child(_coin_label)
+
+	var top_spacer := Control.new()
+	top_spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top_row.add_child(top_spacer)
 
 	var close_btn := Button.new()
 	close_btn.text = "X"
@@ -112,14 +197,11 @@ func _build_ui() -> void:
 	close_btn.add_theme_stylebox_override("normal", _make_style_box(COL_CLOSE, Color(0.03, 0.03, 0.03, 1), 8, 2))
 	for state in ["hover", "pressed", "focus"]:
 		close_btn.add_theme_stylebox_override(state, _make_style_box(COL_CLOSE_HOT, Color(0.03, 0.03, 0.03, 1), 8, 2))
+	# Sits at the very top-right, beside the shopkeeper rather than centred
+	# against the speech bubble.
+	close_btn.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	close_btn.pressed.connect(_close)
-	header.add_child(close_btn)
-
-	_coin_label = Label.new()
-	_coin_label.add_theme_color_override("font_color", COL_GOLD)
-	_coin_label.add_theme_font_size_override("font_size", 22)
-	_coin_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	vbox.add_child(_coin_label)
+	top_row.add_child(close_btn)
 
 	_status = Label.new()
 	_status.add_theme_color_override("font_color", COL_RED)
@@ -195,6 +277,118 @@ func _build_ui() -> void:
 	bottom.add_child(close_bottom)
 	vbox.add_child(bottom)
 
+## Adds the shopkeeper (portrait plus speech bubble) to the panel's top row when a
+## merchant NPC opened the panel. A portable Shop Token panel has no face behind
+## it, so the row is left with just the spacer and close button.
+func _build_merchant_block(row: HBoxContainer) -> void:
+	if Shop.merchant_name.is_empty() and Shop.merchant_portrait == null:
+		return
+
+	if Shop.merchant_portrait != null:
+		var frame := PanelContainer.new()
+		frame.add_theme_stylebox_override("panel", _make_style_box(COL_INNER_BG, COL_BORDER, 10, 3))
+		frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(frame)
+		var portrait := TextureRect.new()
+		portrait.texture = Shop.merchant_portrait
+		portrait.custom_minimum_size = Vector2(170, 80)
+		portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		frame.add_child(portrait)
+
+	var bubble := PanelContainer.new()
+	bubble.add_theme_stylebox_override("panel", _make_style_box(COL_SPEECH_BG, COL_SPEECH_BORDER, 12, 3, true))
+	bubble.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(bubble)
+
+	var bubble_margin := MarginContainer.new()
+	bubble_margin.add_theme_constant_override("margin_left", 16)
+	bubble_margin.add_theme_constant_override("margin_right", 16)
+	bubble_margin.add_theme_constant_override("margin_top", 10)
+	bubble_margin.add_theme_constant_override("margin_bottom", 10)
+	bubble.add_child(bubble_margin)
+
+	var bubble_box := VBoxContainer.new()
+	bubble_box.add_theme_constant_override("separation", 2)
+	bubble_margin.add_child(bubble_box)
+
+	if not Shop.merchant_name.is_empty():
+		var speaker := Label.new()
+		speaker.text = Shop.merchant_name
+		speaker.add_theme_color_override("font_color", COL_ACCENT)
+		speaker.add_theme_font_size_override("font_size", 22)
+		bubble_box.add_child(speaker)
+
+	_speech = Label.new()
+	_speech.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_speech.custom_minimum_size = Vector2(380, 0)
+	_speech.add_theme_color_override("font_color", COL_BODY)
+	_speech.add_theme_font_size_override("font_size", 20)
+	bubble_box.add_child(_speech)
+	_merchant_says(Shop.merchant_greeting if not Shop.merchant_greeting.is_empty() else DEFAULT_MERCHANT_GREETING)
+
+## Types a fresh line into the merchant's speech bubble, letter by letter, at the
+## same cadence dialogue_box.gd uses for a conversation. Any line already typing
+## is replaced, so a quick string of buys or sells never overlaps itself.
+func _merchant_says(text: String) -> void:
+	if _speech == null:
+		return
+	_speech_full = text
+	if _speech_type_tween != null and _speech_type_tween.is_valid():
+		_speech_type_tween.kill()
+	_speech.text = ""
+	var count := _speech_full.length()
+	if count <= 0:
+		return
+	_speech_type_tween = create_tween()
+	_speech_type_tween.tween_method(_set_speech_typed_length, 0, count, count * TYPE_SPEED)
+
+func _set_speech_typed_length(length: int) -> void:
+	_speech.text = _speech_full.substr(0, length)
+
+## Speaks for a purchase of `item_key` (an item or weapon name), picking his
+## per-item line where there is one, with a quick flash so the change reads.
+func _merchant_bought(item_key: String) -> void:
+	_flash_speech()
+	var fallback := Shop.merchant_thanks if not Shop.merchant_thanks.is_empty() else DEFAULT_MERCHANT_THANKS
+	_merchant_says(_line_for(BUY_LINES, item_key, fallback))
+
+## Gilbert's pitch for the buy-back service, played when the sell tab is opened.
+func _merchant_sell_pitch() -> void:
+	_flash_speech()
+	_merchant_says(Shop.merchant_sell_pitch if not Shop.merchant_sell_pitch.is_empty() else DEFAULT_MERCHANT_SELL_PITCH)
+
+## Gilbert's shop greeting, replayed whenever the buy tab comes back up so
+## flipping over to sell and back welcomes the player again.
+func _merchant_greeting() -> void:
+	_flash_speech()
+	_merchant_says(Shop.merchant_greeting if not Shop.merchant_greeting.is_empty() else DEFAULT_MERCHANT_GREETING)
+
+## Speaks as he buys a piece of loot back, picking his per-item line where there
+## is one for `item_key`.
+func _merchant_sold(item_key: String) -> void:
+	_flash_speech()
+	var fallback := Shop.merchant_sell if not Shop.merchant_sell.is_empty() else DEFAULT_MERCHANT_SELL
+	_merchant_says(_line_for(SELL_LINES, item_key, fallback))
+
+## The line for `key` from one of the tables above, or `fallback` when the table
+## has nothing written for it.
+func _line_for(lines: Dictionary, key: String, fallback: String) -> String:
+	if key.is_empty():
+		return fallback
+	var line := str(lines.get(key, ""))
+	return line if not line.is_empty() else fallback
+
+## Brightens the bubble for a beat so the swapped line stands out from the old one.
+func _flash_speech() -> void:
+	if _speech == null:
+		return
+	if _speech_flash_tween != null and _speech_flash_tween.is_valid():
+		_speech_flash_tween.kill()
+	_speech.modulate = Color(1.35, 1.35, 0.85, 1.0)
+	_speech_flash_tween = create_tween()
+	_speech_flash_tween.tween_property(_speech, "modulate", Color.WHITE, 0.3).set_trans(Tween.TRANS_SINE)
+
 func _make_style_box(bg: Color, border: Color, radius: int, border_width: int = 2, shadow: bool = false) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = bg
@@ -249,22 +443,17 @@ func _animate_button(button: Button, target_scale: Vector2, duration: float, tra
 func _list() -> Array:
 	return Shop.get_shop_list(shop_type)
 
-func _buy_title() -> String:
-	match shop_type:
-		"abilities":
-			return "ABILITY SHOP"
-		"items":
-			return "ITEM SHOP"
-		"all":
-			return "GENERAL STORE"
-		_:
-			return "WEAPON SHOP"
-
 func _set_tab(tab: String) -> void:
 	if _tab == tab:
 		return
 	_tab = tab
 	_page = 0
+	# Speak in the merchant's own voice as the tabs change: his buy-back pitch on
+	# the sell tab, his shop greeting back on the buy tab.
+	if tab == "sell":
+		_merchant_sell_pitch()
+	else:
+		_merchant_greeting()
 	_refresh()
 
 ## Highlights the tab that is up. Done by swapping the button's normal stylebox
@@ -278,7 +467,7 @@ func _style_tab(button: Button, active: bool) -> void:
 
 func _refresh() -> void:
 	if _coin_label:
-		_coin_label.text = "Coins: %d" % Shop.coins
+		_coin_label.text = str(Shop.coins)
 	_style_tab(_tab_buy, _tab == "buy")
 	_style_tab(_tab_sell, _tab == "sell")
 	if not _rows:
@@ -288,8 +477,6 @@ func _refresh() -> void:
 		c.queue_free()
 
 	if _tab == "sell":
-		if _title:
-			_title.text = "SELL ITEMS"
 		if _hint:
 			_hint.text = "Sell loot for half price  |  ESC to close"
 		if _pager:
@@ -297,28 +484,25 @@ func _refresh() -> void:
 		_build_sell_rows()
 		return
 
-	if _title:
-		_title.text = _buy_title()
 	if _hint:
 		_hint.text = "Press E or click to equip  |  ESC to close"
-	var list := _list()
-	var pages := _page_count(list.size())
-	_page = clampi(_page, 0, pages - 1)
-	var start := _page * ITEMS_PER_PAGE
-	var end := mini(start + ITEMS_PER_PAGE, list.size())
-	for i in range(start, end):
-		if list[i] is ItemData:
-			_rows.add_child(_make_item_row(list[i] as ItemData))
+	var pages := _pages()
+	var total := maxi(pages.size(), 1)
+	_page = clampi(_page, 0, total - 1)
+	var page_items: Array = pages[_page] if _page < pages.size() else []
+	for entry in page_items:
+		if entry is ItemData:
+			_rows.add_child(_make_item_row(entry as ItemData))
 		else:
-			_rows.add_child(_make_row(list[i] as WeaponData))
+			_rows.add_child(_make_row(entry as WeaponData))
 	if _page_label:
-		_page_label.text = "Page %d / %d" % [_page + 1, pages]
+		_page_label.text = "Page %d / %d" % [_page + 1, total]
 	if _prev_btn:
 		_prev_btn.disabled = _page <= 0
 	if _next_btn:
-		_next_btn.disabled = _page >= pages - 1
+		_next_btn.disabled = _page >= total - 1
 	if _pager:
-		_pager.visible = pages > 1
+		_pager.visible = total > 1
 
 ## One row per occupied inventory slot. The mole only has four slots, so this
 ## never needs a pager. An empty inventory gets a hint line instead of a blank
@@ -382,16 +566,38 @@ func _make_sell_row(slot: int, item: ItemData, count: int) -> HBoxContainer:
 	btn.disabled = price <= 0
 	btn.pressed.connect(func() -> void:
 		if Shop.sell_inventory_slot(slot):
+			_merchant_sold(item.item_name)
 			_refresh()
 	)
 	row.add_child(btn)
 	return row
 
-func _page_count(size: int) -> int:
-	return maxi(ceili(float(size) / float(ITEMS_PER_PAGE)), 1)
+## The stock split into the pages the pager actually shows. The shop's weapons
+## fill the first page(s) and everything else follows on later pages, so the
+## three tools stay together instead of ITEMS_PER_PAGE folding the shelf's first
+## item onto their page.
+func _pages() -> Array:
+	var pages: Array = []
+	var weapons: Array = []
+	var rest: Array = []
+	for entry in _list():
+		if entry is WeaponData and (entry as WeaponData).weapon_type != WeaponData.Type.ABILITY:
+			weapons.append(entry)
+		else:
+			rest.append(entry)
+	_chunk_into(pages, weapons)
+	_chunk_into(pages, rest)
+	return pages
+
+## Appends `entries` to `pages` in ITEMS_PER_PAGE-sized chunks.
+func _chunk_into(pages: Array, entries: Array) -> void:
+	var i := 0
+	while i < entries.size():
+		pages.append(entries.slice(i, i + ITEMS_PER_PAGE))
+		i += ITEMS_PER_PAGE
 
 func _total_pages() -> int:
-	return _page_count(_list().size())
+	return maxi(_pages().size(), 1)
 
 func _make_row(w: WeaponData) -> HBoxContainer:
 	var row := HBoxContainer.new()
@@ -448,6 +654,7 @@ func _make_row(w: WeaponData) -> HBoxContainer:
 		btn.disabled = Shop.coins < w.price
 		btn.pressed.connect(func() -> void:
 			if Shop.buy(w):
+				_merchant_bought(w.display_name)
 				_refresh()
 		)
 	row.add_child(btn)
@@ -489,6 +696,7 @@ func _make_item_row(item: ItemData) -> HBoxContainer:
 	btn.disabled = Shop.coins < price
 	btn.pressed.connect(func() -> void:
 		if Shop.buy_item(item):
+			_merchant_bought(item.item_name)
 			_refresh()
 		elif not _can_carry():
 			_set_status("INVENTORY IS FULL - USE SOMETHING FIRST", COL_RED)

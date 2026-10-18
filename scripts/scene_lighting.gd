@@ -26,6 +26,15 @@ func _process(_delta: float) -> void:
 	# The tutorial is an above-ground training area, so it stays fully lit.
 	if path.ends_with("tutorial.tscn"):
 		return
+	# The PvP front end and its arena are bright by design: the lobby is a menu
+	# built on a light panel, and the arena has to be read at a glance by everyone
+	# in it, so neither takes the cave shade the campaign levels use.
+	if path.ends_with("multiplayer_menu.tscn") or path.ends_with("pvp_arena.tscn"):
+		return
+	# The level editor is a working surface as well as a preview, so it stays
+	# fully lit: authoring tiles in cave shade would hide the palette's colours.
+	if path.ends_with("level_editor.tscn"):
+		return
 	if scene.get_node_or_null("AmbientModulate") == null:
 		var cm := CanvasModulate.new()
 		cm.name = "AmbientModulate"
