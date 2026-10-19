@@ -73,17 +73,20 @@ const QUESTS: Array[Dictionary] = [
 ## The scene that reveals each quest, for quests that open simply on arriving
 ## somewhere. A quest is not listed and its banner does not fire until the mole
 ## reaches the place the quest is about, so the log fills in as the player explores
-## rather than laying out the whole game up front. Quests revealed some other way
-## are not here: kill_corruption is handed over by an NPC's `unlocks_quest` (see
-## npc_mole.gd), save_snail is handed over when the level 5 cutscene ends (see
-## level_05_intro.gd), buy_from_shop is handed over by Goblin Gilbert's own
-## `unlocks_quest` the first time the player talks to him (see shopkeeper_npc.gd),
-## sell_items is handed over by his `unlocks_after_purchase` when the post-purchase
-## thank-you plays, and complete_tutorial is handed over by Grub in Mole Village
-## the same way.
-const UNLOCK_SCENES := {
-	"defeat_corrupted_snail": ["res://scenes/level_10.tscn"],
-}
+## rather than laying out the whole game up front.
+##
+## Nothing is listed here any more: every quest is now handed over by the
+## character it is about, so the banner lands while the player is still looking
+## at whoever gave it to them. kill_corruption comes from an NPC's
+## `unlocks_quest` (see npc_mole.gd), save_snail from the level 5 cutscene (see
+## level_05_intro.gd), defeat_corrupted_snail from the level 10 snail's own line
+## (see snail_dialogue.gd), buy_from_shop from Goblin Gilbert's `unlocks_quest`
+## the first time the player talks to him (see shopkeeper_npc.gd), sell_items
+## from his `unlocks_after_purchase` when the post-purchase thank-you plays, and
+## complete_tutorial from Grub in Mole Village the same way. The arrival
+## mechanism is kept for the next quest that is about a place rather than a
+## person.
+const UNLOCK_SCENES := {}
 
 func _ready() -> void:
 	get_tree().scene_changed.connect(_on_scene_changed)

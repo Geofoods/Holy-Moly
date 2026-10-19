@@ -24,6 +24,7 @@ const TOOL_ERASE := 2
 const TOOL_SPAWN := 3
 const TOOL_CHEST := 4
 const TOOL_ITEM := 5
+const TOOL_PORTAL := 6
 
 const TAB_BLOCKS := 0
 const TAB_ENEMIES := 1
@@ -37,8 +38,13 @@ const HEART_SCENE := preload("res://scenes/heart.tscn")
 const CHEST_SCENE := preload("res://chest.tscn")
 const DROPPED_ITEM_SCENE := preload("res://scenes/dropped_item.tscn")
 const WEAPON_PICKUP_SCENE := preload("res://scenes/weapon_pickup.tscn")
+const PORTAL_SCENE := preload("res://scenes/level_portal.tscn")
+const PORTAL_SCRIPT := preload("res://scripts/level_portal.gd")
 const CHEST_ICON := preload("res://chest.webp")
 const UI_FONT := preload("res://Baby Doll.otf")
+
+## Where EXIT goes: the title screen the editor was opened from.
+const TITLE_SCENE := "res://scenes/intro.tscn"
 
 const SAVE_DIR := "user://levels"
 const AUTOSAVE_PATH := "user://levels/_autosave.json"
@@ -54,6 +60,10 @@ const MOLE_CAMERA_ZOOM := Vector2(0.65, 0.65)
 ## The campaign levels hand-place the heart HUD at this scale; its own script
 ## then shrinks it by a further 0.75 and parks it in the bottom-left corner.
 const HEART_SCALE := Vector2(0.24147864, 0.24147864)
+
+## How long the LEVEL COMPLETE banner is left up before the playtest packs itself
+## away. Long enough to read it, short enough not to feel like a wait.
+const PORTAL_RETURN_DELAY := 1.3
 
 const PAN_SPEED := 900.0
 const MIN_ZOOM := 0.25
@@ -150,6 +160,9 @@ var _undo_stack: Array = []
 var _redo_stack: Array = []
 
 var _playing := false
+## Set the moment a portal is stepped into, so a finished run ends once and cannot
+## be ended again while the LEVEL COMPLETE banner is still up.
+var _finishing := false
 var _mole: Node = null
 var _mole_camera: Camera2D = null
 var _pit: Area2D = null
@@ -187,6 +200,7 @@ var _blocks_tab: Button = null
 var _enemies_tab: Button = null
 var _items_tab: Button = null
 var _chest_btn: Button = null
+var _portal_btn: Button = null
 var _erase_btn: Button = null
 var _spawn_btn: Button = null
 var _grid_btn: Button = null
@@ -229,6 +243,12 @@ func _ready() -> void:
 
 func _exit_tree() -> void:
 	_save_now()
+	# A preview still running as the scene goes has to hand back what it borrowed.
+	# _restore_shop() is the one that matters: the shop refuses to save for the
+	# length of a playtest, so leaving with it still on would keep the player's
+	# own purchases off disk for the rest of the session.
+	if _playing:
+		_release_borrowed_state()
 	# The mole runs the whole campaign at 1.2x; leaving that set would speed the
 	# editor (and the menus) up for the rest of the session.
 	Engine.time_scale = 1.0
@@ -331,6 +351,13 @@ func _make_prop_node(prop: Dictionary) -> Node2D:
 			var pickup = WEAPON_PICKUP_SCENE.instantiate()
 			pickup.weapon_id = str(prop["value"])
 			return pickup as Node2D
+		"portal":
+			var portal = PORTAL_SCENE.instantiate()
+			# Wired here rather than when a playtest begins: the nodes are rebuilt
+			# for a playtest anyway, so the connection arrives with them. In edit
+			# mode the portal is frozen and has no signal to send.
+			portal.entered.connect(_on_portal_entered)
+			return portal as Node2D
 	return null
 
 
@@ -419,6 +446,9 @@ func _paint(cell: Vector2i) -> void:
 			_rebuild_entity_nodes()
 		TOOL_CHEST:
 			_props.append({"kind": "chest", "value": "", "position": _cell_center(cell)})
+			_rebuild_entity_nodes()
+		TOOL_PORTAL:
+			_props.append({"kind": "portal", "value": "", "position": _cell_center(cell)})
 			_rebuild_entity_nodes()
 		TOOL_ITEM:
 			var choice: Dictionary = ITEM_CATALOG[_selected_item]
@@ -583,7 +613,9 @@ func from_dict(data: Dictionary) -> bool:
 			continue
 		var kind := str(row[0])
 		var value := str(row[1])
-		if kind == "chest":
+		if kind == "chest" or kind == "portal":
+			# Neither carries a second value: a chest rolls its own loot, and a
+			# portal has nowhere in particular to lead.
 			value = ""
 		elif not _is_known_prop_value(kind, value):
 			continue
@@ -670,6 +702,7 @@ func start_playtest() -> void:
 		return
 	_save_now()
 	_playing = true
+	_finishing = false
 	_painting = false
 	_panning = false
 	_toolbar.visible = false
@@ -701,10 +734,7 @@ func stop_playtest() -> void:
 	_clear_pit()
 	_clear_playtest_hud()
 	_clear_preview_mole()
-	Inventory.current_level_path = _saved_level_path
-	Inventory.player_health = _saved_health
-	_restore_shop()
-	Engine.time_scale = 1.0
+	_release_borrowed_state()
 	# A playtest is a preview: digging, broken tiles and enemies that wandered
 	# off are all rolled back to what the author actually placed.
 	_apply_level()
@@ -717,6 +747,16 @@ func stop_playtest() -> void:
 	_editor_camera.make_current()
 	_overlay.queue_redraw()
 	_save_now()
+
+
+## Hands back everything a playtest borrowed: the mole's health and the level it
+## would have banked a death in, and the shop's loadout and purse. Called when a
+## playtest stops, and again if the scene is left with one still running.
+func _release_borrowed_state() -> void:
+	Inventory.current_level_path = _saved_level_path
+	Inventory.player_health = _saved_health
+	_restore_shop()
+	Engine.time_scale = 1.0
 
 
 ## The shop's loadout and purse are borrowed for the playtest the same way the
@@ -852,6 +892,56 @@ func _on_pit_body_entered(body: Node) -> void:
 	if _playing and body == _mole and body is CharacterBody2D:
 		body.global_position = _spawn_point
 		body.velocity = Vector2.ZERO
+
+
+## The mole walked into the level's portal, so the level is finished. A playtest
+## has nowhere to go next, so the run ends the way BACK TO EDITING ends it, with
+## the author told why.
+func _on_portal_entered() -> void:
+	if not _playing or _finishing:
+		return
+	_finishing = true
+	SFX.play_ui("item_pickup", -3.0, 1.5)
+	# The mole is stopped where it stands. The banner is a beat to read before the
+	# level rolls back, and a run that carried on could still be killed out of it,
+	# which would take the editor to the game over screen with it.
+	if is_instance_valid(_mole):
+		_mole.process_mode = Node.PROCESS_MODE_DISABLED
+	_show_completion_banner()
+	await get_tree().create_timer(PORTAL_RETURN_DELAY).timeout
+	if not _playing:
+		return
+	stop_playtest()
+	_toast("Level complete!")
+
+
+## An announcement for the moment a level is finished, hung on the same layer as
+## the borrowed heart so it stays put while the mole is stopped. It goes away with
+## the rest of the playtest HUD, and the editor's own toast takes over after that.
+func _show_completion_banner() -> void:
+	if not is_instance_valid(_heart_layer):
+		return
+	var label := Label.new()
+	label.name = "CompletionBanner"
+	label.text = "LEVEL COMPLETE!"
+	label.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	label.offset_left = -420.0
+	label.offset_top = 140.0
+	label.offset_right = 420.0
+	label.offset_bottom = 220.0
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.add_theme_font_override("font", UI_FONT)
+	label.add_theme_font_size_override("font_size", 46)
+	# The colour of the thing that was walked into, so the two read as one moment.
+	label.add_theme_color_override("font_color", PORTAL_SCRIPT.RIM)
+	label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 1.0))
+	label.add_theme_constant_override("outline_size", 6)
+	label.modulate.a = 0.0
+	_heart_layer.add_child(label)
+	var tween := create_tween()
+	tween.tween_property(label, "modulate:a", 1.0, 0.18)
 
 
 # --------------------------------------------------------------------- input
@@ -1177,6 +1267,19 @@ func _build_palette() -> void:
 	_items_box.visible = false
 	scroll.add_child(_items_box)
 
+	# First in the tab, because a level needs a way out before it needs anything to
+	# put in it, and a single row at the top is always in view without scrolling.
+	_items_box.add_child(_heading_label("PORTAL"))
+
+	_portal_btn = _make_button("Portal", Vector2(136.0, 52.0))
+	_portal_btn.toggle_mode = true
+	_portal_btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_portal_btn.icon = PORTAL_SCRIPT.icon(40)
+	_portal_btn.tooltip_text = "Marks the way out: step into it in a playtest to finish the level"
+	_portal_btn.add_theme_constant_override("icon_max_width", 40)
+	_portal_btn.pressed.connect(_on_portal_selected)
+	_items_box.add_child(_portal_btn)
+
 	_items_box.add_child(_heading_label("CHESTS"))
 
 	_chest_btn = _make_button("Chest", Vector2(136.0, 52.0))
@@ -1210,7 +1313,7 @@ func _build_palette() -> void:
 
 	_erase_btn = _make_button("ERASE", Vector2(88.0, 38.0))
 	_erase_btn.toggle_mode = true
-	_erase_btn.tooltip_text = "Remove blocks, enemies, chests and items (right click also erases)"
+	_erase_btn.tooltip_text = "Remove anything placed in the level (right click also erases)"
 	_erase_btn.pressed.connect(_select_tool.bind(TOOL_ERASE))
 	tools.add_child(_erase_btn)
 
@@ -1619,6 +1722,11 @@ func _on_chest_selected() -> void:
 	_refresh_tool_buttons()
 
 
+func _on_portal_selected() -> void:
+	_tool = TOOL_PORTAL
+	_refresh_tool_buttons()
+
+
 func _on_item_selected(index: int) -> void:
 	_selected_item = index
 	_tool = TOOL_ITEM
@@ -1652,6 +1760,7 @@ func _refresh_tool_buttons() -> void:
 	_erase_btn.button_pressed = _tool == TOOL_ERASE
 	_spawn_btn.button_pressed = _tool == TOOL_SPAWN
 	_chest_btn.button_pressed = _tool == TOOL_CHEST
+	_portal_btn.button_pressed = _tool == TOOL_PORTAL
 	for coords in _block_buttons:
 		var button: Button = _block_buttons[coords]
 		button.button_pressed = _tool == TOOL_BLOCK and coords == _selected_block
@@ -1710,8 +1819,15 @@ func _on_restart_pressed() -> void:
 
 
 func _on_exit_pressed() -> void:
+	# The level is written before the wipe rather than on the way out, so the
+	# work is on disk even if the transition is interrupted.
 	_save_now()
-	get_tree().change_scene_to_file("res://scenes/intro.tscn")
+	# Back to the title screen the way every other scene is left: the same circle
+	# wipe the levels use, so the editor reads as part of the game instead of
+	# cutting straight to the menu.
+	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
+	get_tree().root.add_child(transition)
+	transition.change_to(TITLE_SCENE)
 
 
 func _open_load_overlay() -> void:

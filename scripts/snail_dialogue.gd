@@ -11,6 +11,11 @@ extends RigidBody2D
 @export var condition_wave_path := NodePath("")
 @export var unlock_ability := ""
 @export var unlock_text := ""
+## Revealed the moment the player advances this snail's conversation, for a snail
+## whose line is the setup for a quest - the level 10 snail hands over the fight
+## against it. Empty everywhere else, so no other snail in the game says anything
+## to the quest log when it talks.
+@export var unlocks_quest := ""
 @export var face_player := true
 ## After the dialogue closes, the player is put this far to the right of the snail
 ## so the encounter ends with them standing clear of it rather than inside it.
@@ -628,6 +633,10 @@ func _apply_portrait_blink_to(box: CanvasLayer) -> void:
 	box.set_portrait_animation(frames, lo, hi, rest, sprite.sprite_frames.get_animation_speed(anim))
 
 func _on_dialogue_done() -> void:
+	# Handed over on the Next click rather than when the box opens, so the banner
+	# lands the moment the player has finished reading what the fight is about.
+	if not unlocks_quest.is_empty():
+		Quests.unlock(unlocks_quest)
 	_start_transformation()
 	_grant_unlock()
 	_move_player_clear_of_snail()

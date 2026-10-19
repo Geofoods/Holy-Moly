@@ -62,19 +62,24 @@ health bar in the bottom-left tracks the mole's hearts for the duration of the
 test, and is gone again once you return to editing with ESC.
 
 The palette switches between three tabs. BLOCKS is every solid tile in the
-game's tileset. ENEMIES holds the campaign's creatures. ITEMS holds a Chest,
-which rolls its own loot exactly like the ones in the campaign, the four items
-the merchant actually stocks -- Drill, Bomb, Ice Bomb and Holy Water -- and the
-four weapons: Shovel, Golden Shovel, Pickaxe and Wizard Staff. An item is placed
-as a floating pickup that hovers where you put it until the mole walks into it;
-a weapon is placed as a pickup that hands the weapon over, and puts it in hand,
-the moment the mole touches it. A weapon the player already owns is left lying
-there. Whatever a playtest changes -- dug tiles, opened chests, collected items,
-weapons found in the preview, coins a previewed enemy dropped -- is put back when
-you stop.
+game's tileset. ENEMIES holds the campaign's creatures. ITEMS holds a Portal,
+which is the level's way out: drop one wherever the level should end and, in a
+playtest, the mole walking into it finishes the level -- the run stops with a
+LEVEL COMPLETE banner and the editor comes back. A portal the mole is already
+standing on when the test starts (because the start marker was moved onto it) is
+ignored until the mole steps out and back in. The same tab holds a Chest, which
+rolls its own loot exactly like the ones in the campaign, the four items the
+merchant actually stocks -- Drill, Bomb, Ice Bomb and Holy Water -- and the four
+weapons: Shovel, Golden Shovel, Pickaxe and Wizard Staff. An item is placed as a
+floating pickup that hovers where you put it until the mole walks into it; a
+weapon is placed as a pickup that hands the weapon over, and puts it in hand, the
+moment the mole touches it. A weapon the player already owns is left lying there.
+Whatever a playtest changes -- dug tiles, opened chests, collected items, weapons
+found in the preview, coins a previewed enemy dropped -- is put back when you
+stop.
 
-LEFT CLICK: Paint the selected block, or place the selected enemy, chest or item
-RIGHT CLICK: Erase a block, enemy, chest or item
+LEFT CLICK: Paint the selected block, or place the selected enemy, portal, chest or item
+RIGHT CLICK: Erase a block, enemy, portal, chest or item
 MIDDLE MOUSE DRAG / WASD: Pan the view
 MOUSE WHEEL: Zoom
 CTRL+Z / CTRL+Y: Undo / redo
@@ -87,7 +92,9 @@ out completely. Both settings are previewed live and saved with the level.
 
 Levels are saved under the game's user data folder as small JSON files, and the
 editor autosaves a working copy after every edit, so a playtest that ends in a
-game over never costs you your work.
+game over never costs you your work. EXIT saves the level and leaves through the
+same circle wipe the campaign's own scenes use, so the editor reads as part of
+the game rather than a detour.
 
 ART AND VISUAL ASSETS WERE MADE BY BRYAN TANG
 
