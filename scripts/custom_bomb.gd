@@ -10,6 +10,7 @@ const FLASH_TIME := 0.35
 const DAMAGE_SCALAR := 10.0
 const DAMAGE_VARIATION := 0.2
 const TileBreakSFX := preload("res://scripts/tile_break_sfx.gd")
+const EnemyDamage := preload("res://scripts/enemy.gd")
 
 var accent := Color(1.0, 1.0, 1.0, 1.0)
 var blast_radius := 160.0
@@ -108,12 +109,18 @@ func _damage_enemies_in_radius() -> void:
 		if not is_instance_valid(hurtbox):
 			continue
 		var enemy := hurtbox.get_parent()
-		if enemy and is_instance_valid(enemy) and global_position.distance_to(enemy.global_position) <= blast_radius:
-			if enemy.has_method("take_damage"):
-				var damage := _rolled_enemy_damage() * ComboManager.get_damage_multiplier(enemy)
-				enemy.take_damage(damage, (enemy.global_position - global_position).normalized())
-			elif enemy.has_method("die"):
-				enemy.die()
+		if enemy == null or not is_instance_valid(enemy):
+			continue
+		var distance := global_position.distance_to(enemy.global_position)
+		if distance > blast_radius:
+			continue
+		var power := lerpf(0.4, 1.0, clampf(1.0 - distance / blast_radius, 0.0, 1.0))
+		EnemyDamage.apply_blast_knockback(enemy, global_position, power)
+		if enemy.has_method("take_damage"):
+			var damage := _rolled_enemy_damage() * ComboManager.get_damage_multiplier(enemy)
+			enemy.take_damage(damage, (enemy.global_position - global_position).normalized())
+		elif enemy.has_method("die"):
+			enemy.die()
 
 func _break_tiles_in_radius() -> void:
 	var tilemap: TileMap = get_parent().get_node_or_null("TileMap")

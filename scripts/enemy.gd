@@ -17,6 +17,13 @@ const HEALTH_BAR_LOW_COLOR := Color(0.95, 0.22, 0.18, 1.0)
 const HEALTH_BAR_MID_COLOR := Color(1.0, 0.82, 0.16, 1.0)
 const HEALTH_BAR_FULL_COLOR := Color(0.24, 0.82, 0.28, 1.0)
 const SHOOT_INTERVAL := 5.0
+## Explosion knockback: a shove away from the blast, a pop upward, and enough
+## stun that an enemy's own AI cannot take the velocity back on the next frame.
+## Shared because every enemy class moves itself differently. See
+## apply_blast_knockback().
+const BLAST_KNOCKBACK_SPEED := 650.0
+const BLAST_KNOCKBACK_LIFT := 280.0
+const BLAST_KNOCKBACK_STUN := 0.3
 
 var direction := 1.0
 var target_mole: Node2D = null
@@ -246,6 +253,29 @@ func take_damage(amount: float, hit_dir: Vector2 = Vector2.ZERO) -> void:
 
 	if health <= 0:
 		die()
+
+## Throws an enemy away from an explosion. Enemies do not share a movement
+## script, so the shove goes through the one thing they do share: a
+## CharacterBody2D velocity and their stun timer. The hornet has no stun state,
+## so it is dropped into its recover state, which is where it already goes when
+## swatted out of the air; its own recover damping then sells the tumble.
+static func apply_blast_knockback(enemy: Node, origin: Vector2, power: float = 1.0) -> void:
+	if enemy == null or not is_instance_valid(enemy):
+		return
+	var body := enemy as CharacterBody2D
+	if body == null:
+		return
+	var away := body.global_position - origin
+	if away.length_squared() < 0.01:
+		away = Vector2.UP
+	away = away.normalized()
+	if "_stun_timer" in enemy:
+		enemy.set("_stun_timer", maxf(float(enemy.get("_stun_timer")), BLAST_KNOCKBACK_STUN))
+	elif enemy.has_method("_enter_recover"):
+		enemy.call("_enter_recover")
+	# Set the velocity after entering recover: the hornet's recover state damps
+	# whatever velocity it already had, so the blast has to come last.
+	body.velocity = (away * BLAST_KNOCKBACK_SPEED + Vector2(0.0, -BLAST_KNOCKBACK_LIFT)) * power
 
 ## Shared hit feedback keeps attacks crisp across the different enemy types.
 ## The short squash and tiny spark are visual-only; damage and knockback remain

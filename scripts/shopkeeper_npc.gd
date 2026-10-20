@@ -93,9 +93,6 @@ func _ready() -> void:
 	_sprite = get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
 	TapInteract.register(_sprite)
 	_interact_area = get_node_or_null("InteractionArea") as Area2D
-	if _interact_area:
-		_interact_area.body_entered.connect(_on_body_entered)
-		_interact_area.body_exited.connect(_on_body_exited)
 	Shop.shop_closed.connect(_on_shop_closed)
 	Shop.purchased.connect(_on_shop_purchased)
 	_setup_prompt()
@@ -131,6 +128,11 @@ func _process(delta: float) -> void:
 	if _talk_timer > 0.0:
 		_talk_timer -= delta
 	_update_animation()
+	# Read the overlap rather than trust body_entered: an area only announces a
+	# body arriving, and mole.gd joins the "mole" group a frame after it spawns.
+	# A merchant placed next to the spawn marker would never be announced, so his
+	# prompt would never come up.
+	_mole_nearby = _mole_in_range()
 	if _prompt == null:
 		return
 	_prompt.visible = _mole_nearby and not _dialogue_open and not _shop_open
@@ -178,13 +180,13 @@ func _sync_portrait() -> void:
 func apply_knockback(_knockback: Vector2) -> void:
 	pass
 
-func _on_body_entered(body: Node) -> void:
-	if body.is_in_group("mole"):
-		_mole_nearby = true
-
-func _on_body_exited(body: Node) -> void:
-	if body.is_in_group("mole"):
-		_mole_nearby = false
+func _mole_in_range() -> bool:
+	if _interact_area == null:
+		return false
+	for body in _interact_area.get_overlapping_bodies():
+		if body.is_in_group("mole"):
+			return true
+	return false
 
 func _unhandled_input(event: InputEvent) -> void:
 	# Pressing on the stall works like the interact key - a click on desktop, a

@@ -6,6 +6,7 @@ const ENEMY_DAMAGE := 5.0
 const DAMAGE_SCALAR := 10.0
 const DAMAGE_VARIATION := 0.2
 const TileBreakSFX := preload("res://scripts/tile_break_sfx.gd")
+const EnemyDamage := preload("res://scripts/enemy.gd")
 
 ## Fixed art scale shared by bombs and goblin mushrooms, independent of how far
 ## the gameplay blast reaches.
@@ -68,9 +69,14 @@ func _damage_enemies_in_blast(origin: Vector2, radius: float, damage: float) -> 
 			continue
 		if excluded.has(enemy):
 			continue
-		if _blast_distance_to(hurtbox, enemy, origin) > radius:
+		var distance := _blast_distance_to(hurtbox, enemy, origin)
+		if distance > radius:
 			continue
 		var direction: Vector2 = (enemy.global_position - origin).normalized()
+		# The shove is strongest at the centre and trails off to the rim, so an
+		# enemy clipped by the edge is nudged rather than launched.
+		var power := lerpf(0.4, 1.0, clampf(1.0 - distance / radius, 0.0, 1.0))
+		EnemyDamage.apply_blast_knockback(enemy, origin, power)
 		var target_damage := damage * ComboManager.get_damage_multiplier(enemy)
 		# Explosions are their own kind of hit: the snail boss's aura shield soaks
 		# up a swing, but a bomb going off against it still hurts.

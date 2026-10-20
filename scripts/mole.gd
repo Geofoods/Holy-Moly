@@ -145,6 +145,14 @@ var _grapple_rope: Line2D = null
 var _grapple_anchor_sprite: Sprite2D = null
 
 var death_override: Callable = Callable()
+
+## Set by the level editor's playtest. A death then stays inside the host's run:
+## `died` is emitted instead of the game over screen being opened, and the host
+## puts the mole back on its feet with revive_at() once the death beat has played.
+var playtest := false
+## Emitted in place of leaving for game_over.tscn while `playtest` is on.
+signal died
+
 var _restoring_health := false
 var _dying := false
 
@@ -261,6 +269,10 @@ func _ready() -> void:
 ## Deliberately not awaited - _ready keeps setting the level up while the
 ## animation plays.
 func _play_respawn_arrival() -> void:
+	# A playtest never arrives from a banked pad: it starts a level, and its own
+	# checkpoint lives inside the run. Leave the campaign's pending flag alone.
+	if playtest:
+		return
 	if not Progress.take_respawn_pending():
 		return
 	var station := get_tree().get_first_node_in_group("respawn_station")
@@ -1244,7 +1256,11 @@ func _die() -> void:
 		_end_grapple()
 	Inventory.player_health = MAX_HEALTH
 	Inventory.current_level_path = get_tree().current_scene.scene_file_path
-	Inventory.player_died.emit()
+	# The HUD cracks its bar over on this signal and never un-cracks, which is
+	# right for a game over screen but would leave a playtest showing a dead bar
+	# after its first respawn.
+	if not playtest:
+		Inventory.player_died.emit()
 	_play_death_animation()
 
 ## The mole has no death frames, so the death is staged in code: a white flash,
@@ -1286,9 +1302,46 @@ func _death_fall(delta: float) -> void:
 	move_and_slide()
 
 func _go_to_game_over() -> void:
+	if playtest:
+		died.emit()
+		return
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 	get_tree().root.add_child(transition)
 	transition.change_to("res://scenes/game_over.tscn")
+
+
+## Puts a dead mole back on its feet for a host that asked for a respawn instead
+## of a game over screen. Undoes everything _die() and its death animation turn
+## off or pose: the toppled sprite, the stopped processing and the emptied lungs.
+## The health setter banks the refill and repaints the HUD, so the bar comes back
+## full with the mole.
+func revive_at(point: Vector2) -> void:
+	if not _dying:
+		return
+	_dying = false
+	is_digging = false
+	is_tunneling = false
+	is_ground_pounding = false
+	velocity = Vector2.ZERO
+	global_position = point
+	invulnerable = false
+	_stop_invulnerability_blink()
+	_sprite.rotation = 0.0
+	_sprite.position = Vector2.ZERO
+	_sprite.scale = Vector2.ONE
+	_sprite.flip_v = false
+	_sprite.modulate = Color.WHITE
+	_sprite.play("idlebold")
+	# A death that came from a hit would otherwise keep playing the hurt frames
+	# for the rest of their timer on the revived mole.
+	hurt_anim_time_left = 0.0
+	# The mole was moved, not walked here, so its floor memory is reset: an
+	# arrival that happens to land on the ground must not read as a new landing.
+	was_on_floor = true
+	set_process(true)
+	set_process_input(true)
+	set_physics_process(true)
+	health = MAX_HEALTH
 
 func _end_invulnerability() -> void:
 	invulnerable = false

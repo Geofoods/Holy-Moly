@@ -7,6 +7,10 @@ extends "res://scripts/bomb.gd"
 
 const FREEZE_DURATION := 5.0
 const MOLE_FREEZE_DURATION := 2.0
+## The shove gets this long to carry before the cold sets in. Freezing zeroes a
+## CharacterBody2D's velocity, so freezing in the same frame would swallow the
+## blast's knockback whole.
+const FREEZE_SHOVE_TIME := 0.12
 const EXPLOSION_SCENE := preload("res://Retro Explosion.tscn")
 const ICE_EXPLOSION_TINT := Color(0.48, 0.76, 1.0, 1.0)
 ## The cold snap is a hit in its own right, just a lighter one than a fire bomb:
@@ -214,7 +218,7 @@ func _freeze_radius() -> void:
 		if excluded.has(enemy):
 			continue
 		if _blast_distance_to(hurtbox, enemy, global_position) <= explosion_radius:
-			freeze_node(enemy, FREEZE_DURATION)
+			_freeze_after_shove(enemy)
 
 	for bullet in get_tree().get_nodes_in_group("bullet"):
 		if not is_instance_valid(bullet):
@@ -223,6 +227,23 @@ func _freeze_radius() -> void:
 			continue
 		if global_position.distance_to(bullet.global_position) <= explosion_radius:
 			freeze_node(bullet, FREEZE_DURATION)
+
+## Freezes an enemy once the blast has had a moment to throw it. Dying enemies
+## are skipped: stopping their processing would hold the death animation frozen
+## mid-pop.
+func _freeze_after_shove(enemy: Node) -> void:
+	if not (enemy is CharacterBody2D):
+		freeze_node(enemy as Node2D, FREEZE_DURATION)
+		return
+	var node_ref: WeakRef = weakref(enemy)
+	get_tree().create_timer(FREEZE_SHOVE_TIME).timeout.connect(func() -> void:
+		var node := node_ref.get_ref() as Node2D
+		if node == null or not is_instance_valid(node) or not node.is_inside_tree():
+			return
+		if not node.is_physics_processing():
+			return
+		freeze_node(node, FREEZE_DURATION)
+	)
 
 static func freeze_node(node: Node2D, duration: float) -> void:
 	if node == null or not is_instance_valid(node) or node.has_meta("frozen"):

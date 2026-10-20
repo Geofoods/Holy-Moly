@@ -22,6 +22,18 @@ extends RigidBody2D
 @export var prompt_text := "PRESS E: SET CHECKPOINT"
 @export var prompt_offset := Vector2(0.0, -440.0)
 
+## Emitted the moment the pad is banked, with the station itself. A host that
+## keeps its own idea of the checkpoint (the level editor's playtest) listens
+## here instead of reading Progress.
+signal banked(station: Node)
+
+## Set false by a host whose run should not touch the player's save file. The pad
+## still lights up, takes the prompt and records itself for that host, but
+## Progress - and so the campaign's own checkpoint - is left alone. The level
+## editor's playtest flips this so setting a checkpoint while testing a level
+## cannot rewrite the checkpoint of the level the player is really playing.
+var use_progress := true
+
 const PROMPT_HALF_WIDTH := 190.0
 const PROMPT_HEIGHT := 60.0
 
@@ -57,6 +69,9 @@ const PULSE_RATE := 2.2
 
 var _mole_nearby := false
 var _arriving := false
+## True once this pad has been banked by a host that is not using Progress, which
+## is what lights it up in that host's run.
+var _banked_here := false
 var _phase := 0.0
 var _flash := 0.0
 var _pad_particles: CPUParticles2D = null
@@ -64,8 +79,6 @@ var _orb_particles: CPUParticles2D = null
 
 func _ready() -> void:
 	add_to_group("respawn_station")
-	_area.body_entered.connect(_on_body_entered)
-	_area.body_exited.connect(_on_body_exited)
 	_setup_prompt()
 	_setup_particles()
 	_phase = randf_range(0.0, TAU)
@@ -138,6 +151,12 @@ func _ramp(from: Color, to: Color) -> Gradient:
 	return gradient
 
 func _process(delta: float) -> void:
+	# Read the overlap rather than trust body_entered: an area only announces a
+	# body arriving, and mole.gd joins the "mole" group a frame after it spawns.
+	# A mole that starts inside this pad's range - a checkpoint beside the spawn
+	# marker, or an editor playtest - would never be announced and could never
+	# bank. The query is a handful of bodies and covers every entry and exit.
+	_mole_nearby = _nearest_mole() != null
 	_phase = fposmod(_phase + delta * PULSE_RATE, TAU)
 	# The burst flash rides on top of the steady idle/active energy rather than
 	# tweening it, so an activation and the breathing light can't fight each
@@ -192,6 +211,10 @@ func cycle() -> float:
 func is_checkpoint_active() -> bool:
 	if not checkpoints:
 		return false
+	# A host that keeps the checkpoint to itself (the editor's playtest) still
+	# wants the pad to light up; it just leaves Progress out of it.
+	if not use_progress:
+		return _banked_here
 	return Progress.respawn_activated == _scene_path()
 
 ## Where the mole materialises: on the pad, clear of the station's frame.
@@ -209,18 +232,19 @@ func _unhandled_input(event: InputEvent) -> void:
 		_bank()
 		get_viewport().set_input_as_handled()
 
-func _on_body_entered(body: Node) -> void:
-	if body.is_in_group("mole"):
-		_mole_nearby = true
-
-func _on_body_exited(body: Node) -> void:
-	if body.is_in_group("mole"):
-		_mole_nearby = false
-
 ## Records this station as the checkpoint: the scene it stands in plus the spot
 ## the mole banked it from. Re-banking is allowed and just overwrites the
 ## record, so walking back to a station is a no-op that still gives feedback.
 func _bank() -> void:
+	_banked_here = true
+	_flash = ARRIVE_FLASH
+	_pad_particles.emitting = true
+	SFX.play_ui("parry_activate", -10.0, 1.4)
+	SFX.play("item_pickup", spawn_point(), -8.0, 0.1)
+	banked.emit(self)
+	# A host banking this pad in memory asked for exactly that much and no more.
+	if not use_progress:
+		return
 	var scene := _scene_path()
 	if scene.is_empty():
 		return
@@ -233,10 +257,6 @@ func _bank() -> void:
 	# mole actually comes back - by a map teleport here or by a death that
 	# respawns here - not while it is still walking forward.
 	Progress.activate_respawn(scene, pos)
-	_flash = ARRIVE_FLASH
-	_pad_particles.emitting = true
-	SFX.play_ui("parry_activate", -10.0, 1.4)
-	SFX.play("item_pickup", spawn_point(), -8.0, 0.1)
 
 func _nearest_mole() -> Node2D:
 	for body in _area.get_overlapping_bodies():

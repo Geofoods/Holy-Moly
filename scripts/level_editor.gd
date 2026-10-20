@@ -10,13 +10,21 @@ extends Node2D
 ## which is what keeps an author's work safe when a playtest ends in the game
 ## over screen.
 ##
-## Controls: left click paints, right click erases, the middle mouse button
-## drags the view (WASD/arrows pan too), the wheel zooms, Ctrl+Z undoes and G
-## toggles the grid.
+## Controls: left click paints, right click erases, and R turns on rectangle
+## filling, which paints every cell across a drag as one solid slab instead of a
+## line of blocks. The same drag clears a slab with ERASE selected, or with the
+## right button. The middle mouse button drags the view (WASD/arrows pan too), the
+## wheel zooms, Ctrl+Z undoes and G toggles the grid.
 ##
 ## The WORLD panel picks which parallax backdrop the level uses and how hard
 ## the vignette filter bites, so a level's look is authored right alongside its
 ## geometry.
+##
+## The ITEMS tab also carries the bits of a level that are not just things to
+## walk into: a Portal, the way out; a Respawn Station, the checkpoint a playtest
+## death returns to; and Goblin Gilbert's stall, where the mole can spend its
+## coins. A checkpoint is banked in a playtest with the interact key, exactly as
+## in the campaign, and never touches the player's real save.
 
 const TOOL_BLOCK := 0
 const TOOL_ENEMY := 1
@@ -25,6 +33,8 @@ const TOOL_SPAWN := 3
 const TOOL_CHEST := 4
 const TOOL_ITEM := 5
 const TOOL_PORTAL := 6
+const TOOL_CHECKPOINT := 7
+const TOOL_GILBERT := 8
 
 const TAB_BLOCKS := 0
 const TAB_ENEMIES := 1
@@ -35,11 +45,16 @@ const TERRAIN_SOURCE := 0
 
 const MOLE_SCENE := preload("res://scenes/mole.tscn")
 const HEART_SCENE := preload("res://scenes/heart.tscn")
+const INVENTORY_UI_SCENE := preload("res://scenes/inventory_ui.tscn")
 const CHEST_SCENE := preload("res://chest.tscn")
 const DROPPED_ITEM_SCENE := preload("res://scenes/dropped_item.tscn")
-const WEAPON_PICKUP_SCENE := preload("res://scenes/weapon_pickup.tscn")
 const PORTAL_SCENE := preload("res://scenes/level_portal.tscn")
 const PORTAL_SCRIPT := preload("res://scripts/level_portal.gd")
+const RESPAWN_STATION_SCENE := preload("res://scenes/respawn_station.tscn")
+const RESPAWN_STATION_SCRIPT := preload("res://scripts/respawn_station.gd")
+const SHOPKEEPER_SCENE := preload("res://scenes/shopkeeper_npc.tscn")
+const CHECKPOINT_SHEET := preload("res://sprites/checkpoint.png")
+const GILBERT_SHEET := preload("res://sprites/shopt.png")
 const CHEST_ICON := preload("res://chest.webp")
 const UI_FONT := preload("res://Baby Doll.otf")
 
@@ -88,18 +103,15 @@ const ENEMY_CATALOG := [
 ## _build_item_catalog): they are ItemData resources, placed as pickups that
 ## hover where they are put and are collected by walking into them.
 ##
-## The weapons are the shop's WEAPONS list. They reach the player by purchase or
-## story unlock in the campaign, so out in a level they are placed as pickups
-## that hand over the weapon when the mole touches them.
+## Weapons are deliberately absent. They reach the player by purchase or story
+## unlock in the campaign, so a level hands out items and leaves the loadout
+## alone. A saved level that still carries one of the old weapon rows loads with
+## that row dropped, the same as any other value the palette no longer knows.
 const ITEM_CATALOG := [
 	{"kind": "item", "name": "Drill", "value": "res://resources/drill.tres"},
 	{"kind": "item", "name": "Bomb", "value": "res://resources/bomb.tres"},
 	{"kind": "item", "name": "Ice Bomb", "value": "res://resources/ice_bomb.tres"},
 	{"kind": "item", "name": "Holy Water", "value": "res://resources/holy_water.tres"},
-	{"kind": "weapon", "name": "Shovel", "value": "shovel"},
-	{"kind": "weapon", "name": "Golden Shovel", "value": "gold_shovel"},
-	{"kind": "weapon", "name": "Pickaxe", "value": "pickaxe"},
-	{"kind": "weapon", "name": "Wizard Staff", "value": "wizard_staff"},
 ]
 
 ## The campaign's three parallax backdrops. Index 0 is the scene's own
@@ -156,6 +168,17 @@ var _painting := false
 var _panning := false
 var _last_paint_cell := Vector2i(999999, 999999)
 
+## Rectangle filling: a drag from one corner to the other fills every cell in
+## between, which is how floors and walls get laid down without a row of clicks.
+var _rect_mode := false
+## True between the press that anchors a rectangle and the release that fills or
+## clears it, with the button that opened it remembered so the right one ends it.
+var _rect_active := false
+var _rect_button := MOUSE_BUTTON_LEFT
+## Set while the open rectangle is clearing cells rather than painting them.
+var _rect_erase := false
+var _rect_anchor := Vector2i.ZERO
+
 var _undo_stack: Array = []
 var _redo_stack: Array = []
 
@@ -166,15 +189,26 @@ var _finishing := false
 var _mole: Node = null
 var _mole_camera: Camera2D = null
 var _pit: Area2D = null
+## The station banked in this playtest, if any. A death puts the mole back on its
+## pad (or on the start marker when nothing has been banked yet). Never written
+## to Progress: a checkpoint taken while testing is part of the test.
+var _checkpoint_station: Node = null
 var _heart_layer: CanvasLayer = null
+## The campaign's own hotbar, shown only while testing so the author can see
+## what the items they placed actually look like when collected.
+var _inventory_layer: CanvasLayer = null
 ## Campaign state borrowed for the playtest: the mole banks its health and the
 ## level it died in into Inventory on death, so both are snapshotted here and
 ## put back when the author returns to editing.
 var _saved_level_path := ""
 var _saved_health := 0.0
-## The shop's loadout and purse, likewise borrowed: a previewed weapon pickup
-## grants a weapon, and a previewed enemy drops coins, neither of which should
-## follow the author back out of a playtest. See _snapshot_shop().
+## The hotbar's contents are borrowed too: collecting an authored pickup in a
+## playtest must not quietly add it to the player's real inventory.
+var _saved_slots: Array = []
+var _saved_slot_counts: Array = []
+var _saved_selected_slot := -1
+## The shop's loadout and purse, likewise borrowed: a previewed enemy drops coins,
+## which should not follow the author back out of a playtest. See _snapshot_shop().
 var _saved_shop: Dictionary = {}
 ## Nodes the borrowed mole parents above itself -- swing ghosts, the dig cursor,
 ## stray projectiles -- all land back inside this scene, so the child list is
@@ -195,15 +229,17 @@ var _block_grid: GridContainer = null
 var _enemy_grid: GridContainer = null
 var _items_box: VBoxContainer = null
 var _item_grid: GridContainer = null
-var _weapon_grid: GridContainer = null
 var _blocks_tab: Button = null
 var _enemies_tab: Button = null
 var _items_tab: Button = null
 var _chest_btn: Button = null
 var _portal_btn: Button = null
+var _checkpoint_btn: Button = null
+var _gilbert_btn: Button = null
 var _erase_btn: Button = null
 var _spawn_btn: Button = null
 var _grid_btn: Button = null
+var _rect_btn: Button = null
 var _world_panel: PanelContainer = null
 var _vignette_slider: HSlider = null
 var _vignette_value: Label = null
@@ -347,10 +383,6 @@ func _make_prop_node(prop: Dictionary) -> Node2D:
 			# Hover where it was placed instead of arcing out of a chest.
 			node.start_floating = true
 			return node as Node2D
-		"weapon":
-			var pickup = WEAPON_PICKUP_SCENE.instantiate()
-			pickup.weapon_id = str(prop["value"])
-			return pickup as Node2D
 		"portal":
 			var portal = PORTAL_SCENE.instantiate()
 			# Wired here rather than when a playtest begins: the nodes are rebuilt
@@ -358,6 +390,10 @@ func _make_prop_node(prop: Dictionary) -> Node2D:
 			# mode the portal is frozen and has no signal to send.
 			portal.entered.connect(_on_portal_entered)
 			return portal as Node2D
+		"checkpoint":
+			return RESPAWN_STATION_SCENE.instantiate() as Node2D
+		"gilbert":
+			return SHOPKEEPER_SCENE.instantiate() as Node2D
 	return null
 
 
@@ -369,8 +405,9 @@ func _is_known_enemy(enemy_name: String) -> bool:
 
 
 ## A prop is only kept if what it holds still exists: an item path that no longer
-## resolves, or a weapon the shop no longer sells, is dropped rather than left in
-## the level as an invisible thing that cannot be placed again.
+## resolves is dropped rather than left in the level as an invisible thing that
+## cannot be placed again. The same test retires the weapon rows old saves were
+## saved with, since the palette no longer offers a weapon.
 func _is_known_prop_value(kind: String, value: String) -> bool:
 	for spec in ITEM_CATALOG:
 		if str(spec["kind"]) != kind:
@@ -450,6 +487,12 @@ func _paint(cell: Vector2i) -> void:
 		TOOL_PORTAL:
 			_props.append({"kind": "portal", "value": "", "position": _cell_center(cell)})
 			_rebuild_entity_nodes()
+		TOOL_CHECKPOINT:
+			_props.append({"kind": "checkpoint", "value": "", "position": _cell_center(cell)})
+			_rebuild_entity_nodes()
+		TOOL_GILBERT:
+			_props.append({"kind": "gilbert", "value": "", "position": _cell_center(cell)})
+			_rebuild_entity_nodes()
 		TOOL_ITEM:
 			var choice: Dictionary = ITEM_CATALOG[_selected_item]
 			_props.append({
@@ -481,6 +524,46 @@ func _erase_cell(cell: Vector2i) -> void:
 		_tilemap.erase_cell(TILE_LAYER, cell)
 
 
+## Fills every cell between two corners with the selected block.
+func _fill_rect(from: Vector2i, to: Vector2i) -> void:
+	for y in range(mini(from.y, to.y), maxi(from.y, to.y) + 1):
+		for x in range(mini(from.x, to.x), maxi(from.x, to.x) + 1):
+			var cell := Vector2i(x, y)
+			_tiles[cell] = Vector3i(TERRAIN_SOURCE, _selected_block.x, _selected_block.y)
+			_tilemap.set_cell(TILE_LAYER, cell, TERRAIN_SOURCE, _selected_block)
+	_overlay.queue_redraw()
+	_mark_dirty()
+
+
+## Clears the blocks inside a rectangle. A drag that crossed cells sweeps geometry
+## and nothing else: chests, enemies and the rest keep their one-at-a-time erase,
+## so carving a hole in a floor cannot also take the contents of the level with
+## it. A drag that never moved erases the single thing under the cursor instead,
+## exactly the way a plain right click always has.
+func _erase_rect(from: Vector2i, to: Vector2i) -> void:
+	if from == to:
+		_erase_cell(from)
+	else:
+		for y in range(mini(from.y, to.y), maxi(from.y, to.y) + 1):
+			for x in range(mini(from.x, to.x), maxi(from.x, to.x) + 1):
+				var cell := Vector2i(x, y)
+				if _tiles.erase(cell):
+					_tilemap.erase_cell(TILE_LAYER, cell)
+	_overlay.queue_redraw()
+	_mark_dirty()
+
+
+## The one place that decides what an open rectangle does when it is let go.
+func _commit_rect() -> void:
+	if _rect_erase:
+		_erase_rect(_rect_anchor, _hover_cell)
+	else:
+		_fill_rect(_rect_anchor, _hover_cell)
+	_rect_active = false
+	_save_now()
+	_overlay.queue_redraw()
+
+
 func _prop_index_at(point: Vector2) -> int:
 	var radius := _tile_world * 0.7
 	for i in range(_props.size() - 1, -1, -1):
@@ -501,6 +584,14 @@ func _enemy_index_at(point: Vector2) -> int:
 
 func _cell_at_mouse() -> Vector2i:
 	return _tilemap.local_to_map(_tilemap.to_local(get_global_mouse_position()))
+
+
+## Rectangle filling only means something for the two tools that lay down cells
+## one at a time. Enemies, chests, items, the portal, the station, the merchant
+## and the start marker are single objects, so they are still placed with one
+## click in rectangle mode.
+func _rect_on() -> bool:
+	return _rect_mode and (_tool == TOOL_BLOCK or _tool == TOOL_ERASE)
 
 
 func _cell_center(cell: Vector2i) -> Vector2:
@@ -613,9 +704,10 @@ func from_dict(data: Dictionary) -> bool:
 			continue
 		var kind := str(row[0])
 		var value := str(row[1])
-		if kind == "chest" or kind == "portal":
-			# Neither carries a second value: a chest rolls its own loot, and a
-			# portal has nowhere in particular to lead.
+		if kind == "chest" or kind == "portal" or kind == "checkpoint" or kind == "gilbert":
+			# None of these carries a second value: a chest rolls its own loot, a
+			# portal has nowhere in particular to lead, and the station and the
+			# stall are the scene themselves.
 			value = ""
 		elif not _is_known_prop_value(kind, value):
 			continue
@@ -705,6 +797,9 @@ func start_playtest() -> void:
 	_finishing = false
 	_painting = false
 	_panning = false
+	_rect_active = false
+	# Every playtest is a fresh run, so its checkpoint starts unbanked.
+	_checkpoint_station = null
 	_toolbar.visible = false
 	_palette.visible = false
 	_hint_panel.visible = false
@@ -714,11 +809,15 @@ func start_playtest() -> void:
 	_rebuild_entity_nodes()
 	for child in _entities.get_children():
 		_resume_entity(child)
+		_wire_playtest_checkpoint(child)
 	# A playtest is always a fresh run: the mole reads its health out of
 	# Inventory, so a previous run left at three hearts would otherwise carry
 	# straight over. The banked values go back untouched on stop.
 	_saved_level_path = Inventory.current_level_path
 	_saved_health = Inventory.player_health
+	_saved_slots = Inventory.slots.duplicate()
+	_saved_slot_counts = Inventory.slot_counts.duplicate()
+	_saved_selected_slot = Inventory.selected_slot
 	Inventory.player_health = Inventory.MAX_HEALTH
 	_snapshot_shop()
 	_create_playtest_hud()
@@ -731,6 +830,7 @@ func stop_playtest() -> void:
 	if not _playing:
 		return
 	_playing = false
+	_checkpoint_station = null
 	_clear_pit()
 	_clear_playtest_hud()
 	_clear_preview_mole()
@@ -755,13 +855,20 @@ func stop_playtest() -> void:
 func _release_borrowed_state() -> void:
 	Inventory.current_level_path = _saved_level_path
 	Inventory.player_health = _saved_health
+	if not _saved_slots.is_empty():
+		Inventory.slots = _saved_slots.duplicate()
+		Inventory.slot_counts = _saved_slot_counts.duplicate()
+		_saved_slots = []
+		_saved_slot_counts = []
+		if Inventory.selected_slot != _saved_selected_slot:
+			Inventory.selected_slot = _saved_selected_slot
 	_restore_shop()
 	Engine.time_scale = 1.0
 
 
 ## The shop's loadout and purse are borrowed for the playtest the same way the
-## mole's health is. A weapon pickup found in the preview, or coins a previewed
-## enemy drops, would otherwise be banked into the player's real save.
+## mole's health is. Coins a previewed enemy drops would otherwise be banked into
+## the player's real save.
 func _snapshot_shop() -> void:
 	_saved_shop = {
 		"owned": Shop.owned.duplicate(),
@@ -798,6 +905,10 @@ func _spawn_preview_mole() -> void:
 	mole.name = "PreviewMole"
 	mole.scale = MOLE_SCALE
 	mole.position = _spawn_point
+	# Deaths stay in the editor: the mole reports the death and is put back on
+	# its feet at the checkpoint instead of handing off to the game over screen.
+	mole.playtest = true
+	mole.died.connect(_on_playtest_mole_died)
 	var camera := Camera2D.new()
 	camera.name = "Camera2D"
 	camera.scale = MOLE_CAMERA_SCALE
@@ -835,10 +946,11 @@ func _free_preview_orphans() -> void:
 	_children_before = []
 
 
-## The campaign's bottom-left heart plus its HP bar. It reads Inventory each
-## frame, so it tracks the borrowed mole for free, and it hangs off a
-## CanvasLayer named "CanvasLayer" with a "heart" child because that is exactly
-## the path the mole's health setter looks up to play its damage animation.
+## The campaign's bottom-left heart plus its HP bar, and the hotbar along the
+## bottom edge. Both read Inventory each frame, so they track the borrowed mole
+## for free. The heart hangs off a CanvasLayer named "CanvasLayer" with a
+## "heart" child because that is exactly the path the mole's health setter looks
+## up to play its damage animation.
 func _create_playtest_hud() -> void:
 	_clear_playtest_hud()
 	var layer := CanvasLayer.new()
@@ -850,6 +962,10 @@ func _create_playtest_hud() -> void:
 	heart.scale = HEART_SCALE
 	layer.add_child(heart)
 	_heart_layer = layer
+	var inventory := INVENTORY_UI_SCENE.instantiate() as CanvasLayer
+	inventory.name = "InventoryUI"
+	add_child(inventory)
+	_inventory_layer = inventory
 
 
 func _clear_playtest_hud() -> void:
@@ -857,6 +973,10 @@ func _clear_playtest_hud() -> void:
 		remove_child(_heart_layer)
 		_heart_layer.queue_free()
 	_heart_layer = null
+	if is_instance_valid(_inventory_layer):
+		remove_child(_inventory_layer)
+		_inventory_layer.queue_free()
+	_inventory_layer = null
 
 
 func _create_pit() -> void:
@@ -888,10 +1008,58 @@ func _clear_pit() -> void:
 
 func _on_pit_body_entered(body: Node) -> void:
 	# A playtest should not hand out game overs for a hole in the floor, so the
-	# mole is simply put back on the start marker.
+	# mole is put back at its last checkpoint, or on the start marker if it has
+	# not banked one.
 	if _playing and body == _mole and body is CharacterBody2D:
-		body.global_position = _spawn_point
-		body.velocity = Vector2.ZERO
+		_send_mole_to_checkpoint()
+
+
+## A station in the level being tested records its checkpoint in this run rather
+## than in Progress, so testing a level can never move the player's real
+## checkpoint. The pad itself still lights up, prompts, and plays its arrival.
+func _wire_playtest_checkpoint(node: Node) -> void:
+	if not node.is_in_group("respawn_station") or not node.has_signal("banked"):
+		return
+	node.set("use_progress", false)
+	node.connect("banked", _on_checkpoint_banked)
+
+
+func _on_checkpoint_banked(station: Node) -> void:
+	_checkpoint_station = station
+
+
+## Where a death puts the mole back: the pad of the checkpoint banked in this
+## run, or the start marker when nothing has been banked yet.
+func _respawn_point() -> Vector2:
+	if is_instance_valid(_checkpoint_station):
+		var point: Vector2 = _checkpoint_station.call("spawn_point")
+		return point
+	return _spawn_point
+
+
+## A playtest death never leaves for the game over screen. The mole is revived
+## where its checkpoint says, with the pad's own materialise when there is one.
+func _on_playtest_mole_died() -> void:
+	if not _playing or not is_instance_valid(_mole):
+		return
+	var at_checkpoint := is_instance_valid(_checkpoint_station)
+	_mole.call("revive_at", _respawn_point())
+	if at_checkpoint:
+		_checkpoint_station.call("spawn_mole_in", _mole)
+	_show_playtest_banner(
+		"BACK AT THE CHECKPOINT" if at_checkpoint else "BACK AT THE START",
+		RESPAWN_STATION_SCRIPT.PROMPT_COLOR_ACTIVE, 1.0)
+
+
+## Puts a living mole back where a death would, which is what falling into the
+## playtest pit does: the pad plays its arrival, the start marker just takes it.
+func _send_mole_to_checkpoint() -> void:
+	if is_instance_valid(_checkpoint_station):
+		_checkpoint_station.call("spawn_mole_in", _mole)
+		return
+	if _mole is CharacterBody2D:
+		(_mole as CharacterBody2D).global_position = _spawn_point
+		(_mole as CharacterBody2D).velocity = Vector2.ZERO
 
 
 ## The mole walked into the level's portal, so the level is finished. A playtest
@@ -919,11 +1087,19 @@ func _on_portal_entered() -> void:
 ## the borrowed heart so it stays put while the mole is stopped. It goes away with
 ## the rest of the playtest HUD, and the editor's own toast takes over after that.
 func _show_completion_banner() -> void:
+	# The colour of the thing that was walked into, so the two read as one moment.
+	_show_playtest_banner("LEVEL COMPLETE!", PORTAL_SCRIPT.RIM, -1.0)
+
+
+## A line across the top of the playtest HUD. `hold` is how long it stays up
+## after fading in; a negative hold leaves it there until the run's HUD is torn
+## down, which is what the completion banner wants.
+func _show_playtest_banner(text: String, colour: Color, hold: float) -> void:
 	if not is_instance_valid(_heart_layer):
 		return
 	var label := Label.new()
-	label.name = "CompletionBanner"
-	label.text = "LEVEL COMPLETE!"
+	label.name = "PlaytestBanner"
+	label.text = text
 	label.set_anchors_preset(Control.PRESET_CENTER_TOP)
 	label.offset_left = -420.0
 	label.offset_top = 140.0
@@ -934,14 +1110,18 @@ func _show_completion_banner() -> void:
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	label.add_theme_font_override("font", UI_FONT)
 	label.add_theme_font_size_override("font_size", 46)
-	# The colour of the thing that was walked into, so the two read as one moment.
-	label.add_theme_color_override("font_color", PORTAL_SCRIPT.RIM)
+	label.add_theme_color_override("font_color", colour)
 	label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 1.0))
 	label.add_theme_constant_override("outline_size", 6)
 	label.modulate.a = 0.0
 	_heart_layer.add_child(label)
 	var tween := create_tween()
 	tween.tween_property(label, "modulate:a", 1.0, 0.18)
+	if hold < 0.0:
+		return
+	tween.tween_interval(hold)
+	tween.tween_property(label, "modulate:a", 0.0, 0.35)
+	tween.tween_callback(label.queue_free)
 
 
 # --------------------------------------------------------------------- input
@@ -974,9 +1154,16 @@ func _unhandled_input(event: InputEvent) -> void:
 			_show_grid = not _show_grid
 			_grid_btn.button_pressed = _show_grid
 			_overlay.queue_redraw()
+		elif event.keycode == KEY_R:
+			_rect_btn.button_pressed = not _rect_btn.button_pressed
 
 
 func _handle_mouse_button(event: InputEventMouseButton) -> void:
+	# Reaching here means the click landed in the world rather than on the UI, so
+	# the keyboard belongs to the editor again. Without this the vignette slider
+	# keeps focus after it has been dragged, and a focused slider swallows every
+	# pan key until something else is clicked.
+	get_viewport().gui_release_focus()
 	if event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_UP:
 		_editor_camera.zoom = Vector2(
 			minf(_editor_camera.zoom.x * 1.12, MAX_ZOOM),
@@ -995,19 +1182,47 @@ func _handle_mouse_button(event: InputEventMouseButton) -> void:
 			if _load_overlay.visible:
 				return
 			_push_undo()
-			_painting = true
-			_last_paint_cell = _hover_cell
-			_paint(_hover_cell)
+			if _rect_on():
+				# Nothing is painted yet: the anchor is the first corner, and
+				# releasing on the same cell is an ordinary one-block click.
+				_rect_anchor = _hover_cell
+				_rect_button = MOUSE_BUTTON_LEFT
+				_rect_erase = _tool == TOOL_ERASE
+				_rect_active = true
+				_overlay.queue_redraw()
+			else:
+				_painting = true
+				_last_paint_cell = _hover_cell
+				_paint(_hover_cell)
 		else:
+			if _rect_active and _rect_button == MOUSE_BUTTON_LEFT:
+				_commit_rect()
 			if _painting:
 				_save_now()
 			_painting = false
-	elif event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
-		if _load_overlay.visible:
-			return
-		_push_undo()
-		_erase_cell(_cell_at_mouse())
-		_mark_dirty()
+			_overlay.queue_redraw()
+	elif event.button_index == MOUSE_BUTTON_RIGHT:
+		if event.pressed:
+			if _load_overlay.visible:
+				return
+			_push_undo()
+			if _rect_mode:
+				# The right button is the erasing hand, so with rectangle filling
+				# on it sweeps blocks away whatever tool happens to be selected --
+				# that is the gesture a hole gets carved with. A drag that never
+				# moves still erases the single thing under the cursor, chests and
+				# enemies included.
+				_hover_cell = _cell_at_mouse()
+				_rect_anchor = _hover_cell
+				_rect_button = MOUSE_BUTTON_RIGHT
+				_rect_erase = true
+				_rect_active = true
+				_overlay.queue_redraw()
+			else:
+				_erase_cell(_cell_at_mouse())
+				_mark_dirty()
+		elif _rect_active and _rect_button == MOUSE_BUTTON_RIGHT:
+			_commit_rect()
 
 
 func _update_hover() -> void:
@@ -1017,19 +1232,45 @@ func _update_hover() -> void:
 		_overlay.queue_redraw()
 
 
-func _ui_holds_arrows() -> bool:
-	# The slider takes the arrow keys when it has focus, so panning stays off
-	# while a LineEdit or the vignette slider is the focus owner.
+## True while the keyboard belongs to a text field or the vignette slider: the
+## arrow keys move a slider, and a level named "mushroom" would otherwise drag the
+## view around while it is being typed.
+func _ui_holds_pan_keys() -> bool:
 	var focused := get_viewport().gui_get_focus_owner()
 	return focused is LineEdit or focused is Slider
 
 
-func _process(delta: float) -> void:
-	if _playing or _panning or _load_overlay.visible or _ui_holds_arrows():
-		return
+## The arrow keys come from the built-in ui_* actions; WASD is read straight off
+## the physical keys. Going through the actions for WASD does not work: the mole
+## binds W to ui_accept (jump) and A/D to ui_left/ui_right, and never binds S at
+## all, which leaves the vertical axis with no keys and makes even horizontal
+## panning depend on whether a mole has been in the tree yet this session.
+func _pan_axis() -> Vector2:
 	var axis := Vector2(
 		Input.get_axis("ui_left", "ui_right"),
 		Input.get_axis("ui_up", "ui_down"))
+	if Input.is_physical_key_pressed(KEY_A):
+		axis.x -= 1.0
+	if Input.is_physical_key_pressed(KEY_D):
+		axis.x += 1.0
+	if Input.is_physical_key_pressed(KEY_W):
+		axis.y -= 1.0
+	if Input.is_physical_key_pressed(KEY_S):
+		axis.y += 1.0
+	# A/D also arrive through ui_left/ui_right once a mole has run, so a key can be
+	# counted twice; only the direction of the axis matters.
+	return Vector2(clampf(axis.x, -1.0, 1.0), clampf(axis.y, -1.0, 1.0))
+
+
+func _process(delta: float) -> void:
+	# A release that lands on the UI is swallowed by it and never reaches
+	# _unhandled_input, so a drag that ends over the palette would otherwise leave
+	# its preview hanging on screen for good.
+	if _rect_active and not Input.is_mouse_button_pressed(_rect_button):
+		_commit_rect()
+	if _playing or _panning or _load_overlay.visible or _ui_holds_pan_keys():
+		return
+	var axis := _pan_axis()
 	if axis != Vector2.ZERO:
 		_editor_camera.position += axis.normalized() * PAN_SPEED * delta / maxf(_editor_camera.zoom.x, 0.05)
 		_overlay.queue_redraw()
@@ -1062,6 +1303,20 @@ func draw_editor_overlay(canvas: CanvasItem) -> void:
 			guard += 1
 
 	_draw_spawn_marker(canvas)
+
+	if _rect_active and _hover_cell.x < 900000:
+		# The rectangle that the release will paint or clear, so the drag shows its
+		# size before it commits. Red while erasing, the same warm tone as the hover
+		# cell while filling.
+		var corner_a := _cell_center(_rect_anchor)
+		var corner_b := _cell_center(_hover_cell)
+		var half := _tile_world * 0.5
+		var rect := Rect2(
+			Vector2(minf(corner_a.x, corner_b.x), minf(corner_a.y, corner_b.y)) - Vector2(half, half),
+			Vector2(absf(corner_a.x - corner_b.x), absf(corner_a.y - corner_b.y)) + Vector2(_tile_world, _tile_world))
+		var tint := Color(1.0, 0.55, 0.5) if _rect_erase else Color(1.0, 0.9, 0.6)
+		canvas.draw_rect(rect, Color(tint, 0.13), true)
+		canvas.draw_rect(rect, Color(tint, 0.9), false, 3.0)
 
 	if _hover_cell.x < 900000:
 		var center := _cell_center(_hover_cell)
@@ -1291,6 +1546,32 @@ func _build_palette() -> void:
 	_chest_btn.pressed.connect(_on_chest_selected)
 	_items_box.add_child(_chest_btn)
 
+	_items_box.add_child(_heading_label("CHECKPOINT"))
+
+	# Straight after the chests, because a level that can kill the player wants a
+	# place to come back to before it needs anything else.
+	_checkpoint_btn = _make_button("Respawn Station", Vector2(136.0 * 2.0 + 6.0, 52.0))
+	_checkpoint_btn.toggle_mode = true
+	_checkpoint_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_checkpoint_btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_checkpoint_btn.icon = _square_frame(CHECKPOINT_SHEET, 0)
+	_checkpoint_btn.tooltip_text = "Press E next to it in a playtest to bank it; dying then puts the mole back on its pad"
+	_checkpoint_btn.add_theme_constant_override("icon_max_width", 40)
+	_checkpoint_btn.pressed.connect(_on_checkpoint_selected)
+	_items_box.add_child(_checkpoint_btn)
+
+	_items_box.add_child(_heading_label("NPCS"))
+
+	_gilbert_btn = _make_button("Goblin Gilbert", Vector2(136.0 * 2.0 + 6.0, 52.0))
+	_gilbert_btn.toggle_mode = true
+	_gilbert_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_gilbert_btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_gilbert_btn.icon = _square_frame(GILBERT_SHEET, 0)
+	_gilbert_btn.tooltip_text = "Gilbert's stall: press E in a playtest to browse his stock"
+	_gilbert_btn.add_theme_constant_override("icon_max_width", 40)
+	_gilbert_btn.pressed.connect(_on_gilbert_selected)
+	_items_box.add_child(_gilbert_btn)
+
 	_items_box.add_child(_heading_label("ITEMS"))
 
 	_item_grid = GridContainer.new()
@@ -1298,14 +1579,6 @@ func _build_palette() -> void:
 	_item_grid.add_theme_constant_override("h_separation", 6)
 	_item_grid.add_theme_constant_override("v_separation", 6)
 	_items_box.add_child(_item_grid)
-
-	_items_box.add_child(_heading_label("WEAPONS"))
-
-	_weapon_grid = GridContainer.new()
-	_weapon_grid.columns = 1
-	_weapon_grid.add_theme_constant_override("h_separation", 6)
-	_weapon_grid.add_theme_constant_override("v_separation", 6)
-	_items_box.add_child(_weapon_grid)
 
 	var tools := HBoxContainer.new()
 	tools.add_theme_constant_override("separation", 8)
@@ -1331,6 +1604,15 @@ func _build_palette() -> void:
 		_overlay.queue_redraw()
 	)
 	tools.add_child(_grid_btn)
+
+	# The tool row is already full at three buttons, and a rectangle is a way of
+	# drawing rather than a fourth tool, so it gets a switch of its own underneath.
+	_rect_btn = _make_button("RECT FILL  (R)", Vector2(270.0, 34.0))
+	_rect_btn.toggle_mode = true
+	_rect_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_rect_btn.tooltip_text = "Drag out a whole rectangle of blocks at once; with ERASE, or on the right button, the drag clears the blocks in one"
+	_rect_btn.toggled.connect(_on_rect_toggled)
+	column.add_child(_rect_btn)
 
 
 func _build_world_panel() -> void:
@@ -1415,6 +1697,17 @@ func _swatch(color: Color, size: int = 8) -> Texture2D:
 	return ImageTexture.create_from_image(image)
 
 
+## One square frame out of a sprite sheet, for a palette button's icon. Both the
+## checkpoint and the stall are sheets of 560px squares laid out in a row, so the
+## sheet height is the frame size and the index picks the column.
+func _square_frame(sheet: Texture2D, index: int) -> Texture2D:
+	var frame := sheet.get_size().y
+	var atlas := AtlasTexture.new()
+	atlas.atlas = sheet
+	atlas.region = Rect2(frame * float(index), 0.0, frame, frame)
+	return atlas
+
+
 func _build_hint() -> void:
 	var panel := _make_panel()
 	panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
@@ -1430,7 +1723,7 @@ func _build_hint() -> void:
 	panel.add_child(row)
 
 	_hint = Label.new()
-	_hint.text = "LMB paint   RMB erase   MMB drag / WASD pan   Wheel zoom   Ctrl+Z undo   G grid"
+	_hint.text = "LMB paint   RMB erase   R rect fill   MMB drag / WASD pan   Wheel zoom   Ctrl+Z undo   G grid"
 	_hint.add_theme_font_override("font", UI_FONT)
 	_hint.add_theme_font_size_override("font_size", 19)
 	_hint.add_theme_color_override("font_color", Color(0.92, 0.86, 0.76))
@@ -1593,22 +1886,15 @@ func _setup_palette() -> void:
 
 	for i in ITEM_CATALOG.size():
 		var spec: Dictionary = ITEM_CATALOG[i]
-		var kind := str(spec["kind"])
 		var button := Button.new()
 		button.text = str(spec["name"])
-		if kind == "item":
-			var item := load(str(spec["value"])) as ItemData
-			if item != null:
-				button.icon = _item_icon(item)
-		else:
-			var weapon: WeaponData = Shop.get_weapon(str(spec["value"]))
-			if weapon != null:
-				button.icon = _weapon_icon(weapon)
+		var item := load(str(spec["value"])) as ItemData
+		if item != null:
+			button.icon = _item_icon(item)
 		button.toggle_mode = true
 		# One full-width row per entry. The palette's inner width is what the enemy
 		# grid's two 136px columns add up to, and these names run long enough
-		# ("Earthquake Boots" no longer, but "Golden Shovel") that halving it would
-		# cut them off.
+		# ("Holy Water", "Ice Bomb") that halving it would cut them off.
 		button.custom_minimum_size = Vector2(136.0 * 2.0 + 6.0, 52.0)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
@@ -1622,10 +1908,7 @@ func _setup_palette() -> void:
 		button.add_theme_stylebox_override("pressed", _style(BUTTON_PRESSED, ACCENT, 4))
 		button.add_theme_stylebox_override("focus", _style(BUTTON_HOVER, ACCENT, 4))
 		button.pressed.connect(_on_item_selected.bind(i))
-		if kind == "item":
-			_item_grid.add_child(button)
-		else:
-			_weapon_grid.add_child(button)
+		_item_grid.add_child(button)
 		_item_buttons.append(button)
 
 
@@ -1635,12 +1918,6 @@ func _item_icon(item: ItemData) -> Texture2D:
 	if item.icon_texture != null:
 		return item.icon_texture
 	return _swatch(item.icon_color, 32)
-
-
-## Weapons have no artwork at all, only a tint, so their button wears the same
-## colour chip the pickup in the world does.
-func _weapon_icon(weapon: WeaponData) -> Texture2D:
-	return _swatch(weapon.icon_color, 32)
 
 
 func _enemy_icon(enemy_name: String) -> Texture2D:
@@ -1727,6 +2004,16 @@ func _on_portal_selected() -> void:
 	_refresh_tool_buttons()
 
 
+func _on_checkpoint_selected() -> void:
+	_tool = TOOL_CHECKPOINT
+	_refresh_tool_buttons()
+
+
+func _on_gilbert_selected() -> void:
+	_tool = TOOL_GILBERT
+	_refresh_tool_buttons()
+
+
 func _on_item_selected(index: int) -> void:
 	_selected_item = index
 	_tool = TOOL_ITEM
@@ -1736,6 +2023,15 @@ func _on_item_selected(index: int) -> void:
 func _select_tool(tool: int) -> void:
 	_tool = tool
 	_refresh_tool_buttons()
+
+
+## Rectangle filling is a mode rather than a tool, so it stays on while the author
+## moves between block types and between tools. It simply has nothing to do for
+## the tools that place a single object.
+func _on_rect_toggled(on: bool) -> void:
+	_rect_mode = on
+	_rect_active = false
+	_overlay.queue_redraw()
 
 
 func _set_tab(tab: int) -> void:
@@ -1759,8 +2055,11 @@ func _refresh_tool_buttons() -> void:
 	_items_tab.button_pressed = _tab == TAB_ITEMS
 	_erase_btn.button_pressed = _tool == TOOL_ERASE
 	_spawn_btn.button_pressed = _tool == TOOL_SPAWN
+	_rect_btn.set_pressed_no_signal(_rect_mode)
 	_chest_btn.button_pressed = _tool == TOOL_CHEST
 	_portal_btn.button_pressed = _tool == TOOL_PORTAL
+	_checkpoint_btn.button_pressed = _tool == TOOL_CHECKPOINT
+	_gilbert_btn.button_pressed = _tool == TOOL_GILBERT
 	for coords in _block_buttons:
 		var button: Button = _block_buttons[coords]
 		button.button_pressed = _tool == TOOL_BLOCK and coords == _selected_block
