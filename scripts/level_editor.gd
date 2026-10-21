@@ -17,8 +17,9 @@ extends Node2D
 ## wheel zooms, Ctrl+Z undoes and G toggles the grid.
 ##
 ## The WORLD panel picks which parallax backdrop the level uses, how hard the
-## vignette filter bites, and whether fireflies drift through it, so a level's
-## look is authored right alongside its geometry.
+## vignette filter bites, whether fireflies drift through it, and which weapons
+## the level unlocks, so a level's look and starting kit are authored right
+## alongside its geometry.
 ##
 ## The ITEMS tab also carries the bits of a level that are not just things to
 ## walk into: a Portal, the way out; a Respawn Station, the checkpoint a playtest
@@ -103,10 +104,11 @@ const ENEMY_CATALOG := [
 ## _build_item_catalog): they are ItemData resources, placed as pickups that
 ## hover where they are put and are collected by walking into them.
 ##
-## Weapons are deliberately absent. They reach the player by purchase or story
-## unlock in the campaign, so a level hands out items and leaves the loadout
-## alone. A saved level that still carries one of the old weapon rows loads with
-## that row dropped, the same as any other value the palette no longer knows.
+## Weapons are not placeable pickups. The WORLD panel's WEAPONS button opens a
+## panel that sets which weapons a level unlocks for the player; by default a
+## level leaves the player's own campaign unlocks alone. A saved level that still
+## carries one of the old weapon rows loads with that row dropped, the same as
+## any other value the palette no longer knows.
 const ITEM_CATALOG := [
 	{"kind": "item", "name": "Drill", "value": "res://resources/drill.tres"},
 	{"kind": "item", "name": "Bomb", "value": "res://resources/bomb.tres"},
@@ -156,6 +158,10 @@ var _level_name := DEFAULT_LEVEL_NAME
 var _background_index := 0
 var _vignette := DEFAULT_VIGNETTE
 var _fireflies := true
+## When true the level replaces the player's own weapon set with `_level_weapons`.
+## When false the game leaves whatever the player has unlocked alone.
+var _weapon_override := false
+var _level_weapons: Array[String] = []
 
 var _tool := TOOL_BLOCK
 var _tab := TAB_BLOCKS
@@ -246,6 +252,11 @@ var _vignette_slider: HSlider = null
 var _vignette_value: Label = null
 var _firefly_btn: Button = null
 var _firefly_spawner: Node2D = null
+var _weapon_btn: Button = null
+var _loadout_overlay: Control = null
+var _weapon_use_own_btn: Button = null
+var _weapon_buttons: Dictionary = {}
+var _weapon_summary: Label = null
 var _load_overlay: Control = null
 var _load_list: VBoxContainer = null
 var _online_overlay: Control = null
@@ -319,6 +330,8 @@ func _new_level(with_floor: bool) -> void:
 	_background_index = 0
 	_vignette = DEFAULT_VIGNETTE
 	_fireflies = true
+	_weapon_override = false
+	_level_weapons = _all_weapon_ids()
 	if with_floor:
 		for x in NEW_FLOOR_WIDTH:
 			_tiles[Vector2i(x, NEW_FLOOR_ROW)] = Vector3i(TERRAIN_SOURCE, 0, 0)
@@ -523,6 +536,95 @@ func _refresh_world_ui() -> void:
 	if _firefly_btn != null:
 		_firefly_btn.button_pressed = _fireflies
 		_firefly_btn.text = "Fireflies: ON" if _fireflies else "Fireflies: OFF"
+	if _weapon_btn != null:
+		_weapon_btn.text = _weapon_button_text()
+	_refresh_loadout_ui()
+
+
+func _weapon_button_text() -> String:
+	if not _weapon_override:
+		return "Weapons: Player's own"
+	return "Weapons: %d chosen" % _level_weapons.size()
+
+
+func _refresh_loadout_ui() -> void:
+	if _loadout_overlay == null:
+		return
+	if _weapon_use_own_btn != null:
+		_weapon_use_own_btn.button_pressed = not _weapon_override
+		_weapon_use_own_btn.text = "Use player's own unlocks: %s" % (
+				"ON" if not _weapon_override else "OFF")
+	for key in _weapon_buttons:
+		var id := str(key)
+		var button: Button = _weapon_buttons[key]
+		var always := id == "shovel"
+		button.button_pressed = always or id in _level_weapons
+		button.disabled = not _weapon_override or always
+		button.text = "Shovel (always)" if always else _weapon_name(id)
+	if _weapon_summary != null:
+		if not _weapon_override:
+			_weapon_summary.text = "This level uses each player's own shop unlocks."
+		else:
+			var names: Array[String] = []
+			for w in Shop.weapon_catalog:
+				if w.id in _level_weapons:
+					names.append(w.display_name)
+			_weapon_summary.text = "This level unlocks: " + ", ".join(names)
+
+
+func _all_weapon_ids() -> Array[String]:
+	var ids: Array[String] = []
+	for w in Shop.weapon_catalog:
+		if w.weapon_type != WeaponData.Type.ABILITY:
+			ids.append(w.id)
+	return ids
+
+
+func _is_weapon_id(id: String) -> bool:
+	for w in Shop.weapon_catalog:
+		if w.id == id:
+			return true
+	return false
+
+
+func _weapon_name(id: String) -> String:
+	var w := Shop.get_weapon(id)
+	return w.display_name if w != null else id
+
+
+func _open_loadout_overlay() -> void:
+	_close_online_overlay()
+	_close_load_overlay()
+	_refresh_loadout_ui()
+	_loadout_overlay.visible = true
+
+
+func _close_loadout_overlay() -> void:
+	if _loadout_overlay != null:
+		_loadout_overlay.visible = false
+
+
+func _on_weapon_mode_pressed() -> void:
+	_weapon_override = not _weapon_use_own_btn.button_pressed
+	if _weapon_override and _level_weapons.is_empty():
+		_level_weapons = _all_weapon_ids()
+	_refresh_loadout_ui()
+	_refresh_world_ui()
+	_mark_dirty()
+
+
+func _on_weapon_row_pressed(id: String) -> void:
+	if not _weapon_override or id == "shovel":
+		return
+	if id in _level_weapons:
+		_level_weapons.erase(id)
+	else:
+		_level_weapons.append(id)
+	if _level_weapons.is_empty():
+		_level_weapons.append("shovel")
+	_refresh_loadout_ui()
+	_refresh_world_ui()
+	_mark_dirty()
 
 
 # ------------------------------------------------------------------- painting
@@ -720,7 +822,7 @@ func to_dict() -> Dictionary:
 	for entry in _props:
 		var position: Vector2 = entry["position"]
 		props.append([str(entry["kind"]), str(entry["value"]), position.x, position.y])
-	return {
+	var data := {
 		"version": 3,
 		"name": _level_name,
 		"spawn": [_spawn_point.x, _spawn_point.y],
@@ -731,6 +833,11 @@ func to_dict() -> Dictionary:
 		"vignette": _vignette,
 		"fireflies": _fireflies,
 	}
+	# Absent means "use the player's own shop unlocks", which keeps old levels
+	# and levels that never opened the weapon panel behaving as they always did.
+	if _weapon_override:
+		data["weapons"] = _level_weapons.duplicate()
+	return data
 
 
 func from_dict(data: Dictionary) -> bool:
@@ -783,6 +890,19 @@ func from_dict(data: Dictionary) -> bool:
 	_background_index = clampi(int(data.get("background", 0)), 0, BACKGROUND_CATALOG.size() - 1)
 	_vignette = clampf(float(data.get("vignette", DEFAULT_VIGNETTE)), 0.0, 1.0)
 	_fireflies = bool(data.get("fireflies", true))
+	var weapons = data.get("weapons", null)
+	if weapons is Array:
+		_weapon_override = true
+		_level_weapons.clear()
+		for value in weapons:
+			var id := str(value)
+			if _is_weapon_id(id) and id not in _level_weapons:
+				_level_weapons.append(id)
+		if "shovel" not in _level_weapons:
+			_level_weapons.push_front("shovel")
+	else:
+		_weapon_override = false
+		_level_weapons = _all_weapon_ids()
 	_apply_level()
 	_apply_world()
 	return true
@@ -850,6 +970,7 @@ func start_playtest() -> void:
 	if _playing:
 		return
 	_close_online_overlay()
+	_close_loadout_overlay()
 	_save_now()
 	_playing = true
 	_finishing = false
@@ -878,6 +999,7 @@ func start_playtest() -> void:
 	_saved_selected_slot = Inventory.selected_slot
 	Inventory.player_health = Inventory.MAX_HEALTH
 	_snapshot_shop()
+	_apply_level_loadout()
 	_create_playtest_hud()
 	_spawn_preview_mole()
 	_apply_fireflies()
@@ -940,6 +1062,47 @@ func _snapshot_shop() -> void:
 	# Held for the whole playtest so nothing mid-run rewrites the save file
 	# either; the values above put the in-memory state back on the way out.
 	Shop.suppress_save = true
+
+
+## Swaps the weapon part of the borrowed loadout for the level's chosen set.
+## Story abilities and anything else the player owns are left untouched; only
+## the catalog weapons are replaced, so a level never takes away a wall jump or
+## a grappling hook. Called after _snapshot_shop(), so stop_playtest restores
+## the player's real set.
+func _apply_level_loadout() -> void:
+	if not _weapon_override:
+		return
+	var selected: Array[String] = []
+	for id in _level_weapons:
+		if _is_weapon_id(id) and id not in selected:
+			selected.append(id)
+	if "shovel" not in selected:
+		selected.push_front("shovel")
+
+	var kept: Array[String] = []
+	for id in Shop.owned:
+		if not _is_weapon_id(str(id)):
+			kept.append(str(id))
+	for id in selected:
+		if id not in kept:
+			kept.append(id)
+	Shop.owned = kept
+
+	# Start with the best melee the level unlocked. The player can still switch
+	# through the weapon picker once more than one is owned.
+	var starting_melee := "shovel"
+	var starting_ranged := ""
+	for w in Shop.weapon_catalog:
+		if w.id not in selected:
+			continue
+		if w.weapon_type == WeaponData.Type.MELEE:
+			starting_melee = w.id
+		elif w.weapon_type == WeaponData.Type.RANGED:
+			starting_ranged = w.id
+	Shop.equipped_melee_id = starting_melee
+	Shop.equipped_ranged_id = starting_ranged
+	Shop.ranged_active = false
+	Shop.loadout_changed.emit()
 
 
 func _restore_shop() -> void:
@@ -1196,6 +1359,15 @@ func _unhandled_input(event: InputEvent) -> void:
 				start_playtest()
 		return
 
+	# The loadout panel owns input while it is open, for the same reason the
+	# online panel does.
+	if _loadout_overlay.visible:
+		if event is InputEventKey and event.pressed and not event.echo \
+				and event.keycode == KEY_ESCAPE:
+			_close_loadout_overlay()
+			get_viewport().set_input_as_handled()
+		return
+
 	# The online panel owns input while it is open. The dimmer already stops
 	# mouse clicks, but this also keeps WASD, undo and the editor shortcuts from
 	# firing behind a text field.
@@ -1249,7 +1421,7 @@ func _handle_mouse_button(event: InputEventMouseButton) -> void:
 	elif event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
 			_hover_cell = _cell_at_mouse()
-			if _load_overlay.visible:
+			if _load_overlay.visible or _loadout_overlay.visible:
 				return
 			_push_undo()
 			if _rect_on():
@@ -1273,7 +1445,7 @@ func _handle_mouse_button(event: InputEventMouseButton) -> void:
 			_overlay.queue_redraw()
 	elif event.button_index == MOUSE_BUTTON_RIGHT:
 		if event.pressed:
-			if _load_overlay.visible:
+			if _load_overlay.visible or _loadout_overlay.visible:
 				return
 			_push_undo()
 			if _rect_mode:
@@ -1339,7 +1511,8 @@ func _process(delta: float) -> void:
 	if _rect_active and not Input.is_mouse_button_pressed(_rect_button):
 		_commit_rect()
 	if _playing or _panning or _load_overlay.visible \
-			or _online_overlay.visible or _ui_holds_pan_keys():
+			or _online_overlay.visible or _loadout_overlay.visible \
+			or _ui_holds_pan_keys():
 		return
 	var axis := _pan_axis()
 	if axis != Vector2.ZERO:
@@ -1436,6 +1609,7 @@ func _build_ui() -> void:
 	_build_hint()
 	_build_load_overlay()
 	_build_online_overlay()
+	_build_loadout_overlay()
 
 
 func _build_toolbar() -> void:
@@ -1752,6 +1926,14 @@ func _build_world_panel() -> void:
 	_firefly_btn.pressed.connect(_on_fireflies_pressed)
 	column.add_child(_firefly_btn)
 
+	column.add_child(_heading_label("WEAPONS"))
+
+	_weapon_btn = _make_button("Weapons: Player's own", Vector2(232.0, 44.0))
+	_weapon_btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_weapon_btn.tooltip_text = "Choose which weapons this level unlocks for the player"
+	_weapon_btn.pressed.connect(_open_loadout_overlay)
+	column.add_child(_weapon_btn)
+
 
 func _section_label(text: String) -> Label:
 	var label := Label.new()
@@ -1942,6 +2124,88 @@ func _build_online_overlay() -> void:
 	column.add_child(close_row)
 
 
+func _build_loadout_overlay() -> void:
+	_loadout_overlay = Control.new()
+	_loadout_overlay.name = "LoadoutOverlay"
+	_loadout_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_loadout_overlay.visible = false
+	_ui_root.add_child(_loadout_overlay)
+
+	var dim := ColorRect.new()
+	dim.color = Color(0, 0, 0, 0.64)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	_loadout_overlay.add_child(dim)
+
+	var panel := _make_panel()
+	panel.anchor_left = 0.5
+	panel.anchor_top = 0.5
+	panel.anchor_right = 0.5
+	panel.anchor_bottom = 0.5
+	panel.offset_left = -290.0
+	panel.offset_top = -240.0
+	panel.offset_right = 290.0
+	panel.offset_bottom = 240.0
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	_loadout_overlay.add_child(panel)
+
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 8)
+	panel.add_child(column)
+
+	var title := Label.new()
+	title.text = "PLAYER WEAPONS"
+	title.add_theme_font_override("font", UI_FONT)
+	title.add_theme_font_size_override("font_size", 28)
+	title.add_theme_color_override("font_color", ACCENT)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	column.add_child(title)
+
+	var intro := _make_form_label(
+			"Choose the weapons this level unlocks for the player. The shovel is "
+			+ "always available. Leave USE PLAYER'S OWN UNLOCKS on to use each "
+			+ "player's own shop progress; turn it off to set the level's starting "
+			+ "weapons.")
+	intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	intro.custom_minimum_size = Vector2(500.0, 0.0)
+	column.add_child(intro)
+
+	_weapon_use_own_btn = _make_button("Use player's own unlocks: ON", Vector2(500.0, 44.0))
+	_weapon_use_own_btn.toggle_mode = true
+	_weapon_use_own_btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_weapon_use_own_btn.tooltip_text = (
+			"On: the player keeps whatever weapons they have unlocked in the shop. "
+			+ "Off: this level starts the player with the weapons checked below.")
+	_weapon_use_own_btn.pressed.connect(_on_weapon_mode_pressed)
+	column.add_child(_weapon_use_own_btn)
+
+	var rows := VBoxContainer.new()
+	rows.add_theme_constant_override("separation", 6)
+	column.add_child(rows)
+	for w in Shop.weapon_catalog:
+		var button := _make_button(w.display_name, Vector2(500.0, 44.0))
+		button.toggle_mode = true
+		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.icon = _swatch(w.icon_color, 14)
+		button.add_theme_constant_override("icon_max_width", 24)
+		button.tooltip_text = w.description
+		button.pressed.connect(_on_weapon_row_pressed.bind(w.id))
+		rows.add_child(button)
+		_weapon_buttons[w.id] = button
+
+	_weapon_summary = _make_form_label("")
+	_weapon_summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_weapon_summary.custom_minimum_size = Vector2(500.0, 0.0)
+	column.add_child(_weapon_summary)
+
+	var close_btn := _make_button("CLOSE", Vector2(140.0, 40.0))
+	close_btn.pressed.connect(_close_loadout_overlay)
+	var close_row := HBoxContainer.new()
+	close_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	close_row.add_child(close_btn)
+	column.add_child(close_row)
+
+
 func _build_online_publish_view() -> VBoxContainer:
 	var view := VBoxContainer.new()
 	view.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -2059,6 +2323,7 @@ func _make_line_edit(value: String, placeholder: String) -> LineEdit:
 
 
 func _open_online_overlay() -> void:
+	_close_loadout_overlay()
 	_publish_author_edit.text = LevelShare.author
 	_publish_status.text = ""
 	_show_online_publish()
@@ -2585,6 +2850,7 @@ func _on_exit_pressed() -> void:
 
 
 func _open_load_overlay() -> void:
+	_close_loadout_overlay()
 	_refresh_load_list()
 	_load_overlay.visible = true
 

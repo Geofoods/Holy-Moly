@@ -78,9 +78,10 @@ rolls its own loot exactly like the ones in the campaign, and the four items the
 merchant actually stocks -- Drill, Bomb, Ice Bomb and Holy Water -- each placed as
 a floating pickup that hovers where you put it until the mole walks into it.
 Weapons are not on the shelf: they are the shop's business, earned by purchase
-rather than found in a level. Whatever a playtest changes -- dug tiles, opened
-chests, collected items, coins a previewed enemy dropped -- is put back when you
-stop.
+rather than found in a level. The WORLD panel's PLAYER WEAPONS button can set
+which weapons a level unlocks for the player, or leave their own shop unlocks
+alone. Whatever a playtest changes -- dug tiles, opened chests, collected items,
+coins a previewed enemy dropped, borrowed weapons -- is put back when you stop.
 
 A Respawn Station is a checkpoint. Stand beside it in a playtest, press E to bank
 it, and the pad lights up; dying after that puts the mole back on the pad, healed,
@@ -117,12 +118,19 @@ R: Toggle rectangle filling
 CTRL+Z / CTRL+Y: Undo / redo
 G: Toggle the grid
 
-The WORLD panel on the right sets the level's look. Pick one of the three
-parallax backdrops (Teal, Purple, Red), then drag the VIGNETTE slider to choose
-how hard the filter bites: 0% leaves the screen clean, 100% blacks the corners
-out completely. The FIREFLIES button turns the drifting fireflies on or off; they
-preview live around the editor camera and follow the mole during a playtest. All
-three settings are saved with the level.
+The WORLD panel on the right sets the level's look and starting weapons. Pick
+one of the three parallax backdrops (Teal, Purple, Red), then drag the VIGNETTE
+slider to choose how hard the filter bites: 0% leaves the screen clean, 100%
+blacks the corners out completely. The FIREFLIES button turns the drifting
+fireflies on or off; they preview live around the editor camera and follow the
+mole during a playtest. All these settings are saved with the level.
+
+The WEAPONS button opens a panel where you choose which weapons the level
+unlocks: Shovel (always), Golden Shovel, Pickaxe and Wizard Staff. Leave USE
+PLAYER'S OWN UNLOCKS on to use each player's own shop progress, or turn it
+off to give the level a fixed starting set. The strongest selected melee starts
+in hand, and the weapon slot lists the rest. The choice is saved with the level
+and applies to playtests, so it can be tested exactly as a player will get it.
 
 Levels are saved under the game's user data folder as small JSON files, and the
 editor autosaves a working copy after every edit, so a playtest never costs you
