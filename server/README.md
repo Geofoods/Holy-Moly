@@ -17,9 +17,10 @@ From the repository root:
 python server/level_server.py --port 8787 --data-dir server/data
 ```
 
-Then open Level Forge in the game, press **ONLINE**, and use
-`http://127.0.0.1:8787` as the server URL. The panel remembers the address and
-author name in `user://level_share.cfg`.
+The game client is hardwired to the hosted service, so to test against this
+local server, temporarily change `SERVICE_URL` in `scripts/level_share.gd` to
+`http://127.0.0.1:8787`. The panel still remembers the author name in
+`user://level_share.cfg`.
 
 ## Deploy it
 
@@ -78,15 +79,9 @@ Free-tier expectations:
 - Do not use Render's free Key Value for the level database: its data is lost on
   restart. Render's free Postgres expires after 30 days.
 
-After the first deploy, copy the service URL (normally
-`https://holy-moley-levels.onrender.com`) and point the game at it in either of
-the two ways below.
-
-Point the game at the public address in either of two ways:
-
-- Paste it into the **SERVER URL** field in the editor's ONLINE panel.
-- Bake it into a build by changing `online/level_service_url` in
-  `project.godot` (or the equivalent Project Settings entry).
+The game is already pointed at `https://holy-moley-levels.onrender.com`, fixed
+in `scripts/level_share.gd`. If you deploy the service somewhere else, change
+`SERVICE_URL` there; there is no server field in the editor.
 
 If the Web export is served over HTTPS, deploy this service over HTTPS too. A
 browser page cannot call an `http://` server from an `https://` page.

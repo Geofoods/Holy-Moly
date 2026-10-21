@@ -250,7 +250,6 @@ var _online_publish_view: VBoxContainer = null
 var _online_browse_view: VBoxContainer = null
 var _online_tab_publish: Button = null
 var _online_tab_browse: Button = null
-var _publish_server_edit: LineEdit = null
 var _publish_author_edit: LineEdit = null
 var _publish_description_edit: TextEdit = null
 var _publish_status: Label = null
@@ -258,7 +257,6 @@ var _publish_button: Button = null
 var _browse_status: Label = null
 var _browse_list: VBoxContainer = null
 var _browse_refresh_button: Button = null
-var _browse_server_url := ""
 var _browse_request_serial := 0
 var _block_buttons: Dictionary = {}
 var _enemy_buttons: Array = []
@@ -1893,15 +1891,10 @@ func _build_online_publish_view() -> VBoxContainer:
 	view.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	view.add_theme_constant_override("separation", 5)
 
-	var intro := _make_form_label("Upload the level currently open in the editor. A deployed server URL can be baked into Project Settings as online/level_service_url, or typed here.")
+	var intro := _make_form_label("Upload the level currently open in the editor. It will be published to the Holy Moley community for everyone to browse and play.")
 	intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	intro.custom_minimum_size = Vector2(0.0, 44.0)
 	view.add_child(intro)
-
-	view.add_child(_make_form_label("SERVER URL"))
-	_publish_server_edit = _make_line_edit(LevelShare.base_url, "https://your-level-server.example")
-	_publish_server_edit.max_length = 300
-	view.add_child(_publish_server_edit)
 
 	view.add_child(_make_form_label("AUTHOR"))
 	_publish_author_edit = _make_line_edit(LevelShare.author, "Your name")
@@ -2010,7 +2003,6 @@ func _make_line_edit(value: String, placeholder: String) -> LineEdit:
 
 
 func _open_online_overlay() -> void:
-	_publish_server_edit.text = LevelShare.base_url
 	_publish_author_edit.text = LevelShare.author
 	_publish_status.text = ""
 	_show_online_publish()
@@ -2034,15 +2026,6 @@ func _show_online_browse() -> void:
 	_online_browse_view.visible = true
 	_online_tab_publish.modulate = Color(0.72, 0.68, 0.62, 1.0)
 	_online_tab_browse.modulate = Color.WHITE
-	# The Browse tab shares the server field with Publish, so a URL typed there
-	# takes effect without having to publish first. Switching servers also
-	# clears the old list rather than mixing two communities together.
-	var typed_server := _publish_server_edit.text.strip_edges()
-	if not typed_server.is_empty():
-		LevelShare.configure(typed_server, _publish_author_edit.text.strip_edges())
-	if _browse_server_url != LevelShare.base_url:
-		_browse_server_url = LevelShare.base_url
-		_clear_children(_browse_list)
 	if _browse_list.get_child_count() == 0:
 		_refresh_online_levels()
 
@@ -2056,17 +2039,15 @@ func _on_publish_pressed() -> void:
 	if author.is_empty():
 		author = "Anonymous"
 		_publish_author_edit.text = author
-	LevelShare.configure(_publish_server_edit.text, author)
-	_publish_server_edit.text = LevelShare.base_url
+	LevelShare.configure(author)
 	_publish_button.disabled = true
-	_publish_status.text = "Publishing to %s... (free servers may take ~1 min to wake)" % LevelShare.base_url
+	_publish_status.text = "Publishing to the community... (free servers may take ~1 min to wake)"
 	var result: Dictionary = await LevelShare.publish(
 			to_dict(), _level_name, author, _publish_description_edit.text)
 	_publish_button.disabled = false
 	if bool(result.get("ok", false)):
 		var level: Dictionary = result.get("level", {})
-		_publish_status.text = "Published! Level id: %s\nAnyone using %s can find it in BROWSE." % [
-			str(level.get("id", "")), LevelShare.base_url]
+		_publish_status.text = "Published! Level id: %s\nAnyone using ONLINE → BROWSE can find it." % str(level.get("id", ""))
 		_toast("Published \"%s\" online" % _level_name)
 		# Force the next Browse visit to pick up the new entry.
 		_clear_children(_browse_list)
@@ -2083,7 +2064,7 @@ func _refresh_online_levels() -> void:
 	_browse_request_serial += 1
 	var serial := _browse_request_serial
 	_browse_refresh_button.disabled = true
-	_browse_status.text = "Contacting %s... (free servers may take ~1 min to wake)" % LevelShare.base_url
+	_browse_status.text = "Contacting the community server... (free servers may take ~1 min to wake)"
 	_clear_children(_browse_list)
 	var result: Dictionary = await LevelShare.fetch_levels()
 	if serial != _browse_request_serial:

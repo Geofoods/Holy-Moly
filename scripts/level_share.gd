@@ -7,12 +7,11 @@ extends Node
 ## `ok` and either the requested values or a human-readable `error`, so callers
 ## never have to know about HTTP status codes or Godot's request result enum.
 ##
-## The service URL comes from the Online panel and is remembered in user://.
-## A build can bake a default into Project Settings under
-## online/level_service_url without needing the player to configure anything.
+## All publishing, browsing and downloading goes to the hosted community service.
+## Only the player's preferred author name is remembered in user://.
 
 const SETTINGS_PATH := "user://level_share.cfg"
-const DEFAULT_BASE_URL := "http://127.0.0.1:8787"
+const SERVICE_URL := "https://holy-moley-levels.onrender.com"
 const REQUEST_TIMEOUT := 15.0
 const HOSTED_REQUEST_TIMEOUT := 90.0
 const MAX_RESPONSE_BYTES := 2 * 1024 * 1024
@@ -20,22 +19,18 @@ const NAME_MAX := 60
 const AUTHOR_MAX := 40
 const DESCRIPTION_MAX := 280
 
-var base_url := DEFAULT_BASE_URL
+var base_url := SERVICE_URL
 var author := ""
 var last_error := ""
 
 
 func _ready() -> void:
-	base_url = _normalise_url(str(ProjectSettings.get_setting(
-			"online/level_service_url", DEFAULT_BASE_URL)))
 	var config := ConfigFile.new()
 	if config.load(SETTINGS_PATH) == OK:
-		base_url = _normalise_url(str(config.get_value("online", "base_url", base_url)))
 		author = str(config.get_value("online", "author", "")).strip_edges()
 
 
-func configure(server_url: String, author_name: String) -> void:
-	base_url = _normalise_url(server_url)
+func configure(author_name: String) -> void:
 	author = author_name.strip_edges().left(AUTHOR_MAX)
 	_save_settings()
 
@@ -181,18 +176,8 @@ func _fail(message: String) -> Dictionary:
 
 func _save_settings() -> void:
 	var config := ConfigFile.new()
-	config.set_value("online", "base_url", base_url)
 	config.set_value("online", "author", author)
 	config.save(SETTINGS_PATH)
-
-
-func _normalise_url(value: String) -> String:
-	var url := value.strip_edges()
-	if url.is_empty():
-		return DEFAULT_BASE_URL
-	if not (url.begins_with("http://") or url.begins_with("https://")):
-		url = "http://" + url
-	return url.trim_suffix("/")
 
 
 func _url(path: String) -> String:

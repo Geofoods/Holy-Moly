@@ -135,15 +135,15 @@ open in the editor with its name, author and a short description. BROWSE lists
 everything published to the same server; LOAD downloads a level into
 user://levels and opens it in the editor, ready for PLAY or SAVE.
 
-The panel talks to the small service in server/. For local testing, run:
+The panel always talks to the hosted service at
+https://holy-moley-levels.onrender.com. That address is fixed in
+scripts/level_share.gd, and there is no server field in the editor. For local
+testing, temporarily change SERVICE_URL there to http://127.0.0.1:8787 and run:
 
 python server/level_server.py --port 8787 --data-dir server/data
 
-The default address is http://127.0.0.1:8787, and the field in the panel can be
-pointed at any deployed copy of that service. A public build should bake its
-server into project.godot as online/level_service_url so players do not have to
-type an address. The browser build needs the service to be served over HTTPS as
-well, since a page cannot call an http:// address.
+The browser build needs the service to be served over HTTPS as well, since a page
+cannot call an http:// address.
 
 The server stores everything in server/data/levels.json by default, or in a free
 Upstash Redis database when its REST URL and token are configured. It enables

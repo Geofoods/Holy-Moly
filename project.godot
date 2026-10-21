@@ -56,10 +56,6 @@ interact={
 ]
 }
 
-[online]
-
-level_service_url="http://127.0.0.1:8787"
-
 [physics]
 
 3d/physics_engine="Jolt Physics"
