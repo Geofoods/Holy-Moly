@@ -1,0 +1,25 @@
+# Render Blueprint for the Holy Moley community level service.
+#
+# This uses Render's free web-service plan. Free Render services have an
+# ephemeral filesystem, so levels are stored in a free Upstash Redis database
+# instead. Create a database at https://console.upstash.com/redis, copy its
+# REST URL and token, and enter them when Render asks for the two secrets below.
+#
+# Free Upstash limits are currently 250 MB of data, 500K commands/month, and
+# 10 GB/month of bandwidth, which is plenty for a small community level list.
+services:
+  - type: web
+    name: holy-moley-levels
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./server/Dockerfile
+    dockerContext: ./server
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "8787"
+      - key: UPSTASH_REDIS_REST_URL
+        sync: false
+      - key: UPSTASH_REDIS_REST_TOKEN
+        sync: false

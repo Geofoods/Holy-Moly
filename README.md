@@ -16,6 +16,7 @@ Features:
 - 4 different items
 - Many Characters
 - In-game Level Editor
+- Online level publishing and browsing
   
 CONTROLS:
 
@@ -32,6 +33,8 @@ ESC: Pause Game
 M: Map
 
 LEFT CLICK: Attack/Use item held or interact with HUD
+
+HOLD LEFT CLICK: Aim a throwable and preview its path; release to throw
 
 MULTIPLAYER (PVP ARENA):
 
@@ -124,6 +127,31 @@ editor autosaves a working copy after every edit, so a playtest never costs you
 your work. EXIT saves the level and leaves through the same circle wipe the
 campaign's own scenes use, so the editor reads as part of the game rather than a
 detour.
+
+ONLINE LEVELS:
+
+The ONLINE button opens the community panel. PUBLISH uploads the level currently
+open in the editor with its name, author and a short description. BROWSE lists
+everything published to the same server; LOAD downloads a level into
+user://levels and opens it in the editor, ready for PLAY or SAVE.
+
+The panel talks to the small service in server/. For local testing, run:
+
+python server/level_server.py --port 8787 --data-dir server/data
+
+The default address is http://127.0.0.1:8787, and the field in the panel can be
+pointed at any deployed copy of that service. A public build should bake its
+server into project.godot as online/level_service_url so players do not have to
+type an address. The browser build needs the service to be served over HTTPS as
+well, since a page cannot call an http:// address.
+
+The server stores everything in server/data/levels.json by default, or in a free
+Upstash Redis database when its REST URL and token are configured. It enables
+CORS for the Web export, caps uploads at 1 MB, and rejects malformed level JSON.
+It is deliberately small and has no accounts or moderation, so a public
+deployment should add those or be treated as a community service for a game jam.
+A free Render + Upstash deployment is preconfigured in render.yaml; see
+server/README.md for the Render, Docker and other deployment notes.
 
 ART AND VISUAL ASSETS WERE MADE BY BRYAN TANG
 

@@ -13,6 +13,11 @@ desktop.ini
 .mcp.json
 .claude/
 
+# Community level service runtime data and Python caches
+server/data/
+__pycache__/
+*.pyc
+
 
 .vscode/
 *.swp

@@ -245,6 +245,21 @@ var _vignette_slider: HSlider = null
 var _vignette_value: Label = null
 var _load_overlay: Control = null
 var _load_list: VBoxContainer = null
+var _online_overlay: Control = null
+var _online_publish_view: VBoxContainer = null
+var _online_browse_view: VBoxContainer = null
+var _online_tab_publish: Button = null
+var _online_tab_browse: Button = null
+var _publish_server_edit: LineEdit = null
+var _publish_author_edit: LineEdit = null
+var _publish_description_edit: TextEdit = null
+var _publish_status: Label = null
+var _publish_button: Button = null
+var _browse_status: Label = null
+var _browse_list: VBoxContainer = null
+var _browse_refresh_button: Button = null
+var _browse_server_url := ""
+var _browse_request_serial := 0
 var _block_buttons: Dictionary = {}
 var _enemy_buttons: Array = []
 var _item_buttons: Array = []
@@ -792,6 +807,7 @@ func _save_now() -> void:
 func start_playtest() -> void:
 	if _playing:
 		return
+	_close_online_overlay()
 	_save_now()
 	_playing = true
 	_finishing = false
@@ -1136,6 +1152,16 @@ func _unhandled_input(event: InputEvent) -> void:
 				start_playtest()
 		return
 
+	# The online panel owns input while it is open. The dimmer already stops
+	# mouse clicks, but this also keeps WASD, undo and the editor shortcuts from
+	# firing behind a text field.
+	if _online_overlay.visible:
+		if event is InputEventKey and event.pressed and not event.echo \
+				and event.keycode == KEY_ESCAPE:
+			_close_online_overlay()
+			get_viewport().set_input_as_handled()
+		return
+
 	if event is InputEventMouseButton:
 		_handle_mouse_button(event)
 	elif event is InputEventMouseMotion:
@@ -1268,7 +1294,8 @@ func _process(delta: float) -> void:
 	# its preview hanging on screen for good.
 	if _rect_active and not Input.is_mouse_button_pressed(_rect_button):
 		_commit_rect()
-	if _playing or _panning or _load_overlay.visible or _ui_holds_pan_keys():
+	if _playing or _panning or _load_overlay.visible \
+			or _online_overlay.visible or _ui_holds_pan_keys():
 		return
 	var axis := _pan_axis()
 	if axis != Vector2.ZERO:
@@ -1364,6 +1391,7 @@ func _build_ui() -> void:
 	_build_world_panel()
 	_build_hint()
 	_build_load_overlay()
+	_build_online_overlay()
 
 
 func _build_toolbar() -> void:
@@ -1390,7 +1418,7 @@ func _build_toolbar() -> void:
 
 	_name_edit = LineEdit.new()
 	_name_edit.placeholder_text = "Level name"
-	_name_edit.custom_minimum_size = Vector2(210.0, 40.0)
+	_name_edit.custom_minimum_size = Vector2(190.0, 40.0)
 	_name_edit.max_length = 40
 	_name_edit.add_theme_font_override("font", UI_FONT)
 	_name_edit.add_theme_font_size_override("font_size", 20)
@@ -1418,6 +1446,10 @@ func _build_toolbar() -> void:
 	var load_btn := _make_button("LOAD", Vector2(84.0, 40.0))
 	load_btn.pressed.connect(_open_load_overlay)
 	row.add_child(load_btn)
+
+	var online_btn := _make_button("ONLINE", Vector2(88.0, 40.0))
+	online_btn.pressed.connect(_open_online_overlay)
+	row.add_child(online_btn)
 
 	var new_btn := _make_button("NEW", Vector2(78.0, 40.0))
 	new_btn.pressed.connect(_on_new_pressed)
@@ -1794,6 +1826,388 @@ func _build_load_overlay() -> void:
 	column.add_child(close_row)
 
 
+func _build_online_overlay() -> void:
+	_online_overlay = Control.new()
+	_online_overlay.name = "OnlineOverlay"
+	_online_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_online_overlay.visible = false
+	_ui_root.add_child(_online_overlay)
+
+	var dim := ColorRect.new()
+	dim.color = Color(0, 0, 0, 0.64)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	_online_overlay.add_child(dim)
+
+	var panel := _make_panel()
+	panel.anchor_left = 0.5
+	panel.anchor_top = 0.5
+	panel.anchor_right = 0.5
+	panel.anchor_bottom = 0.5
+	panel.offset_left = -340.0
+	panel.offset_top = -300.0
+	panel.offset_right = 340.0
+	panel.offset_bottom = 300.0
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	_online_overlay.add_child(panel)
+
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 8)
+	panel.add_child(column)
+
+	var title := Label.new()
+	title.text = "ONLINE LEVELS"
+	title.add_theme_font_override("font", UI_FONT)
+	title.add_theme_font_size_override("font_size", 28)
+	title.add_theme_color_override("font_color", ACCENT)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	column.add_child(title)
+
+	var tabs := HBoxContainer.new()
+	tabs.alignment = BoxContainer.ALIGNMENT_CENTER
+	tabs.add_theme_constant_override("separation", 8)
+	_online_tab_publish = _make_button("PUBLISH", Vector2(150.0, 38.0))
+	_online_tab_publish.pressed.connect(_show_online_publish)
+	tabs.add_child(_online_tab_publish)
+	_online_tab_browse = _make_button("BROWSE", Vector2(150.0, 38.0))
+	_online_tab_browse.pressed.connect(_show_online_browse)
+	tabs.add_child(_online_tab_browse)
+	column.add_child(tabs)
+
+	_online_publish_view = _build_online_publish_view()
+	column.add_child(_online_publish_view)
+	_online_browse_view = _build_online_browse_view()
+	_online_browse_view.visible = false
+	column.add_child(_online_browse_view)
+
+	var close_btn := _make_button("CLOSE", Vector2(140.0, 40.0))
+	close_btn.pressed.connect(_close_online_overlay)
+	var close_row := HBoxContainer.new()
+	close_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	close_row.add_child(close_btn)
+	column.add_child(close_row)
+
+
+func _build_online_publish_view() -> VBoxContainer:
+	var view := VBoxContainer.new()
+	view.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	view.add_theme_constant_override("separation", 5)
+
+	var intro := _make_form_label("Upload the level currently open in the editor. A deployed server URL can be baked into Project Settings as online/level_service_url, or typed here.")
+	intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	intro.custom_minimum_size = Vector2(0.0, 44.0)
+	view.add_child(intro)
+
+	view.add_child(_make_form_label("SERVER URL"))
+	_publish_server_edit = _make_line_edit(LevelShare.base_url, "https://your-level-server.example")
+	_publish_server_edit.max_length = 300
+	view.add_child(_publish_server_edit)
+
+	view.add_child(_make_form_label("AUTHOR"))
+	_publish_author_edit = _make_line_edit(LevelShare.author, "Your name")
+	_publish_author_edit.max_length = 40
+	view.add_child(_publish_author_edit)
+
+	view.add_child(_make_form_label("DESCRIPTION"))
+	_publish_description_edit = TextEdit.new()
+	_publish_description_edit.placeholder_text = "What should players know about this level?"
+	_publish_description_edit.custom_minimum_size = Vector2(0.0, 84.0)
+	_publish_description_edit.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
+	_publish_description_edit.add_theme_font_override("font", UI_FONT)
+	_publish_description_edit.add_theme_font_size_override("font_size", 18)
+	_publish_description_edit.add_theme_color_override("font_color", TEXT_COLOR)
+	_publish_description_edit.add_theme_color_override("font_placeholder_color", Color(0.78, 0.7, 0.6, 0.75))
+	_publish_description_edit.add_theme_color_override("caret_color", ACCENT)
+	_publish_description_edit.add_theme_stylebox_override("normal", _style(BUTTON_BG, PANEL_BORDER, 4))
+	_publish_description_edit.add_theme_stylebox_override("focus", _style(BUTTON_HOVER, ACCENT, 4))
+	view.add_child(_publish_description_edit)
+
+	var spacer := Control.new()
+	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	view.add_child(spacer)
+
+	_publish_status = Label.new()
+	_publish_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_publish_status.custom_minimum_size = Vector2(0.0, 44.0)
+	_publish_status.add_theme_font_override("font", UI_FONT)
+	_publish_status.add_theme_font_size_override("font_size", 17)
+	_publish_status.add_theme_color_override("font_color", Color(0.9, 0.82, 0.7))
+	view.add_child(_publish_status)
+
+	var action_row := HBoxContainer.new()
+	action_row.alignment = BoxContainer.ALIGNMENT_END
+	_publish_button = _make_button("PUBLISH LEVEL", Vector2(190.0, 42.0))
+	_publish_button.pressed.connect(_on_publish_pressed)
+	action_row.add_child(_publish_button)
+	view.add_child(action_row)
+	return view
+
+
+func _build_online_browse_view() -> VBoxContainer:
+	var view := VBoxContainer.new()
+	view.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	view.add_theme_constant_override("separation", 6)
+
+	var header := HBoxContainer.new()
+	header.add_theme_constant_override("separation", 8)
+	var heading := _make_form_label("COMMUNITY LEVELS")
+	heading.add_theme_color_override("font_color", ACCENT)
+	header.add_child(heading)
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header.add_child(spacer)
+	_browse_refresh_button = _make_button("REFRESH", Vector2(112.0, 36.0))
+	_browse_refresh_button.pressed.connect(_refresh_online_levels)
+	header.add_child(_browse_refresh_button)
+	view.add_child(header)
+
+	_browse_status = Label.new()
+	_browse_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_browse_status.custom_minimum_size = Vector2(0.0, 42.0)
+	_browse_status.add_theme_font_override("font", UI_FONT)
+	_browse_status.add_theme_font_size_override("font_size", 17)
+	_browse_status.add_theme_color_override("font_color", Color(0.9, 0.82, 0.7))
+	view.add_child(_browse_status)
+
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_browse_list = VBoxContainer.new()
+	_browse_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_browse_list.add_theme_constant_override("separation", 6)
+	scroll.add_child(_browse_list)
+	view.add_child(scroll)
+
+	var hint := _make_form_label("Loading a level downloads it into user://levels and opens it here. Press PLAY to try it, then SAVE to keep a local copy.")
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	hint.custom_minimum_size = Vector2(0.0, 38.0)
+	view.add_child(hint)
+	return view
+
+
+func _make_form_label(text: String) -> Label:
+	var label := Label.new()
+	label.text = text
+	label.add_theme_font_override("font", UI_FONT)
+	label.add_theme_font_size_override("font_size", 16)
+	label.add_theme_color_override("font_color", Color(0.84, 0.76, 0.65))
+	return label
+
+
+func _make_line_edit(value: String, placeholder: String) -> LineEdit:
+	var field := LineEdit.new()
+	field.text = value
+	field.placeholder_text = placeholder
+	field.custom_minimum_size = Vector2(0.0, 38.0)
+	field.add_theme_font_override("font", UI_FONT)
+	field.add_theme_font_size_override("font_size", 18)
+	field.add_theme_color_override("font_color", TEXT_COLOR)
+	field.add_theme_color_override("font_placeholder_color", Color(0.78, 0.7, 0.6, 0.75))
+	field.add_theme_color_override("caret_color", ACCENT)
+	field.add_theme_stylebox_override("normal", _style(BUTTON_BG, PANEL_BORDER, 4))
+	field.add_theme_stylebox_override("focus", _style(BUTTON_HOVER, ACCENT, 4))
+	return field
+
+
+func _open_online_overlay() -> void:
+	_publish_server_edit.text = LevelShare.base_url
+	_publish_author_edit.text = LevelShare.author
+	_publish_status.text = ""
+	_show_online_publish()
+	_online_overlay.visible = true
+
+
+func _close_online_overlay() -> void:
+	if _online_overlay != null:
+		_online_overlay.visible = false
+
+
+func _show_online_publish() -> void:
+	_online_publish_view.visible = true
+	_online_browse_view.visible = false
+	_online_tab_publish.modulate = Color.WHITE
+	_online_tab_browse.modulate = Color(0.72, 0.68, 0.62, 1.0)
+
+
+func _show_online_browse() -> void:
+	_online_publish_view.visible = false
+	_online_browse_view.visible = true
+	_online_tab_publish.modulate = Color(0.72, 0.68, 0.62, 1.0)
+	_online_tab_browse.modulate = Color.WHITE
+	# The Browse tab shares the server field with Publish, so a URL typed there
+	# takes effect without having to publish first. Switching servers also
+	# clears the old list rather than mixing two communities together.
+	var typed_server := _publish_server_edit.text.strip_edges()
+	if not typed_server.is_empty():
+		LevelShare.configure(typed_server, _publish_author_edit.text.strip_edges())
+	if _browse_server_url != LevelShare.base_url:
+		_browse_server_url = LevelShare.base_url
+		_clear_children(_browse_list)
+	if _browse_list.get_child_count() == 0:
+		_refresh_online_levels()
+
+
+func _on_publish_pressed() -> void:
+	_sync_level_name()
+	if _tiles.is_empty() and _enemies.is_empty() and _props.is_empty():
+		_publish_status.text = "Add a few blocks or entities before publishing."
+		return
+	var author := _publish_author_edit.text.strip_edges()
+	if author.is_empty():
+		author = "Anonymous"
+		_publish_author_edit.text = author
+	LevelShare.configure(_publish_server_edit.text, author)
+	_publish_server_edit.text = LevelShare.base_url
+	_publish_button.disabled = true
+	_publish_status.text = "Publishing to %s... (free servers may take ~1 min to wake)" % LevelShare.base_url
+	var result: Dictionary = await LevelShare.publish(
+			to_dict(), _level_name, author, _publish_description_edit.text)
+	_publish_button.disabled = false
+	if bool(result.get("ok", false)):
+		var level: Dictionary = result.get("level", {})
+		_publish_status.text = "Published! Level id: %s\nAnyone using %s can find it in BROWSE." % [
+			str(level.get("id", "")), LevelShare.base_url]
+		_toast("Published \"%s\" online" % _level_name)
+		# Force the next Browse visit to pick up the new entry.
+		_clear_children(_browse_list)
+	else:
+		_publish_status.text = "Publish failed: " + str(result.get("error", "Unknown error"))
+
+
+func _refresh_online_levels() -> void:
+	if _browse_refresh_button == null:
+		return
+	# A tab switch can ask for a refresh while an earlier one is still in
+	# flight. Only the newest request is allowed to fill the list, so a slow
+	# old response cannot append duplicates from the previous server.
+	_browse_request_serial += 1
+	var serial := _browse_request_serial
+	_browse_refresh_button.disabled = true
+	_browse_status.text = "Contacting %s... (free servers may take ~1 min to wake)" % LevelShare.base_url
+	_clear_children(_browse_list)
+	var result: Dictionary = await LevelShare.fetch_levels()
+	if serial != _browse_request_serial:
+		return
+	_browse_refresh_button.disabled = false
+	if not bool(result.get("ok", false)):
+		_browse_status.text = "Could not load community levels:\n" + str(result.get("error", "Unknown error"))
+		return
+	var levels: Array = result.get("levels", [])
+	var total := int(result.get("total", levels.size()))
+	_browse_status.text = "%d published level%s." % [total, "" if total == 1 else "s"]
+	if levels.is_empty():
+		var empty := _make_form_label("No levels have been published yet. Be the first!")
+		empty.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_browse_list.add_child(empty)
+		return
+	for raw_entry in levels:
+		if raw_entry is Dictionary:
+			_add_online_level_row(raw_entry)
+
+
+func _add_online_level_row(entry: Dictionary) -> void:
+	var card := VBoxContainer.new()
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	card.add_theme_constant_override("separation", 2)
+
+	var title := Label.new()
+	title.text = str(entry.get("name", "Untitled Level"))
+	title.add_theme_font_override("font", UI_FONT)
+	title.add_theme_font_size_override("font_size", 21)
+	title.add_theme_color_override("font_color", ACCENT)
+	card.add_child(title)
+
+	var created := str(entry.get("created_at", "")).left(10)
+	var downloads := int(entry.get("downloads", 0))
+	var byline := Label.new()
+	byline.text = "by %s  ·  %s  ·  %d download%s" % [
+		str(entry.get("author", "Anonymous")), created, downloads,
+		"" if downloads == 1 else "s"]
+	byline.add_theme_font_override("font", UI_FONT)
+	byline.add_theme_font_size_override("font_size", 15)
+	byline.add_theme_color_override("font_color", Color(0.74, 0.67, 0.58))
+	card.add_child(byline)
+
+	var description := Label.new()
+	var text := str(entry.get("description", "")).strip_edges()
+	description.text = text if not text.is_empty() else "No description."
+	description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	description.add_theme_font_override("font", UI_FONT)
+	description.add_theme_font_size_override("font_size", 16)
+	description.add_theme_color_override("font_color", Color(0.9, 0.84, 0.75))
+	card.add_child(description)
+
+	var load_button := _make_button("LOAD", Vector2(88.0, 38.0))
+	load_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	load_button.pressed.connect(_on_online_level_load.bind(str(entry.get("id", ""))))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	row.add_child(card)
+	row.add_child(load_button)
+	_browse_list.add_child(row)
+	_browse_list.add_child(HSeparator.new())
+
+
+func _on_online_level_load(level_id: String) -> void:
+	if not _valid_online_id(level_id):
+		_browse_status.text = "That level id is not valid."
+		return
+	_browse_status.text = "Downloading level..."
+	var result: Dictionary = await LevelShare.download_level(level_id)
+	if not bool(result.get("ok", false)):
+		_browse_status.text = "Could not load that level:\n" + str(result.get("error", "Unknown error"))
+		return
+	var data = result.get("data", null)
+	if not (data is Dictionary):
+		_browse_status.text = "That level did not contain readable JSON."
+		return
+	var path := "%s/community_%s.json" % [SAVE_DIR, level_id]
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	if file == null:
+		_browse_status.text = "Could not save the downloaded level."
+		return
+	file.store_string(JSON.stringify(data, "\t"))
+	file.close()
+
+	_push_undo()
+	if load_level(path):
+		_editor_camera.position = _spawn_point
+		var meta: Dictionary = result.get("level", {})
+		_close_online_overlay()
+		_toast("Loaded \"%s\" by %s" % [
+			str(meta.get("name", _level_name)), str(meta.get("author", "Anonymous"))])
+		_mark_dirty()
+	else:
+		_browse_status.text = "Downloaded, but the level could not be read."
+
+
+func _sync_level_name() -> void:
+	_level_name = _name_edit.text.strip_edges()
+	if _level_name.is_empty():
+		_level_name = DEFAULT_LEVEL_NAME
+		_name_edit.text = _level_name
+
+
+func _clear_children(parent: Node) -> void:
+	for child in parent.get_children():
+		parent.remove_child(child)
+		child.queue_free()
+
+
+func _valid_online_id(level_id: String) -> bool:
+	if level_id.is_empty() or level_id.length() > 64:
+		return false
+	for i in level_id.length():
+		var ch := level_id.substr(i, 1)
+		var allowed := (ch >= "a" and ch <= "z") \
+				or (ch >= "A" and ch <= "Z") \
+				or (ch >= "0" and ch <= "9") \
+				or ch == "_" or ch == "-"
+		if not allowed:
+			return false
+	return true
+
+
 func _make_panel() -> PanelContainer:
 	var panel := PanelContainer.new()
 	panel.add_theme_stylebox_override("panel", _style(PANEL_BG, PANEL_BORDER, 4))
@@ -2093,10 +2507,7 @@ func _on_vignette_changed(value: float) -> void:
 
 
 func _on_save_pressed() -> void:
-	_level_name = _name_edit.text.strip_edges()
-	if _level_name.is_empty():
-		_level_name = DEFAULT_LEVEL_NAME
-		_name_edit.text = _level_name
+	_sync_level_name()
 	var path := "%s/%s.json" % [SAVE_DIR, _slug(_level_name)]
 	if save_level(path):
 		_toast("Saved \"%s\"" % _level_name)

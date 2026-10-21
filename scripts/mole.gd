@@ -100,6 +100,36 @@ const BounceMushroom := preload("res://scripts/bounce_mushroom.gd")
 const ShinyLure := preload("res://scripts/shiny_lure.gd")
 const CompassCharm := preload("res://scripts/compass_charm.gd")
 const EnemyDamage := preload("res://scripts/enemy.gd")
+const AimPreview := preload("res://scripts/projectile_aim_preview.gd")
+
+## Throw tuning shared by the actual launch and the aim preview, so the dotted
+## path can never drift away from where the projectile really goes.
+const THROW_SPEED := 600.0
+const THROW_START_OFFSET := Vector2(0, -40)
+const BOMB_PREVIEW_TIME := 2.5
+const DRILL_PREVIEW_SPEED := 1000.0
+const DRILL_PREVIEW_TIME := 1.0
+const MUSHROOM_PREVIEW_SPEED := 420.0
+const MUSHROOM_PREVIEW_GRAVITY := 900.0
+const MUSHROOM_PREVIEW_FORWARD := 90.0
+const MUSHROOM_PREVIEW_LIFT := Vector2(0, -140)
+const MUSHROOM_PREVIEW_TIME := 2.5
+const AIM_PREVIEW_MAX_RANGE := 1600.0
+## Items that are thrown or launched toward the cursor. Holding the mouse button
+## with one of these selected shows the trail; releasing performs the throw.
+const AIMED_ITEMS := [
+	"Bomb", "Ice Bomb", "Drill", "Golden Bomb", "Spark Bomb", "Mine",
+	"Stink Bomb", "Flare", "Coal Lump", "Bounce Mushroom",
+]
+
+var _aiming_throw := false
+var _aim_slot := -1
+var _aim_item_name := ""
+var _aim_preview: Node2D = null
+## Tracked from the button events instead of polling Input: mobile controls feed
+## emulated clicks through Viewport.push_input(), which deliberately does not
+## update Input's global mouse-button state.
+var _left_mouse_down := false
 var was_on_floor := true
 var is_sideways_jump := false
 var is_digging := false
@@ -397,7 +427,213 @@ func _setup_held_item_sprites() -> void:
 func _aim_pos() -> Vector2:
 	return get_global_mouse_position()
 
+func _aim_direction() -> Vector2:
+	var to_mouse := _aim_pos() - global_position
+	if to_mouse.length_squared() < 0.0001:
+		return Vector2.RIGHT
+	return to_mouse.normalized()
+
+## Starts a held throw: the item is not spent yet. The dotted path follows the
+## cursor until the button comes back up, and _finish_throw_aim() launches it.
+func _begin_throw_aim(slot: int, item_name: String) -> void:
+	_aiming_throw = true
+	_aim_slot = slot
+	_aim_item_name = item_name
+	if _aim_preview == null or not is_instance_valid(_aim_preview):
+		_aim_preview = AimPreview.new()
+		_aim_preview.name = "ThrowAimPreview"
+		_aim_preview.top_level = true
+		_aim_preview.z_index = 40
+		get_parent().add_child(_aim_preview)
+		_aim_preview.global_position = Vector2.ZERO
+	_update_throw_aim()
+
+func _cancel_throw_aim() -> void:
+	_aiming_throw = false
+	_aim_slot = -1
+	_aim_item_name = ""
+	if _aim_preview != null and is_instance_valid(_aim_preview):
+		_aim_preview.queue_free()
+	_aim_preview = null
+
+func _throw_aim_blocked() -> bool:
+	return _dying or _gliding_to_next_scene or DialogueBox.is_open() \
+			or is_digging or is_tunneling or is_ground_pounding
+
+## Rebuilds the dotted path every frame while the button is down. Everything
+## that would invalidate the throw (selection lost, dialogue open, death, scene
+## change, digging) cancels the aim instead of silently throwing later.
+func _update_throw_aim() -> void:
+	if not _aiming_throw:
+		return
+	# A pause menu or lost focus can eat the release event. Once the button is
+	# genuinely up again, drop the preview instead of leaving it stuck on screen;
+	# a deliberate cancel is safer than throwing when play resumes.
+	if not _left_mouse_down:
+		_cancel_throw_aim()
+		return
+	if _throw_aim_blocked():
+		_cancel_throw_aim()
+		return
+	var slot := Inventory.selected_slot
+	if slot != _aim_slot or slot < 0 or slot >= Inventory.slots.size():
+		_cancel_throw_aim()
+		return
+	var item: ItemData = Inventory.slots[slot]
+	if item == null or item.item_name != _aim_item_name:
+		_cancel_throw_aim()
+		return
+	if _aim_preview == null or not is_instance_valid(_aim_preview):
+		return
+	_aim_preview.call("show_path", _build_aim_path(_aim_item_name), _preview_colour(_aim_item_name))
+
+func _finish_throw_aim() -> void:
+	if not _aiming_throw:
+		return
+	var slot := _aim_slot
+	var item_name := _aim_item_name
+	_cancel_throw_aim()
+	if _throw_aim_blocked():
+		return
+	if slot < 0 or slot >= Inventory.slots.size() or Inventory.selected_slot != slot:
+		return
+	var item: ItemData = Inventory.slots[slot]
+	if item == null or item.item_name != item_name:
+		return
+	match item_name:
+		"Bomb":
+			_throw_bomb()
+		"Ice Bomb":
+			_throw_ice_bomb()
+		"Drill":
+			_deploy_drill()
+		"Golden Bomb":
+			_launch_custom(GoldenBomb)
+		"Spark Bomb":
+			_launch_custom(SparkBomb)
+		"Mine":
+			_launch_custom(Mine)
+		"Stink Bomb":
+			_launch_custom(StinkBomb)
+		"Flare":
+			_launch_custom(Flare)
+		"Coal Lump":
+			_launch_custom(CoalLump)
+		"Bounce Mushroom":
+			if Inventory.use_item(slot):
+				_deploy_mushroom()
+
+func _build_aim_path(item_name: String) -> PackedVector2Array:
+	if item_name == "Drill":
+		# The drill chews through blocks, so its preview ignores terrain and runs
+		# the full one-second burst.
+		return _straight_preview(global_position + THROW_START_OFFSET, _aim_direction(), DRILL_PREVIEW_SPEED * DRILL_PREVIEW_TIME)
+	if item_name == "Bounce Mushroom":
+		var direction := _aim_direction()
+		var start := global_position + direction * MUSHROOM_PREVIEW_FORWARD + MUSHROOM_PREVIEW_LIFT
+		return _ballistic_preview(start, direction * MUSHROOM_PREVIEW_SPEED, Vector2(0, MUSHROOM_PREVIEW_GRAVITY), MUSHROOM_PREVIEW_TIME)
+	# Everything else thrown shares the player-bomb launch and gravity.
+	return _ballistic_preview(global_position + THROW_START_OFFSET, _aim_direction() * THROW_SPEED, _aim_gravity(), BOMB_PREVIEW_TIME)
+
+func _aim_gravity() -> Vector2:
+	var magnitude := float(ProjectSettings.get_setting("physics/2d/default_gravity", 980.0))
+	var direction: Vector2 = ProjectSettings.get_setting("physics/2d/default_gravity_vector", Vector2.DOWN)
+	if direction == Vector2.ZERO:
+		direction = Vector2.DOWN
+	return direction.normalized() * magnitude
+
+func _straight_preview(start: Vector2, direction: Vector2, length: float) -> PackedVector2Array:
+	return PackedVector2Array([start, start + direction * length])
+
+func _ballistic_preview(start: Vector2, initial_velocity: Vector2, gravity: Vector2, max_time: float) -> PackedVector2Array:
+	var points := PackedVector2Array([start])
+	var position := start
+	var velocity := initial_velocity
+	const STEP := 1.0 / 60.0
+	var travelled := 0.0
+	for _i in maxi(1, int(max_time / STEP)):
+		var previous := position
+		position += velocity * STEP + gravity * (0.5 * STEP * STEP)
+		velocity += gravity * STEP
+		if travelled > 12.0:
+			var hit = _first_solid_point(previous, position)
+			if hit != null:
+				points.append(hit as Vector2)
+				break
+		points.append(position)
+		travelled += previous.distance_to(position)
+		if travelled >= AIM_PREVIEW_MAX_RANGE:
+			break
+	return points
+
+func _first_solid_point(from: Vector2, to: Vector2) -> Variant:
+	var distance := from.distance_to(to)
+	if distance <= 0.0:
+		return null
+	var samples := maxi(1, int(ceil(distance / 20.0)))
+	for i in range(1, samples + 1):
+		var point := from.lerp(to, float(i) / samples)
+		if _aim_point_is_solid(point):
+			return point
+	return null
+
+func _aim_point_is_solid(point: Vector2) -> bool:
+	if tilemap == null:
+		return false
+	var tile := tilemap.local_to_map(tilemap.to_local(point))
+	return tilemap.get_cell_source_id(0, tile) != -1
+
+func _preview_colour(item_name: String) -> Color:
+	match item_name:
+		"Ice Bomb":
+			return Color(0.55, 0.92, 1.0)
+		"Drill":
+			return Color(1.0, 0.9, 0.35)
+		"Golden Bomb":
+			return Color(1.0, 0.8, 0.25)
+		"Spark Bomb":
+			return Color(0.65, 0.85, 1.0)
+		"Mine":
+			return Color(0.72, 0.72, 0.78)
+		"Stink Bomb":
+			return Color(0.55, 0.9, 0.45)
+		"Flare":
+			return Color(1.0, 0.55, 0.2)
+		"Coal Lump":
+			return Color(0.82, 0.72, 0.58)
+		"Bounce Mushroom":
+			return Color(0.95, 0.65, 0.8)
+		_:
+			return Color(1.0, 0.62, 0.3)
+
+func _is_aimed_item(item_name: String) -> bool:
+	return item_name in AIMED_ITEMS
+
+func _press_on_blocking_control(pos: Vector2) -> bool:
+	# Hover is refreshed by mouse motion, so a touch tap (or a click that moved
+	# and pressed in one frame) can reach _input before gui_get_hovered_control
+	# knows where it landed. Walk the visible Controls and hit-test the event
+	# position instead: any STOP control under it would consume the click, and
+	# throwing over a hotbar slot would both spend the item and swallow the
+	# slot press.
+	for node in get_tree().root.find_children("*", "Control", true, false):
+		var control := node as Control
+		if control == null or not control.is_visible_in_tree():
+			continue
+		if control.mouse_filter == Control.MOUSE_FILTER_STOP and control.get_global_rect().has_point(pos):
+			return true
+	return false
+
+func _notification(what: int) -> void:
+	# Pausing or losing the window can eat the mouse-up. Forget the held state
+	# and put the preview away rather than leaving it frozen or throwing later.
+	if what == NOTIFICATION_PAUSED or what == NOTIFICATION_UNPAUSED \
+			or what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+		_left_mouse_down = false
+		_cancel_throw_aim()
+
 func _process(_delta: float) -> void:
+	_update_throw_aim()
 	var slot := Inventory.selected_slot
 	if slot < 0 or slot >= Inventory.slots.size():
 		return
@@ -532,6 +768,7 @@ func _setup_level_reverb() -> void:
 ## through the closing circle. Only ever called by a scene transition, on the
 ## level being left - the level being entered starts from its own spawn.
 func glide_into_next_scene() -> void:
+	_cancel_throw_aim()
 	_glide_direction = Input.get_axis("ui_left", "ui_right")
 	_gliding_to_next_scene = true
 
@@ -788,7 +1025,15 @@ func _input(event: InputEvent) -> void:
 			SFX.play_ui("ui_click", -12.0, 1.2)
 		get_viewport().set_input_as_handled()
 		return
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		_left_mouse_down = event.pressed
+		if not event.pressed:
+			# The throw waits for the button to come back up so the dotted path
+			# has time to follow the cursor. A quick tap still throws normally.
+			if _aiming_throw:
+				_finish_throw_aim()
+				get_viewport().set_input_as_handled()
+			return
 		# Reading and fighting at the same time is not a thing. NPC conversations
 		# keep the tree running on purpose, so this has to be asked of the box
 		# directly rather than inherited from the pause state.
@@ -797,6 +1042,10 @@ func _input(event: InputEvent) -> void:
 		# Touches on the mobile controls also arrive as emulated mouse clicks;
 		# they belong to the controls, not to the world.
 		if MobileControls.is_over_control(event.position):
+			return
+		# Buttons own presses that land on them, including the hotbar: without
+		# this a click to select a bomb would throw the bomb already in hand.
+		if _press_on_blocking_control(event.position):
 			return
 		# A press on an NPC or a chest belongs to that interactable: it must not
 		# spend the held item or count as a dig_slash either. Declined only -
@@ -811,34 +1060,13 @@ func _input(event: InputEvent) -> void:
 		if not can_break and (item.item_name == "Bomb" or item.item_name == "Ice Bomb" or item.item_name == "Drill" \
 				or item.item_name == "Golden Bomb" or item.item_name == "Mine"):
 			return
+		# Aimed throws do not fire yet: the press begins the preview and the
+		# release beneath this function launches the projectile.
+		if _is_aimed_item(item.item_name):
+			_begin_throw_aim(slot, item.item_name)
+			get_viewport().set_input_as_handled()
+			return
 		match item.item_name:
-			"Bomb":
-				_throw_bomb()
-				get_viewport().set_input_as_handled()
-			"Ice Bomb":
-				_throw_ice_bomb()
-				get_viewport().set_input_as_handled()
-			"Drill":
-				_deploy_drill()
-				get_viewport().set_input_as_handled()
-			"Golden Bomb":
-				_launch_custom(GoldenBomb)
-				get_viewport().set_input_as_handled()
-			"Spark Bomb":
-				_launch_custom(SparkBomb)
-				get_viewport().set_input_as_handled()
-			"Mine":
-				_launch_custom(Mine)
-				get_viewport().set_input_as_handled()
-			"Stink Bomb":
-				_launch_custom(StinkBomb)
-				get_viewport().set_input_as_handled()
-			"Flare":
-				_launch_custom(Flare)
-				get_viewport().set_input_as_handled()
-			"Coal Lump":
-				_launch_custom(CoalLump)
-				get_viewport().set_input_as_handled()
 			"Vacuum Jelly":
 				Inventory.use_item(slot)
 				_use_vacuum()
@@ -846,10 +1074,6 @@ func _input(event: InputEvent) -> void:
 			"Shop Token":
 				Inventory.use_item(slot)
 				_use_shop_token()
-				get_viewport().set_input_as_handled()
-			"Bounce Mushroom":
-				Inventory.use_item(slot)
-				_deploy_mushroom()
 				get_viewport().set_input_as_handled()
 			"Shiny Lure":
 				Inventory.use_item(slot)
@@ -998,9 +1222,8 @@ func _deploy_drill() -> void:
 	Inventory.selected_slot = -1
 	var drill = drill_scene.instantiate()
 	get_parent().add_child(drill)
-	drill.global_position = global_position + Vector2(0, -40)
-	var dir := (_aim_pos() - global_position).normalized()
-	drill.setup(dir)
+	drill.global_position = global_position + THROW_START_OFFSET
+	drill.setup(_aim_direction())
 
 func _throw_bomb() -> void:
 	if not Inventory.use_item(Inventory.selected_slot):
@@ -1008,9 +1231,8 @@ func _throw_bomb() -> void:
 	Inventory.selected_slot = -1
 	var bomb = bomb_scene.instantiate()
 	get_parent().add_child(bomb)
-	bomb.global_position = global_position + Vector2(0, -40)
-	var dir := (_aim_pos() - global_position).normalized()
-	bomb.linear_velocity = dir * 600.0
+	bomb.global_position = global_position + THROW_START_OFFSET
+	bomb.linear_velocity = _aim_direction() * THROW_SPEED
 	bomb.arm()
 
 func _throw_ice_bomb() -> void:
@@ -1019,9 +1241,8 @@ func _throw_ice_bomb() -> void:
 	Inventory.selected_slot = -1
 	var bomb = ice_bomb_scene.instantiate()
 	get_parent().add_child(bomb)
-	bomb.global_position = global_position + Vector2(0, -40)
-	var dir := (_aim_pos() - global_position).normalized()
-	bomb.linear_velocity = dir * 600.0
+	bomb.global_position = global_position + THROW_START_OFFSET
+	bomb.linear_velocity = _aim_direction() * THROW_SPEED
 	bomb.arm()
 
 func heal(amount: float) -> bool:
@@ -1249,6 +1470,7 @@ func _die() -> void:
 	if _dying:
 		return
 	_dying = true
+	_cancel_throw_aim()
 	is_digging = false
 	is_tunneling = false
 	is_ground_pounding = false
@@ -1861,9 +2083,8 @@ func _launch_custom(script: Script) -> void:
 	Inventory.selected_slot = -1
 	var obj: RigidBody2D = script.new()
 	get_parent().add_child(obj)
-	obj.global_position = global_position + Vector2(0, -40)
-	var dir := (_aim_pos() - global_position).normalized()
-	obj.linear_velocity = dir * 600.0
+	obj.global_position = global_position + THROW_START_OFFSET
+	obj.linear_velocity = _aim_direction() * THROW_SPEED
 	obj.arm()
 
 func _use_vacuum() -> void:
@@ -1880,11 +2101,9 @@ func _deploy_mushroom() -> void:
 	Inventory.selected_slot = -1
 	var shroom: CharacterBody2D = BounceMushroom.new()
 	get_parent().add_child(shroom)
-	var dir := (_aim_pos() - global_position).normalized()
-	if dir == Vector2.ZERO:
-		dir = Vector2.RIGHT
-	shroom.global_position = global_position + dir * 90.0 + Vector2(0, -140)
-	shroom.velocity = dir * 420.0
+	var dir := _aim_direction()
+	shroom.global_position = global_position + dir * MUSHROOM_PREVIEW_FORWARD + MUSHROOM_PREVIEW_LIFT
+	shroom.velocity = dir * MUSHROOM_PREVIEW_SPEED
 
 func _deploy_lure() -> void:
 	Inventory.selected_slot = -1

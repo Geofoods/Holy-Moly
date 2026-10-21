@@ -37,9 +37,11 @@ QuestNotifications="*res://scripts/quest_notifications.gd"
 FrozenTiles="*res://scripts/frozen_tiles.gd"
 Lighting="*res://scripts/scene_lighting.gd"
 Net="*res://scripts/net.gd"
+LevelShare="*res://scripts/level_share.gd"
 
 [display]
 
+window/size/mode=4
 window/stretch/mode="viewport"
 
 [editor_plugins]
@@ -53,6 +55,10 @@ interact={
 "events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":69,"key_label":0,"unicode":101,"location":0,"echo":false,"script":null)
 ]
 }
+
+[online]
+
+level_service_url="http://127.0.0.1:8787"
 
 [physics]
 
