@@ -120,7 +120,9 @@ G: Toggle the grid
 The WORLD panel on the right sets the level's look. Pick one of the three
 parallax backdrops (Teal, Purple, Red), then drag the VIGNETTE slider to choose
 how hard the filter bites: 0% leaves the screen clean, 100% blacks the corners
-out completely. Both settings are previewed live and saved with the level.
+out completely. The FIREFLIES button turns the drifting fireflies on or off; they
+preview live around the editor camera and follow the mole during a playtest. All
+three settings are saved with the level.
 
 Levels are saved under the game's user data folder as small JSON files, and the
 editor autosaves a working copy after every edit, so a playtest never costs you

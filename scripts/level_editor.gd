@@ -16,9 +16,9 @@ extends Node2D
 ## right button. The middle mouse button drags the view (WASD/arrows pan too), the
 ## wheel zooms, Ctrl+Z undoes and G toggles the grid.
 ##
-## The WORLD panel picks which parallax backdrop the level uses and how hard
-## the vignette filter bites, so a level's look is authored right alongside its
-## geometry.
+## The WORLD panel picks which parallax backdrop the level uses, how hard the
+## vignette filter bites, and whether fireflies drift through it, so a level's
+## look is authored right alongside its geometry.
 ##
 ## The ITEMS tab also carries the bits of a level that are not just things to
 ## walk into: a Portal, the way out; a Respawn Station, the checkpoint a playtest
@@ -155,6 +155,7 @@ var _spawn_point := Vector2.ZERO
 var _level_name := DEFAULT_LEVEL_NAME
 var _background_index := 0
 var _vignette := DEFAULT_VIGNETTE
+var _fireflies := true
 
 var _tool := TOOL_BLOCK
 var _tab := TAB_BLOCKS
@@ -243,6 +244,8 @@ var _rect_btn: Button = null
 var _world_panel: PanelContainer = null
 var _vignette_slider: HSlider = null
 var _vignette_value: Label = null
+var _firefly_btn: Button = null
+var _firefly_spawner: Node2D = null
 var _load_overlay: Control = null
 var _load_list: VBoxContainer = null
 var _online_overlay: Control = null
@@ -277,6 +280,7 @@ func _ready() -> void:
 	_build_ui()
 	_setup_palette()
 	_setup_backgrounds()
+	_setup_fireflies()
 
 	if FileAccess.file_exists(AUTOSAVE_PATH):
 		load_level(AUTOSAVE_PATH)
@@ -314,6 +318,7 @@ func _new_level(with_floor: bool) -> void:
 		_name_edit.text = _level_name
 	_background_index = 0
 	_vignette = DEFAULT_VIGNETTE
+	_fireflies = true
 	if with_floor:
 		for x in NEW_FLOOR_WIDTH:
 			_tiles[Vector2i(x, NEW_FLOOR_ROW)] = Vector3i(TERRAIN_SOURCE, 0, 0)
@@ -447,9 +452,27 @@ func _setup_backgrounds() -> void:
 	_apply_world()
 
 
+## The editor's own firefly swarm follows the camera while the author works and
+## the preview mole during a playtest, so the toggle previews exactly what plays.
+func _setup_fireflies() -> void:
+	var packed := load("res://scenes/firefly_spawner.tscn") as PackedScene
+	if packed == null:
+		return
+	_firefly_spawner = packed.instantiate() as Node2D
+	if _firefly_spawner == null:
+		return
+	_firefly_spawner.name = "FireflySpawner"
+	add_child(_firefly_spawner)
+	# Keep fireflies below the editor's grid/marker overlay.
+	if _overlay != null:
+		move_child(_firefly_spawner, _overlay.get_index())
+	_apply_fireflies()
+
+
 func _apply_world() -> void:
 	_apply_background()
 	_apply_vignette()
+	_apply_fireflies()
 	_refresh_world_ui()
 
 
@@ -473,6 +496,22 @@ func _apply_vignette() -> void:
 		material.set_shader_parameter("darkness", _vignette)
 
 
+func _firefly_focus() -> Node2D:
+	if _playing and is_instance_valid(_mole):
+		return _mole
+	return _editor_camera
+
+
+func _apply_fireflies() -> void:
+	if _firefly_spawner == null:
+		return
+	_firefly_spawner.visible = _fireflies
+	_firefly_spawner.process_mode = (
+			Node.PROCESS_MODE_INHERIT if _fireflies
+			else Node.PROCESS_MODE_DISABLED)
+	_firefly_spawner.call("set_focus_override", _firefly_focus())
+
+
 func _refresh_world_ui() -> void:
 	for i in _background_buttons.size():
 		var button: Button = _background_buttons[i]
@@ -481,6 +520,9 @@ func _refresh_world_ui() -> void:
 		_vignette_slider.set_value_no_signal(_vignette)
 	if _vignette_value != null:
 		_vignette_value.text = "%d%%" % roundi(_vignette * 100.0)
+	if _firefly_btn != null:
+		_firefly_btn.button_pressed = _fireflies
+		_firefly_btn.text = "Fireflies: ON" if _fireflies else "Fireflies: OFF"
 
 
 # ------------------------------------------------------------------- painting
@@ -687,6 +729,7 @@ func to_dict() -> Dictionary:
 		"props": props,
 		"background": _background_index,
 		"vignette": _vignette,
+		"fireflies": _fireflies,
 	}
 
 
@@ -739,6 +782,7 @@ func from_dict(data: Dictionary) -> bool:
 		_name_edit.text = _level_name
 	_background_index = clampi(int(data.get("background", 0)), 0, BACKGROUND_CATALOG.size() - 1)
 	_vignette = clampf(float(data.get("vignette", DEFAULT_VIGNETTE)), 0.0, 1.0)
+	_fireflies = bool(data.get("fireflies", true))
 	_apply_level()
 	_apply_world()
 	return true
@@ -836,6 +880,7 @@ func start_playtest() -> void:
 	_snapshot_shop()
 	_create_playtest_hud()
 	_spawn_preview_mole()
+	_apply_fireflies()
 	_create_pit()
 	_overlay.queue_redraw()
 
@@ -848,6 +893,7 @@ func stop_playtest() -> void:
 	_clear_pit()
 	_clear_playtest_hud()
 	_clear_preview_mole()
+	_apply_fireflies()
 	_release_borrowed_state()
 	# A playtest is a preview: digging, broken tiles and enemies that wandered
 	# off are all rolled back to what the author actually placed.
@@ -1696,6 +1742,16 @@ func _build_world_panel() -> void:
 	_vignette_value.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	column.add_child(_vignette_value)
 
+	column.add_child(_heading_label("FIREFLIES"))
+
+	_firefly_btn = _make_button("Fireflies: ON", Vector2(232.0, 44.0))
+	_firefly_btn.toggle_mode = true
+	_firefly_btn.button_pressed = _fireflies
+	_firefly_btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_firefly_btn.tooltip_text = "Show drifting fireflies in the editor and during playtests"
+	_firefly_btn.pressed.connect(_on_fireflies_pressed)
+	column.add_child(_firefly_btn)
+
 
 func _section_label(text: String) -> Label:
 	var label := Label.new()
@@ -2484,6 +2540,13 @@ func _on_vignette_changed(value: float) -> void:
 	_apply_vignette()
 	if _vignette_value != null:
 		_vignette_value.text = "%d%%" % roundi(value * 100.0)
+	_mark_dirty()
+
+
+func _on_fireflies_pressed() -> void:
+	_fireflies = _firefly_btn.button_pressed
+	_apply_fireflies()
+	_refresh_world_ui()
 	_mark_dirty()
 
 
