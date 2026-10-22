@@ -1,8 +1,9 @@
 # Holy Moley community level service
 
-This is the small HTTP service behind the editor's **ONLINE** panel. It accepts
-published Level Forge JSON, lists what has been published, and serves a level
-back when someone presses **LOAD**.
+This is the small HTTP service behind the editor's **ONLINE** panel and the
+title-screen **Level Browser**. It accepts published Level Forge JSON, lists
+what has been published, serves a level back when someone presses **LOAD** or
+**PLAY**, and keeps a like count for each level.
 
 It uses only the Python standard library. Levels live in one JSON document,
 either in a local file under the data directory or in a free Upstash Redis
@@ -71,8 +72,8 @@ database for storage.
 Free-tier expectations:
 
 - Upstash free currently includes 250 MB of data, 500K commands/month and 10 GB
-  of bandwidth/month. A publish or download writes the document once; listing is
-  served from memory. Startup reads the document once.
+  of bandwidth/month. A publish, download or like writes the document once;
+  listing is served from memory. Startup reads the document once.
 - Render free web services spin down after 15 minutes without traffic. The first
   request afterward takes roughly a minute to wake the service; the levels in
   Upstash are unaffected.
@@ -92,13 +93,20 @@ browser page cannot call an `http://` server from an `https://` page.
 | --- | --- | --- |
 | `GET` | `/health` | Liveness check |
 | `GET` | `/` | Small HTML gallery of published levels |
-| `GET` | `/api/levels?limit=50&offset=0` | Level summaries, newest first |
+| `GET` | `/api/levels?limit=50&offset=0&sort=newest` | Level summaries; `sort` is `newest`, `downloads` or `likes` |
 | `POST` | `/api/levels` | Publish `{name, author, description, level}` |
 | `GET` | `/api/levels/{id}` | Full level and metadata; increments downloads |
+| `POST` | `/api/levels/{id}/like` | Like or unlike `{liked, voter}` and return the updated summary |
 
 IDs are 12 lowercase hex characters. The server caps request bodies at 1 MB,
 limits block/enemy/prop counts, and rejects payloads without `blocks` and
 `enemies` arrays.
+
+Likes are keyed by a random installation id (`voter`) generated and stored by
+the game in `user://level_share.cfg`. Sending the same voter again with
+`"liked": true` is idempotent, and `"liked": false` removes that installation's
+like. There are still no accounts: clearing the config or another copy of the
+game looks like a new voter to the server.
 
 ## Operational notes
 

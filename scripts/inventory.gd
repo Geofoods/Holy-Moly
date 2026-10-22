@@ -10,6 +10,7 @@ signal player_died
 
 const MAX_SLOTS := 4
 const MAX_HEALTH := 12.0
+const SHOVEL_ITEM := preload("res://resources/shovel.tres")
 
 var slots: Array = [null, null, null, null]
 var slot_counts: Array = [0, 0, 0, 0]
@@ -84,11 +85,28 @@ var refund_chance := 0.0
 var _initialized := false
 
 func initialize() -> void:
-	if _initialized:
-		return
+	var first_time := not _initialized
 	_initialized = true
-	var shovel := preload("res://resources/shovel.tres")
-	add_item(shovel)
+	if _ensure_shovel() and first_time:
+		SFX.play_ui("item_pickup")
+
+
+## Slot 0 is the weapon slot: the mole hides its held tool when that slot is
+## empty. A borrowed playtest inventory can put the hotbar back to all-empty
+## while `_initialized` stays true, so re-check the weapon slot on every
+## initialize rather than only on the first one; otherwise the next playtest
+## starts with no shovel in hand.
+func _ensure_shovel() -> bool:
+	if slots.size() < MAX_SLOTS:
+		slots.resize(MAX_SLOTS)
+	if slot_counts.size() < MAX_SLOTS:
+		slot_counts.resize(MAX_SLOTS)
+	if slots[0] == null:
+		slots[0] = SHOVEL_ITEM
+		slot_counts[0] = 1
+		slots_changed.emit([0])
+		return true
+	return false
 
 func reset() -> void:
 	clear()

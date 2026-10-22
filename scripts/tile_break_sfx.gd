@@ -2,6 +2,24 @@ extends Node
 
 enum TileType { DIRT, STONE, CORRUPTED, CRYSTAL, MUSHROOM, WOOD }
 
+## Finds the level's terrain map from anywhere inside the scene. Blasts are often
+## spawned into a container -- Level Forge puts goblin mushrooms under `Entities`
+## -- so looking only at the blast's direct parent misses the TileMap and leaves
+## the explosion without a crater. Walking up to the owning scene finds the map
+## in both campaign levels and editor playtests.
+static func find_level_tilemap(from: Node) -> TileMap:
+	var current := from
+	while current != null:
+		var direct := current.get_node_or_null("TileMap") as TileMap
+		if direct != null:
+			return direct
+		current = current.get_parent()
+	if is_instance_valid(from) and from.get_tree() != null:
+		var scene := from.get_tree().current_scene
+		if scene != null:
+			return scene.get_node_or_null("TileMap") as TileMap
+	return null
+
 const SOUNDS := {
 	TileType.DIRT: [
 		preload("res://sounds/break_dirt_1.ogg"),

@@ -91,47 +91,33 @@ corner_radius_bottom_left = 8
 shadow_color = Color(0, 0, 0, 0.4)
 shadow_size = 6
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bossrushbutton"]
-bg_color = Color(0.72, 0.1, 0.18, 1)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_browserbutton"]
+bg_color = Color(0.12, 0.36, 0.5, 1)
 border_width_left = 3
 border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
-border_color = Color(1, 0.3, 0.4, 0.4)
+border_color = Color(0.38, 0.82, 1, 0.45)
 corner_radius_top_left = 12
 corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
-shadow_color = Color(0.9, 0.1, 0.2, 0.35)
+shadow_color = Color(0.1, 0.55, 0.9, 0.35)
 shadow_size = 8
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bossrushbutton_hover"]
-bg_color = Color(1, 0.2, 0.3, 1)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_browserbutton_hover"]
+bg_color = Color(0.16, 0.5, 0.68, 1)
 border_width_left = 3
 border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
-border_color = Color(1, 0.5, 0.6, 1)
+border_color = Color(0.55, 0.9, 1, 1)
 corner_radius_top_left = 12
 corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
-shadow_color = Color(0.9, 0.1, 0.2, 0.5)
+shadow_color = Color(0.1, 0.65, 1, 0.5)
 shadow_size = 12
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bossrushbutton_locked"]
-bg_color = Color(0.24, 0.25, 0.28, 1)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.48, 0.5, 0.54, 0.6)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-shadow_color = Color(0, 0, 0, 0.3)
-shadow_size = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_creditsbutton"]
 bg_color = Color(0.13, 0.12, 0.24, 1)
@@ -242,22 +228,20 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_playbutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_playbutton_hover")
 text = "PLAY"
 
-[node name="BossRushButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer" unique_id=1148290357]
+[node name="LevelBrowserButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer" unique_id=1148290357]
 custom_minimum_size = Vector2(180, 70)
 layout_mode = 2
 size_flags_horizontal = 0
-theme_override_colors/font_color = Color(1, 0.88, 0.88, 1)
-theme_override_colors/font_disabled_color = Color(0.55, 0.57, 0.6, 1)
+theme_override_colors/font_color = Color(0.82, 0.95, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_fonts/font = ExtResource("6_es01l")
 theme_override_font_sizes/font_size = 24
-theme_override_styles/normal = SubResource("StyleBoxFlat_bossrushbutton")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_bossrushbutton_hover")
-theme_override_styles/hover = SubResource("StyleBoxFlat_bossrushbutton_hover")
-theme_override_styles/focus = SubResource("StyleBoxFlat_bossrushbutton_hover")
-theme_override_styles/disabled = SubResource("StyleBoxFlat_bossrushbutton_locked")
-tooltip_text = "Boss Rush - unlocked once you beat the final boss"
-text = "BOSS RUSH"
+theme_override_styles/normal = SubResource("StyleBoxFlat_browserbutton")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_browserbutton_hover")
+theme_override_styles/hover = SubResource("StyleBoxFlat_browserbutton_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_browserbutton_hover")
+tooltip_text = "Browse, like, and play community levels"
+text = "LEVEL BROWSER"
 
 [node name="FieldGuideButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer" unique_id=223072365]
 custom_minimum_size = Vector2(180, 70)
@@ -273,22 +257,20 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_infobutton_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_infobutton_hover")
 text = "FIELD GUIDE"
 
-[node name="MultiplayerButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer"]
+[node name="QuitButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer"]
 custom_minimum_size = Vector2(180, 70)
 layout_mode = 2
 size_flags_horizontal = 0
 theme_override_colors/font_color = Color(1, 0.88, 0.88, 1)
-theme_override_colors/font_disabled_color = Color(0.55, 0.57, 0.6, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_fonts/font = ExtResource("6_es01l")
 theme_override_font_sizes/font_size = 24
-theme_override_styles/normal = SubResource("StyleBoxFlat_bossrushbutton")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_bossrushbutton_hover")
-theme_override_styles/hover = SubResource("StyleBoxFlat_bossrushbutton_hover")
-theme_override_styles/focus = SubResource("StyleBoxFlat_bossrushbutton_hover")
-theme_override_styles/disabled = SubResource("StyleBoxFlat_bossrushbutton_locked")
-tooltip_text = "Online PvP arena. Host a room or join one by address. Not available in the browser build."
-text = "MULTIPLAYER"
+theme_override_styles/normal = SubResource("StyleBoxFlat_exitbutton")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_exitbutton_hover")
+theme_override_styles/hover = SubResource("StyleBoxFlat_exitbutton_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_exitbutton_hover")
+tooltip_text = "Close the game"
+text = "QUIT"
 
 [node name="BottomRow" type="HBoxContainer" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
@@ -358,9 +340,9 @@ text = "SETTINGS"
 [node name="InfoPopup" parent="." instance=ExtResource("7_infopopup")]
 
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/PlayButton" to="." method="_on_play_pressed"]
-[connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/BossRushButton" to="." method="_on_boss_rush_pressed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/LevelBrowserButton" to="." method="_on_level_browser_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/FieldGuideButton" to="." method="_on_field_guide_pressed"]
-[connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/MultiplayerButton" to="." method="_on_multiplayer_pressed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/QuitButton" to="." method="_on_quit_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/BottomRow/ClearSaveButton" to="." method="_on_clear_save_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/BottomRow/EditorButton" to="." method="_on_editor_pressed"]
 

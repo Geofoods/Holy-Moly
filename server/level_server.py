@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Holy Moley community level service.
 
-A deliberately small, dependency-free HTTP service for publishing and loading
-Level Forge JSON files. By default it stores everything in one local JSON file.
+A deliberately small, dependency-free HTTP service for publishing, loading and
+liking Level Forge JSON files. By default it stores everything in one local JSON
+file.
 Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN to keep the same JSON
 document in a free Upstash Redis database instead, which survives free Render
 web-service restarts. It is meant to run behind Render, Fly, a VPS, or on a LAN
@@ -38,6 +39,7 @@ MAX_PROPS = 3000
 NAME_MAX = 60
 AUTHOR_MAX = 40
 DESCRIPTION_MAX = 280
+VOTER_MAX = 64
 ID_RE = re.compile(r"^[a-f0-9]{12}$")
 
 STORE_LOCK = threading.Lock()
@@ -174,6 +176,14 @@ def validate_level(level) -> str | None:
     return None
 
 
+def like_count(record: dict) -> int:
+    """Likes are unique per installation id, so derive the count from the set."""
+    liked_by = record.get("liked_by")
+    if isinstance(liked_by, list):
+        return len({str(voter) for voter in liked_by})
+    return max(0, int(record.get("likes", 0)))
+
+
 def summary(record: dict) -> dict:
     data = record.get("data", {})
     blocks = data.get("blocks", []) if isinstance(data, dict) else []
@@ -185,17 +195,52 @@ def summary(record: dict) -> dict:
         "description": record["description"],
         "created_at": record["created_at"],
         "downloads": int(record.get("downloads", 0)),
+        "likes": like_count(record),
         "blocks": len(blocks) if isinstance(blocks, list) else 0,
         "enemies": len(enemies) if isinstance(enemies, list) else 0,
     }
 
 
-def list_levels(limit: int, offset: int) -> tuple[list[dict], int]:
-    levels = sorted(
-        STORE["levels"].values(),
-        key=lambda entry: (entry.get("created_at", ""), entry.get("id", "")),
-        reverse=True,
-    )
+SORT_MODES = ("newest", "downloads", "likes")
+
+
+def list_levels(limit: int, offset: int, sort: str = "newest") -> tuple[list[dict], int]:
+    """Return one page of level summaries in the requested order.
+
+    Newest is the default so a fresh publish shows up first. downloads and
+    likes sort the whole catalogue, not just the requested page, and ties fall
+    back to the other count then to newest so the order stays stable between
+    requests.
+    """
+    entries = STORE["levels"].values()
+    if sort == "downloads":
+        levels = sorted(
+            entries,
+            key=lambda entry: (
+                int(entry.get("downloads", 0)),
+                like_count(entry),
+                entry.get("created_at", ""),
+                entry.get("id", ""),
+            ),
+            reverse=True,
+        )
+    elif sort == "likes":
+        levels = sorted(
+            entries,
+            key=lambda entry: (
+                like_count(entry),
+                int(entry.get("downloads", 0)),
+                entry.get("created_at", ""),
+                entry.get("id", ""),
+            ),
+            reverse=True,
+        )
+    else:
+        levels = sorted(
+            entries,
+            key=lambda entry: (entry.get("created_at", ""), entry.get("id", "")),
+            reverse=True,
+        )
     total = len(levels)
     window = levels[offset : offset + limit]
     return [summary(entry) for entry in window], total
@@ -214,6 +259,8 @@ def create_level(payload: dict) -> tuple[dict | None, str | None]:
         "description": clean_text(payload.get("description"), DESCRIPTION_MAX),
         "created_at": utc_now(),
         "downloads": 0,
+        "likes": 0,
+        "liked_by": [],
         "data": payload["level"],
     }
     STORE["levels"][record["id"]] = record
@@ -243,6 +290,32 @@ def get_level(level_id: str, count_download: bool = True) -> dict | None:
     return record
 
 
+def set_like(level_id: str, voter: str, liked: bool) -> dict | None:
+    """Add or remove one installation's like and return the level summary."""
+    record = STORE["levels"].get(level_id)
+    if record is None:
+        return None
+    liked_by = record.get("liked_by")
+    if not isinstance(liked_by, list):
+        liked_by = []
+    before = [str(value) for value in liked_by]
+    if liked:
+        if voter not in liked_by:
+            liked_by.append(voter)
+    else:
+        liked_by = [value for value in liked_by if str(value) != voter]
+    record["liked_by"] = liked_by
+    record["likes"] = len({str(value) for value in liked_by})
+    try:
+        save_store()
+    except StoreError:
+        # Keep memory and Upstash in agreement when the write fails.
+        record["liked_by"] = before
+        record["likes"] = len(set(before))
+        raise
+    return summary(record)
+
+
 def render_gallery() -> str:
     with STORE_LOCK:
         levels, total = list_levels(100, 0)
@@ -255,6 +328,7 @@ def render_gallery() -> str:
             f"<p class=\"meta\">by {html.escape(entry['author'])} &middot; "
             f"{html.escape(entry['created_at'][:10])} &middot; "
             f"{entry['downloads']} downloads &middot; "
+            f"{entry['likes']} likes &middot; "
             f"{entry['blocks']} blocks &middot; {entry['enemies']} enemies</p>"
             f"<p>{description}</p>"
             "</article>"
@@ -356,10 +430,16 @@ class Handler(BaseHTTPRequestHandler):
             except ValueError:
                 self._send_json(400, {"error": "limit and offset must be integers"})
                 return
+            sort = query.get("sort", ["newest"])[0]
+            if sort not in SORT_MODES:
+                self._send_json(
+                    400, {"error": "sort must be one of: " + ", ".join(SORT_MODES)}
+                )
+                return
             limit = max(1, min(limit, 100))
             offset = max(0, offset)
             with STORE_LOCK:
-                levels, total = list_levels(limit, offset)
+                levels, total = list_levels(limit, offset, sort)
             self._send_json(200, {"levels": levels, "total": total})
             return
         if path.startswith("/api/levels/"):
@@ -381,24 +461,54 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         path = urlparse(self.path).path.rstrip("/") or "/"
-        if path != "/api/levels":
+        if path != "/api/levels" and not path.endswith("/like"):
             self._send_json(404, {"error": "not found"})
             return
         payload, error = self._read_json()
         if error:
             self._send_json(400, {"error": error})
             return
+        if path == "/api/levels":
+            try:
+                with STORE_LOCK:
+                    summary_record, error = create_level(payload)
+            except StoreError as exc:
+                print(f"[levels] could not save level: {exc}")
+                self._send_json(503, {"error": "level storage is unavailable"})
+                return
+            if error:
+                self._send_json(400, {"error": error})
+                return
+            self._send_json(201, {"level": summary_record})
+            return
+
+        parts = path.split("/")
+        if len(parts) != 5 or parts[1:3] != ["api", "levels"] or parts[4] != "like":
+            self._send_json(404, {"error": "not found"})
+            return
+        level_id = parts[3]
+        if not ID_RE.fullmatch(level_id):
+            self._send_json(404, {"error": "level not found"})
+            return
+        voter = clean_line(payload.get("voter"), VOTER_MAX)
+        if len(voter) < 8:
+            self._send_json(400, {"error": "a voter id is required"})
+            return
+        liked_value = payload.get("liked", True)
+        if not isinstance(liked_value, bool):
+            self._send_json(400, {"error": "liked must be true or false"})
+            return
         try:
             with STORE_LOCK:
-                summary_record, error = create_level(payload)
+                summary_record = set_like(level_id, voter, liked_value)
         except StoreError as exc:
-            print(f"[levels] could not save level: {exc}")
+            print(f"[levels] could not save like: {exc}")
             self._send_json(503, {"error": "level storage is unavailable"})
             return
-        if error:
-            self._send_json(400, {"error": error})
+        if summary_record is None:
+            self._send_json(404, {"error": "level not found"})
             return
-        self._send_json(201, {"level": summary_record})
+        self._send_json(200, {"level": summary_record})
 
 
 def main() -> None:

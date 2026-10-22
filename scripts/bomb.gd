@@ -157,7 +157,7 @@ func _explode() -> void:
 		if dist <= explosion_radius and mole.has_method("take_damage"):
 			mole.take_damage(explosion_damage, global_position, true)
 
-	var tilemap: TileMap = get_parent().get_node_or_null("TileMap")
+	var tilemap: TileMap = TileBreakSFX.find_level_tilemap(self)
 	if tilemap:
 		var center_tile := tilemap.local_to_map(tilemap.to_local(global_position))
 		for dx in range(-tile_break_radius, tile_break_radius + 1):

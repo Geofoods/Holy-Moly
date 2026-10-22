@@ -6,10 +6,9 @@ const HOP_HEIGHT := 90.0
 const HOP_DURATION := 1.7
 const GROUND_RATIO := 0.72
 const VERSION := "v1.0.0"
-## Where Boss Rush drops the mole. Level 09 is the Corrupted Core, which already
-## throws every enemy type the journey has met at the player alongside the
-## Corrupted Heart, so it reads as a rush without needing a scene of its own.
-const BOSS_RUSH_SCENE := "res://scenes/level_09.tscn"
+## The community level browser, where players like and play what other people
+## have published from Level Forge.
+const BROWSER_SCENE := "res://scenes/level_browser.tscn"
 ## The credits roll. Reachable from here as well as from the win screen, so the
 ## roll can be watched without having to finish the game to find it.
 const CREDITS_SCENE := "res://scenes/credits.tscn"
@@ -36,16 +35,20 @@ func _ready():
 
 	var play_btn = $CenterContainer/VBoxContainer/ButtonContainer/PlayButton
 	var field_guide_btn = $CenterContainer/VBoxContainer/ButtonContainer/FieldGuideButton
-	var boss_rush_btn = $CenterContainer/VBoxContainer/ButtonContainer/BossRushButton
-	var multiplayer_btn = $CenterContainer/VBoxContainer/ButtonContainer/MultiplayerButton
+	var browser_btn = $CenterContainer/VBoxContainer/ButtonContainer/LevelBrowserButton
+	var quit_btn = $CenterContainer/VBoxContainer/ButtonContainer/QuitButton
 	var clear_save_btn = $CenterContainer/VBoxContainer/BottomRow/ClearSaveButton
 	var credits_btn = $CenterContainer/VBoxContainer/BottomRow/CreditsButton
+	# Quitting only makes sense for the downloadable build. A web page cannot
+	# close its own tab from the game, so the browser version leaves the button
+	# out entirely (hidden controls are skipped by the container layout).
+	quit_btn.visible = not OS.has_feature("web")
+	quit_btn.mouse_entered.connect(_on_button_hover.bind(quit_btn))
+	quit_btn.mouse_exited.connect(_on_button_unhover.bind(quit_btn))
 	play_btn.mouse_entered.connect(_on_button_hover.bind(play_btn))
 	play_btn.mouse_exited.connect(_on_button_unhover.bind(play_btn))
-	boss_rush_btn.mouse_entered.connect(_on_button_hover.bind(boss_rush_btn))
-	boss_rush_btn.mouse_exited.connect(_on_button_unhover.bind(boss_rush_btn))
-	multiplayer_btn.mouse_entered.connect(_on_button_hover.bind(multiplayer_btn))
-	multiplayer_btn.mouse_exited.connect(_on_button_unhover.bind(multiplayer_btn))
+	browser_btn.mouse_entered.connect(_on_button_hover.bind(browser_btn))
+	browser_btn.mouse_exited.connect(_on_button_unhover.bind(browser_btn))
 	field_guide_btn.mouse_entered.connect(_on_button_hover.bind(field_guide_btn))
 	field_guide_btn.mouse_exited.connect(_on_button_unhover.bind(field_guide_btn))
 	clear_save_btn.mouse_entered.connect(_on_button_hover.bind(clear_save_btn))
@@ -179,34 +182,25 @@ func animate_menu_reveal() -> void:
 func _set_buttons_enabled(enabled: bool) -> void:
 	var play_btn = $CenterContainer/VBoxContainer/ButtonContainer/PlayButton
 	var field_guide_btn = $CenterContainer/VBoxContainer/ButtonContainer/FieldGuideButton
-	var boss_rush_btn = $CenterContainer/VBoxContainer/ButtonContainer/BossRushButton
-	var multiplayer_btn = $CenterContainer/VBoxContainer/ButtonContainer/MultiplayerButton
+	var browser_btn = $CenterContainer/VBoxContainer/ButtonContainer/LevelBrowserButton
+	var quit_btn = $CenterContainer/VBoxContainer/ButtonContainer/QuitButton
 	var clear_save_btn = $CenterContainer/VBoxContainer/BottomRow/ClearSaveButton
 	var credits_btn = $CenterContainer/VBoxContainer/BottomRow/CreditsButton
 	var editor_btn = $CenterContainer/VBoxContainer/BottomRow/EditorButton
 	var settings_btn = $CenterContainer/VBoxContainer/BottomRow/SettingsButton
 	play_btn.disabled = not enabled
 	field_guide_btn.disabled = not enabled
+	browser_btn.disabled = not enabled
+	quit_btn.disabled = not enabled
 	clear_save_btn.disabled = not enabled
 	credits_btn.disabled = not enabled
 	editor_btn.disabled = not enabled
 	settings_btn.disabled = not enabled
-	# The PvP mode runs on Godot's built-in ENet, which needs a real UDP socket;
-	# a browser page has none, so the entry stays shut in the web export rather
-	# than leading to a lobby that cannot connect.
-	multiplayer_btn.disabled = not enabled or OS.has_feature("web")
-	# Boss Rush carries its own save-flag gate on top of the intro reveal, so it
-	# has to be re-derived here rather than simply flipped with the others -
-	# otherwise the reveal pass would unlock it on a fresh save. A disabled Button
-	# reads the disabled stylebox and font_disabled_color rather than the normal
-	# ones, so the locked look lives in intro.tscn as its own set - note that
-	# .tscn files cannot carry comments, which is why this lives here.
-	boss_rush_btn.disabled = not enabled or not Progress.is_game_completed()
 	if enabled:
 		play_btn.pivot_offset = play_btn.size / 2.0
-		boss_rush_btn.pivot_offset = boss_rush_btn.size / 2.0
+		browser_btn.pivot_offset = browser_btn.size / 2.0
 		field_guide_btn.pivot_offset = field_guide_btn.size / 2.0
-		multiplayer_btn.pivot_offset = multiplayer_btn.size / 2.0
+		quit_btn.pivot_offset = quit_btn.size / 2.0
 		clear_save_btn.pivot_offset = clear_save_btn.size / 2.0
 		credits_btn.pivot_offset = credits_btn.size / 2.0
 		editor_btn.pivot_offset = editor_btn.size / 2.0
@@ -250,25 +244,17 @@ func _on_play_pressed() -> void:
 	get_tree().root.add_child(transition)
 	transition.change_to(target)
 
-## Drops straight into the Boss Rush. This is a resume rather than a fresh
-## Play: the mole keeps the gear it finished the game with, because that gear
-## is what the rush is unlocked for.
-func _on_boss_rush_pressed() -> void:
-	# Re-checked here as well as on the button, so a locked mode cannot be
-	# entered by anything that presses it without going through the menu.
-	if not Progress.is_game_completed():
-		return
+## Opens the community level browser. It has no campaign state of its own; PLAY
+## in that screen hands a downloaded level to Level Forge through a one-shot
+## launch request and keeps the author's own editor autosave separate.
+func _on_level_browser_pressed() -> void:
 	SFX.play_ui("ui_click", -6.0, 1.2)
 	_fade_out_menu_music()
-	var boss_rush_btn = $CenterContainer/VBoxContainer/ButtonContainer/BossRushButton
-	boss_rush_btn.disabled = true
-	var target := BOSS_RUSH_SCENE
-	# Keep the resume-aware bookkeeping in step with a normal level entry, so
-	# pause->restart and the game-over retry land back in this same scene.
-	Inventory.current_level_path = target
+	var browser_btn = $CenterContainer/VBoxContainer/ButtonContainer/LevelBrowserButton
+	browser_btn.disabled = true
 	var transition := preload("res://scenes/scene_transition.tscn").instantiate()
 	get_tree().root.add_child(transition)
-	transition.change_to(target)
+	transition.change_to(BROWSER_SCENE)
 
 func _on_field_guide_pressed() -> void:
 	SFX.play_ui("ui_click", -6.0, 1.2)
@@ -276,13 +262,12 @@ func _on_field_guide_pressed() -> void:
 	if info_popup:
 		info_popup.open()
 
-## Opens the online PvP lobby. There is no run behind this button, so nothing is
-## banked or carried over: scripts/net.gd keeps the mode's state entirely to
-## itself and the campaign autoloads are never read.
-func _on_multiplayer_pressed() -> void:
+## Closes the downloadable game. The button is hidden in the browser build,
+## where the page owns the tab and quitting is not ours to do.
+func _on_quit_pressed() -> void:
 	SFX.play_ui("ui_click", -6.0, 1.2)
 	_fade_out_menu_music()
-	Net.change_scene(Net.MENU_SCENE)
+	get_tree().quit()
 
 ## Opens the credits roll. The same scene the win screen plays, reached from the
 ## title screen so it can be watched without finishing the game first. The menu
@@ -326,7 +311,6 @@ func _clear_save_data() -> void:
 	Progress.clear_save_data()
 	Shop.clear_save_data()
 	Inventory.reset()
-	$CenterContainer/VBoxContainer/ButtonContainer/BossRushButton.disabled = true
 	$CenterContainer/VBoxContainer/BottomRow/ClearSaveButton.disabled = true
 	SFX.play_ui("ui_click", -6.0, 1.2)
 

@@ -7,8 +7,9 @@ extends Node
 ## `ok` and either the requested values or a human-readable `error`, so callers
 ## never have to know about HTTP status codes or Godot's request result enum.
 ##
-## All publishing, browsing and downloading goes to the hosted community service.
-## Only the player's preferred author name is remembered in user://.
+## All publishing, browsing, downloading and liking goes to the hosted community
+## service. Only the preferred author name, a random voter id and the levels this
+## installation has liked are remembered in user://.
 
 const SETTINGS_PATH := "user://level_share.cfg"
 const SERVICE_URL := "https://holy-moley-levels.onrender.com"
@@ -18,16 +19,37 @@ const MAX_RESPONSE_BYTES := 2 * 1024 * 1024
 const NAME_MAX := 60
 const AUTHOR_MAX := 40
 const DESCRIPTION_MAX := 280
+## The browser's playtest session gets its own working file so opening a
+## community level can never overwrite the author's own editor autosave.
+const BROWSER_AUTOSAVE_PATH := "user://levels/_browser_autosave.json"
 
 var base_url := SERVICE_URL
 var author := ""
 var last_error := ""
+## A random installation id is enough to make a like unique without accounts.
+## It lives in the same small config as the preferred author name.
+var voter_id := ""
+var liked_levels: Array[String] = []
+
+var _pending_editor_level := ""
+var _pending_editor_playtest := false
+var _pending_editor_autosave := ""
 
 
 func _ready() -> void:
 	var config := ConfigFile.new()
 	if config.load(SETTINGS_PATH) == OK:
 		author = str(config.get_value("online", "author", "")).strip_edges()
+		voter_id = str(config.get_value("online", "voter_id", "")).strip_edges()
+		var raw_liked = config.get_value("online", "liked_levels", [])
+		if raw_liked is Array or raw_liked is PackedStringArray:
+			for raw_id in raw_liked:
+				var level_id := str(raw_id)
+				if _valid_id(level_id) and level_id not in liked_levels:
+					liked_levels.append(level_id)
+	if voter_id.is_empty():
+		voter_id = _new_voter_id()
+		_save_settings()
 
 
 func configure(author_name: String) -> void:
@@ -63,9 +85,13 @@ func publish(level_data: Dictionary, level_name: String, author_name: String,
 	return {"ok": true, "level": data["level"]}
 
 
-func fetch_levels(limit: int = 50, offset: int = 0) -> Dictionary:
-	var path := "/api/levels?limit=%d&offset=%d" % [
-		clampi(limit, 1, 100), maxi(offset, 0)]
+## `sort` is one of "newest", "downloads" or "likes"; the server orders the
+## whole catalogue before paging, so a sorted page is not just the newest page
+## reordered.
+func fetch_levels(limit: int = 50, offset: int = 0, sort: String = "newest") -> Dictionary:
+	var order := sort if sort in ["newest", "downloads", "likes"] else "newest"
+	var path := "/api/levels?limit=%d&offset=%d&sort=%s" % [
+		clampi(limit, 1, 100), maxi(offset, 0), order]
 	var result := await _request_json(path, HTTPClient.METHOD_GET)
 	if not bool(result.get("ok", false)):
 		return result
@@ -94,6 +120,57 @@ func download_level(level_id: String) -> Dictionary:
 		"level": data["level"],
 		"data": data["data"],
 	}
+
+
+func is_level_liked(level_id: String) -> bool:
+	return level_id in liked_levels
+
+
+## Likes and unlikes one level. The voter id keeps one installation from
+## counting twice; the server returns the updated summary so both the dedicated
+## browser and the editor's BROWSE list can show the same count immediately.
+func set_level_liked(level_id: String, liked: bool) -> Dictionary:
+	if not _valid_id(level_id):
+		return _fail("Invalid level id.")
+	var result := await _request_json(
+			"/api/levels/%s/like" % level_id,
+			HTTPClient.METHOD_POST,
+			{"liked": liked, "voter": voter_id})
+	if not bool(result.get("ok", false)):
+		return result
+	var data = result.get("data", null)
+	if not (data is Dictionary) or not (data.get("level") is Dictionary):
+		return _fail("The level server did not return the updated level.")
+	if liked:
+		if level_id not in liked_levels:
+			liked_levels.append(level_id)
+	else:
+		liked_levels.erase(level_id)
+	_save_settings()
+	return {"ok": true, "level": data["level"], "liked": liked}
+
+
+## Hands the editor a downloaded community level to open on the next scene load.
+## The separate autosave path is what keeps the player's own Level Forge work
+## out of the way.
+func request_editor_level(path: String, start_playing: bool = true) -> void:
+	_pending_editor_level = path
+	_pending_editor_playtest = start_playing
+	_pending_editor_autosave = BROWSER_AUTOSAVE_PATH
+
+
+func take_editor_request() -> Dictionary:
+	if _pending_editor_level.is_empty():
+		return {}
+	var request := {
+		"level_path": _pending_editor_level,
+		"playtest": _pending_editor_playtest,
+		"autosave_path": _pending_editor_autosave,
+	}
+	_pending_editor_level = ""
+	_pending_editor_playtest = false
+	_pending_editor_autosave = ""
+	return request
 
 
 func _request_json(path: String, method: int, payload = null) -> Dictionary:
@@ -174,9 +251,15 @@ func _fail(message: String) -> Dictionary:
 	return {"ok": false, "error": message}
 
 
+func _new_voter_id() -> String:
+	return Crypto.new().generate_random_bytes(16).hex_encode()
+
+
 func _save_settings() -> void:
 	var config := ConfigFile.new()
 	config.set_value("online", "author", author)
+	config.set_value("online", "voter_id", voter_id)
+	config.set_value("online", "liked_levels", PackedStringArray(liked_levels))
 	config.save(SETTINGS_PATH)
 
 

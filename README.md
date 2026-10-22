@@ -17,6 +17,7 @@ Features:
 - Many Characters
 - In-game Level Editor
 - Online level publishing and browsing
+- Community Level Browser with likes and download counts
   
 CONTROLS:
 
@@ -36,25 +37,18 @@ LEFT CLICK: Attack/Use item held or interact with HUD
 
 HOLD LEFT CLICK: Aim a throwable and preview its path; release to throw
 
-MULTIPLAYER (PVP ARENA):
+QUIT: Close the game (downloadable version only; the browser version hides this button)
 
-The MULTIPLAYER button on the title screen opens a lobby. One player presses HOST;
-anyone else presses JOIN with the host's address and the same port (27015 by
-default). The host presses START MATCH once everyone is in. The first player to
-five kills wins.
+LEVEL BROWSER:
 
-WASD: Movement
-
-SPACE: Jump
-
-LEFT CLICK: Swing
-
-ESC: Leave the match
-
-Playing over the internet needs the host's port (UDP 27015) forwarded, or both
-players on the same LAN. Netplay uses Godot's built-in ENet, which needs a real
-UDP socket that a web page does not have, so the browser build does not offer the
-mode.
+The LEVEL BROWSER button on the title screen lists every level published to the
+community service. Each entry shows its author, description, likes and download
+count, and NEWEST, MOST DOWNLOADED and MOST LIKED reorder the whole catalogue.
+LIKE adds or removes your own like; the game remembers your choice per
+installation, so one copy of the game counts once. EDIT downloads the level and
+opens it in Level Forge for changing, while PLAY downloads it and starts its
+playtest immediately. Both use a separate editor autosave, so opening a
+community level cannot overwrite the level you were building in Level Forge.
 
 LEVEL EDITOR:
 
@@ -92,10 +86,6 @@ the campaign's save, so setting one while testing a level cannot move the
 checkpoint of the level the player is really playing. A station dropped into a
 campaign level still banks into Progress exactly as before.
 
-Goblin Gilbert is his stall. In a playtest the mole can walk up, press E, and
-browse his stock, paying with the coins it has picked up in that same test.
-Everything it buys, sells or spends is handed back when the test ends.
-
 RECT FILL, or the R key, turns a drag into a filled rectangle: press at one
 corner, drag to the opposite one and let go, and every cell between is painted at
 once. It is how a floor or a wall goes down without a board of single clicks, and
@@ -105,32 +95,38 @@ plain one-block click.
 The same drag clears a rectangle, and the preview turns red to say so. With the
 ERASE tool selected it sweeps the blocks away, and a right-button drag does it
 whatever tool is selected, which is how a hole gets carved out. A sweep takes
-blocks only: enemies, chests, items, the portal, the station and the merchant keep
-coming out one at a time, so a rectangle cannot empty the level of its contents by
+blocks only: enemies, chests, items, the portal and the station keep coming out
+one at a time, so a rectangle cannot empty the level of its contents by
 accident, and a click that never moved erases the single thing under the cursor
 exactly as it always has.
 
-LEFT CLICK: Paint the selected block, or place the selected enemy, portal, chest, station, merchant or item
-RIGHT CLICK: Erase a block, enemy, portal, chest, station, merchant or item; with rectangle filling on, drag to clear the blocks in a rectangle
+LEFT CLICK: Paint the selected block, or place the selected enemy, portal, chest, station or item
+RIGHT CLICK: Erase a block, enemy, portal, chest, station or item; with rectangle filling on, drag to clear the blocks in a rectangle
 MIDDLE MOUSE DRAG / WASD: Pan the view
 MOUSE WHEEL: Zoom
 R: Toggle rectangle filling
 CTRL+Z / CTRL+Y: Undo / redo
 G: Toggle the grid
 
-The WORLD panel on the right sets the level's look and starting weapons. Pick
-one of the three parallax backdrops (Teal, Purple, Red), then drag the VIGNETTE
-slider to choose how hard the filter bites: 0% leaves the screen clean, 100%
-blacks the corners out completely. The FIREFLIES button turns the drifting
+The WORLD panel on the right sets the level's look, sound and starting weapons.
+Pick one of the three parallax backdrops (Teal, Purple, Red), then drag the
+VIGNETTE slider to choose how hard the filter bites: 0% leaves the screen clean,
+100% blacks the corners out completely. The FIREFLIES button turns the drifting
 fireflies on or off; they preview live around the editor camera and follow the
-mole during a playtest. All these settings are saved with the level.
+mole during a playtest. The MUSIC button opens a panel of the campaign's
+background tracks -- Grotto, Mole Village, Slime Valley, The Mines, Corrupted
+Heart, Sealed Vessel and The Arena. Picking one auditions it immediately, and it
+loops under the level in every playtest and when the level is published. Levels
+saved before music selection existed use Grotto. All these settings are saved
+with the level.
 
 The WEAPONS button opens a panel where you choose which weapons the level
 unlocks: Shovel (always), Golden Shovel, Pickaxe and Wizard Staff. Leave USE
 PLAYER'S OWN UNLOCKS on to use each player's own shop progress, or turn it
-off to give the level a fixed starting set. The strongest selected melee starts
-in hand, and the weapon slot lists the rest. The choice is saved with the level
-and applies to playtests, so it can be tested exactly as a player will get it.
+off to give the level a fixed starting set. Every playtest starts with the
+shovel in hand; the weapon slot lists the level's other unlocked weapons, so a
+pickaxe or staff is one click away. The choice is saved with the level and
+applies to playtests, so it can be tested exactly as a player will get it.
 
 Levels are saved under the game's user data folder as small JSON files, and the
 editor autosaves a working copy after every edit, so a playtest never costs you
@@ -142,8 +138,10 @@ ONLINE LEVELS:
 
 The ONLINE button opens the community panel. PUBLISH uploads the level currently
 open in the editor with its name, author and a short description. BROWSE lists
-everything published to the same server; LOAD downloads a level into
-user://levels and opens it in the editor, ready for PLAY or SAVE.
+everything published to the same server, including each level's likes and
+downloads; LIKE uses the same installation-wide like as the title-screen Level
+Browser, and LOAD downloads a level into user://levels and opens it in the
+editor, ready for PLAY or SAVE.
 
 The panel always talks to the hosted service at
 https://holy-moley-levels.onrender.com. That address is fixed in

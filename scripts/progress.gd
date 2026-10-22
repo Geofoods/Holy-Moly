@@ -240,9 +240,9 @@ func mark_game_completed() -> void:
 		game_completed = true
 		save_progress()
 
-## Whether the title screen has a Boss Rush to offer. Kept as a named query so
-## the unlock rule lives in one place rather than being re-derived at every call
-## site.
+## Whether the campaign's final boss has been beaten. Kept as a named query so
+## the completion rule lives in one place rather than being re-derived at every
+## call site.
 func is_game_completed() -> bool:
 	return game_completed
 

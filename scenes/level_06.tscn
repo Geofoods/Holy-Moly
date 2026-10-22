@@ -16,7 +16,6 @@
 [ext_resource type="PackedScene" uid="uid://cdxu1kg5or16d" path="res://candle.tscn" id="15_21f2n"]
 [ext_resource type="Script" uid="uid://kmr8gn60dhg0" path="res://scenes/nextlevel.gd" id="20_mtlme"]
 [ext_resource type="PackedScene" uid="uid://iuqjuk37ur0d" path="res://scenes/slimeenemy.tscn" id="21_mtlme"]
-[ext_resource type="PackedScene" uid="uid://uukw6aqabygl" path="res://door.tscn" id="21_ou5rw"]
 [ext_resource type="Texture2D" uid="uid://2oxds1375q88" path="res://costume5.svg" id="23_0ru5y"]
 [ext_resource type="Script" uid="uid://dpsujuff7o60j" path="res://scripts/dynamic_vignette.gd" id="dyn_vignette"]
 [ext_resource type="Script" uid="uid://bxii3vbhirjou" path="res://scripts/firefly_spawner.gd" id="firefly_script"]
@@ -256,15 +255,6 @@ next_scene = "uid://y7ryod74l7rm"
 position = Vector2(9284, 1151)
 shape = SubResource("RectangleShape2D_ou5rw")
 
-[node name="nextlevel2" type="Area2D" parent="." unique_id=1948290168]
-position = Vector2(-10533, -23)
-script = ExtResource("20_mtlme")
-next_scene = "uid://dnalp7pe0fqi0"
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="nextlevel2" unique_id=493354368]
-position = Vector2(9309, 1147)
-shape = SubResource("RectangleShape2D_ou5rw")
-
 [node name="candle12" parent="." unique_id=1081875245 instance=ExtResource("15_21f2n")]
 position = Vector2(2677, 766)
 scale = Vector2(0.5, 0.5)
@@ -289,12 +279,6 @@ position = Vector2(3496, -1319)
 
 [node name="Enemy17" parent="." unique_id=112817802 instance=ExtResource("21_mtlme")]
 position = Vector2(4352, -2795)
-
-[node name="Sprite2D" parent="." unique_id=713534953 instance=ExtResource("21_ou5rw")]
-offset_left = 7336.0
-offset_top = 1340.0
-offset_right = 7397.0
-offset_bottom = 1440.0
 
 [node name="Costume8" type="Sprite2D" parent="." unique_id=275684890]
 z_index = 99

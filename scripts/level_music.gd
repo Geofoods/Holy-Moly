@@ -4,6 +4,12 @@ var _player: AudioStreamPlayer = null
 var _stream := preload("res://nojisuma-grotto-120967.mp3")
 var _target_volume := -18.0
 
+## The Level Forge can give a custom level a campaign track of its own. While
+## this is set, _start_bed() loads it in place of the campaign's usual bed; the
+## editor clears it again on the way out so it cannot follow anyone back into the
+## campaign. Empty means the ordinary bed.
+var _bed_override_path := ""
+
 ## Whichever tween is currently moving the bed's volume, for the same reason the
 ## boss theme tracks its own. The bed was the one player whose fades were left
 ## untracked, so a duck or a fade-out landing mid-move had no way to take it
@@ -157,6 +163,13 @@ var _region_target_volume := -14.0
 ## the length of a crossfade. Two players exist at once at the loop point, so this
 ## is where the incoming one waits before it is promoted. See _advance_region_loop().
 var _region_next_player: AudioStreamPlayer = null
+
+## The track the arena gives back once its waves are cleared. "The Arena" opens
+## silent and borrows the music for its fight; Slime Valley is the stretch it
+## sits inside, so the room returns to that stretch's shimmer track afterwards.
+## Restored as a region track rather than the ordinary bed, so walking out to
+## Slime Valley carries the same pass of the song across instead of restarting it.
+const ARENA_RETURN_TRACK := SHIMMER_TRACK
 
 ## The arena's fight theme. It starts once the snail in "The Arena" has said its
 ## line and gives up when the waves are cleared, so it cannot be a region track -
@@ -322,8 +335,14 @@ func _update_region_track() -> void:
 	# arrival, and restarting the track over it would cut the music off.
 	if wanted == _region_path and _region_player != null and is_instance_valid(_region_player):
 		return
+	_start_region(wanted)
+
+## Starts a scene's own track from silence in the region slot, replacing whatever
+## was there before. Split out so a mid-scene hand-off - the arena giving the room
+## back its stretch's track - can reuse it without pretending a new scene arrived.
+func _start_region(path: String, fade_time := 2.0) -> void:
 	stop_region(0.0)
-	_region_path = wanted
+	_region_path = path
 	_region_player = AudioStreamPlayer.new()
 	_region_player.stream = load(_region_path)
 	_region_player.process_mode = Node.PROCESS_MODE_ALWAYS
@@ -336,7 +355,21 @@ func _update_region_track() -> void:
 	_region_player.finished.connect(_on_region_track_finished)
 	_region_player.play()
 	_region_volume_tween = create_tween()
-	_region_volume_tween.tween_property(_region_player, "volume_db", _region_target_volume, 2.0)
+	_region_volume_tween.tween_property(_region_player, "volume_db", _region_target_volume, fade_time)
+
+## Brings a stretch's track back without a scene change. The arena borrows the
+## room's music for its fight while it runs, so once its waves clear the room is
+## handed the surrounding stretch's track again. Keeping it in the region slot
+## means the exit back into Slime Valley carries this pass across seamlessly.
+func resume_region_track(path: String, fade_time := 2.0) -> void:
+	if path.is_empty():
+		return
+	if path == _region_path and _region_player != null and is_instance_valid(_region_player):
+		return
+	# The arena cut the bed on its way in. Clearing it again here is harmless, and
+	# covers any bed that arrived while the fight was running.
+	stop_bed(0.0)
+	_start_region(path, fade_time)
 
 ## Fades a scene's own track out and lets it go, so it cannot follow the mole out
 ## of the scene it belongs to. 0 tears it down at once.
@@ -370,11 +403,12 @@ func stop_region(fade_time := 0.8) -> void:
 ## why the player is PROCESS_MODE_ALWAYS and the fade is short enough that the
 ## track is still arriving as the pan back to the arena finishes.
 ##
-## The level bed is cut rather than ducked underneath it, and handed back by
-## stop_arena_track(). Ducking would mean holding its volume somewhere between
-## two numbers and hoping the field guide's own duck in the middle of a fight
-## untangles cleanly; cutting keeps exactly one thing playing, and the bed is
-## cheap to put back because nothing here has to survive a scene change.
+## The room's music is cut rather than ducked underneath the fight theme, and
+## brought back by stop_arena_track(). Ducking would mean holding its volume
+## somewhere between two numbers and hoping the field guide's own duck in the
+## middle of a fight untangles cleanly; cutting keeps exactly one thing playing,
+## and the room's track is cheap to put back because nothing here has to survive
+## a scene change.
 func play_arena_track(fade_time := 2.5) -> void:
 	if _arena_player != null and is_instance_valid(_arena_player):
 		return
@@ -394,14 +428,13 @@ func play_arena_track(fade_time := 2.5) -> void:
 	_arena_volume_tween.tween_property(_arena_player, "volume_db", _arena_target_volume, fade_time)
 
 ## Fades the arena theme out once the waves are cleared and, unless told
-## otherwise, gives the level bed back to the scene - which is left with no music
-## of its own otherwise. The default fade is timed to cover the camera's hold on
-## the shattering wall, so the theme recedes under the payoff instead of being cut
-## off by it.
+## otherwise, gives the room its surrounding stretch's track back. The default
+## fade is timed to cover the camera's hold on the shattering wall, so the theme
+## recedes under the payoff instead of being cut off by it.
 ##
-## `restore_bed` is off for the level-change path, where start() is about to make
-## that decision itself and two callers doing it would race.
-func stop_arena_track(fade_time := 3.0, restore_bed := true) -> void:
+## `restore_music` is off for the level-change path, where start() is about to
+## make that decision itself and two callers doing it would race.
+func stop_arena_track(fade_time := 3.0, restore_music := true) -> void:
 	if _arena_player == null or not is_instance_valid(_arena_player):
 		_arena_player = null
 		return
@@ -412,14 +445,14 @@ func stop_arena_track(fade_time := 3.0, restore_bed := true) -> void:
 	_arena_player = null
 	if fade_time <= 0.0:
 		player.queue_free()
-		if restore_bed:
-			_start_bed()
+		if restore_music:
+			resume_region_track(ARENA_RETURN_TRACK)
 		return
 	var tween := create_tween()
 	tween.tween_property(player, "volume_db", SILENT_VOLUME_DB, fade_time)
 	tween.tween_callback(player.queue_free)
-	if restore_bed:
-		tween.tween_callback(_start_bed)
+	if restore_music:
+		tween.tween_callback(resume_region_track.bind(ARENA_RETURN_TRACK, 1.5))
 
 ## Fades the level bed out and lets it go. The bed is deliberately carried from
 ## level to level as the mole walks, so this is only for arriving somewhere that
@@ -436,6 +469,33 @@ func stop_bed(fade_time := 1.0) -> void:
 	tween.tween_property(_player, "volume_db", SILENT_VOLUME_DB, fade_time)
 	tween.tween_callback(_player.queue_free)
 	_player = null
+
+## Replaces the ordinary level bed while a custom level is being edited or
+## playtested. Changed while the bed is already up, it swaps straight over so the
+## editor preview matches the level's new choice; otherwise the next start() picks
+## it up.
+func set_bed_override(path: String) -> void:
+	if path == _bed_override_path:
+		return
+	_bed_override_path = path
+	if _player != null and is_instance_valid(_player) and _player.playing:
+		stop_bed(0.0)
+		_start_bed()
+
+
+## Starts (or restarts) the bed on a chosen track. Used when the author clicks a
+## song in the editor, so they hear it without having to enter a playtest first.
+func play_bed(path: String, fade_time := 1.0) -> void:
+	_bed_override_path = path
+	if _player != null and is_instance_valid(_player):
+		stop_bed(0.0)
+	_start_bed(fade_time)
+
+
+## Drops the custom level's choice without touching the campaign's ordinary bed.
+## The editor stops that bed itself when it leaves.
+func clear_bed_override() -> void:
+	_bed_override_path = ""
 
 ## Runs one slice of the track on a loop, fading it up from silence. Both bounds
 ## are positions in the song as written - this one is not slowed down, so its
@@ -547,17 +607,24 @@ func start() -> void:
 ## the arena theme borrows the bed's slot for the length of a fight and has to
 ## hand it straight back, without re-running the level-change bookkeeping that
 ## start() does on the way in.
-func _start_bed() -> void:
+func _start_bed(fade_time := 0.0) -> void:
 	if _player != null and is_instance_valid(_player):
 		return
+	var stream = _stream
+	if not _bed_override_path.is_empty():
+		var custom = load(_bed_override_path)
+		if custom is AudioStream:
+			stream = custom
 	_player = AudioStreamPlayer.new()
-	_player.stream = _stream
-	_player.volume_db = _target_volume
+	_player.stream = stream
+	_player.volume_db = SILENT_VOLUME_DB if fade_time > 0.0 else _target_volume
 	_player.process_mode = Node.PROCESS_MODE_ALWAYS
 	_player.bus = &"Music"
 	add_child(_player)
 	_player.finished.connect(_player.play)
 	_player.play()
+	if fade_time > 0.0:
+		_bed_volume_tween = _fade_to_target(_player, _target_volume, fade_time)
 
 ## Starts the boss theme from silence and loops it. Already-playing is left
 ## alone, so re-entering the boss trigger cannot restart the track mid-fade.
@@ -617,6 +684,9 @@ func stop_boss_track(fade_time := 0.8, then: Callable = Callable()) -> void:
 func stop() -> void:
 	stop_boss_track()
 	_vessel_road_active = false
+	# A custom level's track is tied to the editor session, so leaving the game
+	# for good drops it as well; the campaign's bed must never inherit it.
+	_bed_override_path = ""
 	# Everything here is leaving the game for good - credits, game over, the title
 	# screen - so the walk's track and the village's go with the rest of it. The
 	# arena theme goes too: dying mid-fight drops straight into game over, and it

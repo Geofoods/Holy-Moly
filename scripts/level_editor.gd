@@ -17,15 +17,19 @@ extends Node2D
 ## wheel zooms, Ctrl+Z undoes and G toggles the grid.
 ##
 ## The WORLD panel picks which parallax backdrop the level uses, how hard the
-## vignette filter bites, whether fireflies drift through it, and which weapons
-## the level unlocks, so a level's look and starting kit are authored right
-## alongside its geometry.
+## vignette filter bites, whether fireflies drift through it, which campaign track
+## loops in the background, and which weapons the level unlocks, so a level's
+## look, sound and starting kit are authored right alongside its geometry.
 ##
 ## The ITEMS tab also carries the bits of a level that are not just things to
-## walk into: a Portal, the way out; a Respawn Station, the checkpoint a playtest
-## death returns to; and Goblin Gilbert's stall, where the mole can spend its
-## coins. A checkpoint is banked in a playtest with the interact key, exactly as
-## in the campaign, and never touches the player's real save.
+## walk into: a Portal, the way out; a Respawn Station, the checkpoint a
+## playtest death returns to; and a Candle, pure decoration that lights what is
+## around it. A checkpoint is banked in a playtest with the interact key, exactly
+## as in the campaign, and never touches the player's real save.
+##
+## The BLOCKS tab lists the TileSet's solid blocks and, under their own heading,
+## every decorative tile that has no collision. Both are painted the same way: a
+## decorative tile is scenery the mole simply walks through.
 
 const TOOL_BLOCK := 0
 const TOOL_ENEMY := 1
@@ -35,7 +39,7 @@ const TOOL_CHEST := 4
 const TOOL_ITEM := 5
 const TOOL_PORTAL := 6
 const TOOL_CHECKPOINT := 7
-const TOOL_GILBERT := 8
+const TOOL_CANDLE := 8
 
 const TAB_BLOCKS := 0
 const TAB_ENEMIES := 1
@@ -53,9 +57,8 @@ const PORTAL_SCENE := preload("res://scenes/level_portal.tscn")
 const PORTAL_SCRIPT := preload("res://scripts/level_portal.gd")
 const RESPAWN_STATION_SCENE := preload("res://scenes/respawn_station.tscn")
 const RESPAWN_STATION_SCRIPT := preload("res://scripts/respawn_station.gd")
-const SHOPKEEPER_SCENE := preload("res://scenes/shopkeeper_npc.tscn")
+const CANDLE_SCENE := preload("res://candle.tscn")
 const CHECKPOINT_SHEET := preload("res://sprites/checkpoint.png")
-const GILBERT_SHEET := preload("res://sprites/shopt.png")
 const CHEST_ICON := preload("res://chest.webp")
 const UI_FONT := preload("res://Baby Doll.otf")
 
@@ -124,6 +127,22 @@ const BACKGROUND_CATALOG := [
 	{"name": "Red", "scene": "res://scenes/parallax_background3.tscn", "tint": Color(0.98, 0.38, 0.16)},
 ]
 
+## The campaign's background tracks, in the order the player meets them. A level
+## stores the id rather than the resource path, so saves stay stable if a file is
+## renamed and a downloaded level can never ask the game to load an arbitrary
+## resource. The bed track is first: old levels with no music field use it.
+const MUSIC_CATALOG := [
+	{"id": "grotto", "name": "Grotto", "path": "res://nojisuma-grotto-120967.mp3", "tint": Color(0.36, 0.72, 0.82)},
+	{"id": "village", "name": "Mole Village", "path": "res://Stardew Valley OST - Pelican Town.mp3", "tint": Color(0.96, 0.78, 0.42)},
+	{"id": "slime_valley", "name": "Slime Valley", "path": "res://Shimmer - Sinjin Hawke - FRACTAL FANTASY (128k).mp3", "tint": Color(0.94, 0.58, 0.95)},
+	{"id": "mines", "name": "The Mines", "path": "res://Stardew Valley OST - Mines (The Lava Dwellers) - Lewie G (128k).mp3", "tint": Color(0.98, 0.48, 0.22)},
+	{"id": "corrupted_heart", "name": "Corrupted Heart", "path": "res://Grimm (Hollow Knight_ The Grimm Troupe).mp3", "tint": Color(0.82, 0.24, 0.24)},
+	{"id": "sealed_vessel", "name": "Sealed Vessel", "path": "res://Hollow Knight OST - Sealed Vessel.mp3", "tint": Color(0.70, 0.76, 0.92)},
+	{"id": "arena", "name": "The Arena", "path": "res://Hollow Knight OST - Nosk [youaretube.com].mp3", "tint": Color(0.78, 0.54, 0.96)},
+]
+
+const DEFAULT_MUSIC_ID := "grotto"
+
 ## Matches the 0.55 the campaign levels use, so a fresh level starts out with
 ## the look the player will actually see.
 const DEFAULT_VIGNETTE := 0.55
@@ -158,6 +177,7 @@ var _level_name := DEFAULT_LEVEL_NAME
 var _background_index := 0
 var _vignette := DEFAULT_VIGNETTE
 var _fireflies := true
+var _music_id := DEFAULT_MUSIC_ID
 ## When true the level replaces the player's own weapon set with `_level_weapons`.
 ## When false the game leaves whatever the player has unlocked alone.
 var _weapon_override := false
@@ -223,6 +243,11 @@ var _saved_shop: Dictionary = {}
 var _children_before: Array = []
 
 var _autosave_timer: Timer = null
+## The working file this editor session autosaves to. A normal Level Forge open
+## uses AUTOSAVE_PATH; a community level launched from the Level Browser gets a
+## separate file so the author's own work is never overwritten.
+var _autosave_path := AUTOSAVE_PATH
+var _launch_playtest := false
 
 var _ui_root: Control = null
 var _toolbar: PanelContainer = null
@@ -232,7 +257,9 @@ var _hint: Label = null
 var _hint_panel: PanelContainer = null
 var _toast_label: Label = null
 var _name_edit: LineEdit = null
+var _blocks_box: VBoxContainer = null
 var _block_grid: GridContainer = null
+var _decor_grid: GridContainer = null
 var _enemy_grid: GridContainer = null
 var _items_box: VBoxContainer = null
 var _item_grid: GridContainer = null
@@ -242,7 +269,7 @@ var _items_tab: Button = null
 var _chest_btn: Button = null
 var _portal_btn: Button = null
 var _checkpoint_btn: Button = null
-var _gilbert_btn: Button = null
+var _candle_btn: Button = null
 var _erase_btn: Button = null
 var _spawn_btn: Button = null
 var _grid_btn: Button = null
@@ -252,6 +279,9 @@ var _vignette_slider: HSlider = null
 var _vignette_value: Label = null
 var _firefly_btn: Button = null
 var _firefly_spawner: Node2D = null
+var _music_btn: Button = null
+var _music_overlay: Control = null
+var _music_buttons: Dictionary = {}
 var _weapon_btn: Button = null
 var _loadout_overlay: Control = null
 var _weapon_use_own_btn: Button = null
@@ -272,6 +302,9 @@ var _browse_status: Label = null
 var _browse_list: VBoxContainer = null
 var _browse_refresh_button: Button = null
 var _browse_request_serial := 0
+## Per-row labels/buttons, keyed by level id, so liking one entry can refresh
+## its own count without rebuilding the whole list.
+var _browse_rows: Dictionary = {}
 var _block_buttons: Dictionary = {}
 var _enemy_buttons: Array = []
 var _item_buttons: Array = []
@@ -293,8 +326,15 @@ func _ready() -> void:
 	_setup_backgrounds()
 	_setup_fireflies()
 
-	if FileAccess.file_exists(AUTOSAVE_PATH):
-		load_level(AUTOSAVE_PATH)
+	var launch := LevelShare.take_editor_request()
+	if not launch.is_empty():
+		_autosave_path = str(launch.get("autosave_path", AUTOSAVE_PATH))
+		_launch_playtest = bool(launch.get("playtest", false))
+	var launch_path := str(launch.get("level_path", ""))
+	if not launch_path.is_empty() and FileAccess.file_exists(launch_path):
+		load_level(launch_path)
+	elif FileAccess.file_exists(_autosave_path):
+		load_level(_autosave_path)
 	else:
 		_new_level(true)
 
@@ -303,6 +343,18 @@ func _ready() -> void:
 	_refresh_tool_buttons()
 	_hover_cell = Vector2i(999999, 999999)
 	_overlay.queue_redraw()
+	if _launch_playtest:
+		_start_launch_playtest()
+
+
+## A community level opened from the Level Browser goes straight into its
+## playtest. Waiting two frames lets the editor finish laying out its UI and the
+## scene transition hand over cleanly before the mole is spawned.
+func _start_launch_playtest() -> void:
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if is_inside_tree():
+		start_playtest()
 
 
 func _exit_tree() -> void:
@@ -313,6 +365,10 @@ func _exit_tree() -> void:
 	# own purchases off disk for the rest of the session.
 	if _playing:
 		_release_borrowed_state()
+	# A custom level's track must not outlive the editor session; the title and the
+	# campaign both expect the music slot to be theirs again.
+	LevelMusic.clear_bed_override()
+	LevelMusic.stop_bed(0.0)
 	# The mole runs the whole campaign at 1.2x; leaving that set would speed the
 	# editor (and the menus) up for the rest of the session.
 	Engine.time_scale = 1.0
@@ -330,6 +386,7 @@ func _new_level(with_floor: bool) -> void:
 	_background_index = 0
 	_vignette = DEFAULT_VIGNETTE
 	_fireflies = true
+	_music_id = DEFAULT_MUSIC_ID
 	_weapon_override = false
 	_level_weapons = _all_weapon_ids()
 	if with_floor:
@@ -423,8 +480,8 @@ func _make_prop_node(prop: Dictionary) -> Node2D:
 			return portal as Node2D
 		"checkpoint":
 			return RESPAWN_STATION_SCENE.instantiate() as Node2D
-		"gilbert":
-			return SHOPKEEPER_SCENE.instantiate() as Node2D
+		"candle":
+			return CANDLE_SCENE.instantiate() as Node2D
 	return null
 
 
@@ -437,8 +494,8 @@ func _is_known_enemy(enemy_name: String) -> bool:
 
 ## A prop is only kept if what it holds still exists: an item path that no longer
 ## resolves is dropped rather than left in the level as an invisible thing that
-## cannot be placed again. The same test retires the weapon rows old saves were
-## saved with, since the palette no longer offers a weapon.
+## cannot be placed again. The same test retires prop rows and weapon rows old
+## saves were saved with, since the palette no longer offers them.
 func _is_known_prop_value(kind: String, value: String) -> bool:
 	for spec in ITEM_CATALOG:
 		if str(spec["kind"]) != kind:
@@ -486,6 +543,7 @@ func _apply_world() -> void:
 	_apply_background()
 	_apply_vignette()
 	_apply_fireflies()
+	_apply_music()
 	_refresh_world_ui()
 
 
@@ -525,6 +583,36 @@ func _apply_fireflies() -> void:
 	_firefly_spawner.call("set_focus_override", _firefly_focus())
 
 
+## Hands the chosen campaign track to LevelMusic. A bed already playing swaps to
+## the new track immediately so loading another level or changing the choice in
+## the WORLD panel is audible without entering a playtest first.
+func _apply_music() -> void:
+	LevelMusic.set_bed_override(_music_path())
+
+
+func _music_spec(id: String = "") -> Dictionary:
+	var wanted := _music_id if id.is_empty() else id
+	for spec in MUSIC_CATALOG:
+		if str(spec["id"]) == wanted:
+			return spec
+	return MUSIC_CATALOG[0]
+
+
+func _music_path() -> String:
+	return str(_music_spec()["path"])
+
+
+func _music_name() -> String:
+	return str(_music_spec()["name"])
+
+
+func _is_music_id(id: String) -> bool:
+	for spec in MUSIC_CATALOG:
+		if str(spec["id"]) == id:
+			return true
+	return false
+
+
 func _refresh_world_ui() -> void:
 	for i in _background_buttons.size():
 		var button: Button = _background_buttons[i]
@@ -536,9 +624,18 @@ func _refresh_world_ui() -> void:
 	if _firefly_btn != null:
 		_firefly_btn.button_pressed = _fireflies
 		_firefly_btn.text = "Fireflies: ON" if _fireflies else "Fireflies: OFF"
+	_refresh_music_ui()
 	if _weapon_btn != null:
 		_weapon_btn.text = _weapon_button_text()
 	_refresh_loadout_ui()
+
+
+func _refresh_music_ui() -> void:
+	if _music_btn != null:
+		_music_btn.text = "Music: %s" % _music_name()
+	for key in _music_buttons:
+		var button: Button = _music_buttons[key]
+		button.button_pressed = str(key) == _music_id
 
 
 func _weapon_button_text() -> String:
@@ -595,6 +692,7 @@ func _weapon_name(id: String) -> String:
 func _open_loadout_overlay() -> void:
 	_close_online_overlay()
 	_close_load_overlay()
+	_close_music_overlay()
 	_refresh_loadout_ui()
 	_loadout_overlay.visible = true
 
@@ -602,6 +700,30 @@ func _open_loadout_overlay() -> void:
 func _close_loadout_overlay() -> void:
 	if _loadout_overlay != null:
 		_loadout_overlay.visible = false
+
+
+func _open_music_overlay() -> void:
+	_close_online_overlay()
+	_close_load_overlay()
+	_close_loadout_overlay()
+	_refresh_music_ui()
+	_music_overlay.visible = true
+
+
+func _close_music_overlay() -> void:
+	if _music_overlay != null:
+		_music_overlay.visible = false
+
+
+func _on_music_selected(id: String) -> void:
+	if not _is_music_id(id):
+		return
+	_music_id = id
+	# Audition straight away; the panel stays open so several tracks can be
+	# compared without closing and reopening it.
+	LevelMusic.play_bed(_music_path(), 0.8)
+	_refresh_world_ui()
+	_mark_dirty()
 
 
 func _on_weapon_mode_pressed() -> void:
@@ -647,8 +769,8 @@ func _paint(cell: Vector2i) -> void:
 		TOOL_CHECKPOINT:
 			_props.append({"kind": "checkpoint", "value": "", "position": _cell_center(cell)})
 			_rebuild_entity_nodes()
-		TOOL_GILBERT:
-			_props.append({"kind": "gilbert", "value": "", "position": _cell_center(cell)})
+		TOOL_CANDLE:
+			_props.append({"kind": "candle", "value": "", "position": _cell_center(cell)})
 			_rebuild_entity_nodes()
 		TOOL_ITEM:
 			var choice: Dictionary = ITEM_CATALOG[_selected_item]
@@ -744,9 +866,9 @@ func _cell_at_mouse() -> Vector2i:
 
 
 ## Rectangle filling only means something for the two tools that lay down cells
-## one at a time. Enemies, chests, items, the portal, the station, the merchant
-## and the start marker are single objects, so they are still placed with one
-## click in rectangle mode.
+## one at a time. Enemies, chests, items, the portal, the station and the start
+## marker are single objects, so they are still placed with one click in
+## rectangle mode.
 func _rect_on() -> bool:
 	return _rect_mode and (_tool == TOOL_BLOCK or _tool == TOOL_ERASE)
 
@@ -832,6 +954,7 @@ func to_dict() -> Dictionary:
 		"background": _background_index,
 		"vignette": _vignette,
 		"fireflies": _fireflies,
+		"music": _music_id,
 	}
 	# Absent means "use the player's own shop unlocks", which keeps old levels
 	# and levels that never opened the weapon panel behaving as they always did.
@@ -867,10 +990,10 @@ func from_dict(data: Dictionary) -> bool:
 			continue
 		var kind := str(row[0])
 		var value := str(row[1])
-		if kind == "chest" or kind == "portal" or kind == "checkpoint" or kind == "gilbert":
+		if kind == "chest" or kind == "portal" or kind == "checkpoint" or kind == "candle":
 			# None of these carries a second value: a chest rolls its own loot, a
-			# portal has nowhere in particular to lead, and the station and the
-			# stall are the scene themselves.
+			# portal has nowhere in particular to lead, the station is the scene
+			# itself, and a candle is pure decoration.
 			value = ""
 		elif not _is_known_prop_value(kind, value):
 			continue
@@ -890,6 +1013,11 @@ func from_dict(data: Dictionary) -> bool:
 	_background_index = clampi(int(data.get("background", 0)), 0, BACKGROUND_CATALOG.size() - 1)
 	_vignette = clampf(float(data.get("vignette", DEFAULT_VIGNETTE)), 0.0, 1.0)
 	_fireflies = bool(data.get("fireflies", true))
+	# Old levels have no music field and keep the campaign's usual bed; an id the
+	# catalog has retired falls back to that same track rather than loading an
+	# arbitrary resource from a downloaded file.
+	var music_id := str(data.get("music", DEFAULT_MUSIC_ID))
+	_music_id = music_id if _is_music_id(music_id) else DEFAULT_MUSIC_ID
 	var weapons = data.get("weapons", null)
 	if weapons is Array:
 		_weapon_override = true
@@ -954,14 +1082,14 @@ func _mark_dirty() -> void:
 
 
 func _save_autosave() -> void:
-	save_level(AUTOSAVE_PATH)
+	save_level(_autosave_path)
 
 
 func _save_now() -> void:
 	if _autosave_timer != null:
 		_autosave_timer.stop()
 	if is_inside_tree():
-		save_level(AUTOSAVE_PATH)
+		save_level(_autosave_path)
 
 
 # ------------------------------------------------------------------ playtest
@@ -971,6 +1099,7 @@ func start_playtest() -> void:
 		return
 	_close_online_overlay()
 	_close_loadout_overlay()
+	_close_music_overlay()
 	_save_now()
 	_playing = true
 	_finishing = false
@@ -989,6 +1118,11 @@ func start_playtest() -> void:
 	for child in _entities.get_children():
 		_resume_entity(child)
 		_wire_playtest_checkpoint(child)
+	# The editor can be entered straight from the title screen, before a mole has
+	# ever initialized the hotbar. Do that before taking the snapshot, so the
+	# shovel in slot 0 is part of the borrowed state and is still there after
+	# the first playtest ends.
+	Inventory.initialize()
 	# A playtest is always a fresh run: the mole reads its health out of
 	# Inventory, so a previous run left at three hearts would otherwise carry
 	# straight over. The banked values go back untouched on stop.
@@ -1070,37 +1204,36 @@ func _snapshot_shop() -> void:
 ## a grappling hook. Called after _snapshot_shop(), so stop_playtest restores
 ## the player's real set.
 func _apply_level_loadout() -> void:
-	if not _weapon_override:
-		return
-	var selected: Array[String] = []
-	for id in _level_weapons:
-		if _is_weapon_id(id) and id not in selected:
-			selected.append(id)
-	if "shovel" not in selected:
-		selected.push_front("shovel")
+	if _weapon_override:
+		var selected: Array[String] = []
+		for id in _level_weapons:
+			if _is_weapon_id(id) and id not in selected:
+				selected.append(id)
+		if "shovel" not in selected:
+			selected.push_front("shovel")
 
-	var kept: Array[String] = []
-	for id in Shop.owned:
-		if not _is_weapon_id(str(id)):
-			kept.append(str(id))
-	for id in selected:
-		if id not in kept:
-			kept.append(id)
-	Shop.owned = kept
+		var kept: Array[String] = []
+		for id in Shop.owned:
+			if not _is_weapon_id(str(id)):
+				kept.append(str(id))
+		for id in selected:
+			if id not in kept:
+				kept.append(id)
+		Shop.owned = kept
 
-	# Start with the best melee the level unlocked. The player can still switch
-	# through the weapon picker once more than one is owned.
-	var starting_melee := "shovel"
-	var starting_ranged := ""
-	for w in Shop.weapon_catalog:
-		if w.id not in selected:
-			continue
-		if w.weapon_type == WeaponData.Type.MELEE:
-			starting_melee = w.id
-		elif w.weapon_type == WeaponData.Type.RANGED:
-			starting_ranged = w.id
-	Shop.equipped_melee_id = starting_melee
-	Shop.equipped_ranged_id = starting_ranged
+		var starting_ranged := ""
+		for w in Shop.weapon_catalog:
+			if w.id in selected and w.weapon_type == WeaponData.Type.RANGED:
+				starting_ranged = w.id
+		Shop.equipped_ranged_id = starting_ranged
+
+	# Every playtest starts with the trusty shovel in hand, whether the level
+	# uses the player's own unlocks or a custom set. The other unlocked weapons
+	# are still in the weapon slot's picker, and this keeps the baseline tool
+	# from disappearing when the author has a heavier melee equipped.
+	if "shovel" not in Shop.owned:
+		Shop.owned.push_front("shovel")
+	Shop.equipped_melee_id = "shovel"
 	Shop.ranged_active = false
 	Shop.loadout_changed.emit()
 
@@ -1361,6 +1494,13 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	# The loadout panel owns input while it is open, for the same reason the
 	# online panel does.
+	if _music_overlay.visible:
+		if event is InputEventKey and event.pressed and not event.echo \
+				and event.keycode == KEY_ESCAPE:
+			_close_music_overlay()
+			get_viewport().set_input_as_handled()
+		return
+
 	if _loadout_overlay.visible:
 		if event is InputEventKey and event.pressed and not event.echo \
 				and event.keycode == KEY_ESCAPE:
@@ -1512,7 +1652,7 @@ func _process(delta: float) -> void:
 		_commit_rect()
 	if _playing or _panning or _load_overlay.visible \
 			or _online_overlay.visible or _loadout_overlay.visible \
-			or _ui_holds_pan_keys():
+			or _music_overlay.visible or _ui_holds_pan_keys():
 		return
 	var axis := _pan_axis()
 	if axis != Vector2.ZERO:
@@ -1610,6 +1750,7 @@ func _build_ui() -> void:
 	_build_load_overlay()
 	_build_online_overlay()
 	_build_loadout_overlay()
+	_build_music_overlay()
 
 
 func _build_toolbar() -> void:
@@ -1754,11 +1895,26 @@ func _build_palette() -> void:
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	column.add_child(scroll)
 
+	# The blocks tab is two grids under their own headings: solid blocks that
+	# collide, then the decorative tiles that are only ever scenery. Both are
+	# painted with the same tool, so picking one from either grid is enough.
+	_blocks_box = VBoxContainer.new()
+	_blocks_box.add_theme_constant_override("separation", 6)
+	scroll.add_child(_blocks_box)
+
+	_blocks_box.add_child(_heading_label("SOLID"))
 	_block_grid = GridContainer.new()
 	_block_grid.columns = 4
 	_block_grid.add_theme_constant_override("h_separation", 6)
 	_block_grid.add_theme_constant_override("v_separation", 6)
-	scroll.add_child(_block_grid)
+	_blocks_box.add_child(_block_grid)
+
+	_blocks_box.add_child(_heading_label("DECORATIVE"))
+	_decor_grid = GridContainer.new()
+	_decor_grid.columns = 4
+	_decor_grid.add_theme_constant_override("h_separation", 6)
+	_decor_grid.add_theme_constant_override("v_separation", 6)
+	_blocks_box.add_child(_decor_grid)
 
 	_enemy_grid = GridContainer.new()
 	_enemy_grid.columns = 2
@@ -1810,17 +1966,20 @@ func _build_palette() -> void:
 	_checkpoint_btn.pressed.connect(_on_checkpoint_selected)
 	_items_box.add_child(_checkpoint_btn)
 
-	_items_box.add_child(_heading_label("NPCS"))
+	_items_box.add_child(_heading_label("DECORATION"))
 
-	_gilbert_btn = _make_button("Goblin Gilbert", Vector2(136.0 * 2.0 + 6.0, 52.0))
-	_gilbert_btn.toggle_mode = true
-	_gilbert_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_gilbert_btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	_gilbert_btn.icon = _square_frame(GILBERT_SHEET, 0)
-	_gilbert_btn.tooltip_text = "Gilbert's stall: press E in a playtest to browse his stock"
-	_gilbert_btn.add_theme_constant_override("icon_max_width", 40)
-	_gilbert_btn.pressed.connect(_on_gilbert_selected)
-	_items_box.add_child(_gilbert_btn)
+	# Scenery that does not change how a level plays, but does change how it
+	# reads. The candle is the campaign's own candle scene: it flickers, lights
+	# the rock around it, and falls if the block under it is dug away.
+	_candle_btn = _make_button("Candle", Vector2(136.0 * 2.0 + 6.0, 52.0))
+	_candle_btn.toggle_mode = true
+	_candle_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_candle_btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_candle_btn.icon = _candle_icon()
+	_candle_btn.tooltip_text = "A flickering light for decoration; it falls if the block beneath it is removed"
+	_candle_btn.add_theme_constant_override("icon_max_width", 40)
+	_candle_btn.pressed.connect(_on_candle_selected)
+	_items_box.add_child(_candle_btn)
 
 	_items_box.add_child(_heading_label("ITEMS"))
 
@@ -1871,12 +2030,20 @@ func _build_world_panel() -> void:
 	_world_panel.offset_left = -276.0
 	_world_panel.offset_top = 82.0
 	_world_panel.offset_right = -12.0
-	_world_panel.offset_bottom = -96.0
+	_world_panel.offset_bottom = -56.0
 	_ui_root.add_child(_world_panel)
 
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_world_panel.add_child(scroll)
+
 	var column := VBoxContainer.new()
+	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	column.add_theme_constant_override("separation", 8)
-	_world_panel.add_child(column)
+	scroll.add_child(column)
 
 	var title := _section_label("WORLD")
 	column.add_child(title)
@@ -1933,6 +2100,14 @@ func _build_world_panel() -> void:
 	_weapon_btn.tooltip_text = "Choose which weapons this level unlocks for the player"
 	_weapon_btn.pressed.connect(_open_loadout_overlay)
 	column.add_child(_weapon_btn)
+
+	column.add_child(_heading_label("MUSIC"))
+
+	_music_btn = _make_button("Music: Grotto", Vector2(232.0, 44.0))
+	_music_btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_music_btn.tooltip_text = "Choose which campaign track plays in the background"
+	_music_btn.pressed.connect(_open_music_overlay)
+	column.add_child(_music_btn)
 
 
 func _section_label(text: String) -> Label:
@@ -2206,6 +2381,71 @@ func _build_loadout_overlay() -> void:
 	column.add_child(close_row)
 
 
+func _build_music_overlay() -> void:
+	_music_overlay = Control.new()
+	_music_overlay.name = "MusicOverlay"
+	_music_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_music_overlay.visible = false
+	_ui_root.add_child(_music_overlay)
+
+	var dim := ColorRect.new()
+	dim.color = Color(0, 0, 0, 0.64)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	_music_overlay.add_child(dim)
+
+	var panel := _make_panel()
+	panel.anchor_left = 0.5
+	panel.anchor_top = 0.5
+	panel.anchor_right = 0.5
+	panel.anchor_bottom = 0.5
+	panel.offset_left = -290.0
+	panel.offset_top = -280.0
+	panel.offset_right = 290.0
+	panel.offset_bottom = 280.0
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	_music_overlay.add_child(panel)
+
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 8)
+	panel.add_child(column)
+
+	var title := Label.new()
+	title.text = "BACKGROUND MUSIC"
+	title.add_theme_font_override("font", UI_FONT)
+	title.add_theme_font_size_override("font_size", 28)
+	title.add_theme_color_override("font_color", ACCENT)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	column.add_child(title)
+
+	var intro := _make_form_label(
+			"Choose the campaign track that loops under this level. Picking one "
+			+ "auditions it now, and it plays in every playtest and when the level "
+			+ "is published.")
+	intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	intro.custom_minimum_size = Vector2(500.0, 0.0)
+	column.add_child(intro)
+
+	for spec in MUSIC_CATALOG:
+		var id := str(spec["id"])
+		var button := _make_button(str(spec["name"]), Vector2(500.0, 44.0))
+		button.toggle_mode = true
+		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.icon = _swatch(spec["tint"], 14)
+		button.add_theme_constant_override("icon_max_width", 24)
+		button.tooltip_text = "Play %s in the background" % str(spec["name"])
+		button.pressed.connect(_on_music_selected.bind(id))
+		column.add_child(button)
+		_music_buttons[id] = button
+
+	var close_btn := _make_button("CLOSE", Vector2(140.0, 40.0))
+	close_btn.pressed.connect(_close_music_overlay)
+	var close_row := HBoxContainer.new()
+	close_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	close_row.add_child(close_btn)
+	column.add_child(close_row)
+
+
 func _build_online_publish_view() -> VBoxContainer:
 	var view := VBoxContainer.new()
 	view.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -2324,6 +2564,7 @@ func _make_line_edit(value: String, placeholder: String) -> LineEdit:
 
 func _open_online_overlay() -> void:
 	_close_loadout_overlay()
+	_close_music_overlay()
 	_publish_author_edit.text = LevelShare.author
 	_publish_status.text = ""
 	_show_online_publish()
@@ -2372,6 +2613,7 @@ func _on_publish_pressed() -> void:
 		_toast("Published \"%s\" online" % _level_name)
 		# Force the next Browse visit to pick up the new entry.
 		_clear_children(_browse_list)
+		_browse_rows.clear()
 	else:
 		_publish_status.text = "Publish failed: " + str(result.get("error", "Unknown error"))
 
@@ -2387,6 +2629,7 @@ func _refresh_online_levels() -> void:
 	_browse_refresh_button.disabled = true
 	_browse_status.text = "Contacting the community server... (free servers may take ~1 min to wake)"
 	_clear_children(_browse_list)
+	_browse_rows.clear()
 	var result: Dictionary = await LevelShare.fetch_levels()
 	if serial != _browse_request_serial:
 		return
@@ -2407,7 +2650,24 @@ func _refresh_online_levels() -> void:
 			_add_online_level_row(raw_entry)
 
 
+func _online_entry_byline(entry: Dictionary) -> String:
+	var created := str(entry.get("created_at", "")).left(10)
+	var downloads := int(entry.get("downloads", 0))
+	var likes := int(entry.get("likes", 0))
+	return "by %s | %s | %d like%s | %d download%s" % [
+		str(entry.get("author", "Anonymous")), created, likes,
+		"" if likes == 1 else "s", downloads,
+		"" if downloads == 1 else "s"]
+
+
+func _online_like_label(entry: Dictionary) -> String:
+	var level_id := str(entry.get("id", ""))
+	var likes := int(entry.get("likes", 0))
+	return "%s (%d)" % ["LIKED" if LevelShare.is_level_liked(level_id) else "LIKE", likes]
+
+
 func _add_online_level_row(entry: Dictionary) -> void:
+	var level_id := str(entry.get("id", ""))
 	var card := VBoxContainer.new()
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card.add_theme_constant_override("separation", 2)
@@ -2419,12 +2679,8 @@ func _add_online_level_row(entry: Dictionary) -> void:
 	title.add_theme_color_override("font_color", ACCENT)
 	card.add_child(title)
 
-	var created := str(entry.get("created_at", "")).left(10)
-	var downloads := int(entry.get("downloads", 0))
 	var byline := Label.new()
-	byline.text = "by %s  ·  %s  ·  %d download%s" % [
-		str(entry.get("author", "Anonymous")), created, downloads,
-		"" if downloads == 1 else "s"]
+	byline.text = _online_entry_byline(entry)
 	byline.add_theme_font_override("font", UI_FONT)
 	byline.add_theme_font_size_override("font_size", 15)
 	byline.add_theme_color_override("font_color", Color(0.74, 0.67, 0.58))
@@ -2439,15 +2695,53 @@ func _add_online_level_row(entry: Dictionary) -> void:
 	description.add_theme_color_override("font_color", Color(0.9, 0.84, 0.75))
 	card.add_child(description)
 
-	var load_button := _make_button("LOAD", Vector2(88.0, 38.0))
-	load_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	load_button.pressed.connect(_on_online_level_load.bind(str(entry.get("id", ""))))
+	var actions := VBoxContainer.new()
+	actions.add_theme_constant_override("separation", 6)
+	actions.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var like_button := _make_button(_online_like_label(entry), Vector2(126.0, 38.0))
+	like_button.pressed.connect(_on_online_level_like.bind(level_id))
+	actions.add_child(like_button)
+	var load_button := _make_button("LOAD", Vector2(126.0, 38.0))
+	load_button.pressed.connect(_on_online_level_load.bind(level_id))
+	actions.add_child(load_button)
+
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
 	row.add_child(card)
-	row.add_child(load_button)
+	row.add_child(actions)
 	_browse_list.add_child(row)
 	_browse_list.add_child(HSeparator.new())
+	_browse_rows[level_id] = {
+		"entry": entry,
+		"byline": byline,
+		"like": like_button,
+	}
+
+
+func _on_online_level_like(level_id: String) -> void:
+	var row: Dictionary = _browse_rows.get(level_id, {})
+	var like_button: Button = row.get("like")
+	if like_button != null:
+		like_button.disabled = true
+	var result: Dictionary = await LevelShare.set_level_liked(
+			level_id, not LevelShare.is_level_liked(level_id))
+	if not is_inside_tree():
+		return
+	if like_button != null and is_instance_valid(like_button):
+		like_button.disabled = false
+	if not bool(result.get("ok", false)):
+		_browse_status.text = "Could not update that like:\n" \
+				+ str(result.get("error", "Unknown error"))
+		return
+	var updated = result.get("level", {})
+	if not (updated is Dictionary) or row.is_empty():
+		return
+	if not is_instance_valid(like_button) or not is_instance_valid(row.get("byline")):
+		return
+	var entry: Dictionary = row["entry"]
+	entry["likes"] = int(updated.get("likes", entry.get("likes", 0)))
+	row["byline"].text = _online_entry_byline(entry)
+	like_button.text = _online_like_label(entry)
 
 
 func _on_online_level_load(level_id: String) -> void:
@@ -2558,8 +2852,10 @@ func _setup_palette() -> void:
 		for i in source.get_tiles_count():
 			var coords := source.get_tile_id(i)
 			var data := source.get_tile_data(coords, 0)
-			if data == null or data.get_collision_polygons_count(0) <= 0:
-				continue
+			# A tile with no collision is pure scenery, so it belongs under the
+			# decorative heading rather than among the blocks that make up the
+			# level's geometry. Everything the palette shows can still be painted.
+			var decorative := data == null or data.get_collision_polygons_count(0) <= 0
 			var atlas := AtlasTexture.new()
 			atlas.atlas = source.texture
 			atlas.region = Rect2(Vector2(coords) * tile_px, tile_px)
@@ -2568,17 +2864,20 @@ func _setup_palette() -> void:
 			button.expand_icon = true
 			button.toggle_mode = true
 			button.custom_minimum_size = Vector2(60.0, 60.0)
-			button.tooltip_text = "Block %d, %d" % [coords.x, coords.y]
+			button.tooltip_text = "%s %d, %d" % ["Decorative tile" if decorative else "Block", coords.x, coords.y]
 			button.add_theme_stylebox_override("normal", _style(BUTTON_BG, PANEL_BORDER, 4))
 			button.add_theme_stylebox_override("hover", _style(BUTTON_HOVER, ACCENT, 4))
 			button.add_theme_stylebox_override("pressed", _style(BUTTON_PRESSED, ACCENT, 4))
 			button.add_theme_stylebox_override("focus", _style(BUTTON_HOVER, ACCENT, 4))
 			button.pressed.connect(_on_block_selected.bind(coords))
-			_block_grid.add_child(button)
+			if decorative:
+				_decor_grid.add_child(button)
+			else:
+				_block_grid.add_child(button)
+				if first:
+					_selected_block = coords
+					first = false
 			_block_buttons[coords] = button
-			if first:
-				_selected_block = coords
-				first = false
 
 	for i in ENEMY_CATALOG.size():
 		var spec: Dictionary = ENEMY_CATALOG[i]
@@ -2640,6 +2939,15 @@ func _enemy_icon(enemy_name: String) -> Texture2D:
 	var node := _make_enemy_node(enemy_name)
 	if node == null:
 		return null
+	var texture := _sprite_preview_texture(node)
+	node.free()
+	return texture
+
+
+## The candle's own first frame, so its palette button always matches the scene
+## that gets placed rather than a hand-copied slice of the tile sheet.
+func _candle_icon() -> Texture2D:
+	var node := CANDLE_SCENE.instantiate()
 	var texture := _sprite_preview_texture(node)
 	node.free()
 	return texture
@@ -2725,8 +3033,8 @@ func _on_checkpoint_selected() -> void:
 	_refresh_tool_buttons()
 
 
-func _on_gilbert_selected() -> void:
-	_tool = TOOL_GILBERT
+func _on_candle_selected() -> void:
+	_tool = TOOL_CANDLE
 	_refresh_tool_buttons()
 
 
@@ -2752,7 +3060,7 @@ func _on_rect_toggled(on: bool) -> void:
 
 func _set_tab(tab: int) -> void:
 	_tab = tab
-	_block_grid.visible = tab == TAB_BLOCKS
+	_blocks_box.visible = tab == TAB_BLOCKS
 	_enemy_grid.visible = tab == TAB_ENEMIES
 	_items_box.visible = tab == TAB_ITEMS
 	match tab:
@@ -2775,7 +3083,7 @@ func _refresh_tool_buttons() -> void:
 	_chest_btn.button_pressed = _tool == TOOL_CHEST
 	_portal_btn.button_pressed = _tool == TOOL_PORTAL
 	_checkpoint_btn.button_pressed = _tool == TOOL_CHECKPOINT
-	_gilbert_btn.button_pressed = _tool == TOOL_GILBERT
+	_candle_btn.button_pressed = _tool == TOOL_CANDLE
 	for coords in _block_buttons:
 		var button: Button = _block_buttons[coords]
 		button.button_pressed = _tool == TOOL_BLOCK and coords == _selected_block
@@ -2851,6 +3159,7 @@ func _on_exit_pressed() -> void:
 
 func _open_load_overlay() -> void:
 	_close_loadout_overlay()
+	_close_music_overlay()
 	_refresh_load_list()
 	_load_overlay.visible = true
 
@@ -2870,7 +3179,7 @@ func _refresh_load_list() -> void:
 		var file_name := str(raw_name)
 		if not file_name.ends_with(".json"):
 			continue
-		if file_name == AUTOSAVE_PATH.get_file():
+		if file_name == AUTOSAVE_PATH.get_file() or file_name == _autosave_path.get_file():
 			continue
 		entries.append(file_name)
 	entries.sort()

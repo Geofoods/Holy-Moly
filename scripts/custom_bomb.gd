@@ -123,7 +123,7 @@ func _damage_enemies_in_radius() -> void:
 			enemy.die()
 
 func _break_tiles_in_radius() -> void:
-	var tilemap: TileMap = get_parent().get_node_or_null("TileMap")
+	var tilemap: TileMap = TileBreakSFX.find_level_tilemap(self)
 	if not tilemap:
 		return
 	var center_tile := tilemap.local_to_map(tilemap.to_local(global_position))

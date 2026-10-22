@@ -66,7 +66,7 @@ func _explode() -> void:
 		if dist <= explosion_radius:
 			freeze_node(mole, MOLE_FREEZE_DURATION)
 
-	var tilemap: TileMap = get_parent().get_node_or_null("TileMap")
+	var tilemap: TileMap = TileBreakSFX.find_level_tilemap(self)
 	if tilemap:
 		_freeze_tiles(tilemap)
 

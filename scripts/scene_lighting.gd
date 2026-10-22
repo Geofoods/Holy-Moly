@@ -35,6 +35,10 @@ func _process(_delta: float) -> void:
 	# fully lit: authoring tiles in cave shade would hide the palette's colours.
 	if path.ends_with("level_editor.tscn"):
 		return
+	# The community level browser is a front end like the title screen it is
+	# opened from, so it keeps the same unshaded background.
+	if path.ends_with("level_browser.tscn"):
+		return
 	if scene.get_node_or_null("AmbientModulate") == null:
 		var cm := CanvasModulate.new()
 		cm.name = "AmbientModulate"
