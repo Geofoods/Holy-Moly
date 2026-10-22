@@ -19,9 +19,12 @@ const MAX_RESPONSE_BYTES := 2 * 1024 * 1024
 const NAME_MAX := 60
 const AUTHOR_MAX := 40
 const DESCRIPTION_MAX := 280
-## The browser's playtest session gets its own working file so opening a
+## The browser's editing session gets its own working file so opening a
 ## community level can never overwrite the author's own editor autosave.
 const BROWSER_AUTOSAVE_PATH := "user://levels/_browser_autosave.json"
+## The normal-gameplay host for a community level. Kept here as well as in the
+## browser so game over can tell a community run from a campaign level.
+const COMMUNITY_PLAY_SCENE := "res://scenes/community_play.tscn"
 
 var base_url := SERVICE_URL
 var author := ""
@@ -34,6 +37,14 @@ var liked_levels: Array[String] = []
 var _pending_editor_level := ""
 var _pending_editor_playtest := false
 var _pending_editor_autosave := ""
+## The last community level the browser launched. Unlike the editor request,
+## this is not consumed on arrival: game over sends the player back to the same
+## scene, and that reload needs to know which JSON to build again. A new PLAY
+## from the browser replaces it; returning to the browser clears it.
+var _community_level_path := ""
+## Checkpoint banked in the current community run. Kept out of Progress so a
+## custom level can never overwrite the player's campaign checkpoint.
+var _community_checkpoint: Dictionary = {}
 
 
 func _ready() -> void:
@@ -148,6 +159,40 @@ func set_level_liked(level_id: String, liked: bool) -> Dictionary:
 		liked_levels.erase(level_id)
 	_save_settings()
 	return {"ok": true, "level": data["level"], "liked": liked}
+
+
+## Starts a fresh normal-gameplay run of a downloaded community level. The
+## checkpoint is deliberately dropped here: pressing PLAY is a new run, while a
+## retry after death comes back through community_play_level() below and keeps
+## the checkpoint banked during that run.
+func begin_community_play(path: String) -> void:
+	_community_level_path = path
+	_community_checkpoint = {}
+
+
+func community_play_level() -> String:
+	return _community_level_path
+
+
+func set_community_checkpoint(level_path: String, spawn_point: Vector2,
+		station_position: Vector2) -> void:
+	if level_path != _community_level_path:
+		return
+	_community_checkpoint = {
+		"position": spawn_point,
+		"station": station_position,
+	}
+
+
+func community_checkpoint(level_path: String) -> Dictionary:
+	if level_path != _community_level_path:
+		return {}
+	return _community_checkpoint.duplicate()
+
+
+func clear_community_play() -> void:
+	_community_level_path = ""
+	_community_checkpoint = {}
 
 
 ## Hands the editor a downloaded community level to open on the next scene load.

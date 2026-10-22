@@ -110,7 +110,8 @@ func change_to(path: String) -> void:
 	# own depth in the mole's _ready, and the menu and other front ends have no
 	# mole, so they would otherwise keep echoing.
 	SFX.reset_reverb()
-	if path.begins_with("res://scenes/level") or path == "res://scenes/tutorial.tscn" or path == "res://scenes/map.tscn":
+	if path.begins_with("res://scenes/level") or path == "res://scenes/tutorial.tscn" \
+			or path == "res://scenes/map.tscn" or path == LevelShare.COMMUNITY_PLAY_SCENE:
 		Inventory.current_level_path = path
 	await _swap_scene(path)
 	await get_tree().process_frame

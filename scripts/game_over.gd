@@ -132,6 +132,11 @@ func _on_play_again_pressed():
 ## is written on every level transition and again at the moment of death
 ## (mole.gd), so it still points at the level we came from by this point.
 func _retry_path() -> String:
+	# A community level is a downloaded JSON, not a campaign scene. It has its
+	# own retry route and its own checkpoint state, so a campaign checkpoint left
+	# on Progress must not steal the retry.
+	if Inventory.current_level_path == LevelShare.COMMUNITY_PLAY_SCENE:
+		return LevelShare.COMMUNITY_PLAY_SCENE
 	if Progress.has_respawn():
 		# Tells the station in the scene we are about to load that this arrival
 		# is a respawn, so it plays the materialise animation.

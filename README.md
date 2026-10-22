@@ -46,9 +46,12 @@ community service. Each entry shows its author, description, likes and download
 count, and NEWEST, MOST DOWNLOADED and MOST LIKED reorder the whole catalogue.
 LIKE adds or removes your own like; the game remembers your choice per
 installation, so one copy of the game counts once. EDIT downloads the level and
-opens it in Level Forge for changing, while PLAY downloads it and starts its
-playtest immediately. Both use a separate editor autosave, so opening a
-community level cannot overwrite the level you were building in Level Forge.
+opens it in Level Forge for changing, while PLAY launches it as a normal game
+level: the campaign HUD, pause menu and game over screen are all there, and the
+exit portal returns you to the browser when you finish. Community runs borrow
+their authored weapons and music for that run only, use their own checkpoint,
+and never overwrite campaign progress, shop unlocks or the level you were
+building in Level Forge.
 
 LEVEL EDITOR:
 

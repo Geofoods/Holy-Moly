@@ -4,10 +4,10 @@ extends Control
 ##
 ## It is deliberately separate from Level Forge: players can see what the
 ## community has published, like a level, then choose whether to open it for
-## editing or jump straight into a playtest. Both actions save the downloaded
-## JSON under user://levels and hand it to the editor through LevelShare's
-## one-shot launch request, which keeps the author's own editor autosave
-## untouched.
+## editing or play it as a normal game level. Both actions save the downloaded
+## JSON under user://levels; EDIT hands it to Level Forge's one-shot launch
+## request, while PLAY goes to the dedicated gameplay scene. The author's own
+## editor autosave is never touched either way.
 
 const UI_FONT := preload("res://Baby Doll.otf")
 const SCENE_TRANSITION := preload("res://scenes/scene_transition.tscn")
@@ -46,6 +46,9 @@ var _busy := false
 
 
 func _ready() -> void:
+	# Reaching the browser means any previous community run is over; its
+	# checkpoint must not leak into the next level the player picks.
+	LevelShare.clear_community_play()
 	_build_ui()
 	_refresh_levels()
 
@@ -150,7 +153,7 @@ func _build_ui() -> void:
 	column.add_child(scroll)
 
 	var footer := Label.new()
-	footer.text = "EDIT opens the level in Level Forge. PLAY opens it and starts a playtest. Downloads are counted by the community server."
+	footer.text = "EDIT opens the level in Level Forge. PLAY launches it as a normal game level. Downloads are counted by the community server."
 	footer.add_theme_font_override("font", UI_FONT)
 	footer.add_theme_font_size_override("font_size", 14)
 	footer.add_theme_color_override("font_color", Color(0.66, 0.58, 0.5))
@@ -356,9 +359,9 @@ func _on_play_pressed(level_id: String, button: Button) -> void:
 	_open_level(level_id, button, true)
 
 
-## Both row actions share the download, save and launch step; only the editor's
-## launch request differs, so EDIT loads the level for changing while PLAY also
-## starts its playtest.
+## Both row actions share the download and save step. EDIT hands the file to the
+## editor without starting a playtest; PLAY hands it to the normal gameplay scene
+## and leaves the editor entirely out of the run.
 func _open_level(level_id: String, button: Button, start_playing: bool) -> void:
 	if _busy:
 		return
@@ -390,8 +393,12 @@ func _open_level(level_id: String, button: Button, start_playing: bool) -> void:
 	file.store_string(JSON.stringify(data, "\t"))
 	file.close()
 	_busy = true
-	LevelShare.request_editor_level(path, start_playing)
-	_go_to_scene(EDITOR_SCENE)
+	if start_playing:
+		LevelShare.begin_community_play(path)
+		_go_to_scene(LevelShare.COMMUNITY_PLAY_SCENE)
+	else:
+		LevelShare.request_editor_level(path, false)
+		_go_to_scene(EDITOR_SCENE)
 
 
 func _set_row_actions_disabled(level_id: String, disabled: bool) -> void:

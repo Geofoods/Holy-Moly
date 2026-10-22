@@ -130,12 +130,22 @@ func _on_scene_changed() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if _traveling:
 		return
+	if _community_play_active():
+		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_M:
 			if _open:
 				_close_map()
 			else:
 				_open_map()
+
+
+## A downloaded community level has no map art or campaign travel destinations,
+## so the map stays shut for that run. The pause menu hides its MAP button for
+## the same reason; this also covers the M shortcut.
+func _community_play_active() -> bool:
+	var scene := get_tree().current_scene
+	return scene != null and scene.scene_file_path == LevelShare.COMMUNITY_PLAY_SCENE
 
 ## Other menus pause the tree too, and they must not fight this one over the
 ## shared paused flag - otherwise one closing would unpause the other's screen.
@@ -147,10 +157,12 @@ func is_map_open() -> bool:
 ## paused by the time its button can be pressed; the map simply takes the screen
 ## over and hands the pause back on close.
 func open_map() -> void:
+	if _community_play_active():
+		return
 	_open_map()
 
 func _open_map() -> void:
-	if _open or _traveling:
+	if _open or _traveling or _community_play_active():
 		return
 
 	_open = true

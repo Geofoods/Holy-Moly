@@ -27,6 +27,8 @@ const _NON_LEVEL_SCENES: Array[String] = [
 	"res://scenes/game_over.tscn",
 	"res://scenes/win_screen.tscn",
 	"res://scenes/credits.tscn",
+	"res://scenes/level_browser.tscn",
+	"res://scenes/community_play.tscn",
 ]
 
 var acorns := {}
@@ -195,7 +197,7 @@ func is_level_complete(path: String) -> bool:
 ## Notes that the mole has stood in `path`. Idempotent, and only writes to disk
 ## the first time a scene is seen so arrivals do not rewrite the save each time.
 func mark_visited(path: String) -> void:
-	if path.is_empty() or visited.has(path):
+	if path.is_empty() or path in _NON_LEVEL_SCENES or visited.has(path):
 		return
 	visited[path] = true
 	save_progress()

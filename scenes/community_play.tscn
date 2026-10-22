@@ -1,0 +1,123 @@
+[gd_scene load_steps=13 format=3]
+
+[ext_resource type="Script" path="res://scripts/community_play.gd" id="1_play"]
+[ext_resource type="TileSet" uid="uid://d07lidnoim34q" path="res://tileset.tres" id="2_tileset"]
+[ext_resource type="PackedScene" uid="uid://cc3uivb5mk5x5" path="res://scenes/parallax_background.tscn" id="3_parallax"]
+[ext_resource type="Shader" uid="uid://qjf1ibg12yh2" path="res://shaders/vignette.gdshader" id="4_vignette"]
+[ext_resource type="PackedScene" uid="uid://c6xus6tuhcmfo" path="res://scenes/heart.tscn" id="5_heart"]
+[ext_resource type="PackedScene" uid="uid://brmtyiqcy1wkv" path="res://scenes/inventory_ui.tscn" id="6_inventory"]
+[ext_resource type="PackedScene" uid="uid://d2i1x8x1y6qa" path="res://scenes/pause_menu.tscn" id="7_pause"]
+[ext_resource type="PackedScene" uid="uid://3wwhicdeo8hl" path="res://scenes/info_popup.tscn" id="8_info"]
+[ext_resource type="FontFile" uid="uid://bnyew5lradf4a" path="res://Baby Doll.otf" id="9_font"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_vignette"]
+shader = ExtResource("4_vignette")
+shader_parameter/inner_radius = 0.25
+shader_parameter/outer_radius = 0.55
+shader_parameter/darkness = 0.55
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton"]
+bg_color = Color(0.8, 0.68, 0.46, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.42, 0.28, 0.14, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pausebutton_hover"]
+bg_color = Color(0.97, 0.91, 0.78, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.42, 0.28, 0.14, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="CommunityPlay" type="Node2D"]
+script = ExtResource("1_play")
+
+[node name="ParallaxBackground" parent="." instance=ExtResource("3_parallax")]
+
+[node name="TileMap" type="TileMap" parent="."]
+modulate = Color(0.8784314, 0.62352943, 0.24313726, 1)
+scale = Vector2(0.5, 0.5)
+tile_set = ExtResource("2_tileset")
+format = 2
+
+[node name="Entities" type="Node2D" parent="."]
+
+[node name="VignetteLayer" type="CanvasLayer" parent="."]
+layer = 1
+
+[node name="VignetteRect" type="ColorRect" parent="VignetteLayer"]
+material = SubResource("ShaderMaterial_vignette")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+layer = 99
+
+[node name="heart" parent="CanvasLayer" instance=ExtResource("5_heart")]
+position = Vector2(117.99999, 113.99999)
+scale = Vector2(0.24147864, 0.24147864)
+
+[node name="PauseButton" type="Button" parent="CanvasLayer"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -65.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 65.0
+grow_horizontal = 0
+theme_override_colors/font_color = Color(0.32, 0.2, 0.08, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("9_font")
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_pausebutton")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_pausebutton_hover")
+theme_override_styles/hover = SubResource("StyleBoxFlat_pausebutton_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_pausebutton_hover")
+text = "II"
+
+[node name="InfoButton" type="Button" parent="CanvasLayer"]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -66.0
+offset_top = -66.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.32, 0.2, 0.08, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("9_font")
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StyleBoxFlat_pausebutton")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_pausebutton_hover")
+theme_override_styles/hover = SubResource("StyleBoxFlat_pausebutton_hover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_pausebutton_hover")
+text = "?"
+
+[node name="InventoryUI" parent="." instance=ExtResource("6_inventory")]
+
+[node name="PauseMenu" parent="." instance=ExtResource("7_pause")]
+
+[node name="InfoPopup" parent="." instance=ExtResource("8_info")]
+
+[connection signal="pressed" from="CanvasLayer/PauseButton" to="PauseMenu" method="toggle_pause"]
+[connection signal="pressed" from="CanvasLayer/InfoButton" to="InfoPopup" method="open"]
