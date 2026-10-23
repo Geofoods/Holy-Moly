@@ -48,6 +48,13 @@ const TAB_ITEMS := 2
 const TILE_LAYER := 0
 const TERRAIN_SOURCE := 0
 
+## The terrain sheet has six decorative cells that are either empty or hold a
+## stray pixel. They used to appear as blank buttons under DECORATIVE; the
+## palette skips cells this sparse, while the tiles stay in the TileSet so
+## levels saved before this cleanup still load.
+const PALETTE_ALPHA_STEP := 4
+const PALETTE_MIN_VISIBLE_SAMPLES := 8
+
 const MOLE_SCENE := preload("res://scenes/mole.tscn")
 const HEART_SCENE := preload("res://scenes/heart.tscn")
 const INVENTORY_UI_SCENE := preload("res://scenes/inventory_ui.tscn")
@@ -2848,6 +2855,7 @@ func _setup_palette() -> void:
 	var source := tileset.get_source(TERRAIN_SOURCE) as TileSetAtlasSource
 	if source != null and source.texture != null:
 		var tile_px := Vector2(tileset.tile_size)
+		var atlas_image := source.texture.get_image()
 		var first := true
 		for i in source.get_tiles_count():
 			var coords := source.get_tile_id(i)
@@ -2856,6 +2864,8 @@ func _setup_palette() -> void:
 			# decorative heading rather than among the blocks that make up the
 			# level's geometry. Everything the palette shows can still be painted.
 			var decorative := data == null or data.get_collision_polygons_count(0) <= 0
+			if decorative and _palette_tile_is_blank(atlas_image, coords, Vector2i(tile_px)):
+				continue
 			var atlas := AtlasTexture.new()
 			atlas.atlas = source.texture
 			atlas.region = Rect2(Vector2(coords) * tile_px, tile_px)
@@ -2925,6 +2935,28 @@ func _setup_palette() -> void:
 		button.pressed.connect(_on_item_selected.bind(i))
 		_item_grid.add_child(button)
 		_item_buttons.append(button)
+
+
+## True for a palette cell whose artwork is empty or just a stray few pixels.
+## Sampling keeps the check cheap on the 160px tiles while the gap between the
+## six blank cells and the next real decoration is wide enough that nothing
+## meaningful is hidden.
+func _palette_tile_is_blank(image: Image, coords: Vector2i, tile_size: Vector2i) -> bool:
+	if image == null or tile_size.x <= 0 or tile_size.y <= 0:
+		return false
+	var origin := Vector2i(coords.x * tile_size.x, coords.y * tile_size.y)
+	var visible := 0
+	for y in range(0, tile_size.y, PALETTE_ALPHA_STEP):
+		for x in range(0, tile_size.x, PALETTE_ALPHA_STEP):
+			var px := origin.x + x
+			var py := origin.y + y
+			if px >= image.get_width() or py >= image.get_height():
+				continue
+			if image.get_pixel(px, py).a >= 0.1:
+				visible += 1
+				if visible >= PALETTE_MIN_VISIBLE_SAMPLES:
+					return false
+	return true
 
 
 ## Items that ship an icon texture show it; the rest get a chip of their own
