@@ -25,6 +25,13 @@ const BROWSER_AUTOSAVE_PATH := "user://levels/_browser_autosave.json"
 ## The normal-gameplay host for a community level. Kept here as well as in the
 ## browser so game over can tell a community run from a campaign level.
 const COMMUNITY_PLAY_SCENE := "res://scenes/community_play.tscn"
+## A free Render web service sleeps after fifteen minutes without traffic.
+## While the game is open, a silent health ping every ten minutes keeps the
+## hosted service warm for the Level Browser. The ping is deliberately not a
+## user-facing request: failures are ignored and the browser still has its
+## normal loading/retry path.
+const WARMUP_INTERVAL := 600.0
+const WARMUP_BODY_LIMIT := 4096
 
 var base_url := SERVICE_URL
 var author := ""
@@ -45,6 +52,8 @@ var _community_level_path := ""
 ## Checkpoint banked in the current community run. Kept out of Progress so a
 ## custom level can never overwrite the player's campaign checkpoint.
 var _community_checkpoint: Dictionary = {}
+var _warmup_in_flight := false
+var _warmup_timer: Timer = null
 
 
 func _ready() -> void:
@@ -61,6 +70,53 @@ func _ready() -> void:
 	if voter_id.is_empty():
 		voter_id = _new_voter_id()
 		_save_settings()
+
+
+## Starts the session-long keep-warm timer. Called by the title screen so normal
+## gameplay and the editor do not need to know about the community service.
+## Headless runs are skipped: they should not make live network requests just
+## because a scene was loaded for testing.
+func start_service_keepalive() -> void:
+	if DisplayServer.get_name() == "headless" or _warmup_timer != null:
+		return
+	_warmup_timer = Timer.new()
+	_warmup_timer.name = "LevelServiceWarmup"
+	_warmup_timer.wait_time = WARMUP_INTERVAL
+	_warmup_timer.one_shot = false
+	# Keep warming even if the player leaves the game paused for a while. The
+	# timer lives on this autoload, so it survives scene changes until the game
+	# exits.
+	_warmup_timer.process_mode = Node.PROCESS_MODE_ALWAYS
+	_warmup_timer.timeout.connect(warm_up_service)
+	add_child(_warmup_timer)
+	_warmup_timer.start()
+	warm_up_service()
+
+
+## One silent GET /health. The response is intentionally ignored; this only
+## exists to stop a sleeping free Render instance from making the next browser
+## request wait through a cold start.
+func warm_up_service() -> void:
+	if _warmup_in_flight:
+		return
+	_warmup_in_flight = true
+	var http := HTTPRequest.new()
+	http.name = "LevelServiceWarmupRequest"
+	http.timeout = _request_timeout()
+	http.body_size_limit = WARMUP_BODY_LIMIT
+	http.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(http)
+	var error := http.request(
+			_url("/health"),
+			PackedStringArray(["Accept: application/json"]),
+			HTTPClient.METHOD_GET)
+	if error != OK:
+		_warmup_in_flight = false
+		http.queue_free()
+		return
+	await http.request_completed
+	_warmup_in_flight = false
+	http.queue_free()
 
 
 func configure(author_name: String) -> void:
@@ -98,11 +154,20 @@ func publish(level_data: Dictionary, level_name: String, author_name: String,
 
 ## `sort` is one of "newest", "downloads" or "likes"; the server orders the
 ## whole catalogue before paging, so a sorted page is not just the newest page
-## reordered.
-func fetch_levels(limit: int = 50, offset: int = 0, sort: String = "newest") -> Dictionary:
+## reordered. `search` narrows the catalogue by name, author, description or id;
+## `since` is a Unix timestamp cutoff, where 0 means all time. Older server builds
+## ignore those filters, and the browser repeats them locally so they still work
+## while a deployment catches up.
+func fetch_levels(limit: int = 50, offset: int = 0, sort: String = "newest",
+		search: String = "", since: int = 0) -> Dictionary:
 	var order := sort if sort in ["newest", "downloads", "likes"] else "newest"
 	var path := "/api/levels?limit=%d&offset=%d&sort=%s" % [
 		clampi(limit, 1, 100), maxi(offset, 0), order]
+	var needle := search.strip_edges().left(80)
+	if not needle.is_empty():
+		path += "&q=" + needle.uri_encode()
+	if since > 0:
+		path += "&since=%d" % since
 	var result := await _request_json(path, HTTPClient.METHOD_GET)
 	if not bool(result.get("ok", false)):
 		return result

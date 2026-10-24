@@ -8,6 +8,9 @@ const MAX_DAMAGE_BONUS := 0.5
 const COIN_BONUS_PER_KILL := 0.1
 const MAX_COIN_BONUS := 1.0
 const COYOTE_TIME := 0.08
+## The readout stays readable for a moment after the combo expires instead of
+## blinking out on the exact frame the timer reaches zero.
+const FADE_OUT_DURATION := 0.4
 
 var combo := 0
 var combo_timer := 0.0
@@ -15,6 +18,7 @@ var combo_timer := 0.0
 var _label: Label = null
 var _color_tween: Tween = null
 var _scale_tween: Tween = null
+var _fade_tween: Tween = null
 
 ## Menus and end screens where the readout has no place. This autoload is a
 ## CanvasLayer that survives scene changes, so a combo still counting down when
@@ -68,15 +72,18 @@ func _ready() -> void:
 ## while the player is looking at a game over screen.
 func _on_player_died() -> void:
 	_kill_label_tweens()
-	_label.visible = false
+	_hide_label()
 
 func _kill_label_tweens() -> void:
 	if _color_tween and _color_tween.is_valid():
 		_color_tween.kill()
 	if _scale_tween and _scale_tween.is_valid():
 		_scale_tween.kill()
+	if _fade_tween and _fade_tween.is_valid():
+		_fade_tween.kill()
 	_color_tween = null
 	_scale_tween = null
+	_fade_tween = null
 
 func _process(delta: float) -> void:
 	_refresh_readout_visibility()
@@ -105,11 +112,13 @@ func _refresh_readout_visibility() -> void:
 	_scene_path = path
 	_readout_hidden = HIDDEN_SCENES.has(path)
 	if _readout_hidden:
-		_label.visible = false
+		_kill_label_tweens()
+		_hide_label()
 
 func increment() -> void:
 	combo += 1
 	combo_timer = COMBO_WINDOW
+	_label.modulate.a = 1.0
 	_label.visible = true
 	_play_combo_sound()
 	_flash_label()
@@ -136,7 +145,25 @@ func get_coin_multiplier() -> float:
 func _reset_combo() -> void:
 	combo = 0
 	combo_timer = 0.0
+	if _readout_hidden:
+		_hide_label()
+	else:
+		_fade_out_label()
+
+## The combo value is already zero by the time this runs: the gameplay bonuses
+## stop immediately, while the now-stale readout fades out over a few frames.
+func _fade_out_label() -> void:
+	if _fade_tween and _fade_tween.is_valid():
+		_fade_tween.kill()
+	_fade_tween = create_tween()
+	_fade_tween.tween_property(_label, "modulate:a", 0.0, FADE_OUT_DURATION) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_fade_tween.tween_callback(_hide_label)
+
+func _hide_label() -> void:
 	_label.visible = false
+	# Reset the alpha for the next combo, even if this hide interrupted a fade.
+	_label.modulate.a = 1.0
 
 func _update_label() -> void:
 	var time_left := int(ceil(combo_timer))

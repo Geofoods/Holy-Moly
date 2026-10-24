@@ -76,7 +76,11 @@ Free-tier expectations:
   listing is served from memory. Startup reads the document once.
 - Render free web services spin down after 15 minutes without traffic. The first
   request afterward takes roughly a minute to wake the service; the levels in
-  Upstash are unaffected.
+  Upstash are unaffected. The game sends a silent `GET /health` when the title
+  screen loads and every ten minutes while it is open, so the service is
+  normally warm while someone is playing. The game cannot keep it awake after it
+  is closed; a paid always-on instance or an external keep-alive is still needed
+  for zero cold starts.
 - Do not use Render's free Key Value for the level database: its data is lost on
   restart. Render's free Postgres expires after 30 days.
 
@@ -93,14 +97,18 @@ browser page cannot call an `http://` server from an `https://` page.
 | --- | --- | --- |
 | `GET` | `/health` | Liveness check |
 | `GET` | `/` | Small HTML gallery of published levels |
-| `GET` | `/api/levels?limit=50&offset=0&sort=newest` | Level summaries; `sort` is `newest`, `downloads` or `likes` |
+| `GET` | `/api/levels?limit=50&offset=0&sort=newest&q=mushroom&since=1760000000` | Level summaries; `sort` is `newest`, `downloads` or `likes`; optional `q` searches name, author, description and id; optional `since` is a Unix timestamp cutoff |
 | `POST` | `/api/levels` | Publish `{name, author, description, level}` |
 | `GET` | `/api/levels/{id}` | Full level and metadata; increments downloads |
 | `POST` | `/api/levels/{id}/like` | Like or unlike `{liked, voter}` and return the updated summary |
 
 IDs are 12 lowercase hex characters. The server caps request bodies at 1 MB,
 limits block/enemy/prop counts, and rejects payloads without `blocks` and
-`enemies` arrays.
+`enemies` arrays. Searches are case-insensitive and all whitespace-separated
+terms must match somewhere in the level's name, author, description or id.
+`since` keeps levels created at or after that Unix timestamp; omit it or pass
+`0` for all time. Filtering happens before sorting and paging, so `total` is the
+number of matching levels.
 
 Likes are keyed by a random installation id (`voter`) generated and stored by
 the game in `user://level_share.cfg`. Sending the same voter again with

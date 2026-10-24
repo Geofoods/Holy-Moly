@@ -20,6 +20,9 @@ var _last_hop_index := -1
 var _intro_music: AudioStreamPlayer = null
 
 func _ready():
+	# Start waking the community service while the title screen is still
+	# appearing, and keep it warm for the rest of this game session.
+	LevelShare.start_service_keepalive()
 	LevelMusic.stop()
 	var vp_size: Vector2 = get_viewport_rect().size
 	size = vp_size

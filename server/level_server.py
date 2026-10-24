@@ -204,15 +204,52 @@ def summary(record: dict) -> dict:
 SORT_MODES = ("newest", "downloads", "likes")
 
 
-def list_levels(limit: int, offset: int, sort: str = "newest") -> tuple[list[dict], int]:
+def search_text(record: dict) -> str:
+    """Lower-cased fields a community search can match."""
+    return " ".join(
+        str(record.get(field, ""))
+        for field in ("id", "name", "author", "description")
+    ).lower()
+
+
+def created_at_timestamp(record: dict) -> float:
+    """Unix timestamp for a record's publish date, or 0 when it is unreadable."""
+    raw = str(record.get("created_at", "")).strip()
+    if not raw:
+        return 0.0
+    try:
+        return datetime.fromisoformat(raw.replace("Z", "+00:00")).timestamp()
+    except ValueError:
+        return 0.0
+
+
+def list_levels(
+    limit: int,
+    offset: int,
+    sort: str = "newest",
+    search: str = "",
+    since: int = 0,
+) -> tuple[list[dict], int]:
     """Return one page of level summaries in the requested order.
 
     Newest is the default so a fresh publish shows up first. downloads and
     likes sort the whole catalogue, not just the requested page, and ties fall
     back to the other count then to newest so the order stays stable between
-    requests.
+    requests. Search and the optional `since` cutoff are applied before sorting
+    and paging, so `total` is the number of matching levels.
     """
-    entries = STORE["levels"].values()
+    entries = list(STORE["levels"].values())
+    if since > 0:
+        entries = [
+            entry for entry in entries if created_at_timestamp(entry) >= since
+        ]
+    terms = search.lower().split()
+    if terms:
+        entries = [
+            entry
+            for entry in entries
+            if all(term in search_text(entry) for term in terms)
+        ]
     if sort == "downloads":
         levels = sorted(
             entries,
@@ -427,8 +464,11 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 limit = int(query.get("limit", ["50"])[0])
                 offset = int(query.get("offset", ["0"])[0])
+                since = int(query.get("since", ["0"])[0] or "0")
             except ValueError:
-                self._send_json(400, {"error": "limit and offset must be integers"})
+                self._send_json(
+                    400, {"error": "limit, offset and since must be integers"}
+                )
                 return
             sort = query.get("sort", ["newest"])[0]
             if sort not in SORT_MODES:
@@ -436,10 +476,12 @@ class Handler(BaseHTTPRequestHandler):
                     400, {"error": "sort must be one of: " + ", ".join(SORT_MODES)}
                 )
                 return
+            search = query.get("q", [""])[0].strip()[:100]
             limit = max(1, min(limit, 100))
             offset = max(0, offset)
+            since = max(0, since)
             with STORE_LOCK:
-                levels, total = list_levels(limit, offset, sort)
+                levels, total = list_levels(limit, offset, sort, search, since)
             self._send_json(200, {"levels": levels, "total": total})
             return
         if path.startswith("/api/levels/"):

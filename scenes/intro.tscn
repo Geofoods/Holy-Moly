@@ -215,7 +215,7 @@ theme_override_constants/separation = 30
 alignment = 1
 
 [node name="PlayButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer" unique_id=1416814148]
-custom_minimum_size = Vector2(180, 70)
+custom_minimum_size = Vector2(240, 70)
 layout_mode = 2
 size_flags_horizontal = 0
 theme_override_colors/font_color = Color(0.03, 0.03, 0.03, 1)
@@ -229,7 +229,7 @@ theme_override_styles/focus = SubResource("StyleBoxFlat_playbutton_hover")
 text = "PLAY"
 
 [node name="LevelBrowserButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer" unique_id=1148290357]
-custom_minimum_size = Vector2(180, 70)
+custom_minimum_size = Vector2(240, 70)
 layout_mode = 2
 size_flags_horizontal = 0
 theme_override_colors/font_color = Color(0.82, 0.95, 1, 1)
@@ -244,7 +244,7 @@ tooltip_text = "Browse, like, and play community levels"
 text = "LEVEL BROWSER"
 
 [node name="FieldGuideButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer" unique_id=223072365]
-custom_minimum_size = Vector2(180, 70)
+custom_minimum_size = Vector2(240, 70)
 layout_mode = 2
 size_flags_horizontal = 0
 theme_override_colors/font_color = Color(0.32, 0.2, 0.08, 1)
@@ -258,7 +258,7 @@ theme_override_styles/focus = SubResource("StyleBoxFlat_infobutton_hover")
 text = "FIELD GUIDE"
 
 [node name="QuitButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer"]
-custom_minimum_size = Vector2(180, 70)
+custom_minimum_size = Vector2(240, 70)
 layout_mode = 2
 size_flags_horizontal = 0
 theme_override_colors/font_color = Color(1, 0.88, 0.88, 1)

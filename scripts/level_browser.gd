@@ -27,6 +27,7 @@ const TEXT_COLOR := Color(0.98, 0.9, 0.78, 1.0)
 const MUTED := Color(0.74, 0.67, 0.58, 1.0)
 const ACCENT := Color(1.0, 0.84, 0.45, 1.0)
 const LIKE_ACTIVE := Color(1.0, 0.52, 0.42, 1.0)
+const SEARCH_DEBOUNCE := 0.35
 ## Sorting happens on the community server before paging, so these order the
 ## whole catalogue rather than just the fifty rows shown.
 const SORT_OPTIONS := [
@@ -34,11 +35,24 @@ const SORT_OPTIONS := [
 	{"id": "downloads", "label": "MOST DOWNLOADED"},
 	{"id": "likes", "label": "MOST LIKED"},
 ]
+## Rolling windows keep the ranges independent of the player's timezone. The
+## server gets the same absolute cutoff so sorting and paging still cover the
+## whole matching catalogue.
+const TIME_OPTIONS := [
+	{"id": "all", "label": "ALL TIME", "seconds": 0, "status": "all time"},
+	{"id": "day", "label": "24 HOURS", "seconds": 86400, "status": "the last 24 hours"},
+	{"id": "week", "label": "7 DAYS", "seconds": 604800, "status": "the last 7 days"},
+	{"id": "month", "label": "30 DAYS", "seconds": 2592000, "status": "the last 30 days"},
+]
 
 var _status: Label = null
 var _refresh_button: Button = null
+var _search_edit: LineEdit = null
+var _search_timer: Timer = null
 var _sort := "newest"
 var _sort_buttons: Dictionary = {}
+var _time_filter := "all"
+var _time_buttons: Dictionary = {}
 var _list: VBoxContainer = null
 var _rows: Dictionary = {}
 var _request_serial := 0
@@ -105,6 +119,41 @@ func _build_ui() -> void:
 	subtitle.add_theme_color_override("font_color", MUTED)
 	column.add_child(subtitle)
 
+	var search_row := HBoxContainer.new()
+	search_row.add_theme_constant_override("separation", 10)
+	var search_label := Label.new()
+	search_label.text = "SEARCH"
+	search_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	search_label.add_theme_font_override("font", UI_FONT)
+	search_label.add_theme_font_size_override("font_size", 18)
+	search_label.add_theme_color_override("font_color", MUTED)
+	search_row.add_child(search_label)
+	_search_edit = LineEdit.new()
+	_search_edit.placeholder_text = "Search level names, authors, descriptions, or IDs"
+	_search_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_search_edit.custom_minimum_size = Vector2(0.0, 38.0)
+	_search_edit.max_length = 80
+	_search_edit.clear_button_enabled = true
+	_search_edit.add_theme_font_override("font", UI_FONT)
+	_search_edit.add_theme_font_size_override("font_size", 18)
+	_search_edit.add_theme_color_override("font_color", TEXT_COLOR)
+	_search_edit.add_theme_color_override("font_placeholder_color", Color(0.62, 0.56, 0.5))
+	_search_edit.add_theme_color_override("caret_color", ACCENT)
+	_search_edit.add_theme_color_override("selection_color", Color(ACCENT, 0.3))
+	_search_edit.add_theme_stylebox_override("normal", _style(BUTTON_BG, PANEL_BORDER))
+	_search_edit.add_theme_stylebox_override("focus", _style(BUTTON_BG, ACCENT))
+	_search_edit.add_theme_stylebox_override("read_only", _style(BUTTON_DISABLED, PANEL_BORDER))
+	_search_edit.text_changed.connect(_on_search_changed)
+	_search_edit.text_submitted.connect(_on_search_submitted)
+	search_row.add_child(_search_edit)
+	column.add_child(search_row)
+
+	_search_timer = Timer.new()
+	_search_timer.one_shot = true
+	_search_timer.wait_time = SEARCH_DEBOUNCE
+	_search_timer.timeout.connect(_refresh_levels)
+	add_child(_search_timer)
+
 	var sort_row := HBoxContainer.new()
 	sort_row.add_theme_constant_override("separation", 10)
 	var sort_label := Label.new()
@@ -123,6 +172,25 @@ func _build_ui() -> void:
 		_sort_buttons[sort_id] = sort_button
 	column.add_child(sort_row)
 	_update_sort_buttons()
+
+	var time_row := HBoxContainer.new()
+	time_row.add_theme_constant_override("separation", 10)
+	var time_label := Label.new()
+	time_label.text = "TIME"
+	time_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	time_label.add_theme_font_override("font", UI_FONT)
+	time_label.add_theme_font_size_override("font_size", 18)
+	time_label.add_theme_color_override("font_color", MUTED)
+	time_row.add_child(time_label)
+	for option in TIME_OPTIONS:
+		var time_id := str(option["id"])
+		var time_button := _make_button(str(option["label"]), Vector2(0.0, 34.0))
+		time_button.add_theme_font_size_override("font_size", 17)
+		time_button.pressed.connect(_on_time_pressed.bind(time_id))
+		time_row.add_child(time_button)
+		_time_buttons[time_id] = time_button
+	column.add_child(time_row)
+	_update_time_buttons()
 
 	var toolbar := HBoxContainer.new()
 	toolbar.add_theme_constant_override("separation", 12)
@@ -161,28 +229,107 @@ func _build_ui() -> void:
 
 
 func _refresh_levels() -> void:
+	if _busy:
+		return
+	if _search_timer != null:
+		_search_timer.stop()
+	var query := _search_edit.text.strip_edges() if _search_edit != null else ""
+	var since := _time_since()
 	_request_serial += 1
 	var serial := _request_serial
 	_refresh_button.disabled = true
 	_status.text = "Contacting the community server... (free servers may take ~1 min to wake)"
 	_clear_list()
-	var result: Dictionary = await LevelShare.fetch_levels(50, 0, _sort)
+	var result: Dictionary = await LevelShare.fetch_levels(50, 0, _sort, query, since)
 	if serial != _request_serial or not is_inside_tree():
 		return
 	_refresh_button.disabled = false
 	if not bool(result.get("ok", false)):
 		_status.text = "Could not reach the community server: " + str(result.get("error", "Unknown error"))
 		return
-	var levels = result.get("levels", [])
-	if not (levels is Array) or levels.is_empty():
-		_status.text = "No levels published yet. Build one in Level Forge and be the first!"
+	var raw_levels = result.get("levels", [])
+	if not (raw_levels is Array):
+		_status.text = "The community server returned an unexpected response."
 		return
-	var total := int(result.get("total", levels.size()))
-	_status.text = "Showing %d of %d level%s." % [
-		levels.size(), total, "" if total == 1 else "s"]
+	var levels := _filter_time_range(_filter_levels(raw_levels, query), since)
+	if levels.is_empty():
+		if query.is_empty() and since <= 0:
+			_status.text = "No levels published yet. Build one in Level Forge and be the first!"
+		elif query.is_empty():
+			_status.text = "No levels published in %s." % _time_status()
+		elif since <= 0:
+			_status.text = "No levels match \"%s\"." % query
+		else:
+			_status.text = "No levels match \"%s\" in %s." % [query, _time_status()]
+		return
+	if query.is_empty() and since <= 0:
+		var total := int(result.get("total", levels.size()))
+		_status.text = "Showing %d of %d level%s." % [
+			levels.size(), total, "" if total == 1 else "s"]
+	elif query.is_empty():
+		_status.text = "Showing %d level%s from %s." % [
+			levels.size(), "" if levels.size() == 1 else "s", _time_status()]
+	else:
+		_status.text = "Showing %d matching level%s." % [
+			levels.size(), "" if levels.size() == 1 else "s"]
 	for raw_entry in levels:
 		if raw_entry is Dictionary:
 			_add_level_row(raw_entry)
+
+
+## The server filters the whole catalogue when it supports `q` and `since`. Older
+## deployments ignore those parameters, so repeat both checks locally for the
+## page they returned.
+func _filter_levels(levels: Array, query: String) -> Array:
+	var terms := query.to_lower().split(" ", false)
+	if terms.is_empty():
+		return levels
+	var matches: Array = []
+	for raw_entry in levels:
+		if raw_entry is Dictionary and _entry_matches(raw_entry, terms):
+			matches.append(raw_entry)
+	return matches
+
+
+func _filter_time_range(levels: Array, since: int) -> Array:
+	if since <= 0:
+		return levels
+	var matches: Array = []
+	for raw_entry in levels:
+		if raw_entry is Dictionary and _entry_created_unix(raw_entry) >= since:
+			matches.append(raw_entry)
+	return matches
+
+
+func _entry_created_unix(entry: Dictionary) -> int:
+	var parsed := Time.get_unix_time_from_datetime_string(str(entry.get("created_at", "")))
+	return parsed if parsed >= 0 else 0
+
+
+func _entry_matches(entry: Dictionary, terms: PackedStringArray) -> bool:
+	var haystack := "%s %s %s %s" % [
+		str(entry.get("id", "")),
+		str(entry.get("name", "")),
+		str(entry.get("author", "")),
+		str(entry.get("description", "")),
+	]
+	haystack = haystack.to_lower()
+	for term in terms:
+		if not haystack.contains(term):
+			return false
+	return true
+
+
+func _on_search_changed(_text: String) -> void:
+	if _busy or _search_timer == null:
+		return
+	_search_timer.start()
+
+
+func _on_search_submitted(_text: String) -> void:
+	if _search_timer != null:
+		_search_timer.stop()
+	_refresh_levels()
 
 
 func _on_sort_pressed(sort_id: String) -> void:
@@ -203,6 +350,42 @@ func _update_sort_buttons() -> void:
 		button.add_theme_color_override("font_color", ACCENT if active else TEXT_COLOR)
 		button.add_theme_stylebox_override("normal",
 				_style(BUTTON_BG, ACCENT if active else PANEL_BORDER))
+
+
+func _on_time_pressed(time_id: String) -> void:
+	if time_id == _time_filter:
+		return
+	SFX.play_ui("ui_click", -6.0, 1.2)
+	_time_filter = time_id
+	_update_time_buttons()
+	_refresh_levels()
+
+
+func _update_time_buttons() -> void:
+	for time_id in _time_buttons:
+		var button: Button = _time_buttons[time_id]
+		var active: bool = time_id == _time_filter
+		button.add_theme_color_override("font_color", ACCENT if active else TEXT_COLOR)
+		button.add_theme_stylebox_override("normal",
+				_style(BUTTON_BG, ACCENT if active else PANEL_BORDER))
+
+
+func _time_option() -> Dictionary:
+	for option in TIME_OPTIONS:
+		if str(option["id"]) == _time_filter:
+			return option
+	return TIME_OPTIONS[0]
+
+
+func _time_since() -> int:
+	var seconds := int(_time_option().get("seconds", 0))
+	if seconds <= 0:
+		return 0
+	return int(Time.get_unix_time_from_system()) - seconds
+
+
+func _time_status() -> String:
+	return str(_time_option().get("status", "all time"))
 
 
 func _clear_list() -> void:
@@ -366,6 +549,10 @@ func _open_level(level_id: String, button: Button, start_playing: bool) -> void:
 	if _busy:
 		return
 	_busy = true
+	if _search_timer != null:
+		_search_timer.stop()
+	if _search_edit != null:
+		_search_edit.editable = false
 	SFX.play_ui("ui_click", -6.0, 1.2)
 	_set_row_actions_disabled(level_id, true)
 	button.disabled = true
@@ -376,6 +563,8 @@ func _open_level(level_id: String, button: Button, start_playing: bool) -> void:
 		return
 	_set_row_actions_disabled(level_id, false)
 	_refresh_button.disabled = false
+	if _search_edit != null:
+		_search_edit.editable = true
 	_busy = false
 	if not bool(result.get("ok", false)):
 		_status.text = "Could not download that level: " + str(result.get("error", "Unknown error"))
