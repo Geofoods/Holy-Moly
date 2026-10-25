@@ -96,6 +96,14 @@ const MIN_ZOOM := 0.25
 const MAX_ZOOM := 2.5
 const UNDO_LIMIT := 40
 
+## How far a finger has to move before a touch counts as a drag and starts
+## painting rather than staying a tap. This is what stops the first finger of a
+## two-finger pan from leaving a stray block behind before the second lands.
+const TOUCH_TAP_SLOP := 14.0
+## Below this finger spacing a pinch ratio is too jittery to trust, so the zoom
+## simply holds instead of snapping around.
+const TOUCH_PINCH_MIN := 16.0
+
 const NEW_FLOOR_WIDTH := 12
 const NEW_FLOOR_ROW := 2
 const DEFAULT_SPAWN_CELL := Vector2i(6, 1)
@@ -213,6 +221,23 @@ var _rect_button := MOUSE_BUTTON_LEFT
 var _rect_erase := false
 var _rect_anchor := Vector2i.ZERO
 
+## Touch editing state, kept apart from the mouse fields above so a finger and a
+## mouse cannot end each other's stroke. One finger paints (tap for one cell,
+## drag for a line), two fingers drag the view and a pinch zooms.
+var _touch_positions: Dictionary = {}
+var _touch_index := -1
+var _touch_anchor := Vector2.ZERO
+var _touch_moved := false
+var _touch_paint_started := false
+var _touch_painting := false
+## True while a touch-driven rectangle is open, so the mouse auto-commit in
+## _process does not fire for a finger that has no mouse button held.
+var _touch_rect := false
+var _touch_last_cell := Vector2i(999999, 999999)
+var _two_finger := false
+var _pinch_distance := 0.0
+var _pinch_mid := Vector2.ZERO
+
 var _undo_stack: Array = []
 var _redo_stack: Array = []
 
@@ -286,6 +311,7 @@ var _vignette_slider: HSlider = null
 var _vignette_value: Label = null
 var _firefly_btn: Button = null
 var _firefly_spawner: Node2D = null
+var _mobile_controls_btn: Button = null
 var _music_btn: Button = null
 var _music_overlay: Control = null
 var _music_buttons: Dictionary = {}
@@ -329,6 +355,11 @@ func _ready() -> void:
 	add_child(_autosave_timer)
 
 	_build_ui()
+	# The gameplay joystick parks right where the palette and WORLD panel sit,
+	# and the editor wants raw touches for its own paint/pan/pinch handling. The
+	# overlay comes back for a playtest (see start_playtest) and when this scene
+	# leaves (see _exit_tree).
+	MobileControls.set_editor_editing(true)
 	_setup_palette()
 	_setup_backgrounds()
 	_setup_fireflies()
@@ -379,6 +410,10 @@ func _exit_tree() -> void:
 	# The mole runs the whole campaign at 1.2x; leaving that set would speed the
 	# editor (and the menus) up for the rest of the session.
 	Engine.time_scale = 1.0
+	# Hand the on-screen controls back once the incoming scene has taken over, so
+	# they appear for a level but not for the title screen this scene returns to.
+	if is_instance_valid(MobileControls):
+		MobileControls.call_deferred("set_editor_editing", false)
 
 
 # ---------------------------------------------------------------- level state
@@ -631,10 +666,26 @@ func _refresh_world_ui() -> void:
 	if _firefly_btn != null:
 		_firefly_btn.button_pressed = _fireflies
 		_firefly_btn.text = "Fireflies: ON" if _fireflies else "Fireflies: OFF"
+	_refresh_mobile_controls_ui()
+	_refresh_hint_text()
 	_refresh_music_ui()
 	if _weapon_btn != null:
 		_weapon_btn.text = _weapon_button_text()
 	_refresh_loadout_ui()
+
+
+func _refresh_mobile_controls_ui() -> void:
+	if _mobile_controls_btn == null:
+		return
+	_mobile_controls_btn.set_pressed_no_signal(MobileControls.enabled)
+	_mobile_controls_btn.text = "Mobile controls: ON" if MobileControls.enabled else "Mobile controls: OFF"
+
+
+## Keeps the WORLD switch and the hint strip honest if the preference changes
+## elsewhere: the deferred startup restore, or the Settings screen.
+func _on_mobile_controls_enabled_changed(_on: bool) -> void:
+	_refresh_mobile_controls_ui()
+	_refresh_hint_text()
 
 
 func _refresh_music_ui() -> void:
@@ -1109,10 +1160,14 @@ func start_playtest() -> void:
 	_close_music_overlay()
 	_save_now()
 	_playing = true
+	# A playtest is played with the same on-screen controls the level will use in
+	# the wild, so the overlay comes back for the length of the test.
+	MobileControls.set_editor_editing(false)
 	_finishing = false
 	_painting = false
 	_panning = false
 	_rect_active = false
+	_reset_touch_state()
 	# Every playtest is a fresh run, so its checkpoint starts unbanked.
 	_checkpoint_station = null
 	_toolbar.visible = false
@@ -1153,6 +1208,7 @@ func stop_playtest() -> void:
 		return
 	_playing = false
 	_checkpoint_station = null
+	_reset_touch_state()
 	_clear_pit()
 	_clear_playtest_hud()
 	_clear_preview_mole()
@@ -1170,6 +1226,8 @@ func stop_playtest() -> void:
 	_editor_camera.make_current()
 	_overlay.queue_redraw()
 	_save_now()
+	# Back to building: park the gameplay controls again so the palette is clear.
+	MobileControls.set_editor_editing(true)
 
 
 ## Hands back everything a playtest borrowed: the mole's health and the level it
@@ -1525,6 +1583,16 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 		return
 
+	# Touch is the painting/panning/zooming pointer on mobile. The on-screen
+	# gameplay controls are parked while editing (MobileControls.set_editor_editing),
+	# so these raw events arrive here rather than being turned into a mouse click.
+	if event is InputEventScreenTouch:
+		_handle_screen_touch(event)
+		return
+	if event is InputEventScreenDrag:
+		_handle_screen_drag(event)
+		return
+
 	if event is InputEventMouseButton:
 		_handle_mouse_button(event)
 	elif event is InputEventMouseMotion:
@@ -1614,6 +1682,227 @@ func _handle_mouse_button(event: InputEventMouseButton) -> void:
 			_commit_rect()
 
 
+# ------------------------------------------------------------------ touch
+
+## A finger going down is held until it either lifts (a tap, one cell) or moves
+## past TOUCH_TAP_SLOP (a drag, a line of cells). Nothing is painted on the way
+## down on purpose: if a second finger lands for a pan, the first must not have
+## left a block behind already.
+func _handle_screen_touch(event: InputEventScreenTouch) -> void:
+	if _load_overlay.visible:
+		return
+	if event.pressed:
+		if _touch_positions.has(event.index):
+			return
+		_touch_positions[event.index] = event.position
+		if _touch_positions.size() == 1:
+			_begin_one_finger(event.index, event.position)
+		elif _touch_positions.size() == 2:
+			_begin_two_fingers()
+		get_viewport().set_input_as_handled()
+		return
+	if not _touch_positions.has(event.index):
+		return
+	_touch_positions.erase(event.index)
+	if _touch_positions.is_empty():
+		_finish_one_finger()
+		_reset_touch_state()
+	elif _touch_positions.size() == 1:
+		# One finger of a two-finger gesture lifted. The leftover finger is not
+		# allowed to turn into a paint stroke mid-gesture: clearing the active
+		# index makes its drags and its final lift inert.
+		_two_finger = false
+		_touch_index = -1
+		_touch_moved = true
+		_touch_paint_started = false
+		_touch_painting = false
+	get_viewport().set_input_as_handled()
+
+
+func _handle_screen_drag(event: InputEventScreenDrag) -> void:
+	if _load_overlay.visible:
+		return
+	if not _touch_positions.has(event.index):
+		return
+	_touch_positions[event.index] = event.position
+	if _two_finger:
+		_update_two_finger_gesture()
+		get_viewport().set_input_as_handled()
+		return
+	if event.index != _touch_index:
+		return
+	if not _touch_moved and event.position.distance_to(_touch_anchor) >= TOUCH_TAP_SLOP:
+		_touch_moved = true
+	if _touch_moved and not _touch_paint_started:
+		_begin_touch_stroke()
+	if _touch_paint_started:
+		_update_touch_stroke(event.position)
+	else:
+		_hover_cell = _cell_at_screen(event.position)
+		_overlay.queue_redraw()
+	get_viewport().set_input_as_handled()
+
+
+func _begin_one_finger(index: int, pos: Vector2) -> void:
+	_touch_index = index
+	_touch_anchor = pos
+	_touch_moved = false
+	_touch_paint_started = false
+	_touch_painting = false
+	_touch_rect = false
+	_two_finger = false
+	_hover_cell = _cell_at_screen(pos)
+	_overlay.queue_redraw()
+
+
+func _begin_two_fingers() -> void:
+	_two_finger = true
+	# A stroke that had already begun stays as it is; it simply ends here. From
+	# this point until both fingers lift the gesture only pans and zooms.
+	if _touch_paint_started:
+		_end_touch_stroke()
+	_touch_moved = true
+	_pinch_mid = _two_finger_mid()
+	_pinch_distance = _two_finger_distance()
+
+
+## Pans by how far the midpoint of the two fingers travelled and zooms by how
+## much their spacing changed, so a pinch while sliding does both at once.
+func _update_two_finger_gesture() -> void:
+	var mid := _two_finger_mid()
+	var spacing := _two_finger_distance()
+	if _pinch_distance >= TOUCH_PINCH_MIN and spacing >= TOUCH_PINCH_MIN:
+		var zoom := clampf(_editor_camera.zoom.x * (spacing / _pinch_distance), MIN_ZOOM, MAX_ZOOM)
+		_editor_camera.zoom = Vector2(zoom, zoom)
+	# The midpoint moves in screen pixels; the camera moves in world units.
+	if _pinch_mid != Vector2.ZERO:
+		_editor_camera.position -= (mid - _pinch_mid) / _editor_camera.zoom
+	_pinch_mid = mid
+	_pinch_distance = spacing
+	_overlay.queue_redraw()
+
+
+func _two_finger_mid() -> Vector2:
+	var points := _first_two_touch_points()
+	if points.size() < 2:
+		return Vector2.ZERO
+	var a: Vector2 = points[0]
+	var b: Vector2 = points[1]
+	return (a + b) * 0.5
+
+
+func _two_finger_distance() -> float:
+	var points := _first_two_touch_points()
+	if points.size() < 2:
+		return 0.0
+	var a: Vector2 = points[0]
+	var b: Vector2 = points[1]
+	return a.distance_to(b)
+
+
+func _first_two_touch_points() -> Array:
+	var keys := _touch_positions.keys()
+	keys.sort()
+	var points: Array = []
+	for key in keys:
+		if points.size() >= 2:
+			break
+		points.append(_touch_positions[key])
+	return points
+
+
+## Starts the actual edit for a tap or the first movement of a drag. Undo is
+## pushed once per stroke, the same as a mouse press, not once per cell.
+func _begin_touch_stroke() -> void:
+	_touch_paint_started = true
+	var cell := _cell_at_screen(_touch_anchor)
+	_touch_last_cell = cell
+	_hover_cell = cell
+	if _rect_on():
+		_push_undo()
+		_touch_rect = true
+		_rect_anchor = cell
+		_rect_button = MOUSE_BUTTON_LEFT
+		_rect_erase = _tool == TOOL_ERASE
+		_rect_active = true
+	else:
+		_push_undo()
+		_paint(cell)
+		# Only the tile tools draw continuously along a drag; an enemy or a chest
+		# is a single placement and must not multiply as the finger passes over
+		# cells. The same rule the mouse drag follows in _process.
+		_touch_painting = _tool == TOOL_BLOCK or _tool == TOOL_ERASE
+	_overlay.queue_redraw()
+
+
+func _update_touch_stroke(pos: Vector2) -> void:
+	var cell := _cell_at_screen(pos)
+	_hover_cell = cell
+	if _touch_rect:
+		_overlay.queue_redraw()
+		return
+	if _touch_painting and cell != _touch_last_cell:
+		_touch_last_cell = cell
+		_paint(cell)
+
+
+## A tap that never moved paints exactly one cell; a stroke that did move has
+## already painted as it went and only needs saving.
+func _finish_one_finger() -> void:
+	if _two_finger:
+		return
+	if _touch_paint_started:
+		_end_touch_stroke()
+	elif not _touch_moved and _touch_index != -1:
+		_begin_touch_stroke()
+		_end_touch_stroke()
+
+
+func _end_touch_stroke() -> void:
+	if _touch_rect:
+		_commit_rect()
+		_touch_rect = false
+	if _touch_painting:
+		_save_now()
+		_touch_painting = false
+	_touch_paint_started = false
+
+
+func _reset_touch_state() -> void:
+	_touch_positions.clear()
+	_touch_index = -1
+	_touch_moved = false
+	_touch_paint_started = false
+	_touch_painting = false
+	_touch_rect = false
+	_two_finger = false
+	_pinch_distance = 0.0
+	_pinch_mid = Vector2.ZERO
+
+
+## The cell under a touch position. InputEventScreenTouch positions are in
+## viewport space, the same space the camera's screen centre and zoom work in,
+## so this inverts the camera transform without touching the mouse position.
+func _cell_at_screen(screen: Vector2) -> Vector2i:
+	return _tilemap.local_to_map(_tilemap.to_local(_screen_to_world(screen)))
+
+
+func _screen_to_world(screen: Vector2) -> Vector2:
+	var viewport_size := get_viewport_rect().size
+	return _editor_camera.get_screen_center_position() \
+		+ (screen - viewport_size * 0.5) / _editor_camera.zoom
+
+
+## A touch that is in progress when the window loses focus would otherwise stay
+## in the dictionary: the next press would look like a second finger and start a
+## pan instead of painting. Close the stroke and forget the fingers.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_APPLICATION_PAUSED:
+		if _touch_paint_started:
+			_end_touch_stroke()
+		_reset_touch_state()
+
+
 func _update_hover() -> void:
 	var cell := _cell_at_mouse()
 	if cell != _hover_cell:
@@ -1654,8 +1943,9 @@ func _pan_axis() -> Vector2:
 func _process(delta: float) -> void:
 	# A release that lands on the UI is swallowed by it and never reaches
 	# _unhandled_input, so a drag that ends over the palette would otherwise leave
-	# its preview hanging on screen for good.
-	if _rect_active and not Input.is_mouse_button_pressed(_rect_button):
+	# its preview hanging on screen for good. Touch-driven rectangles have no
+	# mouse button to poll; they close themselves on touch_end.
+	if _rect_active and not _touch_rect and not Input.is_mouse_button_pressed(_rect_button):
 		_commit_rect()
 	if _playing or _panning or _load_overlay.visible \
 			or _online_overlay.visible or _loadout_overlay.visible \
@@ -2055,6 +2345,21 @@ func _build_world_panel() -> void:
 	var title := _section_label("WORLD")
 	column.add_child(title)
 
+	# High in the panel on purpose: on a phone the panel is long, and this is the
+	# switch an author most wants to reach without scrolling. It is the same
+	# saved preference the Settings screen edits, just available without leaving
+	# the level being built.
+	column.add_child(_heading_label("TOUCH CONTROLS"))
+
+	_mobile_controls_btn = _make_button("Mobile controls: OFF", Vector2(232.0, 44.0))
+	_mobile_controls_btn.toggle_mode = true
+	_mobile_controls_btn.button_pressed = MobileControls.enabled
+	_mobile_controls_btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_mobile_controls_btn.tooltip_text = "Switch the on-screen joystick and dig button on or off; the choice is saved and also used during playtests"
+	_mobile_controls_btn.toggled.connect(_on_editor_mobile_controls_toggled)
+	column.add_child(_mobile_controls_btn)
+	MobileControls.enabled_changed.connect(_on_mobile_controls_enabled_changed)
+
 	column.add_child(_heading_label("BACKGROUND"))
 
 	for i in BACKGROUND_CATALOG.size():
@@ -2173,7 +2478,7 @@ func _build_hint() -> void:
 	panel.add_child(row)
 
 	_hint = Label.new()
-	_hint.text = "LMB paint   RMB erase   R rect fill   MMB drag / WASD pan   Wheel zoom   Ctrl+Z undo   G grid"
+	_refresh_hint_text()
 	_hint.add_theme_font_override("font", UI_FONT)
 	_hint.add_theme_font_size_override("font_size", 19)
 	_hint.add_theme_color_override("font_color", Color(0.92, 0.86, 0.76))
@@ -2187,6 +2492,22 @@ func _build_hint() -> void:
 	_toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_toast_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(_toast_label)
+
+
+## The bottom strip follows the input the editor can actually receive: a touch
+## screen gets the gestures (Level Forge handles them even when the gameplay
+## controls are switched off), and a plain desktop gets the key list. With the
+## mobile controls on, the playtest controls are called out too, since those are
+## what the author will actually use once they press PLAY.
+func _refresh_hint_text() -> void:
+	if _hint == null:
+		return
+	if MobileControls.enabled or DisplayServer.is_touchscreen_available():
+		# Kept under ~920px so the strip still fits beside the "Mobile controls
+		# on" toast at the 1152-wide logical viewport.
+		_hint.text = "MOBILE CONTROLS: tap/drag paint, 2-finger pan, pinch zoom, playtest: stick moves/jumps, button digs"
+	else:
+		_hint.text = "LMB paint   RMB erase   R rect fill   MMB drag / WASD pan   Wheel zoom   Ctrl+Z undo   G grid"
 
 
 func _build_load_overlay() -> void:
@@ -3153,6 +3474,20 @@ func _on_fireflies_pressed() -> void:
 	_apply_fireflies()
 	_refresh_world_ui()
 	_mark_dirty()
+
+
+## The Level Forge's copy of the Settings switch. It drives the same saved
+## preference, so flipping it here is exactly the same choice as flipping it on
+## the Settings screen - the next playtest and the next launch both follow it.
+func _on_editor_mobile_controls_toggled(on: bool) -> void:
+	MobileControls.set_enabled(on)
+	Progress.set_mobile_controls_override(on)
+	_refresh_world_ui()
+	# _refresh_world_ui already does this, but the hint is the thing this switch
+	# most obviously changes, so refresh it explicitly rather than relying on a
+	# helper three calls away.
+	_refresh_hint_text()
+	_toast("Mobile controls %s" % ("on" if on else "off"))
 
 
 func _on_save_pressed() -> void:

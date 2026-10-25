@@ -127,7 +127,7 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_check")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_check_hover")
 theme_override_styles/hover = SubResource("StyleBoxFlat_check_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_check_hover")
-tooltip_text = "Show the on-screen touch controls (joystick to move and jump, interact, dig dash)"
+tooltip_text = "Show the on-screen touch controls (joystick to move and jump, interact, dig dash). The choice is saved."
 text = "MOBILE CONTROLS"
 
 [node name="SoundEffectsRow" type="HBoxContainer" parent="CenterContainer/Panel/Margin/VBox"]

@@ -79,6 +79,12 @@ var completed_banner_shown := {}
 var sfx_volume := 1.0
 var music_volume := 1.0
 
+## Saved on-screen touch controls preference. -1 means the player has never
+## chosen, so MobileControls falls back to device detection; 0 keeps the
+## controls off and 1 keeps them on, whatever the device is. Stored as an int
+## rather than a bool so "not chosen yet" stays distinguishable from "off".
+var mobile_controls_override := -1
+
 ## Banked respawn station. `respawn_scene` is the scene the mole is set to
 ## arrive in, and the station in that scene works out the arrival spot from its
 ## own pad. `respawn_position` is where the mole stood when it banked the pad,
@@ -327,6 +333,13 @@ func set_music_volume(value: float) -> void:
 	music_volume = clampf(value, 0.0, 1.0)
 	save_progress()
 
+## Remembers whether the player wants the on-screen touch controls on. Written
+## the moment the switch is flipped, so the choice survives a restart instead of
+## being re-decided by device detection on the next launch.
+func set_mobile_controls_override(enabled: bool) -> void:
+	mobile_controls_override = 1 if enabled else 0
+	save_progress()
+
 func has_respawn() -> bool:
 	return not respawn_scene.is_empty() and ResourceLoader.exists(respawn_scene)
 
@@ -422,6 +435,7 @@ func save_progress() -> void:
 	cfg.set_value("meta", "tutorial_done", tutorial_done)
 	cfg.set_value("audio", "sfx", sfx_volume)
 	cfg.set_value("audio", "music", music_volume)
+	cfg.set_value("settings", "mobile_controls", mobile_controls_override)
 	cfg.save(SAVE_PATH)
 
 func load_progress() -> void:
@@ -465,4 +479,9 @@ func load_progress() -> void:
 	tutorial_done = bool(cfg.get_value("meta", "tutorial_done", false))
 	sfx_volume = clampf(float(cfg.get_value("audio", "sfx", 1.0)), 0.0, 1.0)
 	music_volume = clampf(float(cfg.get_value("audio", "music", 1.0)), 0.0, 1.0)
+	mobile_controls_override = int(cfg.get_value("settings", "mobile_controls", -1))
+	if mobile_controls_override not in [-1, 0, 1]:
+		# A hand-edited or future value falls back to auto-detection rather than
+		# leaving the controls in a state nothing can reason about.
+		mobile_controls_override = -1
 	audio_settings_loaded.emit()

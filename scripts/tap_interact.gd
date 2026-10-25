@@ -35,6 +35,12 @@ static func register(sprite: Node2D) -> void:
 	if sprite != null and is_instance_valid(sprite):
 		sprite.add_to_group(TAP_GROUP)
 
+## Stops a sprite being treated as an interactable. Opened chests use this so a
+## press lands on the shovel instead of being swallowed by the empty chest.
+static func unregister(sprite: Node2D) -> void:
+	if sprite != null and is_instance_valid(sprite):
+		sprite.remove_from_group(TAP_GROUP)
+
 ## True for a left mouse button press (finger taps are emulated mouse clicks).
 static func is_press(event: InputEvent) -> bool:
 	return event is InputEventMouseButton and event.pressed \

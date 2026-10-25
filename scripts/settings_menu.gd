@@ -7,10 +7,10 @@ extends CanvasLayer
 ## standing when it is dismissed.
 ##
 ## It carries the on-screen touch controls toggle and a pair of volume sliders.
-## Auto-detection still picks the controls' starting state (see
-## mobile_controls.gd) and this switch overrides it for the session; the sliders
-## drive the SFX and Music buses and the levels they land on are saved through
-## Progress, so the mix survives a restart.
+## Auto-detection picks the controls' starting state on a fresh save (see
+## mobile_controls.gd); once the switch is used the choice is saved through
+## Progress, so it survives a restart. The sliders drive the SFX and Music buses
+## and the levels they land on are saved through Progress too.
 
 ## Buses the volume sliders drive. Created at startup by _ensure_buses().
 const SFX_BUS := &"SFX"
@@ -122,13 +122,15 @@ func _on_close_pressed() -> void:
 	SFX.play_ui("ui_click", -10.0, 1.15)
 	close()
 
-## Turns the on-screen touch controls on or off by hand. Auto-detection still
-## picks the starting state (see mobile_controls.gd); this overrides it for the
-## session - a touchscreen desktop can switch them on, a phone can switch them
-## off.
+## Turns the on-screen touch controls on or off by hand and remembers the
+## choice. Until this is used once (or the Level Forge switch is), auto-detection
+## picks the starting state on a mobile device; after it, the saved preference
+## wins on every launch - a touchscreen desktop can switch them on, a phone can
+## switch them off.
 func _on_mobile_controls_toggled(pressed: bool) -> void:
 	SFX.play_ui("ui_click", -6.0, 1.2)
 	MobileControls.set_enabled(pressed)
+	Progress.set_mobile_controls_override(pressed)
 
 ## Adds the SFX and Music buses if the layout does not already carry them, both
 ## routed to Master. Created here at startup rather than in default_bus_layout.tres

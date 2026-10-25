@@ -69,6 +69,13 @@ signal enabled_changed(is_on: bool)
 
 var enabled := false
 
+## Set by the Level Forge while the author is building rather than playtesting.
+## The gameplay joystick and dig button are parked (they would sit on top of the
+## palette) and raw touches are left for the editor's own paint/pan/pinch
+## handling. Cleared as soon as a playtest starts, which is when the author wants
+## to test how the level actually plays with the controls on screen.
+var _editor_editing := false
+
 ## Scene the overlay's visibility is currently derived from.
 var _scene_path := ""
 ## Whether a dialogue box is open (see _refresh_visibility).
@@ -122,7 +129,27 @@ func _ready() -> void:
 	_build_ui()
 	get_viewport().size_changed.connect(_layout)
 	_scene_path = _current_scene_path()
-	set_enabled(is_mobile_device())
+	# Deferred, because the saved preference lives in Progress and that autoload
+	# is registered after this one. By the next idle frame its save is read.
+	call_deferred("_apply_initial_preference")
+
+## The starting state: the player's saved choice if there is one, otherwise the
+## device detection that a fresh save has always used.
+func _apply_initial_preference() -> void:
+	if not is_inside_tree():
+		return
+	var choice := Progress.mobile_controls_override
+	set_enabled(is_mobile_device() if choice < 0 else choice == 1)
+
+## Parks the overlay while the Level Forge is being edited. Visibility alone is
+## not enough: the engine's touch-to-mouse emulation has to stay off too, so the
+## editor receives the raw touches it turns into paint, pan and pinch. Called
+## again with false when the playtest starts, and when the editor scene leaves.
+func set_editor_editing(editing: bool) -> void:
+	if _editor_editing == editing:
+		return
+	_editor_editing = editing
+	_refresh_visibility()
 
 ## The overlay belongs in gameplay, not on the menus, so its visibility follows
 ## whichever scene is current. Tracked here rather than pushed from each scene:
@@ -177,9 +204,18 @@ func _dialogue_is_open() -> bool:
 	return false
 
 func _refresh_visibility() -> void:
+	# Re-read the scene here as well as in the physics tick: a scene change that
+	# calls this through a deferred flag should already judge the incoming scene,
+	# not the one that is in the middle of being torn down.
+	var path := _current_scene_path()
+	if not path.is_empty():
+		_scene_path = path
 	# Paused means a menu, cutscene or popup owns the screen; the overlay sits
-	# that out too, so the mouse can go back to driving their Buttons.
-	visible = enabled and not HIDDEN_SCENES.has(_scene_path) and not _dialogue_open and not _paused
+	# that out too, so the mouse can go back to driving their Buttons. The Level
+	# Forge's editing session parks it for the same reason: its own palette and
+	# panels need the screen.
+	visible = enabled and not _editor_editing \
+		and not HIDDEN_SCENES.has(_scene_path) and not _dialogue_open and not _paused
 	_refresh_field_guide_button()
 	_update_mouse_emulation()
 	if not visible:
@@ -196,6 +232,14 @@ func _refresh_visibility() -> void:
 ## finger (digging while the joystick is held) would still be invisible. Handed
 ## back whenever the overlay is hidden so menu Buttons keep working.
 func _update_mouse_emulation() -> void:
+	# While Level Forge is being edited the overlay is parked and the editor
+	# consumes raw touches itself. The engine's emulation would add a duplicate
+	# click on top of that (and would only follow the first finger, which breaks
+	# two-finger panning), so it stays off until editing ends.
+	if _editor_editing:
+		if Input.is_emulating_mouse_from_touch():
+			Input.set_emulate_mouse_from_touch(false)
+		return
 	var want := _emulate_mouse_baseline if not visible else false
 	if Input.is_emulating_mouse_from_touch() != want:
 		Input.set_emulate_mouse_from_touch(want)

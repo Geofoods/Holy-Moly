@@ -107,9 +107,19 @@ LEFT CLICK: Paint the selected block, or place the selected enemy, portal, chest
 RIGHT CLICK: Erase a block, enemy, portal, chest, station or item; with rectangle filling on, drag to clear the blocks in a rectangle
 MIDDLE MOUSE DRAG / WASD: Pan the view
 MOUSE WHEEL: Zoom
+ONE-FINGER TAP / DRAG (touch): Paint the selected block or place the selected object
+TWO-FINGER DRAG (touch): Pan the view
+PINCH (touch): Zoom
 R: Toggle rectangle filling
 CTRL+Z / CTRL+Y: Undo / redo
 G: Toggle the grid
+
+The TOUCH CONTROLS switch at the top of the WORLD panel turns the on-screen
+joystick and dig button on or off. It is the same saved preference as the MOBILE
+CONTROLS checkbox in Settings, so changing either one sticks across restarts and
+applies to playtests. While you are building, the gameplay controls are parked so
+they cannot cover the palette; they come back for the length of a playtest and
+step aside again when you return to editing.
 
 The WORLD panel on the right sets the level's look, sound and starting weapons.
 Pick one of the three parallax backdrops (Teal, Purple, Red), then drag the

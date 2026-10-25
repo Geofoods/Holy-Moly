@@ -52,12 +52,17 @@ func _input(event: InputEvent) -> void:
 ## Area2D is the wide proximity zone, not the chest itself - the press must
 ## land on the sprite.
 func _unhandled_input(event: InputEvent) -> void:
+	# An opened chest is breakable loot furniture, not an interactable. Let a
+	# press through to the shovel; otherwise clicking the empty chest would be
+	# swallowed by the old interaction target and it could never be smashed.
+	if is_open or is_breaking:
+		return
 	if not TapInteract.is_press_on(event, chest_sprite):
 		return
-	# The press is spent on the chest even when it cannot open (already open,
-	# player out of reach): pressing a chest never swings a shovel at it.
+	# The press is spent on the chest even when the player is out of reach:
+	# pressing a closed chest never swings a shovel at it.
 	TapInteract.consume(event, self)
-	if not player_nearby or is_open or is_breaking:
+	if not player_nearby:
 		return
 	_open_chest()
 
@@ -94,6 +99,7 @@ func _has_line_of_sight(target: Node2D) -> bool:
 
 func _open_chest() -> void:
 	is_open = true
+	TapInteract.unregister(chest_sprite)
 	TutorialEvents.chest_opened.emit()
 	add_to_group("opened_chest")
 	remove_from_group("chest")
@@ -113,6 +119,7 @@ func break_as_block() -> void:
 	if not is_open or is_breaking:
 		return
 	is_breaking = true
+	TapInteract.unregister(chest_sprite)
 	remove_from_group("opened_chest")
 	var mole := get_tree().get_first_node_in_group("mole")
 	if mole and mole.has_method("screen_shake"):
