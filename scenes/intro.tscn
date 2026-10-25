@@ -8,143 +8,143 @@
 [ext_resource type="PackedScene" uid="uid://3wwhicdeo8hl" path="res://scenes/info_popup.tscn" id="7_infopopup"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_playbutton"]
-bg_color = Color(0.13, 0.85, 0.35, 1)
+bg_color = Color(0.18, 0.48, 0.28, 1)
 border_width_left = 3
 border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
-border_color = Color(0.2, 1, 0.5, 0.4)
+border_color = Color(0.05, 0.14, 0.08, 1)
 corner_radius_top_left = 12
 corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
-shadow_color = Color(0.1, 0.9, 0.3, 0.35)
+shadow_color = Color(0.08, 0.24, 0.13, 0.45)
 shadow_size = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_playbutton_hover"]
-bg_color = Color(0.2, 1, 0.45, 1)
+bg_color = Color(0.26, 0.64, 0.37, 1)
 border_width_left = 3
 border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
-border_color = Color(0.4, 1, 0.7, 1)
+border_color = Color(0.45, 0.78, 0.55, 1)
 corner_radius_top_left = 12
 corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
-shadow_color = Color(0.1, 1, 0.4, 0.5)
+shadow_color = Color(0.1, 0.32, 0.17, 0.55)
 shadow_size = 12
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_exitbutton"]
-bg_color = Color(0.72, 0.1, 0.18, 1)
+bg_color = Color(0.52, 0.16, 0.16, 1)
 border_width_left = 3
 border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
-border_color = Color(1, 0.3, 0.4, 0.4)
+border_color = Color(0.18, 0.04, 0.04, 1)
 corner_radius_top_left = 12
 corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
-shadow_color = Color(0.9, 0.1, 0.2, 0.35)
+shadow_color = Color(0.22, 0.05, 0.05, 0.45)
 shadow_size = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_exitbutton_hover"]
-bg_color = Color(1, 0.2, 0.3, 1)
+bg_color = Color(0.68, 0.22, 0.22, 1)
 border_width_left = 3
 border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
-border_color = Color(1, 0.5, 0.6, 1)
+border_color = Color(0.85, 0.38, 0.34, 1)
 corner_radius_top_left = 12
 corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
-shadow_color = Color(0.9, 0.1, 0.2, 0.5)
+shadow_color = Color(0.28, 0.06, 0.06, 0.55)
 shadow_size = 12
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_infobutton"]
 bg_color = Color(0.8, 0.68, 0.46, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
 border_color = Color(0.42, 0.28, 0.14, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-shadow_color = Color(0, 0, 0, 0.4)
-shadow_size = 6
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0.1, 0.07, 0.03, 0.45)
+shadow_size = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_infobutton_hover"]
 bg_color = Color(0.97, 0.91, 0.78, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.42, 0.28, 0.14, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-shadow_color = Color(0, 0, 0, 0.4)
-shadow_size = 6
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_browserbutton"]
-bg_color = Color(0.12, 0.36, 0.5, 1)
 border_width_left = 3
 border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
-border_color = Color(0.38, 0.82, 1, 0.45)
+border_color = Color(0.42, 0.28, 0.14, 1)
 corner_radius_top_left = 12
 corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
-shadow_color = Color(0.1, 0.55, 0.9, 0.35)
+shadow_color = Color(0.1, 0.07, 0.03, 0.55)
+shadow_size = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_browserbutton"]
+bg_color = Color(0.16, 0.34, 0.38, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.05, 0.12, 0.14, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0.06, 0.18, 0.21, 0.45)
 shadow_size = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_browserbutton_hover"]
-bg_color = Color(0.16, 0.5, 0.68, 1)
+bg_color = Color(0.24, 0.48, 0.52, 1)
 border_width_left = 3
 border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
-border_color = Color(0.55, 0.9, 1, 1)
+border_color = Color(0.45, 0.7, 0.72, 1)
 corner_radius_top_left = 12
 corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
-shadow_color = Color(0.1, 0.65, 1, 0.5)
+shadow_color = Color(0.08, 0.24, 0.27, 0.55)
 shadow_size = 12
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_creditsbutton"]
-bg_color = Color(0.13, 0.12, 0.24, 1)
+bg_color = Color(0.24, 0.18, 0.13, 1)
 border_width_left = 3
 border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
-border_color = Color(0.85, 0.72, 0.35, 0.5)
+border_color = Color(0.52, 0.38, 0.21, 1)
 corner_radius_top_left = 12
 corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
-shadow_color = Color(0.7, 0.58, 0.2, 0.3)
+shadow_color = Color(0.06, 0.04, 0.02, 0.5)
 shadow_size = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_creditsbutton_hover"]
-bg_color = Color(0.23, 0.21, 0.4, 1)
+bg_color = Color(0.34, 0.26, 0.19, 1)
 border_width_left = 3
 border_width_top = 3
 border_width_right = 3
 border_width_bottom = 3
-border_color = Color(1, 0.88, 0.45, 1)
+border_color = Color(0.72, 0.55, 0.32, 1)
 corner_radius_top_left = 12
 corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
-shadow_color = Color(0.9, 0.75, 0.3, 0.45)
+shadow_color = Color(0.08, 0.05, 0.03, 0.6)
 shadow_size = 12
 
 [node name="IntroScreen" type="Control" unique_id=1091680018]
@@ -218,8 +218,8 @@ alignment = 1
 custom_minimum_size = Vector2(240, 70)
 layout_mode = 2
 size_flags_horizontal = 0
-theme_override_colors/font_color = Color(0.03, 0.03, 0.03, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_colors/font_color = Color(0.96, 0.91, 0.8, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.02, 0.01, 1)
 theme_override_fonts/font = ExtResource("6_es01l")
 theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = SubResource("StyleBoxFlat_playbutton")
@@ -232,8 +232,8 @@ text = "PLAY"
 custom_minimum_size = Vector2(240, 70)
 layout_mode = 2
 size_flags_horizontal = 0
-theme_override_colors/font_color = Color(0.82, 0.95, 1, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_colors/font_color = Color(0.86, 0.95, 0.94, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.02, 0.01, 1)
 theme_override_fonts/font = ExtResource("6_es01l")
 theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = SubResource("StyleBoxFlat_browserbutton")
@@ -247,8 +247,8 @@ text = "LEVEL BROWSER"
 custom_minimum_size = Vector2(240, 70)
 layout_mode = 2
 size_flags_horizontal = 0
-theme_override_colors/font_color = Color(0.32, 0.2, 0.08, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_colors/font_color = Color(0.24, 0.15, 0.07, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.02, 0.01, 1)
 theme_override_fonts/font = ExtResource("6_es01l")
 theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = SubResource("StyleBoxFlat_infobutton")
@@ -261,8 +261,8 @@ text = "FIELD GUIDE"
 custom_minimum_size = Vector2(240, 70)
 layout_mode = 2
 size_flags_horizontal = 0
-theme_override_colors/font_color = Color(1, 0.88, 0.88, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_colors/font_color = Color(0.99, 0.89, 0.84, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.02, 0.01, 1)
 theme_override_fonts/font = ExtResource("6_es01l")
 theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = SubResource("StyleBoxFlat_exitbutton")
@@ -280,12 +280,13 @@ theme_override_constants/separation = 30
 alignment = 1
 
 [node name="ClearSaveButton" type="Button" parent="CenterContainer/VBoxContainer/BottomRow"]
-custom_minimum_size = Vector2(240, 48)
+custom_minimum_size = Vector2(240, 70)
 layout_mode = 2
 size_flags_horizontal = 4
-theme_override_colors/font_color = Color(1, 0.88, 0.88, 1)
+theme_override_colors/font_color = Color(0.99, 0.89, 0.84, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.02, 0.01, 1)
 theme_override_fonts/font = ExtResource("6_es01l")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = SubResource("StyleBoxFlat_exitbutton")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_exitbutton_hover")
 theme_override_styles/hover = SubResource("StyleBoxFlat_exitbutton_hover")
@@ -293,13 +294,13 @@ theme_override_styles/focus = SubResource("StyleBoxFlat_exitbutton_hover")
 text = "CLEAR SAVE DATA"
 
 [node name="EditorButton" type="Button" parent="CenterContainer/VBoxContainer/BottomRow"]
-custom_minimum_size = Vector2(240, 48)
+custom_minimum_size = Vector2(240, 70)
 layout_mode = 2
 size_flags_horizontal = 4
-theme_override_colors/font_color = Color(1, 0.94, 0.62, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_colors/font_color = Color(0.96, 0.88, 0.7, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.02, 0.01, 1)
 theme_override_fonts/font = ExtResource("6_es01l")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = SubResource("StyleBoxFlat_creditsbutton")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_creditsbutton_hover")
 theme_override_styles/hover = SubResource("StyleBoxFlat_creditsbutton_hover")
@@ -308,13 +309,13 @@ tooltip_text = "Build your own level out of blocks and enemies"
 text = "LEVEL EDITOR"
 
 [node name="CreditsButton" type="Button" parent="CenterContainer/VBoxContainer/BottomRow"]
-custom_minimum_size = Vector2(240, 48)
+custom_minimum_size = Vector2(240, 70)
 layout_mode = 2
 size_flags_horizontal = 4
-theme_override_colors/font_color = Color(1, 0.88, 0.45, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_colors/font_color = Color(0.96, 0.88, 0.7, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.02, 0.01, 1)
 theme_override_fonts/font = ExtResource("6_es01l")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = SubResource("StyleBoxFlat_creditsbutton")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_creditsbutton_hover")
 theme_override_styles/hover = SubResource("StyleBoxFlat_creditsbutton_hover")
@@ -323,13 +324,13 @@ tooltip_text = "Watch the credits roll"
 text = "CREDITS"
 
 [node name="SettingsButton" type="Button" parent="CenterContainer/VBoxContainer/BottomRow"]
-custom_minimum_size = Vector2(240, 48)
+custom_minimum_size = Vector2(240, 70)
 layout_mode = 2
 size_flags_horizontal = 4
-theme_override_colors/font_color = Color(0.32, 0.2, 0.08, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_colors/font_color = Color(0.24, 0.15, 0.07, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.02, 0.01, 1)
 theme_override_fonts/font = ExtResource("6_es01l")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = SubResource("StyleBoxFlat_infobutton")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_infobutton_hover")
 theme_override_styles/hover = SubResource("StyleBoxFlat_infobutton_hover")

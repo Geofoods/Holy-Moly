@@ -911,6 +911,9 @@ func _physics_process(delta: float) -> void:
 		_coyote_timer = 0.0
 		SFX.play("jump", global_position, -12.0)
 		spawn_mole_hole()
+		# Kick a little dirt out from under the mole as it launches, so the jump
+		# reads as pushing off the ground rather than just floating upward.
+		_spawn_dust_puff(0.3)
 		var direction_at_jump := Input.get_axis("ui_left", "ui_right")
 		is_sideways_jump = direction_at_jump != 0
 		air_time = 1.0
@@ -950,7 +953,7 @@ func _physics_process(delta: float) -> void:
 		var landing_impact := minf(landing_speed / GROUND_POUND_SPEED, 1.0)
 		velocity.y = 0.0
 		SFX.play("land", global_position, lerpf(-16.0, -8.0, landing_impact), 0.12)
-		_spawn_land_dust(landing_impact)
+		_spawn_dust_puff(landing_impact)
 		_squash_landing(landing_impact)
 		remove_mole_hole()
 		is_sideways_jump = false
@@ -1509,7 +1512,7 @@ func _play_death_animation() -> void:
 	topple.tween_property(_sprite, "scale", Vector2(1.15, 0.8), 0.35)
 	await topple.finished
 
-	_spawn_land_dust()
+	_spawn_dust_puff()
 	await get_tree().create_timer(0.45).timeout
 	_go_to_game_over()
 
@@ -1600,7 +1603,9 @@ func _damage_flash() -> void:
 	tween.tween_property(flash, "color:a", 0.0, 0.25).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tween.tween_callback(canvas_layer.queue_free)
 
-func _spawn_land_dust(impact: float = 0.0) -> void:
+## A short-lived puff of dirt. Used on takeoff, landing, and the death topple;
+## `impact` scales the particle count and launch speed.
+func _spawn_dust_puff(impact: float = 0.0) -> void:
 	var dust := CPUParticles2D.new()
 	dust.emitting = true
 	dust.one_shot = true

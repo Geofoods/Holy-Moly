@@ -1689,7 +1689,7 @@ func _freeze_tiles_along_boss_ice_laser(start: Vector2, finish: Vector2) -> void
 			FrozenTiles.register(cell, BOSS_ICE_LASER_FROST_DURATION)
 
 	if frost_layer.get_child_count() > 0:
-		get_tree().create_timer(BOSS_ICE_LASER_FROST_DURATION).timeout.connect(_melt_boss_ice_frost.bind(frost_layer))
+		get_tree().create_timer(BOSS_ICE_LASER_FROST_DURATION).timeout.connect(_melt_boss_ice_frost.bind(weakref(frost_layer)))
 	else:
 		frost_layer.queue_free()
 
@@ -1698,9 +1698,12 @@ func _freeze_tiles_along_boss_ice_laser(start: Vector2, finish: Vector2) -> void
 ##
 ## Static on purpose, for the same reason the ice bomb's is: the snail can be freed
 ## out from under this if the fight is abandoned, and a connection to one of its own
-## methods would be torn down with it, leaving the frost frozen to the floor.
-static func _melt_boss_ice_frost(frost_layer: Node2D) -> void:
-	if not is_instance_valid(frost_layer):
+## methods would be torn down with it, leaving the frost frozen to the floor. The
+## layer is bound through a WeakRef because the level can free it before the timer
+## fires.
+static func _melt_boss_ice_frost(frost_layer_ref: WeakRef) -> void:
+	var frost_layer := frost_layer_ref.get_ref() as Node2D
+	if not frost_layer:
 		return
 	for child in frost_layer.get_children():
 		if child is IceOverlay:
