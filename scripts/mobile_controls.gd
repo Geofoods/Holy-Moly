@@ -69,7 +69,7 @@ signal enabled_changed(is_on: bool)
 
 var enabled := false
 
-## Set by the Level Forge while the author is building rather than playtesting.
+## Set by the Level Editor while the author is building rather than playtesting.
 ## The gameplay joystick and dig button are parked (they would sit on top of the
 ## palette) and raw touches are left for the editor's own paint/pan/pinch
 ## handling. Cleared as soon as a playtest starts, which is when the author wants
@@ -141,7 +141,7 @@ func _apply_initial_preference() -> void:
 	var choice := Progress.mobile_controls_override
 	set_enabled(is_mobile_device() if choice < 0 else choice == 1)
 
-## Parks the overlay while the Level Forge is being edited. Visibility alone is
+## Parks the overlay while the Level Editor is being edited. Visibility alone is
 ## not enough: the engine's touch-to-mouse emulation has to stay off too, so the
 ## editor receives the raw touches it turns into paint, pan and pinch. Called
 ## again with false when the playtest starts, and when the editor scene leaves.
@@ -212,7 +212,7 @@ func _refresh_visibility() -> void:
 		_scene_path = path
 	# Paused means a menu, cutscene or popup owns the screen; the overlay sits
 	# that out too, so the mouse can go back to driving their Buttons. The Level
-	# Forge's editing session parks it for the same reason: its own palette and
+	# Editor's editing session parks it for the same reason: its own palette and
 	# panels need the screen.
 	visible = enabled and not _editor_editing \
 		and not HIDDEN_SCENES.has(_scene_path) and not _dialogue_open and not _paused
@@ -232,7 +232,7 @@ func _refresh_visibility() -> void:
 ## finger (digging while the joystick is held) would still be invisible. Handed
 ## back whenever the overlay is hidden so menu Buttons keep working.
 func _update_mouse_emulation() -> void:
-	# While Level Forge is being edited the overlay is parked and the editor
+	# While the Level Editor is being edited the overlay is parked and the editor
 	# consumes raw touches itself. The engine's emulation would add a duplicate
 	# click on top of that (and would only follow the first finger, which breaks
 	# two-finger panning), so it stays off until editing ends.

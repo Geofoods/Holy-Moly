@@ -123,10 +123,10 @@ func _on_close_pressed() -> void:
 	close()
 
 ## Turns the on-screen touch controls on or off by hand and remembers the
-## choice. Until this is used once (or the Level Forge switch is), auto-detection
-## picks the starting state on a mobile device; after it, the saved preference
-## wins on every launch - a touchscreen desktop can switch them on, a phone can
-## switch them off.
+## choice. Until this is used once (or the Level Editor switch is),
+## auto-detection picks the starting state on a mobile device; after it, the
+## saved preference wins on every launch - a touchscreen desktop can switch
+## them on, a phone can switch them off.
 func _on_mobile_controls_toggled(pressed: bool) -> void:
 	SFX.play_ui("ui_click", -6.0, 1.2)
 	MobileControls.set_enabled(pressed)

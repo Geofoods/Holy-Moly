@@ -1,11 +1,11 @@
 extends Node2D
 
-## Normal-gameplay host for a community level published from Level Forge.
+## Normal-gameplay host for a community level published from the Level Editor.
 ##
 ## Unlike the editor's playtest, this is not a preview: it has the campaign's
 ## HUD, pause menu and field guide, deaths leave for the game over screen, and
 ## the portal finishes the run back at the Level Browser. The level JSON is
-## rebuilt here from the same data the editor saves, but none of Level Forge's
+## rebuilt here from the same data the editor saves, but none of the editor's
 ## tools or playtest bar are loaded.
 
 const MOLE_SCENE := preload("res://scenes/mole.tscn")
@@ -23,8 +23,8 @@ const TILE_LAYER := 0
 const TERRAIN_SOURCE := 0
 
 ## The campaign levels scale the mole down to a quarter so he stands roughly
-## one tile tall next to the half-scaled 160px TileSet. Matches Level Forge so a
-## community level plays at the size its author previewed.
+## one tile tall next to the half-scaled 160px TileSet. Matches the Level Editor,
+## so a community level plays at the size its author previewed.
 const MOLE_SCALE := Vector2(0.25, 0.25)
 const MOLE_CAMERA_SCALE := Vector2(4.0, 4.0)
 const MOLE_CAMERA_ZOOM := Vector2(0.65, 0.65)
@@ -181,8 +181,9 @@ func _build_level(data: Dictionary) -> void:
 			_restore_checkpoint_light(node, checkpoint)
 
 
-## Rebuilds one placed prop. Only the values Level Forge can actually place are
-## accepted, so a hand-edited JSON cannot make this scene load an arbitrary path.
+## Rebuilds one placed prop. Only the values the Level Editor can actually place
+## are accepted, so a hand-edited JSON cannot make this scene load an arbitrary
+## path.
 func _make_prop(kind: String, value: String) -> Node2D:
 	match kind:
 		"chest":
@@ -302,8 +303,8 @@ func _spawn_mole() -> void:
 
 
 ## A custom level has no campaign exit zone to kill a fall, so a wide pit sits a
-## few tiles under the lowest authored block, exactly like Level Forge's own
-## playtest floor. Touching it ends the run through the normal death path.
+## few tiles under the lowest authored block, exactly like the Level Editor's
+## own playtest floor. Touching it ends the run through the normal death path.
 func _create_pit() -> void:
 	var used := _tilemap.get_used_rect()
 	var bottom := _spawn_point.y + 2400.0

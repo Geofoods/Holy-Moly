@@ -1,6 +1,6 @@
 extends Node2D
 
-## "Level Forge" -- the in-game level editor.
+## The in-game Level Editor.
 ##
 ## Paint blocks from the game's own TileSet and drop enemies straight from the
 ## campaign, then hit PLAY to test the level in place with the real mole.
@@ -75,6 +75,10 @@ const TITLE_SCENE := "res://scenes/intro.tscn"
 const SAVE_DIR := "user://levels"
 const AUTOSAVE_PATH := "user://levels/_autosave.json"
 const AUTOSAVE_DELAY := 0.7
+## The hash of the last level finished in a playtest. Kept beside the levels so
+## reopening an untouched level does not demand a second run before publishing.
+## Not a .json file, so the editor's load list never offers it as a level.
+const BEATEN_PATH := "user://levels/_last_beaten.dat"
 const DEFAULT_LEVEL_NAME := "Untitled Level"
 
 ## The campaign levels scale the mole down to a quarter so he stands roughly
@@ -275,10 +279,16 @@ var _saved_shop: Dictionary = {}
 var _children_before: Array = []
 
 var _autosave_timer: Timer = null
-## The working file this editor session autosaves to. A normal Level Forge open
+## The working file this editor session autosaves to. A normal Level Editor open
 ## uses AUTOSAVE_PATH; a community level launched from the Level Browser gets a
 ## separate file so the author's own work is never overwritten.
 var _autosave_path := AUTOSAVE_PATH
+## The last finished level's fingerprint. Loaded at startup and rewritten when a
+## playtest reaches the portal, so publishing can check the level still matches
+## the run that was actually completed. The path is a variable so a test harness
+## can keep its own record instead of the player's.
+var _beaten_fingerprint := ""
+var _beaten_path := BEATEN_PATH
 var _launch_playtest := false
 
 var _ui_root: Control = null
@@ -346,6 +356,7 @@ var _background_buttons: Array = []
 
 func _ready() -> void:
 	DirAccess.make_dir_recursive_absolute(SAVE_DIR)
+	_beaten_fingerprint = _load_beaten_fingerprint()
 	_tile_world = float(_tilemap.tile_set.tile_size.x) * absf(_tilemap.scale.x)
 	_overlay.editor = self
 
@@ -1102,6 +1113,40 @@ func save_level(path: String) -> bool:
 	return true
 
 
+## A stable signature of exactly what publishing would upload. Hashing the JSON
+## means moving a block, renaming the level or changing any world setting
+## invalidates a previous finish, while undoing back to the finished layout is
+## recognised as the same level again.
+func _level_fingerprint() -> String:
+	return JSON.stringify(to_dict()).sha256_text()
+
+
+## Called the moment the author walks through a portal in a playtest. The live
+## fingerprint is what publishing checks, and the copy on disk lets a later
+## editor session recognise the same untouched level.
+func _remember_level_beaten() -> void:
+	_beaten_fingerprint = _level_fingerprint()
+	var file := FileAccess.open(_beaten_path, FileAccess.WRITE)
+	if file == null:
+		return
+	file.store_string(JSON.stringify({
+		"fingerprint": _beaten_fingerprint,
+		"name": _level_name,
+	}, "\t"))
+
+
+func _load_beaten_fingerprint() -> String:
+	if not FileAccess.file_exists(_beaten_path):
+		return ""
+	var file := FileAccess.open(_beaten_path, FileAccess.READ)
+	if file == null:
+		return ""
+	var parsed = JSON.parse_string(file.get_as_text())
+	if not (parsed is Dictionary):
+		return ""
+	return str(parsed.get("fingerprint", ""))
+
+
 func load_level(path: String) -> bool:
 	if not FileAccess.file_exists(path):
 		return false
@@ -1485,11 +1530,13 @@ func _send_mole_to_checkpoint() -> void:
 
 ## The mole walked into the level's portal, so the level is finished. A playtest
 ## has nowhere to go next, so the run ends the way BACK TO EDITING ends it, with
-## the author told why.
+## the author told why. Finishing also marks this exact level as publishable;
+## any edit afterwards changes its fingerprint and locks publishing again.
 func _on_portal_entered() -> void:
 	if not _playing or _finishing:
 		return
 	_finishing = true
+	_remember_level_beaten()
 	SFX.play_ui("item_pickup", -3.0, 1.5)
 	# The mole is stopped where it stands. The banner is a beat to read before the
 	# level rolls back, and a run that carried on could still be killed out of it,
@@ -2495,10 +2542,10 @@ func _build_hint() -> void:
 
 
 ## The bottom strip follows the input the editor can actually receive: a touch
-## screen gets the gestures (Level Forge handles them even when the gameplay
-## controls are switched off), and a plain desktop gets the key list. With the
-## mobile controls on, the playtest controls are called out too, since those are
-## what the author will actually use once they press PLAY.
+## screen gets the gestures (the Level Editor handles them even when the
+## gameplay controls are switched off), and a plain desktop gets the key list.
+## With the mobile controls on, the playtest controls are called out too, since
+## those are what the author will actually use once they press PLAY.
 func _refresh_hint_text() -> void:
 	if _hint == null:
 		return
@@ -2909,6 +2956,7 @@ func _show_online_publish() -> void:
 	_online_browse_view.visible = false
 	_online_tab_publish.modulate = Color.WHITE
 	_online_tab_browse.modulate = Color(0.72, 0.68, 0.62, 1.0)
+	_refresh_publish_gate()
 
 
 func _show_online_browse() -> void:
@@ -2920,8 +2968,49 @@ func _show_online_browse() -> void:
 		_refresh_online_levels()
 
 
+func _level_has_portal() -> bool:
+	for entry in _props:
+		if str(entry.get("kind", "")) == "portal":
+			return true
+	return false
+
+
+## Publishing is earned by finishing the level: the author has to reach a portal
+## in a playtest and then leave the level untouched. Comparing fingerprints
+## rather than a plain flag means the requirement is about the published level,
+## not about how many times the editor happened to be opened.
+func _is_publish_unlocked() -> bool:
+	return not _beaten_fingerprint.is_empty() \
+		and _beaten_fingerprint == _level_fingerprint()
+
+
+func _refresh_publish_gate() -> void:
+	if _publish_button == null:
+		return
+	var locked_message := _publish_locked_message()
+	var unlocked := _is_publish_unlocked()
+	_publish_button.disabled = not unlocked
+	_publish_button.tooltip_text = "" if unlocked else locked_message
+	if _publish_status == null:
+		return
+	if unlocked:
+		if _publish_status.text == locked_message:
+			_publish_status.text = ""
+	else:
+		_publish_status.text = locked_message
+
+
+func _publish_locked_message() -> String:
+	if not _level_has_portal():
+		return "Add a Portal and play through it to publish your level online."
+	return "Finish a playtest through the portal to publish your level online. Any edit locks it again."
+
+
 func _on_publish_pressed() -> void:
 	_sync_level_name()
+	if not _is_publish_unlocked():
+		_refresh_publish_gate()
+		return
 	if _tiles.is_empty() and _enemies.is_empty() and _props.is_empty():
 		_publish_status.text = "Add a few blocks or entities before publishing."
 		return
@@ -2934,7 +3023,7 @@ func _on_publish_pressed() -> void:
 	_publish_status.text = "Publishing to the community... (free servers may take ~1 min to wake)"
 	var result: Dictionary = await LevelShare.publish(
 			to_dict(), _level_name, author, _publish_description_edit.text)
-	_publish_button.disabled = false
+	_refresh_publish_gate()
 	if bool(result.get("ok", false)):
 		var level: Dictionary = result.get("level", {})
 		_publish_status.text = "Published! Level id: %s\nAnyone using ONLINE → BROWSE can find it." % str(level.get("id", ""))
@@ -3476,7 +3565,7 @@ func _on_fireflies_pressed() -> void:
 	_mark_dirty()
 
 
-## The Level Forge's copy of the Settings switch. It drives the same saved
+## The Level Editor's copy of the Settings switch. It drives the same saved
 ## preference, so flipping it here is exactly the same choice as flipping it on
 ## the Settings screen - the next playtest and the next launch both follow it.
 func _on_editor_mobile_controls_toggled(on: bool) -> void:

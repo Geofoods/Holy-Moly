@@ -1,7 +1,7 @@
 # Holy Moley community level service
 
 This is the small HTTP service behind the editor's **ONLINE** panel and the
-title-screen **Level Browser**. It accepts published Level Forge JSON, lists
+title-screen **Level Browser**. It accepts published Level Editor JSON, lists
 what has been published, serves a level back when someone presses **LOAD** or
 **PLAY**, and keeps a like count for each level.
 

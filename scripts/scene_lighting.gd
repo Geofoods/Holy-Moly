@@ -35,9 +35,9 @@ func _process(_delta: float) -> void:
 	# fully lit: authoring tiles in cave shade would hide the palette's colours.
 	if path.ends_with("level_editor.tscn"):
 		return
-	# A community level is played exactly as its author saw it in Level Forge, so
-	# it keeps the editor's unshaded look instead of picking up the campaign's
-	# cave shade.
+	# A community level is played exactly as its author saw it in the Level
+	# Editor, so it keeps the editor's unshaded look instead of picking up the
+	# campaign's cave shade.
 	if path.ends_with("community_play.tscn"):
 		return
 	# The community level browser is a front end like the title screen it is

@@ -4,10 +4,10 @@ var _player: AudioStreamPlayer = null
 var _stream := preload("res://nojisuma-grotto-120967.mp3")
 var _target_volume := -18.0
 
-## The Level Forge can give a custom level a campaign track of its own. While
+## The Level Editor can give a custom level a campaign track of its own. While
 ## this is set, _start_bed() loads it in place of the campaign's usual bed; the
-## editor clears it again on the way out so it cannot follow anyone back into the
-## campaign. Empty means the ordinary bed.
+## editor clears it again on the way out so it cannot follow anyone back into
+## the campaign. Empty means the ordinary bed.
 var _bed_override_path := ""
 
 ## Whichever tween is currently moving the bed's volume, for the same reason the

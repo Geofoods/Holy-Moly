@@ -32,6 +32,11 @@ const COMMUNITY_PLAY_SCENE := "res://scenes/community_play.tscn"
 ## normal loading/retry path.
 const WARMUP_INTERVAL := 600.0
 const WARMUP_BODY_LIMIT := 4096
+## Two throwaway levels were published to the live service while the community
+## board was being wired up. The service has no delete route, so every list this
+## client fetches skips them by id. Hidden by id rather than name, so renaming
+## one cannot bring it back.
+const HIDDEN_LEVEL_IDS := ["d16bbafa2582", "c99cc740cf96"]
 
 var base_url := SERVICE_URL
 var author := ""
@@ -174,11 +179,27 @@ func fetch_levels(limit: int = 50, offset: int = 0, sort: String = "newest",
 	var data = result.get("data", null)
 	if not (data is Dictionary) or not (data.get("levels") is Array):
 		return _fail("The level server returned an unexpected response.")
+	var fetched: Array = data["levels"]
+	var levels := _without_hidden_levels(fetched)
+	# The server's total still counts anything filtered out above, so take back
+	# however many of them came back in this page.
+	var total := int(data.get("total", fetched.size())) - (fetched.size() - levels.size())
 	return {
 		"ok": true,
-		"levels": data["levels"],
-		"total": int(data.get("total", data["levels"].size())),
+		"levels": levels,
+		"total": maxi(total, levels.size()),
 	}
+
+
+## See HIDDEN_LEVEL_IDS. A new array is built so the downloaded payload the
+## caller passed in is left untouched.
+func _without_hidden_levels(levels: Array) -> Array:
+	var visible: Array = []
+	for raw_entry in levels:
+		if raw_entry is Dictionary and str(raw_entry.get("id", "")) in HIDDEN_LEVEL_IDS:
+			continue
+		visible.append(raw_entry)
+	return visible
 
 
 func download_level(level_id: String) -> Dictionary:
@@ -261,7 +282,7 @@ func clear_community_play() -> void:
 
 
 ## Hands the editor a downloaded community level to open on the next scene load.
-## The separate autosave path is what keeps the player's own Level Forge work
+## The separate autosave path is what keeps the player's own Level Editor work
 ## out of the way.
 func request_editor_level(path: String, start_playing: bool = true) -> void:
 	_pending_editor_level = path

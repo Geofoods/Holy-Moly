@@ -46,16 +46,16 @@ community service. Each entry shows its author, description, likes and download
 count, and NEWEST, MOST DOWNLOADED and MOST LIKED reorder the whole catalogue.
 LIKE adds or removes your own like; the game remembers your choice per
 installation, so one copy of the game counts once. EDIT downloads the level and
-opens it in Level Forge for changing, while PLAY launches it as a normal game
+opens it in the Level Editor for changing, while PLAY launches it as a normal game
 level: the campaign HUD, pause menu and game over screen are all there, and the
 exit portal returns you to the browser when you finish. Community runs borrow
 their authored weapons and music for that run only, use their own checkpoint,
 and never overwrite campaign progress, shop unlocks or the level you were
-building in Level Forge.
+building in the Level Editor.
 
 LEVEL EDITOR:
 
-The LEVEL EDITOR button on the title screen opens Level Forge. Paint blocks
+The LEVEL EDITOR button on the title screen opens the Level Editor. Paint blocks
 straight out of the game's own tileset, drop in enemies, chests and items from
 the campaign, then press PLAY to test the level in place with the real mole. A
 health bar in the bottom-left tracks the mole's hearts for the duration of the
@@ -150,11 +150,14 @@ detour.
 ONLINE LEVELS:
 
 The ONLINE button opens the community panel. PUBLISH uploads the level currently
-open in the editor with its name, author and a short description. BROWSE lists
-everything published to the same server, including each level's likes and
-downloads; LIKE uses the same installation-wide like as the title-screen Level
-Browser, and LOAD downloads a level into user://levels and opens it in the
-editor, ready for PLAY or SAVE.
+open in the editor with its name, author and a short description. Publishing is
+earned: the level must first be finished in a playtest by walking through its
+portal, and it has to stay unchanged afterwards. Any edit locks PUBLISH again
+until another portal finish, while undoing back to the finished layout counts as
+unchanged. BROWSE lists everything published to the same server, including each
+level's likes and downloads; LIKE uses the same installation-wide like as the
+title-screen Level Browser, and LOAD downloads a level into user://levels and
+opens it in the editor, ready for PLAY or SAVE.
 
 The panel always talks to the hosted service at
 https://holy-moley-levels.onrender.com. That address is fixed in

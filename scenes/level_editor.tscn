@@ -1,9 +1,9 @@
-[gd_scene load_steps=7 format=3 uid="uid://ce4d1t0rforge"]
+[gd_scene format=3 uid="uid://ce4d1t0rforge"]
 
-[ext_resource type="Script" path="res://scripts/level_editor.gd" id="1_editor"]
+[ext_resource type="Script" uid="uid://5qv3n41chm6e" path="res://scripts/level_editor.gd" id="1_editor"]
 [ext_resource type="TileSet" uid="uid://d07lidnoim34q" path="res://tileset.tres" id="2_tileset"]
 [ext_resource type="PackedScene" uid="uid://cc3uivb5mk5x5" path="res://scenes/parallax_background.tscn" id="3_parallax"]
-[ext_resource type="Script" path="res://scripts/level_editor_overlay.gd" id="4_overlay"]
+[ext_resource type="Script" uid="uid://cq17pdg5wdc67" path="res://scripts/level_editor_overlay.gd" id="4_overlay"]
 [ext_resource type="Shader" uid="uid://qjf1ibg12yh2" path="res://shaders/vignette.gdshader" id="5_vignette"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_editor_vignette"]
@@ -12,30 +12,29 @@ shader_parameter/inner_radius = 0.25
 shader_parameter/outer_radius = 0.55
 shader_parameter/darkness = 0.55
 
-[node name="LevelEditor" type="Node2D"]
+[node name="LevelEditor" type="Node2D" unique_id=874559057]
 script = ExtResource("1_editor")
 
-[node name="ParallaxBackground" parent="." instance=ExtResource("3_parallax")]
+[node name="ParallaxBackground" parent="." unique_id=102677031 instance=ExtResource("3_parallax")]
 
-[node name="TileMap" type="TileMap" parent="."]
+[node name="TileMap" type="TileMap" parent="." unique_id=422381674]
 modulate = Color(0.8784314, 0.62352943, 0.24313726, 1)
 scale = Vector2(0.5, 0.5)
 tile_set = ExtResource("2_tileset")
 format = 2
 
-[node name="Entities" type="Node2D" parent="."]
+[node name="Entities" type="Node2D" parent="." unique_id=1699139546]
 
-[node name="EditorCamera" type="Camera2D" parent="."]
+[node name="EditorCamera" type="Camera2D" parent="." unique_id=1477051041]
 zoom = Vector2(0.6, 0.6)
 
-[node name="Overlay" type="Node2D" parent="."]
+[node name="Overlay" type="Node2D" parent="." unique_id=1150509218]
 z_index = 20
 script = ExtResource("4_overlay")
 
-[node name="VignetteLayer" type="CanvasLayer" parent="."]
-layer = 1
+[node name="VignetteLayer" type="CanvasLayer" parent="." unique_id=828871755]
 
-[node name="VignetteRect" type="ColorRect" parent="VignetteLayer"]
+[node name="VignetteRect" type="ColorRect" parent="VignetteLayer" unique_id=1210984546]
 material = SubResource("ShaderMaterial_editor_vignette")
 anchors_preset = 15
 anchor_right = 1.0
@@ -44,5 +43,5 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="HUD" type="CanvasLayer" parent="."]
+[node name="HUD" type="CanvasLayer" parent="." unique_id=1882352720]
 layer = 10

@@ -2,10 +2,10 @@ extends Control
 
 ## The community level browser reachable straight from the title screen.
 ##
-## It is deliberately separate from Level Forge: players can see what the
+## It is deliberately separate from the Level Editor: players can see what the
 ## community has published, like a level, then choose whether to open it for
 ## editing or play it as a normal game level. Both actions save the downloaded
-## JSON under user://levels; EDIT hands it to Level Forge's one-shot launch
+## JSON under user://levels; EDIT hands it to the Level Editor's one-shot launch
 ## request, while PLAY goes to the dedicated gameplay scene. The author's own
 ## editor autosave is never touched either way.
 
@@ -113,7 +113,7 @@ func _build_ui() -> void:
 	column.add_child(header)
 
 	var subtitle := Label.new()
-	subtitle.text = "Community levels built in Level Forge. Like the ones you enjoy, then jump straight in."
+	subtitle.text = "Community levels built in the Level Editor. Like the ones you enjoy, then jump straight in."
 	subtitle.add_theme_font_override("font", UI_FONT)
 	subtitle.add_theme_font_size_override("font_size", 17)
 	subtitle.add_theme_color_override("font_color", MUTED)
@@ -221,7 +221,7 @@ func _build_ui() -> void:
 	column.add_child(scroll)
 
 	var footer := Label.new()
-	footer.text = "EDIT opens the level in Level Forge. PLAY launches it as a normal game level. Downloads are counted by the community server."
+	footer.text = "EDIT opens the level in the Level Editor. PLAY launches it as a normal game level. Downloads are counted by the community server."
 	footer.add_theme_font_override("font", UI_FONT)
 	footer.add_theme_font_size_override("font_size", 14)
 	footer.add_theme_color_override("font_color", Color(0.66, 0.58, 0.5))
@@ -254,7 +254,7 @@ func _refresh_levels() -> void:
 	var levels := _filter_time_range(_filter_levels(raw_levels, query), since)
 	if levels.is_empty():
 		if query.is_empty() and since <= 0:
-			_status.text = "No levels published yet. Build one in Level Forge and be the first!"
+			_status.text = "No levels published yet. Build one in the Level Editor and be the first!"
 		elif query.is_empty():
 			_status.text = "No levels published in %s." % _time_status()
 		elif since <= 0:

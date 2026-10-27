@@ -2,7 +2,7 @@
 """Holy Moley community level service.
 
 A deliberately small, dependency-free HTTP service for publishing, loading and
-liking Level Forge JSON files. By default it stores everything in one local JSON
+liking Level Editor JSON files. By default it stores everything in one local JSON
 file.
 Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN to keep the same JSON
 document in a free Upstash Redis database instead, which survives free Render

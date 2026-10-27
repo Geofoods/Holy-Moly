@@ -1,6 +1,6 @@
 extends Area2D
 
-## The way out of a level built in Level Forge.
+## The way out of a level built in the Level Editor.
 ##
 ## A campaign level leaves through a bare zone -- see level_exit.gd -- which works
 ## because its levels were laid out around a known exit. A level still being built

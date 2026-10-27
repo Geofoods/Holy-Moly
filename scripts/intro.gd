@@ -7,12 +7,12 @@ const HOP_DURATION := 1.7
 const GROUND_RATIO := 0.72
 const VERSION := "v1.0.0"
 ## The community level browser, where players like and play what other people
-## have published from Level Forge.
+## have published from the Level Editor.
 const BROWSER_SCENE := "res://scenes/level_browser.tscn"
 ## The credits roll. Reachable from here as well as from the win screen, so the
 ## roll can be watched without having to finish the game to find it.
 const CREDITS_SCENE := "res://scenes/credits.tscn"
-## The in-game level editor ("Level Forge"), where players build their own
+## The in-game Level Editor, where players build their own
 ## levels out of blocks and enemies and playtest them in place.
 const EDITOR_SCENE := "res://scenes/level_editor.tscn"
 
@@ -248,8 +248,8 @@ func _on_play_pressed() -> void:
 	transition.change_to(target)
 
 ## Opens the community level browser. It has no campaign state of its own; PLAY
-## in that screen hands a downloaded level to Level Forge through a one-shot
-## launch request and keeps the author's own editor autosave separate.
+## in that screen hands a downloaded level to the Level Editor through a
+## one-shot launch request and keeps the author's own editor autosave separate.
 func _on_level_browser_pressed() -> void:
 	SFX.play_ui("ui_click", -6.0, 1.2)
 	_fade_out_menu_music()
