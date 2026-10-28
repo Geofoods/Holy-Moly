@@ -12,11 +12,11 @@ const MOLE_SCENE := preload("res://scenes/mole.tscn")
 const CHEST_SCENE := preload("res://chest.tscn")
 const DROPPED_ITEM_SCENE := preload("res://scenes/dropped_item.tscn")
 const PORTAL_SCENE := preload("res://scenes/level_portal.tscn")
+const LEVEL_COMPLETE_SCENE := preload("res://scenes/level_complete.tscn")
 const RESPAWN_STATION_SCENE := preload("res://scenes/respawn_station.tscn")
 const CANDLE_SCENE := preload("res://candle.tscn")
 const FIREFLY_SCENE := preload("res://scenes/firefly_spawner.tscn")
 const SCENE_TRANSITION := preload("res://scenes/scene_transition.tscn")
-const UI_FONT := preload("res://Baby Doll.otf")
 
 const BROWSER_SCENE := "res://scenes/level_browser.tscn"
 const TILE_LAYER := 0
@@ -31,7 +31,6 @@ const MOLE_CAMERA_ZOOM := Vector2(0.65, 0.65)
 const HEART_SCALE := Vector2(0.24147864, 0.24147864)
 
 const DEFAULT_MUSIC_ID := "grotto"
-const COMPLETION_HOLD := 1.6
 
 const ENEMY_SCENES := {
 	"Ant": "res://scenes/antenemy.tscn",
@@ -85,12 +84,18 @@ var _level_weapons: Array[String] = []
 var _mole: Node = null
 var _finishing := false
 var _saved_shop: Dictionary = {}
+## The shared finish screen. It pauses the tree while it is up; CONTINUE clears
+## the community run and returns to the browser.
+var _level_complete: CanvasLayer = null
 
 
 func _ready() -> void:
 	_tile_world = float(_tilemap.tile_set.tile_size.x) * absf(_tilemap.scale.x)
 	_hide_pause_menu_map()
 	_apply_heart_scale()
+	_level_complete = LEVEL_COMPLETE_SCENE.instantiate() as CanvasLayer
+	add_child(_level_complete)
+	_level_complete.connect("continued", _on_level_complete_continued)
 
 	var level_path := LevelShare.community_play_level()
 	if level_path.is_empty() or not FileAccess.file_exists(level_path):
@@ -350,59 +355,34 @@ func _restore_checkpoint_light(station: Node, checkpoint: Dictionary) -> void:
 		station.set("_banked_here", true)
 
 
-func _on_portal_entered() -> void:
+func _on_portal_entered(portal: Node) -> void:
 	if _finishing:
 		return
 	_finishing = true
 	SFX.play_ui("item_pickup", -3.0, 1.5)
 	if is_instance_valid(_mole):
 		_mole.set("invulnerable", true)
-		_mole.set_physics_process(false)
-		_mole.process_mode = Node.PROCESS_MODE_DISABLED
-	_show_completion()
-	await get_tree().create_timer(COMPLETION_HOLD).timeout
+	# The pause menu must not open over the finish screen while the tree is
+	# paused underneath it.
+	if _pause_menu != null:
+		_pause_menu.set_process_input(false)
+	# The on-screen Pause button would still fire its signal even with the key
+	# handler off, so it is disabled for the rest of the finished run too.
+	var pause_button := get_node_or_null("CanvasLayer/PauseButton") as Button
+	if pause_button != null:
+		pause_button.disabled = true
+	# The portal pulls the mole in and fades it out before the screen appears.
+	if portal != null and portal.has_method("play_enter_animation"):
+		await portal.play_enter_animation(_mole)
+	if _level_complete != null:
+		_level_complete.call("show_complete", _level_name, "CONTINUE")
+
+
+## CONTINUE leaves the finished run. The finish screen has already unpaused the
+## tree, so the normal wipe back to the browser can take over.
+func _on_level_complete_continued() -> void:
 	LevelShare.clear_community_play()
 	_leave_for_browser()
-
-
-func _show_completion() -> void:
-	var layer := CanvasLayer.new()
-	layer.name = "CompletionLayer"
-	layer.layer = 120
-	add_child(layer)
-	var label := Label.new()
-	label.text = "LEVEL COMPLETE!"
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	label.add_theme_font_override("font", UI_FONT)
-	label.add_theme_font_size_override("font_size", 54)
-	label.add_theme_color_override("font_color", Color(0.55, 0.95, 1.0))
-	label.add_theme_color_override("font_outline_color", Color(0.02, 0.05, 0.12))
-	label.add_theme_constant_override("outline_size", 10)
-	label.modulate.a = 0.0
-	layer.add_child(label)
-	label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-
-	var subtitle := Label.new()
-	subtitle.text = _level_name
-	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	subtitle.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	subtitle.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	subtitle.add_theme_font_override("font", UI_FONT)
-	subtitle.add_theme_font_size_override("font_size", 24)
-	subtitle.add_theme_color_override("font_color", Color(0.82, 0.92, 1.0))
-	subtitle.add_theme_color_override("font_outline_color", Color(0.02, 0.05, 0.12))
-	subtitle.add_theme_constant_override("outline_size", 6)
-	subtitle.modulate.a = 0.0
-	layer.add_child(subtitle)
-	subtitle.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	subtitle.offset_top = 80.0
-
-	var tween := create_tween()
-	tween.set_parallel(true)
-	tween.tween_property(label, "modulate:a", 1.0, 0.22)
-	tween.tween_property(subtitle, "modulate:a", 1.0, 0.3)
 
 
 func _leave_for_browser() -> void:

@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://cc3uivb5mk5x5" path="res://scenes/parallax_background.tscn" id="3_parallax"]
 [ext_resource type="Script" uid="uid://cq17pdg5wdc67" path="res://scripts/level_editor_overlay.gd" id="4_overlay"]
 [ext_resource type="Shader" uid="uid://qjf1ibg12yh2" path="res://shaders/vignette.gdshader" id="5_vignette"]
+[ext_resource type="PackedScene" uid="uid://d2i1x8x1y6qa" path="res://scenes/pause_menu.tscn" id="6_pause"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_editor_vignette"]
 shader = ExtResource("5_vignette")
@@ -45,3 +46,5 @@ mouse_filter = 2
 
 [node name="HUD" type="CanvasLayer" parent="." unique_id=1882352720]
 layer = 10
+
+[node name="PauseMenu" parent="." instance=ExtResource("6_pause")]

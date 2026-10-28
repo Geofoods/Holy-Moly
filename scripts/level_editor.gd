@@ -62,6 +62,7 @@ const CHEST_SCENE := preload("res://chest.tscn")
 const DROPPED_ITEM_SCENE := preload("res://scenes/dropped_item.tscn")
 const PORTAL_SCENE := preload("res://scenes/level_portal.tscn")
 const PORTAL_SCRIPT := preload("res://scripts/level_portal.gd")
+const LEVEL_COMPLETE_SCENE := preload("res://scenes/level_complete.tscn")
 const RESPAWN_STATION_SCENE := preload("res://scenes/respawn_station.tscn")
 const RESPAWN_STATION_SCRIPT := preload("res://scripts/respawn_station.gd")
 const CANDLE_SCENE := preload("res://candle.tscn")
@@ -90,10 +91,6 @@ const MOLE_CAMERA_ZOOM := Vector2(0.65, 0.65)
 ## The campaign levels hand-place the heart HUD at this scale; its own script
 ## then shrinks it by a further 0.75 and parks it in the bottom-left corner.
 const HEART_SCALE := Vector2(0.24147864, 0.24147864)
-
-## How long the LEVEL COMPLETE banner is left up before the playtest packs itself
-## away. Long enough to read it, short enough not to feel like a wait.
-const PORTAL_RETURN_DELAY := 1.3
 
 const PAN_SPEED := 900.0
 const MIN_ZOOM := 0.25
@@ -182,6 +179,11 @@ const ACCENT := Color(1.0, 0.84, 0.45, 1.0)
 @onready var _hud: CanvasLayer = $HUD
 @onready var _background: Node2D = $ParallaxBackground
 @onready var _vignette_rect: ColorRect = $VignetteLayer/VignetteRect
+@onready var _pause_menu: CanvasLayer = $PauseMenu
+
+## The shared finish screen, built once and reused by every playtest. It pauses
+## the tree while it is up, so a finished run cannot be killed behind it.
+var _level_complete: CanvasLayer = null
 
 ## World size of one cell (tile_size * the TileMap's scale).
 var _tile_world := 80.0
@@ -321,7 +323,6 @@ var _vignette_slider: HSlider = null
 var _vignette_value: Label = null
 var _firefly_btn: Button = null
 var _firefly_spawner: Node2D = null
-var _mobile_controls_btn: Button = null
 var _music_btn: Button = null
 var _music_overlay: Control = null
 var _music_buttons: Dictionary = {}
@@ -366,6 +367,10 @@ func _ready() -> void:
 	add_child(_autosave_timer)
 
 	_build_ui()
+	_configure_pause_menu()
+	_level_complete = LEVEL_COMPLETE_SCENE.instantiate() as CanvasLayer
+	add_child(_level_complete)
+	_level_complete.connect("continued", _on_level_complete_continued)
 	# The gameplay joystick parks right where the palette and WORLD panel sit,
 	# and the editor wants raw touches for its own paint/pan/pinch handling. The
 	# overlay comes back for a playtest (see start_playtest) and when this scene
@@ -404,6 +409,36 @@ func _start_launch_playtest() -> void:
 	await get_tree().process_frame
 	if is_inside_tree():
 		start_playtest()
+
+
+## The editor borrows the campaign's pause menu, so the Pause key and the PAUSE
+## buttons freeze the editor or a playtest exactly the way they freeze a level.
+## FIELD GUIDE and MAP do not apply to a level that has not been published, so
+## those entries are hidden. MENU already leaves through the scene wipe, and
+## _exit_tree saves the level on the way out.
+func _configure_pause_menu() -> void:
+	if _pause_menu == null:
+		return
+	var buttons := _pause_menu.get_node_or_null(
+			"CenterContainer/PausePanel/VBoxContainer/ButtonContainer")
+	if buttons == null:
+		return
+	var field_guide := buttons.get_node_or_null("FieldGuideButton") as Button
+	if field_guide != null:
+		field_guide.visible = false
+	var map_button := buttons.get_node_or_null("MapButton") as Button
+	if map_button != null:
+		map_button.visible = false
+
+
+func _toggle_editor_pause() -> void:
+	# A finished run belongs to the portal and then the finish screen; letting the
+	# play bar's PAUSE button freeze the tree here would strand the entering
+	# animation halfway through.
+	if _finishing:
+		return
+	if _pause_menu != null:
+		_pause_menu.call("toggle_pause")
 
 
 func _exit_tree() -> void:
@@ -489,6 +524,10 @@ func _rebuild_entity_nodes() -> void:
 ## physics steps, and a chest -- a RigidBody2D in the campaign -- is frozen so it
 ## does not slide off the tile it was dropped on while the author works.
 func _freeze_entity(node: Node) -> void:
+	# A portal is deliberately left running while the author builds, so its shards
+	# and rings keep turning and the exit reads as alive rather than as a decal.
+	if node.is_in_group("level_portal"):
+		return
 	node.process_mode = Node.PROCESS_MODE_DISABLED
 	if node is RigidBody2D:
 		(node as RigidBody2D).freeze = true
@@ -677,26 +716,11 @@ func _refresh_world_ui() -> void:
 	if _firefly_btn != null:
 		_firefly_btn.button_pressed = _fireflies
 		_firefly_btn.text = "Fireflies: ON" if _fireflies else "Fireflies: OFF"
-	_refresh_mobile_controls_ui()
 	_refresh_hint_text()
 	_refresh_music_ui()
 	if _weapon_btn != null:
 		_weapon_btn.text = _weapon_button_text()
 	_refresh_loadout_ui()
-
-
-func _refresh_mobile_controls_ui() -> void:
-	if _mobile_controls_btn == null:
-		return
-	_mobile_controls_btn.set_pressed_no_signal(MobileControls.enabled)
-	_mobile_controls_btn.text = "Mobile controls: ON" if MobileControls.enabled else "Mobile controls: OFF"
-
-
-## Keeps the WORLD switch and the hint strip honest if the preference changes
-## elsewhere: the deferred startup restore, or the Settings screen.
-func _on_mobile_controls_enabled_changed(_on: bool) -> void:
-	_refresh_mobile_controls_ui()
-	_refresh_hint_text()
 
 
 func _refresh_music_ui() -> void:
@@ -1252,6 +1276,7 @@ func stop_playtest() -> void:
 	if not _playing:
 		return
 	_playing = false
+	_finishing = false
 	_checkpoint_station = null
 	_reset_touch_state()
 	_clear_pit()
@@ -1528,40 +1553,49 @@ func _send_mole_to_checkpoint() -> void:
 		(_mole as CharacterBody2D).velocity = Vector2.ZERO
 
 
-## The mole walked into the level's portal, so the level is finished. A playtest
-## has nowhere to go next, so the run ends the way BACK TO EDITING ends it, with
-## the author told why. Finishing also marks this exact level as publishable;
-## any edit afterwards changes its fingerprint and locks publishing again.
-func _on_portal_entered() -> void:
+## The mole walked into the level's portal, so the level is finished. The portal
+## pulls the mole through, then the shared finish screen appears; CONTINUE on it
+## ends the run the way BACK TO EDITING ends it. Finishing also marks this exact
+## level as publishable; any edit afterwards changes its fingerprint and locks
+## publishing again.
+func _on_portal_entered(portal: Node) -> void:
 	if not _playing or _finishing:
 		return
 	_finishing = true
 	_remember_level_beaten()
 	SFX.play_ui("item_pickup", -3.0, 1.5)
-	# The mole is stopped where it stands. The banner is a beat to read before the
-	# level rolls back, and a run that carried on could still be killed out of it,
-	# which would take the editor to the game over screen with it.
+	# The pause menu must not open over the finish screen while the tree is
+	# paused underneath it. Its Pause key handler runs on _input, so that is what
+	# is switched off here and back on when the author returns to editing.
+	if _pause_menu != null:
+		_pause_menu.set_process_input(false)
 	if is_instance_valid(_mole):
-		_mole.process_mode = Node.PROCESS_MODE_DISABLED
-	_show_completion_banner()
-	await get_tree().create_timer(PORTAL_RETURN_DELAY).timeout
+		_mole.set("invulnerable", true)
+	# The portal owns the entering animation: it draws the mole into the ring,
+	# spins and fades it out, and then lets the finish screen take over.
+	if portal != null and portal.has_method("play_enter_animation"):
+		await portal.play_enter_animation(_mole)
 	if not _playing:
 		return
-	stop_playtest()
-	_toast("Level complete!")
+	if is_instance_valid(_mole):
+		_mole.process_mode = Node.PROCESS_MODE_DISABLED
+	if _level_complete != null:
+		_level_complete.call("show_complete", _level_name, "BACK TO EDITING")
 
 
-## An announcement for the moment a level is finished, hung on the same layer as
-## the borrowed heart so it stays put while the mole is stopped. It goes away with
-## the rest of the playtest HUD, and the editor's own toast takes over after that.
-func _show_completion_banner() -> void:
-	# The colour of the thing that was walked into, so the two read as one moment.
-	_show_playtest_banner("LEVEL COMPLETE!", PORTAL_SCRIPT.RIM, -1.0)
+## CONTINUE on the finish screen returns to building. The screen has already
+## unpaused the tree, so the normal stop path can put the editor back together.
+func _on_level_complete_continued() -> void:
+	if _pause_menu != null:
+		_pause_menu.set_process_input(true)
+	if _playing:
+		stop_playtest()
+		_toast("Level complete!")
 
 
 ## A line across the top of the playtest HUD. `hold` is how long it stays up
 ## after fading in; a negative hold leaves it there until the run's HUD is torn
-## down, which is what the completion banner wants.
+## down.
 func _show_playtest_banner(text: String, colour: Color, hold: float) -> void:
 	if not is_instance_valid(_heart_layer):
 		return
@@ -1596,6 +1630,11 @@ func _show_playtest_banner(text: String, colour: Color, hold: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if _playing:
+		# A finished run is in the portal's hands: ESC must not tear the playtest
+		# down halfway through the entering animation. The finish screen handles
+		# ESC itself once it is up.
+		if _finishing:
+			return
 		if event is InputEventKey and event.pressed and not event.echo:
 			if event.keycode == KEY_ESCAPE:
 				stop_playtest()
@@ -2137,6 +2176,11 @@ func _build_toolbar() -> void:
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(spacer)
 
+	var pause_btn := _make_button("PAUSE", Vector2(84.0, 40.0))
+	pause_btn.tooltip_text = "Freeze the editor and any playtest (Pause/Break)"
+	pause_btn.pressed.connect(_toggle_editor_pause)
+	row.add_child(pause_btn)
+
 	var play_btn := _make_button("PLAY  (F5)", Vector2(120.0, 40.0))
 	play_btn.add_theme_color_override("font_color", Color(0.6, 1.0, 0.65))
 	play_btn.pressed.connect(start_playtest)
@@ -2189,6 +2233,11 @@ func _build_play_bar() -> void:
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(spacer)
+
+	var pause_btn := _make_button("PAUSE", Vector2(96.0, 40.0))
+	pause_btn.tooltip_text = "Freeze the playtest (Pause/Break)"
+	pause_btn.pressed.connect(_toggle_editor_pause)
+	row.add_child(pause_btn)
 
 	var restart_btn := _make_button("RESTART  (F5)", Vector2(150.0, 40.0))
 	restart_btn.pressed.connect(_on_restart_pressed)
@@ -2392,21 +2441,6 @@ func _build_world_panel() -> void:
 	var title := _section_label("WORLD")
 	column.add_child(title)
 
-	# High in the panel on purpose: on a phone the panel is long, and this is the
-	# switch an author most wants to reach without scrolling. It is the same
-	# saved preference the Settings screen edits, just available without leaving
-	# the level being built.
-	column.add_child(_heading_label("TOUCH CONTROLS"))
-
-	_mobile_controls_btn = _make_button("Mobile controls: OFF", Vector2(232.0, 44.0))
-	_mobile_controls_btn.toggle_mode = true
-	_mobile_controls_btn.button_pressed = MobileControls.enabled
-	_mobile_controls_btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	_mobile_controls_btn.tooltip_text = "Switch the on-screen joystick and dig button on or off; the choice is saved and also used during playtests"
-	_mobile_controls_btn.toggled.connect(_on_editor_mobile_controls_toggled)
-	column.add_child(_mobile_controls_btn)
-	MobileControls.enabled_changed.connect(_on_mobile_controls_enabled_changed)
-
 	column.add_child(_heading_label("BACKGROUND"))
 
 	for i in BACKGROUND_CATALOG.size():
@@ -2542,17 +2576,14 @@ func _build_hint() -> void:
 
 
 ## The bottom strip follows the input the editor can actually receive: a touch
-## screen gets the gestures (the Level Editor handles them even when the
-## gameplay controls are switched off), and a plain desktop gets the key list.
-## With the mobile controls on, the playtest controls are called out too, since
-## those are what the author will actually use once they press PLAY.
+## screen gets the gestures the editor handles itself, and a plain desktop gets
+## the key list. The on-screen gameplay controls are not configured here; the
+## Settings screen owns that preference.
 func _refresh_hint_text() -> void:
 	if _hint == null:
 		return
-	if MobileControls.enabled or DisplayServer.is_touchscreen_available():
-		# Kept under ~920px so the strip still fits beside the "Mobile controls
-		# on" toast at the 1152-wide logical viewport.
-		_hint.text = "MOBILE CONTROLS: tap/drag paint, 2-finger pan, pinch zoom, playtest: stick moves/jumps, button digs"
+	if DisplayServer.is_touchscreen_available():
+		_hint.text = "TOUCH: tap/drag paint   2-finger pan   pinch zoom"
 	else:
 		_hint.text = "LMB paint   RMB erase   R rect fill   MMB drag / WASD pan   Wheel zoom   Ctrl+Z undo   G grid"
 
@@ -3563,20 +3594,6 @@ func _on_fireflies_pressed() -> void:
 	_apply_fireflies()
 	_refresh_world_ui()
 	_mark_dirty()
-
-
-## The Level Editor's copy of the Settings switch. It drives the same saved
-## preference, so flipping it here is exactly the same choice as flipping it on
-## the Settings screen - the next playtest and the next launch both follow it.
-func _on_editor_mobile_controls_toggled(on: bool) -> void:
-	MobileControls.set_enabled(on)
-	Progress.set_mobile_controls_override(on)
-	_refresh_world_ui()
-	# _refresh_world_ui already does this, but the hint is the thing this switch
-	# most obviously changes, so refresh it explicitly rather than relying on a
-	# helper three calls away.
-	_refresh_hint_text()
-	_toast("Mobile controls %s" % ("on" if on else "off"))
 
 
 func _on_save_pressed() -> void:
