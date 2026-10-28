@@ -117,9 +117,11 @@ G: Toggle the grid
 The TOUCH CONTROLS switch at the top of the WORLD panel turns the on-screen
 joystick and dig button on or off. It is the same saved preference as the MOBILE
 CONTROLS checkbox in Settings, so changing either one sticks across restarts and
-applies to playtests. While you are building, the gameplay controls are parked so
-they cannot cover the palette; they come back for the length of a playtest and
-step aside again when you return to editing.
+applies to playtests. Until that switch is used, the controls start ON for a
+phone or tablet and off on desktop; after it, the saved choice wins on every
+device. While you are building, the gameplay controls are parked so they cannot
+cover the palette; they come back for the length of a playtest and step aside
+again when you return to editing.
 
 The WORLD panel on the right sets the level's look, sound and starting weapons.
 Pick one of the three parallax backdrops (Teal, Purple, Red), then drag the

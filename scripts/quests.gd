@@ -27,8 +27,8 @@ const QUESTS: Array[Dictionary] = [
 		"title": "Kill the Corruption",
 		"description": "The Corrupted Heart festers at the bottom of the Corrupted Core. Descend into the darkest depths and destroy it.",
 		"reward_coins": 300,
-		"icon": "res://boss_bite.webp",
-		"icon_region": Rect2(0, 0, 310, 310),
+		"icon": "res://golblin.webp",
+		"icon_region": Rect2(0, 0, 620, 414),
 	},
 	{
 		"id": "save_snail",

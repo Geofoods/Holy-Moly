@@ -133,13 +133,19 @@ func _ready() -> void:
 	# is registered after this one. By the next idle frame its save is read.
 	call_deferred("_apply_initial_preference")
 
-## The starting state: the player's saved choice if there is one, otherwise the
-## device detection that a fresh save has always used.
+## The starting state: the player's saved choice if there is one, otherwise
+## device detection. Kept separate from applying it so the rule can be checked
+## without an overlay in the tree.
+func _preferred_controls_state() -> bool:
+	var choice := Progress.mobile_controls_override
+	if choice < 0:
+		return is_mobile_device()
+	return choice == 1
+
 func _apply_initial_preference() -> void:
 	if not is_inside_tree():
 		return
-	var choice := Progress.mobile_controls_override
-	set_enabled(is_mobile_device() if choice < 0 else choice == 1)
+	set_enabled(_preferred_controls_state())
 
 ## Parks the overlay while the Level Editor is being edited. Visibility alone is
 ## not enough: the engine's touch-to-mouse emulation has to stay off too, so the
@@ -169,17 +175,43 @@ func _current_scene_path() -> String:
 	var cs := get_tree().current_scene
 	return cs.scene_file_path if cs != null else ""
 
-## True on phones and tablets. Native mobile exports report one of the mobile
-## features; a web build cannot see the OS, so a touchscreen (without a desktop
-## fallback being required) is the giveaway for a phone/tablet browser.
+## True on phones and tablets. Native exports report one of the mobile feature
+## tags; OS.get_name() is a second opinion in case a custom export omits them.
+## A web build cannot see the OS, so the page is asked instead.
 func is_mobile_device() -> bool:
 	if OS.has_feature("android") or OS.has_feature("ios") or OS.has_feature("mobile"):
+		return true
+	var os_name := OS.get_name()
+	if os_name == "Android" or os_name == "iOS":
 		return true
 	if OS.has_feature("web_android") or OS.has_feature("web_ios"):
 		return true
 	if OS.has_feature("web"):
-		return DisplayServer.is_touchscreen_available()
+		return _web_is_mobile()
 	return false
+
+## The browser-side half of is_mobile_device(). A phone or tablet names itself
+## in the user agent, and an iPadOS browser disguises itself as a Macintosh but
+## reports several touch points. Touch support is kept as a final signal, so a
+## touch-first browser that hides its user agent still gets the controls. If
+## JavaScriptBridge is unavailable, DisplayServer answers instead.
+func _web_is_mobile() -> bool:
+	if Engine.has_singleton("JavaScriptBridge"):
+		var bridge = Engine.get_singleton("JavaScriptBridge")
+		if bridge != null:
+			var answer = bridge.eval("""
+				(function () {
+					var ua = navigator.userAgent || "";
+					var mobile = /Android|iPhone|iPad|iPod|Mobile|Tablet|Silk|Kindle/i.test(ua);
+					var ipad = /Macintosh/i.test(ua) && (navigator.maxTouchPoints || 0) > 1;
+					var touch = (navigator.maxTouchPoints || 0) > 0
+						|| ("ontouchstart" in window);
+					return mobile || ipad || touch;
+				})()
+			""")
+			if answer != null:
+				return bool(answer)
+	return DisplayServer.is_touchscreen_available()
 
 func set_enabled(on: bool) -> void:
 	var changed := enabled != on
