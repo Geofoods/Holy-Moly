@@ -334,21 +334,10 @@ var _weapon_summary: Label = null
 var _load_overlay: Control = null
 var _load_list: VBoxContainer = null
 var _online_overlay: Control = null
-var _online_publish_view: VBoxContainer = null
-var _online_browse_view: VBoxContainer = null
-var _online_tab_publish: Button = null
-var _online_tab_browse: Button = null
 var _publish_author_edit: LineEdit = null
 var _publish_description_edit: TextEdit = null
 var _publish_status: Label = null
 var _publish_button: Button = null
-var _browse_status: Label = null
-var _browse_list: VBoxContainer = null
-var _browse_refresh_button: Button = null
-var _browse_request_serial := 0
-## Per-row labels/buttons, keyed by level id, so liking one entry can refresh
-## its own count without rebuilding the whole list.
-var _browse_rows: Dictionary = {}
 var _block_buttons: Dictionary = {}
 var _enemy_buttons: Array = []
 var _item_buttons: Array = []
@@ -2680,22 +2669,7 @@ func _build_online_overlay() -> void:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	column.add_child(title)
 
-	var tabs := HBoxContainer.new()
-	tabs.alignment = BoxContainer.ALIGNMENT_CENTER
-	tabs.add_theme_constant_override("separation", 8)
-	_online_tab_publish = _make_button("PUBLISH", Vector2(150.0, 38.0))
-	_online_tab_publish.pressed.connect(_show_online_publish)
-	tabs.add_child(_online_tab_publish)
-	_online_tab_browse = _make_button("BROWSE", Vector2(150.0, 38.0))
-	_online_tab_browse.pressed.connect(_show_online_browse)
-	tabs.add_child(_online_tab_browse)
-	column.add_child(tabs)
-
-	_online_publish_view = _build_online_publish_view()
-	column.add_child(_online_publish_view)
-	_online_browse_view = _build_online_browse_view()
-	_online_browse_view.visible = false
-	column.add_child(_online_browse_view)
+	column.add_child(_build_online_publish_view())
 
 	var close_btn := _make_button("CLOSE", Vector2(140.0, 40.0))
 	close_btn.pressed.connect(_close_online_overlay)
@@ -2857,7 +2831,7 @@ func _build_online_publish_view() -> VBoxContainer:
 	view.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	view.add_theme_constant_override("separation", 5)
 
-	var intro := _make_form_label("Upload the level currently open in the editor. It will be published to the Holy Moley community for everyone to browse and play.")
+	var intro := _make_form_label("Upload the level currently open in the editor. It will be published to the Holy Moley community for everyone to find and play.")
 	intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	intro.custom_minimum_size = Vector2(0.0, 44.0)
 	view.add_child(intro)
@@ -2902,48 +2876,6 @@ func _build_online_publish_view() -> VBoxContainer:
 	return view
 
 
-func _build_online_browse_view() -> VBoxContainer:
-	var view := VBoxContainer.new()
-	view.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	view.add_theme_constant_override("separation", 6)
-
-	var header := HBoxContainer.new()
-	header.add_theme_constant_override("separation", 8)
-	var heading := _make_form_label("COMMUNITY LEVELS")
-	heading.add_theme_color_override("font_color", ACCENT)
-	header.add_child(heading)
-	var spacer := Control.new()
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	header.add_child(spacer)
-	_browse_refresh_button = _make_button("REFRESH", Vector2(112.0, 36.0))
-	_browse_refresh_button.pressed.connect(_refresh_online_levels)
-	header.add_child(_browse_refresh_button)
-	view.add_child(header)
-
-	_browse_status = Label.new()
-	_browse_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_browse_status.custom_minimum_size = Vector2(0.0, 42.0)
-	_browse_status.add_theme_font_override("font", UI_FONT)
-	_browse_status.add_theme_font_size_override("font_size", 17)
-	_browse_status.add_theme_color_override("font_color", Color(0.9, 0.82, 0.7))
-	view.add_child(_browse_status)
-
-	var scroll := ScrollContainer.new()
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	_browse_list = VBoxContainer.new()
-	_browse_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_browse_list.add_theme_constant_override("separation", 6)
-	scroll.add_child(_browse_list)
-	view.add_child(scroll)
-
-	var hint := _make_form_label("Loading a level downloads it into user://levels and opens it here. Press PLAY to try it, then SAVE to keep a local copy.")
-	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	hint.custom_minimum_size = Vector2(0.0, 38.0)
-	view.add_child(hint)
-	return view
-
-
 func _make_form_label(text: String) -> Label:
 	var label := Label.new()
 	label.text = text
@@ -2973,30 +2905,13 @@ func _open_online_overlay() -> void:
 	_close_music_overlay()
 	_publish_author_edit.text = LevelShare.author
 	_publish_status.text = ""
-	_show_online_publish()
+	_refresh_publish_gate()
 	_online_overlay.visible = true
 
 
 func _close_online_overlay() -> void:
 	if _online_overlay != null:
 		_online_overlay.visible = false
-
-
-func _show_online_publish() -> void:
-	_online_publish_view.visible = true
-	_online_browse_view.visible = false
-	_online_tab_publish.modulate = Color.WHITE
-	_online_tab_browse.modulate = Color(0.72, 0.68, 0.62, 1.0)
-	_refresh_publish_gate()
-
-
-func _show_online_browse() -> void:
-	_online_publish_view.visible = false
-	_online_browse_view.visible = true
-	_online_tab_publish.modulate = Color(0.72, 0.68, 0.62, 1.0)
-	_online_tab_browse.modulate = Color.WHITE
-	if _browse_list.get_child_count() == 0:
-		_refresh_online_levels()
 
 
 func _level_has_portal() -> bool:
@@ -3057,172 +2972,10 @@ func _on_publish_pressed() -> void:
 	_refresh_publish_gate()
 	if bool(result.get("ok", false)):
 		var level: Dictionary = result.get("level", {})
-		_publish_status.text = "Published! Level id: %s\nAnyone using ONLINE → BROWSE can find it." % str(level.get("id", ""))
+		_publish_status.text = "Published! Level id: %s\nAnyone can find it in the Level Browser." % str(level.get("id", ""))
 		_toast("Published \"%s\" online" % _level_name)
-		# Force the next Browse visit to pick up the new entry.
-		_clear_children(_browse_list)
-		_browse_rows.clear()
 	else:
 		_publish_status.text = "Publish failed: " + str(result.get("error", "Unknown error"))
-
-
-func _refresh_online_levels() -> void:
-	if _browse_refresh_button == null:
-		return
-	# A tab switch can ask for a refresh while an earlier one is still in
-	# flight. Only the newest request is allowed to fill the list, so a slow
-	# old response cannot append duplicates from the previous server.
-	_browse_request_serial += 1
-	var serial := _browse_request_serial
-	_browse_refresh_button.disabled = true
-	_browse_status.text = "Contacting the community server... (free servers may take ~1 min to wake)"
-	_clear_children(_browse_list)
-	_browse_rows.clear()
-	var result: Dictionary = await LevelShare.fetch_levels()
-	if serial != _browse_request_serial:
-		return
-	_browse_refresh_button.disabled = false
-	if not bool(result.get("ok", false)):
-		_browse_status.text = "Could not load community levels:\n" + str(result.get("error", "Unknown error"))
-		return
-	var levels: Array = result.get("levels", [])
-	var total := int(result.get("total", levels.size()))
-	_browse_status.text = "%d published level%s." % [total, "" if total == 1 else "s"]
-	if levels.is_empty():
-		var empty := _make_form_label("No levels have been published yet. Be the first!")
-		empty.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		_browse_list.add_child(empty)
-		return
-	for raw_entry in levels:
-		if raw_entry is Dictionary:
-			_add_online_level_row(raw_entry)
-
-
-func _online_entry_byline(entry: Dictionary) -> String:
-	var created := str(entry.get("created_at", "")).left(10)
-	var downloads := int(entry.get("downloads", 0))
-	var likes := int(entry.get("likes", 0))
-	return "by %s | %s | %d like%s | %d download%s" % [
-		str(entry.get("author", "Anonymous")), created, likes,
-		"" if likes == 1 else "s", downloads,
-		"" if downloads == 1 else "s"]
-
-
-func _online_like_label(entry: Dictionary) -> String:
-	var level_id := str(entry.get("id", ""))
-	var likes := int(entry.get("likes", 0))
-	return "%s (%d)" % ["LIKED" if LevelShare.is_level_liked(level_id) else "LIKE", likes]
-
-
-func _add_online_level_row(entry: Dictionary) -> void:
-	var level_id := str(entry.get("id", ""))
-	var card := VBoxContainer.new()
-	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	card.add_theme_constant_override("separation", 2)
-
-	var title := Label.new()
-	title.text = str(entry.get("name", "Untitled Level"))
-	title.add_theme_font_override("font", UI_FONT)
-	title.add_theme_font_size_override("font_size", 21)
-	title.add_theme_color_override("font_color", ACCENT)
-	card.add_child(title)
-
-	var byline := Label.new()
-	byline.text = _online_entry_byline(entry)
-	byline.add_theme_font_override("font", UI_FONT)
-	byline.add_theme_font_size_override("font_size", 15)
-	byline.add_theme_color_override("font_color", Color(0.74, 0.67, 0.58))
-	card.add_child(byline)
-
-	var description := Label.new()
-	var text := str(entry.get("description", "")).strip_edges()
-	description.text = text if not text.is_empty() else "No description."
-	description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	description.add_theme_font_override("font", UI_FONT)
-	description.add_theme_font_size_override("font_size", 16)
-	description.add_theme_color_override("font_color", Color(0.9, 0.84, 0.75))
-	card.add_child(description)
-
-	var actions := VBoxContainer.new()
-	actions.add_theme_constant_override("separation", 6)
-	actions.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	var like_button := _make_button(_online_like_label(entry), Vector2(126.0, 38.0))
-	like_button.pressed.connect(_on_online_level_like.bind(level_id))
-	actions.add_child(like_button)
-	var load_button := _make_button("LOAD", Vector2(126.0, 38.0))
-	load_button.pressed.connect(_on_online_level_load.bind(level_id))
-	actions.add_child(load_button)
-
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 10)
-	row.add_child(card)
-	row.add_child(actions)
-	_browse_list.add_child(row)
-	_browse_list.add_child(HSeparator.new())
-	_browse_rows[level_id] = {
-		"entry": entry,
-		"byline": byline,
-		"like": like_button,
-	}
-
-
-func _on_online_level_like(level_id: String) -> void:
-	var row: Dictionary = _browse_rows.get(level_id, {})
-	var like_button: Button = row.get("like")
-	if like_button != null:
-		like_button.disabled = true
-	var result: Dictionary = await LevelShare.set_level_liked(
-			level_id, not LevelShare.is_level_liked(level_id))
-	if not is_inside_tree():
-		return
-	if like_button != null and is_instance_valid(like_button):
-		like_button.disabled = false
-	if not bool(result.get("ok", false)):
-		_browse_status.text = "Could not update that like:\n" \
-				+ str(result.get("error", "Unknown error"))
-		return
-	var updated = result.get("level", {})
-	if not (updated is Dictionary) or row.is_empty():
-		return
-	if not is_instance_valid(like_button) or not is_instance_valid(row.get("byline")):
-		return
-	var entry: Dictionary = row["entry"]
-	entry["likes"] = int(updated.get("likes", entry.get("likes", 0)))
-	row["byline"].text = _online_entry_byline(entry)
-	like_button.text = _online_like_label(entry)
-
-
-func _on_online_level_load(level_id: String) -> void:
-	if not _valid_online_id(level_id):
-		_browse_status.text = "That level id is not valid."
-		return
-	_browse_status.text = "Downloading level..."
-	var result: Dictionary = await LevelShare.download_level(level_id)
-	if not bool(result.get("ok", false)):
-		_browse_status.text = "Could not load that level:\n" + str(result.get("error", "Unknown error"))
-		return
-	var data = result.get("data", null)
-	if not (data is Dictionary):
-		_browse_status.text = "That level did not contain readable JSON."
-		return
-	var path := "%s/community_%s.json" % [SAVE_DIR, level_id]
-	var file := FileAccess.open(path, FileAccess.WRITE)
-	if file == null:
-		_browse_status.text = "Could not save the downloaded level."
-		return
-	file.store_string(JSON.stringify(data, "\t"))
-	file.close()
-
-	_push_undo()
-	if load_level(path):
-		_editor_camera.position = _spawn_point
-		var meta: Dictionary = result.get("level", {})
-		_close_online_overlay()
-		_toast("Loaded \"%s\" by %s" % [
-			str(meta.get("name", _level_name)), str(meta.get("author", "Anonymous"))])
-		_mark_dirty()
-	else:
-		_browse_status.text = "Downloaded, but the level could not be read."
 
 
 func _sync_level_name() -> void:
@@ -3230,26 +2983,6 @@ func _sync_level_name() -> void:
 	if _level_name.is_empty():
 		_level_name = DEFAULT_LEVEL_NAME
 		_name_edit.text = _level_name
-
-
-func _clear_children(parent: Node) -> void:
-	for child in parent.get_children():
-		parent.remove_child(child)
-		child.queue_free()
-
-
-func _valid_online_id(level_id: String) -> bool:
-	if level_id.is_empty() or level_id.length() > 64:
-		return false
-	for i in level_id.length():
-		var ch := level_id.substr(i, 1)
-		var allowed := (ch >= "a" and ch <= "z") \
-				or (ch >= "A" and ch <= "Z") \
-				or (ch >= "0" and ch <= "9") \
-				or ch == "_" or ch == "-"
-		if not allowed:
-			return false
-	return true
 
 
 func _make_panel() -> PanelContainer:

@@ -516,6 +516,11 @@ func _update_facing() -> void:
 	_sprite.flip_h = (dx > 0.0) == sprite_faces_left
 
 func _unhandled_input(event: InputEvent) -> void:
+	# The boss is a target, not an NPC. Its sprite is enormous at fight scale, so
+	# consuming presses that land on it would stop the ranged weapon firing
+	# whenever the player aims at the shell.
+	if not _accepts_interaction_presses():
+		return
 	# Pressing on the snail works like the interact key - a click on desktop, a
 	# tap on mobile (taps arrive as emulated mouse clicks).
 	var pressed_on_me := TapInteract.is_press_on(event, _sprite)
@@ -528,6 +533,12 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("interact") or pressed_on_me:
 		_open_dialogue()
 		get_viewport().set_input_as_handled()
+
+## True while the snail is still an NPC the player can press on. Once it has
+## transformed into the boss it is a target instead: its sprite covers much of
+## the screen, so swallowing clicks there would keep the ranged weapon silent.
+func _accepts_interaction_presses() -> bool:
+	return not (_boss_active or _boss_dying or (boss_after_dialogue and _transformed))
 
 func _on_body_entered(body: Node) -> void:
 	if body.is_in_group("mole"):
@@ -720,6 +731,11 @@ func _start_transformation() -> void:
 	if not transform_after_dialogue or _transformed or _sprite == null:
 		return
 	_transformed = true
+	if boss_after_dialogue:
+		# From here the snail is a fight, not something to press on. Leaving its
+		# sprite registered would swallow clicks across the whole boss and keep
+		# the ranged weapon from firing at it.
+		TapInteract.unregister(_sprite)
 
 	var duration := BOSS_TRANSFORM_DURATION if boss_after_dialogue else TRANSFORM_DURATION
 	_siphon_player_aura(duration)
@@ -852,6 +868,9 @@ func _begin_boss_fight() -> void:
 	if not boss_after_dialogue or not is_inside_tree() or _boss_dying:
 		return
 	_boss_active = true
+	# Belt and braces: the transformation already unregistered the sprite, but
+	# the boss must never be pressable even if that path changes.
+	TapInteract.unregister(_sprite)
 	_boss_health = BOSS_MAX_HEALTH
 	# The fight drives this snail's position by script, so the dash must not be
 	# able to shove it off its autoscroll path. It still takes the hit damage.

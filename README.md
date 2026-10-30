@@ -157,15 +157,13 @@ detour.
 
 ONLINE LEVELS:
 
-The ONLINE button opens the community panel. PUBLISH uploads the level currently
+The ONLINE button opens the publish panel. PUBLISH uploads the level currently
 open in the editor with its name, author and a short description. Publishing is
 earned: the level must first be finished in a playtest by walking through its
 portal, and it has to stay unchanged afterwards. Any edit locks PUBLISH again
 until another portal finish, while undoing back to the finished layout counts as
-unchanged. BROWSE lists everything published to the same server, including each
-level's likes and downloads; LIKE uses the same installation-wide like as the
-title-screen Level Browser, and LOAD downloads a level into user://levels and
-opens it in the editor, ready for PLAY or SAVE.
+unchanged. To browse, like and play published levels, use the LEVEL BROWSER on
+the title screen.
 
 The panel always talks to the hosted service at
 https://holy-moley-levels.onrender.com. That address is fixed in
