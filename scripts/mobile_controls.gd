@@ -58,6 +58,8 @@ const STICK_ACTIONS: Array[StringName] = [&"ui_left", &"ui_right", &"ui_up", &"u
 ## re-enable them (the same approach mole.gd takes with PEACEFUL_SCENES).
 const HIDDEN_SCENES := [
 	"res://scenes/intro.tscn",
+	"res://scenes/level_browser.tscn",
+	"res://scenes/multiplayer_menu.tscn",
 	"res://scenes/game_over.tscn",
 	"res://scenes/win_screen.tscn",
 	"res://scenes/credits.tscn",
@@ -134,8 +136,10 @@ func _ready() -> void:
 	call_deferred("_apply_initial_preference")
 
 ## The starting state: the player's saved choice if there is one, otherwise
-## device detection. Kept separate from applying it so the rule can be checked
-## without an overlay in the tree.
+## device detection. Detection only ever turns the controls on for a phone or
+## tablet, so a laptop or desktop - touchscreen or not - starts with them off.
+## Kept separate from applying it so the rule can be checked without an overlay
+## in the tree.
 func _preferred_controls_state() -> bool:
 	var choice := Progress.mobile_controls_override
 	if choice < 0:
@@ -192,26 +196,41 @@ func is_mobile_device() -> bool:
 
 ## The browser-side half of is_mobile_device(). A phone or tablet names itself
 ## in the user agent, and an iPadOS browser disguises itself as a Macintosh but
-## reports several touch points. Touch support is kept as a final signal, so a
-## touch-first browser that hides its user agent still gets the controls. If
-## JavaScriptBridge is unavailable, DisplayServer answers instead.
+## reports several touch points. Touch support on its own is deliberately not a
+## signal: a touchscreen laptop reports it too, and the controls must stay off
+## there by default. If the browser cannot be asked, the answer is desktop.
 func _web_is_mobile() -> bool:
 	if Engine.has_singleton("JavaScriptBridge"):
 		var bridge = Engine.get_singleton("JavaScriptBridge")
 		if bridge != null:
 			var answer = bridge.eval("""
 				(function () {
-					var ua = navigator.userAgent || "";
-					var mobile = /Android|iPhone|iPad|iPod|Mobile|Tablet|Silk|Kindle/i.test(ua);
-					var ipad = /Macintosh/i.test(ua) && (navigator.maxTouchPoints || 0) > 1;
-					var touch = (navigator.maxTouchPoints || 0) > 0
-						|| ("ontouchstart" in window);
-					return mobile || ipad || touch;
+					return JSON.stringify({
+						ua: navigator.userAgent || "",
+						touchPoints: navigator.maxTouchPoints || 0
+					});
 				})()
 			""")
 			if answer != null:
-				return bool(answer)
-	return DisplayServer.is_touchscreen_available()
+				var info = JSON.parse_string(str(answer))
+				if info is Dictionary:
+					return _user_agent_is_mobile(
+							str(info.get("ua", "")), int(info.get("touchPoints", 0)))
+	return false
+
+## The user-agent half of the web check, split out so the rule can be tested
+## without a browser. Only phones and tablets match; a Windows, Mac or Linux
+## desktop stays off even when its screen is touch-enabled. The one exception
+## is iPadOS, which claims to be a Macintosh: Macs have no touchscreen, so a
+## Macintosh user agent with several touch points is an iPad in disguise.
+func _user_agent_is_mobile(ua: String, touch_points: int) -> bool:
+	if ua.is_empty():
+		return false
+	var lower := ua.to_lower()
+	for token in ["android", "iphone", "ipod", "ipad", "mobile", "silk", "kindle"]:
+		if lower.contains(token):
+			return true
+	return lower.contains("macintosh") and touch_points > 1
 
 func set_enabled(on: bool) -> void:
 	var changed := enabled != on

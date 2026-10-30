@@ -4,8 +4,11 @@ extends CanvasLayer
 ## title and the current level's map art centred as the menu body, and pressing
 ## M again takes it away. The game is paused while it is up.
 ##
-## Art is looked up per scene so each place shows its own map. A scene with no
-## art of its own falls back to the design image rather than showing nothing.
+## The map belongs to gameplay: it is only available in the campaign's levels,
+## hubs and rooms, never on the title screen, the Level Browser, the Level Editor
+## or any other menu. Art is looked up per scene so each place shows its own map.
+## A scene with no art of its own falls back to the design image rather than
+## showing nothing.
 ##
 ## Under the art is a travel list: the hub scenes and a couple of levels can each
 ## be selected here, and picking one plays a teleportation and hands off to the
@@ -130,7 +133,10 @@ func _on_scene_changed() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if _traveling:
 		return
-	if _community_play_active():
+	# M is a gameplay shortcut. Menus and editors keep the key for themselves,
+	# so the map cannot appear over the title screen, the Level Browser, the
+	# Level Editor or a community level.
+	if not _gameplay_active():
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_M:
@@ -140,9 +146,27 @@ func _unhandled_input(event: InputEvent) -> void:
 				_open_map()
 
 
+## The campaign's playable scenes: every numbered level, every hub or room that
+## LevelData knows, and the two house interiors. A whitelist is used rather than
+## a blacklist so a menu added later cannot accidentally inherit the M shortcut.
+func _gameplay_active() -> bool:
+	return _is_gameplay_path(_current_scene_path())
+
+## Split out from _gameplay_active() so the rule can be checked without moving
+## the running scene around. The empty path means a transition is mid-flight and
+## no map should be opened over it.
+func _is_gameplay_path(path: String) -> bool:
+	if path.is_empty():
+		return false
+	if LevelData.LEVELS.has(path) or LevelData.AREA_TITLES.has(path):
+		return true
+	return path == "res://scenes/house1.tscn" \
+			or path == "res://scenes/house2.tscn"
+
+
 ## A downloaded community level has no map art or campaign travel destinations,
 ## so the map stays shut for that run. The pause menu hides its MAP button for
-## the same reason; this also covers the M shortcut.
+## the same reason; the gameplay whitelist above also covers the M shortcut.
 func _community_play_active() -> bool:
 	var scene := get_tree().current_scene
 	return scene != null and scene.scene_file_path == LevelShare.COMMUNITY_PLAY_SCENE
@@ -157,12 +181,12 @@ func is_map_open() -> bool:
 ## paused by the time its button can be pressed; the map simply takes the screen
 ## over and hands the pause back on close.
 func open_map() -> void:
-	if _community_play_active():
+	if not _gameplay_active() or _community_play_active():
 		return
 	_open_map()
 
 func _open_map() -> void:
-	if _open or _traveling or _community_play_active():
+	if _open or _traveling or not _gameplay_active() or _community_play_active():
 		return
 
 	_open = true

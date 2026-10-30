@@ -31,7 +31,7 @@ SHIFT: Dig Dash/Groundpound
 
 ESC: Pause Game
 
-M: Map
+M: Map (during campaign gameplay only)
 
 LEFT CLICK: Attack/Use item held or interact with HUD
 
@@ -49,10 +49,11 @@ installation, so one copy of the game counts once. EDIT downloads the level and
 opens it in the Level Editor for changing, while PLAY launches it as a normal game
 level: the campaign HUD, pause menu and game over screen are all there. The
 green exit portal pulls the mole through when you reach it, then a LEVEL
-COMPLETE screen offers CONTINUE back to the browser. Community runs borrow
-their authored weapons and music for that run only, use their own checkpoint,
-and never overwrite campaign progress, shop unlocks or the level you were
-building in the Level Editor.
+COMPLETE screen offers CONTINUE back to the browser. The browser is a menu, so
+the on-screen mobile controls stay hidden there. Community runs borrow their
+authored weapons and music for that run only, use their own checkpoint, and
+never overwrite campaign progress, shop unlocks or the level you were building
+in the Level Editor.
 
 LEVEL EDITOR:
 
@@ -118,9 +119,11 @@ CTRL+Z / CTRL+Y: Undo / redo
 G: Toggle the grid
 
 The editor does not carry its own on-screen controls switch; the MOBILE CONTROLS
-checkbox in Settings owns that preference. While you are building, the gameplay
-controls are parked so they cannot cover the palette; they come back for the
-length of a playtest and step aside again when you return to editing.
+checkbox in Settings owns that preference. On a phone or tablet the controls
+start on; on a laptop or desktop they start off, even when the screen is
+touch-enabled. While you are building, the gameplay controls are parked so they
+cannot cover the palette; they come back for the length of a playtest and step
+aside again when you return to editing.
 
 The Pause/Break key, or either PAUSE button, freezes the editor or a running
 playtest. The pause menu can hand the screen to Settings or leave the editor;
