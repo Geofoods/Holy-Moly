@@ -109,6 +109,7 @@ func _build_item_catalog() -> void:
 	var defs := [
 		# Tools
 		{"name": "Drill", "price": 70},
+		{"name": "Flyswatter", "price": 55},
 		# Explosives
 		{"name": "Bomb", "price": 80},
 		{"name": "Ice Bomb", "price": 95},
@@ -130,6 +131,7 @@ func _find_item(item_name: String) -> ItemData:
 		"Ice Bomb": "res://resources/ice_bomb.tres",
 		"Golden Bomb": "res://resources/golden_bomb.tres",
 		"Drill": "res://resources/drill.tres",
+		"Flyswatter": "res://resources/flyswatter.tres",
 		"Holy Water": "res://resources/holy_water.tres",
 		"Mine": "res://resources/mine.tres",
 		"Stink Bomb": "res://resources/stink_bomb.tres",

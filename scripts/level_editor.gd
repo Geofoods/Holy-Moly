@@ -132,6 +132,7 @@ const ITEM_CATALOG := [
 	{"kind": "item", "name": "Drill", "value": "res://resources/drill.tres"},
 	{"kind": "item", "name": "Bomb", "value": "res://resources/bomb.tres"},
 	{"kind": "item", "name": "Ice Bomb", "value": "res://resources/ice_bomb.tres"},
+	{"kind": "item", "name": "Flyswatter", "value": "res://resources/flyswatter.tres"},
 	{"kind": "item", "name": "Holy Water", "value": "res://resources/holy_water.tres"},
 ]
 

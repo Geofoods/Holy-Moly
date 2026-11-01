@@ -1,0 +1,49 @@
+[gd_scene format=3 uid="uid://cg0x4llpx2wdr"]
+
+[ext_resource type="Script" path="res://scripts/flyswatter.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://bi37i5dj77idc" path="res://sprites/flyswatter.png" id="2_sheet"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_f0"]
+atlas = ExtResource("2_sheet")
+region = Rect2(0, 0, 600, 600)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_f1"]
+atlas = ExtResource("2_sheet")
+region = Rect2(600, 0, 600, 600)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_f2"]
+atlas = ExtResource("2_sheet")
+region = Rect2(1200, 0, 600, 600)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_f3"]
+atlas = ExtResource("2_sheet")
+region = Rect2(1800, 0, 600, 600)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_swat"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_f0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_f1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_f2")
+}, {
+"duration": 1.5,
+"texture": SubResource("AtlasTexture_f3")
+}],
+"loop": false,
+"name": &"swat",
+"speed": 14.0
+}]
+
+[node name="Flyswatter" type="Node2D"]
+z_index = 20
+script = ExtResource("1_script")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+scale = Vector2(0.5, 0.5)
+sprite_frames = SubResource("SpriteFrames_swat")
+animation = &"swat"
