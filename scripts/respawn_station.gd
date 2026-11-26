@@ -11,6 +11,10 @@ extends RigidBody2D
 ## Progress (autoload) holds the record. mole.gd asks this node to play the
 ## arrival when a scene loads; game_over.gd sends the mole back here on retry.
 
+## Click/tap-to-interact, the same helper chests and NPCs use: a press on the
+## pad's own artwork banks it just like the interact key.
+const TapInteract := preload("res://scripts/tap_interact.gd")
+
 ## The mole materialises on the pad, not on the exact spot it banked from, so a
 ## respawn never drops the player inside the station's frame.
 @export var spawn_offset := Vector2(0.0, -120.0)
@@ -66,6 +70,8 @@ const PULSE_RATE := 2.2
 @onready var _area: Area2D = $InteractionArea
 @onready var _prompt: Label = $Prompt
 @onready var _light: PointLight2D = $PadLight
+## The station's visible artwork, which is what a click/tap has to land on.
+@onready var _art: AnimatedSprite2D = $Art
 
 var _mole_nearby := false
 var _arriving := false
@@ -79,6 +85,10 @@ var _orb_particles: CPUParticles2D = null
 
 func _ready() -> void:
 	add_to_group("respawn_station")
+	# Only a station that can actually bank is an interactable; a decorative
+	# one must not swallow clicks or offer a press target.
+	if checkpoints:
+		TapInteract.register(_art)
 	_setup_prompt()
 	_setup_particles()
 	_phase = randf_range(0.0, TAU)
@@ -226,11 +236,21 @@ func _scene_path() -> String:
 	return "" if scene == null else str(scene.scene_file_path)
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not _mole_nearby or not checkpoints or _arriving:
+	if not checkpoints or _arriving:
 		return
 	if event.is_action_pressed("interact"):
-		_bank()
-		get_viewport().set_input_as_handled()
+		if _mole_nearby:
+			_bank()
+			get_viewport().set_input_as_handled()
+		return
+	# Clicking or tapping the pad banks it exactly like the interact key, so a
+	# checkpoint can be claimed with the mouse or a finger as well as with E.
+	# The press is spent on the station even when the mole is out of reach, so a
+	# click on the artwork never falls through to a weapon swing.
+	if TapInteract.is_press_on(event, _art):
+		TapInteract.consume(event, self)
+		if _mole_nearby:
+			_bank()
 
 ## Records this station as the checkpoint: the scene it stands in plus the spot
 ## the mole banked it from. Re-banking is allowed and just overwrites the

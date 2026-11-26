@@ -18,6 +18,7 @@ const EDITOR_SCENE := "res://scenes/level_editor.tscn"
 
 var _last_hop_index := -1
 var _intro_music: AudioStreamPlayer = null
+var _menu_revealed := false
 
 func _ready():
 	# Start waking the community service while the title screen is still
@@ -69,6 +70,20 @@ func _ready():
 
 	animate_intro()
 
+	# Safety net for the reveal below. The menu starts fully transparent and is
+	# faded in once the mole's opening hop finishes. If that chain is interrupted
+	# (for example the app is suspended or the tween never completes on a
+	# platform), the title screen would sit there with no logo and no buttons at
+	# all. The timer is PROCESS_MODE_ALWAYS so it still fires while paused, and
+	# animate_menu_reveal() ignores the second call in the normal case.
+	var reveal_guard := Timer.new()
+	reveal_guard.one_shot = true
+	reveal_guard.wait_time = 6.0
+	reveal_guard.process_mode = Node.PROCESS_MODE_ALWAYS
+	reveal_guard.timeout.connect(animate_menu_reveal)
+	add_child(reveal_guard)
+	reveal_guard.start()
+
 func _add_version_label() -> void:
 	var font := load("res://Baby Doll.otf") as Font
 	var label := Label.new()
@@ -90,6 +105,7 @@ func _add_version_label() -> void:
 
 func animate_intro():
 	_intro_music = AudioStreamPlayer.new()
+	_intro_music.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
 	_intro_music.process_mode = Node.PROCESS_MODE_ALWAYS
 	_intro_music.bus = &"Music"
 	_intro_music.stream = preload("res://ivan_luzan-epic-hybrid-logo-157092.mp3")
@@ -111,6 +127,7 @@ func _fade_out_intro_music() -> void:
 
 func _start_menu_music() -> void:
 	var music := AudioStreamPlayer.new()
+	music.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
 	music.process_mode = Node.PROCESS_MODE_ALWAYS
 	music.bus = &"Music"
 	music.stream = preload("res://pink_sound-neon-symphony-phonk-house-background-music-for-video-21-second-533504.mp3")
@@ -170,10 +187,14 @@ func _update_mole_hop(mole: Control, shadow: ColorRect, t: float, start_x: float
 	shadow.modulate.a = lerp(0.0, 0.4, 1.0 - arc)
 
 func animate_menu_reveal() -> void:
+	if _menu_revealed:
+		return
+	_menu_revealed = true
 	var vbox = $CenterContainer/VBoxContainer
 	_set_buttons_enabled(true)
 
 	var tween := create_tween()
+	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	tween.set_parallel(true)
 	tween.tween_property(vbox, "modulate:a", 1.0, 0.55).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tween.tween_property(vbox, "scale", Vector2(1.0, 1.0), 0.55).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)

@@ -100,6 +100,7 @@ func _set_buttons_enabled(enabled: bool) -> void:
 
 func _start_game_over_music() -> void:
 	_game_over_music = AudioStreamPlayer.new()
+	_game_over_music.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
 	_game_over_music.process_mode = Node.PROCESS_MODE_ALWAYS
 	_game_over_music.bus = &"Music"
 	_game_over_music.stream = preload("res://soundreality-crystal-cave-136472.mp3")

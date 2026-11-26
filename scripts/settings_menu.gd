@@ -132,10 +132,16 @@ func _on_mobile_controls_toggled(pressed: bool) -> void:
 	MobileControls.set_enabled(pressed)
 	Progress.set_mobile_controls_override(pressed)
 
-## Adds the SFX and Music buses if the layout does not already carry them, both
-## routed to Master. Created here at startup rather than in default_bus_layout.tres
-## so they exist before any player is assigned to them - every sound in the game
-## names one of the two.
+## Backfills the SFX and Music buses if the bus layout does not already carry
+## them, both routed to Master.
+##
+## The real definitions live in default_bus_layout.tres, which the engine loads
+## before any autoload runs. They have to come from there: the web export's Web
+## Audio driver wires a bus that is added at runtime into a loop that never
+## reaches the speakers, which silences the whole game. Loading the layout takes
+## the driver's own bus-setup path instead, which routes correctly. This stays as
+## a safety net for a layout that lost a bus, so the volume sliders still have a
+## target to drive.
 func _ensure_buses() -> void:
 	for bus_name in [SFX_BUS, MUSIC_BUS]:
 		if AudioServer.get_bus_index(bus_name) != -1:

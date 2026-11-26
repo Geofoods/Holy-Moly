@@ -598,6 +598,7 @@ func _start_browse_music() -> void:
 	if _browse_music and is_instance_valid(_browse_music):
 		return
 	_browse_music = AudioStreamPlayer.new()
+	_browse_music.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
 	_browse_music.stream = _browse_music_stream
 	_browse_music.volume_db = -12.0
 	_browse_music.process_mode = Node.PROCESS_MODE_ALWAYS

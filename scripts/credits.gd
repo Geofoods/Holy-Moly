@@ -301,6 +301,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _start_music() -> void:
 	_music = AudioStreamPlayer.new()
+	_music.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
 	_music.process_mode = Node.PROCESS_MODE_ALWAYS
 	_music.bus = &"Music"
 	_music.stream = load(MUSIC_PATH) as AudioStream

@@ -242,6 +242,7 @@ func _advance_region_loop() -> void:
 func _begin_region_loop() -> void:
 	var outgoing := _region_player
 	var incoming := AudioStreamPlayer.new()
+	incoming.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
 	incoming.stream = outgoing.stream
 	incoming.process_mode = Node.PROCESS_MODE_ALWAYS
 	incoming.bus = &"Music"
@@ -344,6 +345,7 @@ func _start_region(path: String, fade_time := 2.0) -> void:
 	stop_region(0.0)
 	_region_path = path
 	_region_player = AudioStreamPlayer.new()
+	_region_player.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
 	_region_player.stream = load(_region_path)
 	_region_player.process_mode = Node.PROCESS_MODE_ALWAYS
 	_region_player.bus = &"Music"
@@ -415,6 +417,7 @@ func play_arena_track(fade_time := 2.5) -> void:
 	_kill_arena_volume_tween()
 	stop_bed()
 	_arena_player = AudioStreamPlayer.new()
+	_arena_player.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
 	_arena_player.stream = _arena_stream
 	_arena_player.process_mode = Node.PROCESS_MODE_ALWAYS
 	_arena_player.bus = &"Music"
@@ -506,6 +509,11 @@ func _play_vessel_segment(from: float, until: float, fade_time: float) -> void:
 	_kill_vessel_volume_tween()
 	if _vessel_player == null or not is_instance_valid(_vessel_player):
 		_vessel_player = AudioStreamPlayer.new()
+		# Every music player is a stream. The web default is sample playback, which
+		# decodes the whole mp3 on the main thread at play(): this 5 MB track froze
+		# the browser for seconds the moment the heart died. Streaming decodes as it
+		# plays.
+		_vessel_player.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
 		_vessel_player.stream = _vessel_stream
 		_vessel_player.process_mode = Node.PROCESS_MODE_ALWAYS
 		_vessel_player.bus = &"Music"
@@ -616,6 +624,7 @@ func _start_bed(fade_time := 0.0) -> void:
 		if custom is AudioStream:
 			stream = custom
 	_player = AudioStreamPlayer.new()
+	_player.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
 	_player.stream = stream
 	_player.volume_db = SILENT_VOLUME_DB if fade_time > 0.0 else _target_volume
 	_player.process_mode = Node.PROCESS_MODE_ALWAYS
@@ -639,6 +648,7 @@ func play_boss_track(fade_time := 6.0) -> void:
 	if _boss_player != null and is_instance_valid(_boss_player):
 		return
 	_boss_player = AudioStreamPlayer.new()
+	_boss_player.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
 	_boss_player.stream = _boss_stream
 	_boss_player.process_mode = Node.PROCESS_MODE_ALWAYS
 	_boss_player.bus = &"Music"

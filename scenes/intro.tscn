@@ -197,13 +197,12 @@ theme_override_constants/separation = 40
 alignment = 1
 
 [node name="BannerImage" type="TextureRect" parent="CenterContainer/VBoxContainer" unique_id=1959195757]
-clip_contents = true
-custom_minimum_size = Vector2(800, 310)
+custom_minimum_size = Vector2(780, 310)
 layout_mode = 2
 size_flags_horizontal = 4
 texture = ExtResource("4_0naf5")
 expand_mode = 1
-stretch_mode = 6
+stretch_mode = 5
 
 [node name="Spacer" type="Control" parent="CenterContainer/VBoxContainer" unique_id=1959195758]
 custom_minimum_size = Vector2(0, 30)

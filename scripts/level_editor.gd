@@ -2343,7 +2343,7 @@ func _build_palette() -> void:
 	_checkpoint_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_checkpoint_btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_checkpoint_btn.icon = _square_frame(CHECKPOINT_SHEET, 0)
-	_checkpoint_btn.tooltip_text = "Press E next to it in a playtest to bank it; dying then puts the mole back on its pad"
+	_checkpoint_btn.tooltip_text = "Press E or click it in a playtest to bank it; dying then puts the mole back on its pad"
 	_checkpoint_btn.add_theme_constant_override("icon_max_width", 40)
 	_checkpoint_btn.pressed.connect(_on_checkpoint_selected)
 	_items_box.add_child(_checkpoint_btn)

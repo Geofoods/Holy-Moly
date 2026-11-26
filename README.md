@@ -84,14 +84,14 @@ which weapons a level unlocks for the player, or leave their own shop unlocks
 alone. Whatever a playtest changes -- dug tiles, opened chests, collected items,
 coins a previewed enemy dropped, borrowed weapons -- is put back when you stop.
 
-A Respawn Station is a checkpoint. Stand beside it in a playtest, press E to bank
-it, and the pad lights up; dying after that puts the mole back on the pad, healed,
-instead of ending the test. Falling into the pit under the level counts as a
-death for this, and with no station banked the mole comes back to the start
-marker. The checkpoint belongs to the playtest alone: it is never written into
-the campaign's save, so setting one while testing a level cannot move the
-checkpoint of the level the player is really playing. A station dropped into a
-campaign level still banks into Progress exactly as before.
+A Respawn Station is a checkpoint. Stand beside it in a playtest and press E or
+click it to bank it, and the pad lights up; dying after that puts the mole back
+on the pad, healed, instead of ending the test. Falling into the pit under the
+level counts as a death for this, and with no station banked the mole comes back
+to the start marker. The checkpoint belongs to the playtest alone: it is never
+written into the campaign's save, so setting one while testing a level cannot
+move the checkpoint of the level the player is really playing. A station dropped
+into a campaign level still banks into Progress exactly as before.
 
 RECT FILL, or the R key, turns a drag into a filled rectangle: press at one
 corner, drag to the opposite one and let go, and every cell between is painted at
