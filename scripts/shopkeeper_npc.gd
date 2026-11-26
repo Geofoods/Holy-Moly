@@ -40,6 +40,9 @@ const SHOP_PORTRAIT_REGION := Rect2(165, 258, 270, 125)
 ## Shown once, the first time the player talks to the merchant. Leave empty to
 ## skip the greeting and open the shop straight away.
 @export_multiline var greeting_text := "Psst - over here, digger! Fresh bombs, a good drill, holy water if you're leaking. Everything a mole needs to get home in one piece."
+## Said right after the greeting, before the shop opens, to show off the newest
+## stock. Leave empty to skip it.
+@export_multiline var new_item_text := "I just got a NEW item! The flyswatter swats any pesky bugs in one shot."
 ## Shown once the shop closes after the player has bought something, so Gilbert
 ## can pitch his buy-back service. Only fires for a purchase made at his own
 ## stall (see _on_shop_purchased). Leave empty to skip the thank-you entirely.
@@ -282,6 +285,14 @@ func _open_dialogue(text: String, on_done: Callable) -> void:
 	_dialogue_box.show_text(text, 0, 0, true, false)
 
 func _on_greeting_done() -> void:
+	_close_dialogue()
+	if not new_item_text.is_empty() and sells:
+		_open_dialogue(new_item_text, _on_new_item_done)
+		return
+	if not _shop_open:
+		_open_shop()
+
+func _on_new_item_done() -> void:
 	_close_dialogue()
 	if not _shop_open:
 		_open_shop()

@@ -679,7 +679,40 @@ func _process(_delta: float) -> void:
 func _on_selected_slot_changed(slot: int) -> void:
 	_update_held_item()
 
+## The flyswatter has no hold sprite: while it is equipped the cursor itself is
+## the swatter, and any other state puts the normal cursor back.
+const FLYSWATTER_SHEET := preload("res://sprites/flyswatter.png")
+const FLYSWATTER_CURSOR_SIZE := 192
+const FLYSWATTER_CURSOR_HOTSPOT := Vector2(52, 76)
+const FlyswatterScene := preload("res://scenes/flyswatter.tscn")
+static var _flyswatter_cursor: ImageTexture = null
+
+func _set_flyswatter_cursor(active: bool) -> void:
+	if not active:
+		Input.set_custom_mouse_cursor(null, Input.CURSOR_ARROW)
+		return
+	if _flyswatter_cursor == null:
+		var img := FLYSWATTER_SHEET.get_image()
+		if img == null:
+			return
+		img.decompress()
+		var frame := img.get_region(Rect2i(0, 0, 600, 600))
+		frame.resize(FLYSWATTER_CURSOR_SIZE, FLYSWATTER_CURSOR_SIZE, Image.INTERPOLATE_LANCZOS)
+		_flyswatter_cursor = ImageTexture.create_from_image(frame)
+	Input.set_custom_mouse_cursor(_flyswatter_cursor, Input.CURSOR_ARROW, FLYSWATTER_CURSOR_HOTSPOT)
+
+func _use_flyswatter(at: Vector2) -> void:
+	var swatter := FlyswatterScene.instantiate()
+	get_parent().add_child(swatter)
+	swatter.global_position = at
+
+func _exit_tree() -> void:
+	_set_flyswatter_cursor(false)
+
 func _update_held_item() -> void:
+	var held_slot := Inventory.selected_slot
+	var held: ItemData = Inventory.slots[held_slot] if held_slot >= 0 and held_slot < Inventory.slots.size() else null
+	_set_flyswatter_cursor(held != null and held.item_name == "Flyswatter")
 	if is_digging or is_tunneling:
 		return
 
@@ -1070,6 +1103,11 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			return
 		match item.item_name:
+			"Flyswatter":
+				if Inventory.use_item(slot):
+					Inventory.selected_slot = -1
+					_use_flyswatter(_aim_pos())
+				get_viewport().set_input_as_handled()
 			"Vacuum Jelly":
 				Inventory.use_item(slot)
 				_use_vacuum()

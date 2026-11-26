@@ -46,6 +46,7 @@ const ITEM_PATHS: Array[String] = [
 	"res://resources/drill.tres",
 	"res://resources/bomb.tres",
 	"res://resources/ice_bomb.tres",
+	"res://resources/flyswatter.tres",
 	"res://resources/holy_water.tres",
 ]
 

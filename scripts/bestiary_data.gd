@@ -87,6 +87,18 @@ const ENTRIES: Array[Dictionary] = [
 		"strategy": "Aim it straight down a corridor to clear a path and any enemies lined up in it in one shot. Completely safe to use up close.",
 	},
 	{
+		"id": "flyswatter",
+		"name": "Flyswatter",
+		"icon": "res://sprites/flyswatter.png",
+		"icon_region": Rect2(0, 0, 600, 600),
+		"category": "Item",
+		"danger_level": 1,
+		"description": "A one-use swatter for pesky bugs. Sold only by Goblin Gilbert, never found in chests.",
+		"behavior": "Select it from your inventory and your cursor becomes the flyswatter. Left-click to swat the spot under it.",
+		"attack_pattern": "Instantly defeats any bug it lands on (Ants, Beetles and Hornets) in one hit, and deals massive damage to the Snail boss. Single use: it is spent on the swing, hit or miss.",
+		"strategy": "Save it for a tough Beetle or a Hornet mid-dash, or hold it for the snail boss. Aim carefully, since a miss still uses it up.",
+	},
+	{
 		"id": "bomb",
 		"name": "Bomb",
 		"icon": "res://scenes/bomb.webp",
@@ -151,6 +163,7 @@ const CONTROLS: Array[Dictionary] = [
 		"rows": [
 			{"label": "Tap a slot", "detail": "Select an inventory slot. Tap the same slot again to deselect."},
 			{"label": "Bomb / Drill", "detail": "While selected, tap to throw toward your finger. See the Bestiary tab for what each one does."},
+			{"label": "Flyswatter", "detail": "While selected, your cursor becomes the swatter. Tap a bug to squash it; one use only."},
 			{"label": "Health Potion", "detail": "Tapping it instantly drinks it, restoring 1 heart."},
 			{"label": "Speed Boots / Shield", "detail": "Tapping it instantly activates a temporary speed boost or invulnerability."},
 		],
